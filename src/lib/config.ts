@@ -10,6 +10,9 @@ export const POST_API_PROMO = process.env.NEXT_PUBLIC_POST_API_PROMO; //PROMOCOD
 export const API_PY_NORMAL_URL = process.env.NEXT_PUBLIC_API_PY_NORMAL_URL; //NORMAL API URL FOR PYTHON
 export const API_SIMILAR_PRODUCT_URL = process.env.NEXT_PUBLIC_API_SIMILAR_PRODUCT_URL; // SIMILAR PRODUCT API
 
+export const APP_VERSION = "0.1.0";
+export const DEVICE_TYPE_WEB = 3;
+
 // PAYMENT METHOD KEY AND URL
 export const Stripe_Key = process.env.NEXT_PUBLIC_Stripe_Key; // STRIPE KEY
 export const RakBank_Key = process.env.NEXT_PUBLIC_RakBank_Key; // RANKBANK KEY

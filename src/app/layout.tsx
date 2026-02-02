@@ -5,6 +5,7 @@ import Header from "../components/layout/Header"
 import Footer from "../components/layout/Footer"
 import PreFooterIconModule from "../components/layout/PreFooterIconModule"
 import { NextIntlClientProvider } from "next-intl"
+import ClientProviders from "./providers"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,7 +32,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <ClientProviders>
+          <NextIntlClientProvider>
+            {children}
+          </NextIntlClientProvider>
+        </ClientProviders>
       </body>
     </html>
   )

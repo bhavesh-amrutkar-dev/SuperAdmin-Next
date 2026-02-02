@@ -1,47 +1,62 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
+import Image from "next/image";
+import { useEffect, useState } from "react";
+import type { HomeBanner } from "@/src/models/api/response/home";
 
-const slides = [
-  {
-    title: "Build faster",
-    description: "Launch your product with confidence",
-  },
-  {
-    title: "Scale smarter",
-    description: "Infrastructure that grows with you",
-  },
-  {
-    title: "Ship quality",
-    description: "Modern tools for modern teams",
-  },
-]
+type Props = {
+  banners: HomeBanner[];
+  autoPlay?: boolean;
+};
 
-export default function HeroSlider() {
-  const [index, setIndex] = useState(0)
+export default function HeroSlider({ banners, autoPlay = true }: Props) {
+  const [index, setIndex] = useState(0);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setIndex((prev) => (prev + 1) % slides.length)
-    }, 1500)
+    if (!autoPlay || banners.length <= 1) return;
 
-    return () => clearInterval(timer)
-  }, [])
+    const timer = setInterval(() => {
+      setIndex((i) => (i + 1) % banners.length);
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [banners, autoPlay]);
+
+  if (!banners.length) return null;
+
+  const banner = banners[index];
 
   return (
-    <section className="relative overflow-hidden bg-gray-50">
-      <div className="mx-auto max-w-7xl px-6 py-32 text-center transition-all duration-700">
-        <h2 className="text-5xl font-bold mb-4">
-          {slides[index].title}
-        </h2>
-        <p className="text-lg text-gray-600 mb-8">
-          {slides[index].description}
-        </p>
-
-        <button className="px-8 py-3 bg-black text-white rounded-lg">
-          Get Started
-        </button>
+    <section className="w-full">
+      {/* Image container MUST be relative */}
+      <div className="relative w-full h-[40vh] sm:h-[50vh] md:h-[60vh] overflow-hidden">
+        <Image
+          src={banner.imageWeb}
+          alt="Home banner"
+          fill
+          priority={index === 0}
+          sizes="(max-width: 640px) 100vw, 100vw"
+        />
       </div>
+
+      {/* Dots BELOW image */}
+      {banners.length > 1 && (
+        <div className="flex justify-center gap-3 py-4">
+          {banners.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setIndex(i)}
+              aria-label={`Go to slide ${i + 1}`}
+              className={`h-2.5 w-2.5 rounded-full transition-all duration-200
+                ${
+                  i === index
+                    ? "bg-black scale-125"
+                    : "bg-black/30 hover:bg-black/50"
+                }`}
+            />
+          ))}
+        </div>
+      )}
     </section>
-  )
+  );
 }
