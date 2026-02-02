@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+
+  /* Brand colors */
+  --theme-color: #EFCE60;
+  --footer-bg: #F6CD46;
+  --footer-dark: #2F2F2F;
+  --danger: #E53935;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* Tailwind color bindings */
+  --color-theme: var(--theme-color);
+  --color-footerBg: var(--footer-bg);
+  --color-footerDark: var(--footer-dark);
+  --color-danger: var(--danger);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+.social-icon {
+  filter: grayscale(100%);
+  transition: filter 0.3s ease, transform 0.3s ease;
+}
+
+.social-icon:hover {
+  filter: grayscale(0%);
+}
