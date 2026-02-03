@@ -243,7 +243,7 @@ export const Red_Icon = "/images/banner/red_icon.svg";
 export const ABOUT_MOBILE_IMG = "/images/banner/about-wireframe.png";
 export const MOBILE_PRODUCT = "/images/dummy/MobileProduct.png";
 export const STARIMG = CDN_IMAGE + "star-icon.svg";
-
+export const HOW_IT_WORKS = "/images/donrifa/howItWorks.webp"
 // Icons
 export const GOOGLEICON = "/icons/google_Icon.svg";
 export const FACEBOOKICON = "/icons/facebook_Icon.svg";

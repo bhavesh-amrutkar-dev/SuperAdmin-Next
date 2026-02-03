@@ -20,6 +20,7 @@ import HeroSlider from "./Hero";
 import { getContentSection } from "@/src/lib/filters/homeContent";
 import HomeContentSection from "./HomeContentSection";
 import RaffleSectionLayout from "./RafflesSelectionLayout";
+import HowItWorksSection from "./HowItWorks";
 
 export default function HomePage() {
   const locale = useLocale();
@@ -60,6 +61,7 @@ export default function HomePage() {
       {contentSection && (
         <HomeContentSection {...contentSection} />
       )}
+      <HowItWorksSection />
 
       {raffleSections.map((section) => (
         <RaffleSectionLayout key={section.id} section={section} />
