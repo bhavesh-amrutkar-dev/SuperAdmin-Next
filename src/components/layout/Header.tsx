@@ -57,7 +57,7 @@ export default function Header() {
 
             {/* Login */}
             <Link
-              href="/login"
+              href="/auth/login"
               className="hidden lg:flex items-center gap-2 text-sm font-medium
                          text-black hover:text-theme transition"
             >
@@ -105,7 +105,7 @@ export default function Header() {
             ))}
 
             <Link
-              href="/login"
+              href="/auth/login"
               className="flex items-center gap-2 pt-4 font-medium"
             >
               <User size={18} />

@@ -1,15 +1,17 @@
-// src/app/home/page.tsx
-
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 
 import { HomeService } from "@/src/lib/services/home";
-import { HomeSection, HomeBanner, RaffleSection } from "@/src/models/api/response/home";
+import {
+  HomeSection,
+  HomeBanner,
+  RaffleSection,
+} from "@/src/models/api/response/home";
 
 import { getHeroBannerSection, getRaffleSections } from "@/src/lib/filters/home";
-
 import { mapBanners, mapRaffleSection } from "@/src/lib/mappers/home";
 import {
   mapContentSection,
@@ -23,15 +25,26 @@ import RaffleSectionLayout from "./RafflesSelectionLayout";
 import HowItWorksSection from "./HowItWorks";
 
 export default function HomePage() {
+  const router = useRouter();
   const locale = useLocale();
 
   const [banners, setBanners] = useState<HomeBanner[]>([]);
   const [contentSection, setContentSection] =
     useState<MappedContentSection | null>(null);
+  const [raffleSections, setRaffleSections] = useState<RaffleSection[]>([]);
 
   const [loading, setLoading] = useState(true);
-  const [raffleSections, setRaffleSections] = useState<RaffleSection[]>([]);
+
   useEffect(() => {
+    // /** 🔐 AUTH CHECK */
+    // const token = localStorage.getItem("access_token");
+
+    // if (!token) {
+    //   router.replace("/auth/login");
+    //   return;
+    // }
+
+    /** ✅ FETCH HOME DATA */
     HomeService.getHomePage(1)
       .then((res) => {
         const sections: HomeSection[] = res.data;
@@ -50,17 +63,22 @@ export default function HomePage() {
         setRaffleSections(raffles);
       })
       .finally(() => setLoading(false));
-  }, [locale]);
+  }, [locale, router]);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <>
       {banners.length > 0 && <HeroSlider banners={banners} />}
 
-      {contentSection && (
-        <HomeContentSection {...contentSection} />
-      )}
+      {contentSection && <HomeContentSection {...contentSection} />}
+
       <HowItWorksSection />
 
       {raffleSections.map((section) => (
