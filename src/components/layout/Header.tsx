@@ -40,7 +40,7 @@ export default function Header() {
                 key={item.href}
                 href={item.href}
                 className="relative hover:text-theme transition
-                  after:absolute after:-bottom-1 after:left-0 after:h-[2px]
+                  after:absolute after:-bottom-1 after:left-0 after:h-0.5
                   after:w-0 after:bg-theme after:transition-all hover:after:w-full"
               >
                 {item.label}
@@ -92,20 +92,22 @@ export default function Header() {
         <div className="lg:hidden bg-white border-t border-black/10">
           <nav className="flex flex-col px-6 py-6 space-y-4 text-sm text-black">
             {[
-              { label: "How It Works", href: "#howItWorks" },
-              { label: "Raffles", href: "#raffles" },
-              { label: "Winners", href: "#winners" },
-              { label: "Contact", href: "#contact" },
+              { key: "howItWorks", href: "#howItWorks" },
+              { key: "raffles", href: "#raffles" },
+              { key: "winners", href: "#winners" },
+              { key: "contact", href: "#contact" },
             ].map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setOpen(false)}
-                className="font-medium"
+                className="relative hover:text-theme transition
+      after:absolute after:-bottom-1 after:left-0 after:h-0.5
+      after:w-0 after:bg-theme after:transition-all hover:after:w-full"
               >
-                {item.label}
+                {t(`${item.key}`)}
               </Link>
             ))}
+
 
             <Link
               href="/login"

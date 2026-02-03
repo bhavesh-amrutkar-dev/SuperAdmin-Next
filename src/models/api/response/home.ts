@@ -76,24 +76,42 @@ export interface BannerImage {
 // }
 
 export interface HomeSection {
-  _id: string;
-  title: string;
-  afterLoginTitle?: string;
-  description?: string;
-  linkedWith?: number;
-  visible: boolean;
-  type: number;
-  sectionType: number;
-  buttonText?: string;
-  image?: string[];
-  width?: number;
-  height?: number;
-  cellType?: number;
-  numberOfRows?: {
-    row: number;
-    cellCount: number;
-  };
-  entity?: any[];
-  seqId?: number;
-  banner_image: BannerImage[];
+    _id: string;
+    title: string;
+    afterLoginTitle?: string;
+    description?: string;
+    linkedWith?: number;
+    visible: boolean;
+    type: number;
+    sectionType: number;
+    buttonText?: string;
+    image?: string[];
+    width?: number;
+    height?: number;
+    cellType?: number;
+    numberOfRows?: {
+        row: number;
+        cellCount: number;
+    };
+    entity?: any[];
+    seqId?: number;
+    banner_image: BannerImage[];
+}
+
+
+export interface RaffleItem {
+    id: string;
+    name?: string;
+    description?: string;
+    price?: number;
+    currencySymbol?: string;
+    image: string;
+}
+
+export interface RaffleSection {
+    id: string;
+    title: string;
+    description?: string;
+    cellType: number;
+    items: RaffleItem[];
 }

@@ -6,11 +6,11 @@ import { useEffect, useState } from "react";
 import { useLocale } from "next-intl";
 
 import { HomeService } from "@/src/lib/services/home";
-import { HomeSection, HomeBanner } from "@/src/models/api/response/home";
+import { HomeSection, HomeBanner, RaffleSection } from "@/src/models/api/response/home";
 
-import { getHeroBannerSection } from "@/src/lib/filters/home";
+import { getHeroBannerSection, getRaffleSections } from "@/src/lib/filters/home";
 
-import { mapBanners } from "@/src/lib/mappers/home";
+import { mapBanners, mapRaffleSection } from "@/src/lib/mappers/home";
 import {
   mapContentSection,
   MappedContentSection,
@@ -19,6 +19,7 @@ import {
 import HeroSlider from "./Hero";
 import { getContentSection } from "@/src/lib/filters/homeContent";
 import HomeContentSection from "./HomeContentSection";
+import RaffleSectionLayout from "./RafflesSelectionLayout";
 
 export default function HomePage() {
   const locale = useLocale();
@@ -28,7 +29,7 @@ export default function HomePage() {
     useState<MappedContentSection | null>(null);
 
   const [loading, setLoading] = useState(true);
-
+  const [raffleSections, setRaffleSections] = useState<RaffleSection[]>([]);
   useEffect(() => {
     HomeService.getHomePage(1)
       .then((res) => {
@@ -43,6 +44,9 @@ export default function HomePage() {
         if (content) {
           setContentSection(mapContentSection(content));
         }
+
+        const raffles = getRaffleSections(sections).map(mapRaffleSection);
+        setRaffleSections(raffles);
       })
       .finally(() => setLoading(false));
   }, [locale]);
@@ -56,6 +60,10 @@ export default function HomePage() {
       {contentSection && (
         <HomeContentSection {...contentSection} />
       )}
+
+      {raffleSections.map((section) => (
+        <RaffleSectionLayout key={section.id} section={section} />
+      ))}
     </>
   );
 }
