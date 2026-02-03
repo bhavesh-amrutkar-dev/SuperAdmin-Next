@@ -24,6 +24,7 @@ export default function Header() {
       <div className="mx-auto w-full max-w-[1648px] px-2 md:px-6">
         <div className="flex h-20 items-center justify-between">
 
+
           {/* Logo */}
           <Link href="/" className="flex items-center">
             <Image
@@ -36,13 +37,7 @@ export default function Header() {
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden lg:flex items-center gap-14 text-sm text-white uppercase font-semibold">
-            {[
-              { label: "How It Works", href: "#howItWorks" },
-              { label: "Raffles", href: "#raffles" },
-              { label: "Winners", href: "#winners" },
-              { label: "Contact", href: "#contact" },
-            ].map((item) => (
+          <nav className="hidden lg:flex items-center gap-14 text-sm text-white uppercase font-semibold">            {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -61,7 +56,7 @@ export default function Header() {
 
             {/* Login */}
             <Link
-              href="/login"
+              href="/auth/login"
               className="hidden lg:flex items-center gap-2 text-sm
                          text-black hover:text-theme transition btn-primary px-3 py-2 rounded-md border border-black/10 font-semibold"
             >
@@ -75,7 +70,7 @@ export default function Header() {
               className="relative p-2 rounded-md hover:bg-black/5 transition btn-primary flex items-center justify-center"
             >
               <ShoppingCart className="mr-1" size={20} />
-              <span className="bg-[#2F2F2F] text-white
+               <span className="bg-[#2F2F2F] text-white
                                text-sm font-semibold rounded-full w-5 h-5 inline-flex items-center justify-center">
                 0
               </span>
