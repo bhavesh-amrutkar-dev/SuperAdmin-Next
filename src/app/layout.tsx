@@ -6,6 +6,7 @@ import Footer from "../components/layout/Footer"
 import PreFooterIconModule from "../components/layout/PreFooterIconModule"
 import { NextIntlClientProvider } from "next-intl"
 import ClientProviders from "./providers"
+import { Toaster } from "sonner"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,6 +36,11 @@ export default function RootLayout({
         <ClientProviders>
           <NextIntlClientProvider>
             {children}
+            <Toaster
+              position="top-center"
+              richColors
+              closeButton
+            />
           </NextIntlClientProvider>
         </ClientProviders>
       </body>

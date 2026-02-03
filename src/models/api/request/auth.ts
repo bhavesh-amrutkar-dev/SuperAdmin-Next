@@ -1,10 +1,11 @@
 // ==============================
 // LOGIN
 // ==============================
-
 export interface ILoginRM {
-  email: string;
-  password: string;
+  email?: string;
+  password?: string;
+  mobile?: string;
+  countryCode?: string;
 }
 
 // ==============================
