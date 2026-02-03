@@ -21,7 +21,7 @@ export default function HomeContentSection({
   const finalImage = image || saleTime;
 
   return (
-    <section className="py-10 sm:py-14">
+    <section className="py-10 md:py-14 xl:py-20">
       <div className="mx-auto w-full max-w-7xl px-4">
         {/* Responsive Row */}
         <div className="flex flex-col gap-8 md:flex-row md:items-center">
@@ -30,13 +30,14 @@ export default function HomeContentSection({
           <div className="w-full md:w-1/2">
             <h2
               className="
-                mb-2
+                mb-6
                 text-base
                 sm:text-lg
                 md:text-xl
+                lg:text-[32px]
                 capitalize
-                text-[#797979]
-                font-medium
+                font-semibold
+                section_title
               "
             >
               {title}
@@ -47,9 +48,9 @@ export default function HomeContentSection({
                 className="
                   text-xs
                   sm:text-sm
-                  uppercase
-                  text-[#797979]
+                  text-[#7c7878]
                   leading-relaxed
+                  capitalize md:pe-14
                 "
                 dangerouslySetInnerHTML={{ __html: description }}
               />

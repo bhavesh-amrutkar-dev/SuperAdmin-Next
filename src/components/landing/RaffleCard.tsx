@@ -13,10 +13,10 @@ export default function RaffleCard({
   const aspect =
     cellType === 1 || cellType === 2
       ? "aspect-square"
-      : "aspect-[2/1]";
+      : "aspect-[1/1]";
 
   return (
-    <div className="min-w-45 shrink-0 text-center">
+    <div className="shrink-0 text-center raffle-card">
       {/* Image Wrapper */}
       <div
         className={`
@@ -27,6 +27,7 @@ export default function RaffleCard({
           items-center
           justify-center
           bg-transparent
+          raffle-card-image
         `}
       >
         <Image
@@ -37,20 +38,21 @@ export default function RaffleCard({
           className="object-contain"
         />
       </div>
+      <div className="raffle-card-info">
+        {/* Name */}
+        {item.name && (
+          <h2 className="mt-2 text-sm md:text-base lg:text-lg xl:text-xl font-bold text-[#2F2F2F] truncate">
+            {item.name}
+          </h2>
+        )}
 
-      {/* Name */}
-      {item.name && (
-        <p className="mt-2 text-sm font-medium text-[#797979] truncate">
-          {item.name}
-        </p>
-      )}
-
-      {/* Price */}
-      {item.price && (
-        <p className="text-sm text-[#9a9a9a]">
-          {item.currencySymbol} {item.price}
-        </p>
-      )}
+        {/* Price */}
+        {item.price && (
+          <p className="text-sm md:text-lg xl:text-[24px] font-semibold text-[#f3c200] mt-4">
+            {item.currencySymbol} {item.price}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
