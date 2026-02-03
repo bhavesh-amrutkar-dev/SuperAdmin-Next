@@ -10,12 +10,23 @@ export default function HowItWorksSection() {
   return (
     <section
       id="howItWorks"
-      className="mx-auto max-w-7xl px-6 py-16"
+      className="mx-auto w-full max-w-[1648px] px-2 md:px-6 pt-10 pb-[60px] lg:pb-[80px] xl:pb-[100px]"
     >
       <div className="text-center mb-10">
-        <h2 className="text-3xl font-bold text-black">
+        <div className="text-center section_heading min-w-[400px] inline-block px-8 py-3">
+        <h2 className="pt-2
+        pb-2
+        text-lg md:text-2xl lg:text-3xl xl:text-4xl
+        font-bold
+        uppercase
+        tracking-[1px]
+        leading-[1.35]
+        text-[#2F2F2F]
+        overflow-hidden
+        text-ellipsis">
           {t("howItWorks")}
         </h2>
+        </div>
       </div>
 
       <div className="relative w-full overflow-hidden rounded-2xl border border-black/10">
