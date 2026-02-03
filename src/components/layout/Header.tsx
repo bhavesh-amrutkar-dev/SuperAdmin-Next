@@ -20,30 +20,35 @@ export default function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-black/10">
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="flex h-16 items-center justify-between">
+    <header className="sticky top-0 z-50 bg-[#2F2F2F] backdrop-blur border-b border-black/10 shadow-[0px_4px_10px_0px_#00000059] mb-4">
+      <div className="mx-auto w-full max-w-[1648px] px-2 md:px-6">
+        <div className="flex h-20 items-center justify-between">
 
           {/* Logo */}
           <Link href="/" className="flex items-center">
             <Image
               src={website_logo}
               alt="DonRifa"
-              width={140}
+              width={200}
               height={40}
               priority
             />
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden lg:flex items-center gap-8 text-sm font-medium text-black">
-            {navItems.map((item) => (
+          <nav className="hidden lg:flex items-center gap-14 text-sm text-white uppercase font-semibold">
+            {[
+              { label: "How It Works", href: "#howItWorks" },
+              { label: "Raffles", href: "#raffles" },
+              { label: "Winners", href: "#winners" },
+              { label: "Contact", href: "#contact" },
+            ].map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="relative hover:text-theme transition
+                className="relative hover:text-[#FECB02] transition
                   after:absolute after:-bottom-1 after:left-0 after:h-0.5
-                  after:w-0 after:bg-theme after:transition-all hover:after:w-full"
+                  after:w-0 after:bg-[#FECB02] after:transition-all hover:after:w-full"
               >
                 {t(item.key)}
               </Link>
@@ -56,9 +61,9 @@ export default function Header() {
 
             {/* Login */}
             <Link
-              href="/auth/login"
-              className="hidden lg:flex items-center gap-2 text-sm font-medium
-                         text-black hover:text-theme transition"
+              href="/login"
+              className="hidden lg:flex items-center gap-2 text-sm
+                         text-black hover:text-theme transition btn-primary px-3 py-2 rounded-md border border-black/10 font-semibold"
             >
               <User size={18} />
               {t("Login")}
@@ -67,11 +72,11 @@ export default function Header() {
             {/* Cart */}
             <Link
               href="/cart"
-              className="relative p-2 rounded-md hover:bg-black/5 transition"
+              className="relative p-2 rounded-md hover:bg-black/5 transition btn-primary flex items-center justify-center"
             >
-              <ShoppingCart size={20} />
-              <span className="absolute -top-2 -right-2 bg-black text-white
-                               text-[10px] rounded-full w-5 h-5 flex items-center justify-center">
+              <ShoppingCart className="mr-1" size={20} />
+              <span className="bg-[#2F2F2F] text-white
+                               text-sm font-semibold rounded-full w-5 h-5 inline-flex items-center justify-center">
                 0
               </span>
             </Link>

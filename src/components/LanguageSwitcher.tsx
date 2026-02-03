@@ -33,14 +33,14 @@ export default function LanguageSwitcher() {
       <button
         onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-2 px-3 py-2 rounded-md border border-black/10 
-                   bg-white text-sm font-medium text-black
-                   hover:bg-black/5 transition focus:outline-none"
+                   btn-primary text-sm font-medium text-black
+                   hover:bg-black/5 transition focus:outline-none font-semibold"
       >
-        <Globe size={16} className="opacity-70" />
+        <Globe size={16} />
         <span className="hidden sm:inline">
           {languageLabels[locale]}
         </span>
-        <ChevronDown size={14} className="opacity-60" />
+        <ChevronDown size={14} />
       </button>
 
       {open && (

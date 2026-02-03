@@ -12,51 +12,53 @@ export default function RaffleSectionLayout({
     section: RaffleSection;
 }) {
     return (
-        <section className="w-full py-6">
-            {/* Header */}
-            <div className="mb-4 flex flex-col items-center text-center">
-                <h2
-                    className="
-      inline-block
-      w-[90%]
-      pt-3.75
-      pb-2
-      text-[14px] md:text-[19px]
-      font-medium
-      capitalize
-      tracking-[1px]
-      leading-[1.35]
-      text-[#797979]
-      overflow-hidden
-      text-ellipsis
-    "
-                >
-                    {section.title}
-                </h2>
-
-                {section.description && (
-                    <div
-                        className="
-        text-[13px]
+        <section className="w-full pt-10 pb-[60px] lg:pb-[80px] xl:pb-[100px]">
+            <div className="mx-auto w-full max-w-[1648px] px-2 md:px-6">
+                {/* Header */}
+                <div className="mb-14 text-center">
+                    <div className="text-center section_heading min-w-[400px] inline-block px-8 py-3">
+                        <h2
+                            className="
+        pt-2
+        pb-2
+        text-lg md:text-2xl lg:text-3xl xl:text-4xl
+        font-bold
         uppercase
-        text-[#797979]
-        leading-relaxed
-        max-w-[90%]
-      "
-                        dangerouslySetInnerHTML={{ __html: section.description }}
-                    />
-                )}
-            </div>
+        tracking-[1px]
+        leading-[1.35]
+        text-[#2F2F2F]
+        overflow-hidden
+        text-ellipsis
+        "
+                        >
+                            {section.title}
+                        </h2>
 
-            {/* List */}
-            <div className="flex gap-8 overflow-x-auto space-x-4 p-8 ">
-                {section.items.map((item) => (
-                    <RaffleCard
-                        key={item.id}
-                        item={item}
-                        cellType={section.cellType}
-                    />
-                ))}
+                        {section.description && (
+                            <div
+                                className="
+            text-sm md:text-base 
+            capitalize
+            text-[#7c7878]
+            leading-relaxed
+            font-medium
+        "
+                                dangerouslySetInnerHTML={{ __html: section.description }}
+                            />
+                        )}
+                    </div>
+                </div>
+
+                {/* List */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 justify-center">
+                    {section.items.map((item) => (
+                        <RaffleCard
+                            key={item.id}
+                            item={item}
+                            cellType={section.cellType}
+                        />
+                    ))}
+                </div>
             </div>
         </section>
     );
