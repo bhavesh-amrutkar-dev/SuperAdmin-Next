@@ -37,7 +37,7 @@ apiClient.interceptors.response.use(
       // token expired / invalid
       if (typeof window !== "undefined") {
         localStorage.clear();
-        window.location.href = "/login";
+        window.location.href = "/auth/login";
       }
     }
 

@@ -12,6 +12,14 @@ export default function Header() {
   const [open, setOpen] = useState(false);
   const t = useTranslations();
 
+  // ✅ ONE shared nav config (keys only)
+  const navItems = [
+    { key: "howItWorks", href: "#howItWorks" },
+    { key: "raffles", href: "#raffles" },
+    { key: "winners", href: "#winners" },
+    { key: "contact", href: "#contact" },
+  ];
+
   return (
     <header className="sticky top-0 z-50 bg-[#2F2F2F] backdrop-blur border-b border-black/10 shadow-[0px_4px_10px_0px_#00000059] mb-4">
       <div className="mx-auto w-full max-w-[1648px] px-2 md:px-6">
@@ -43,14 +51,13 @@ export default function Header() {
                   after:absolute after:-bottom-1 after:left-0 after:h-0.5
                   after:w-0 after:bg-[#FECB02] after:transition-all hover:after:w-full"
               >
-                {item.label}
+                {t(item.key)}
               </Link>
             ))}
           </nav>
 
           {/* Right Side */}
           <div className="flex items-center gap-3">
-
             <LanguageSwitcher />
 
             {/* Login */}
@@ -91,26 +98,19 @@ export default function Header() {
       {open && (
         <div className="lg:hidden bg-white border-t border-black/10">
           <nav className="flex flex-col px-6 py-6 space-y-4 text-sm text-black">
-            {[
-              { key: "howItWorks", href: "#howItWorks" },
-              { key: "raffles", href: "#raffles" },
-              { key: "winners", href: "#winners" },
-              { key: "contact", href: "#contact" },
-            ].map((item) => (
+            {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="relative hover:text-theme transition
-      after:absolute after:-bottom-1 after:left-0 after:h-0.5
-      after:w-0 after:bg-theme after:transition-all hover:after:w-full"
+                onClick={() => setOpen(false)}
+                className="font-medium"
               >
-                {t(`${item.key}`)}
+                {t(item.key)}
               </Link>
             ))}
 
-
             <Link
-              href="/login"
+              href="/auth/login"
               className="flex items-center gap-2 pt-4 font-medium"
             >
               <User size={18} />
