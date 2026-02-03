@@ -4,5 +4,16 @@
     "raffles": "Raffles",
     "winners": "Winners",
     "contact": "Contact",
-     "cart": "Cart"
+    "cart": "Cart",
+    "welcomeBack": "Welcome back",
+    "signInToAccount": "Sign in to your account",
+    "email": "Email",
+    "emailPlaceholder": "you@example.com",
+    "password": "Password",
+    "passwordPlaceholder": "••••••••",
+    "signIn": "Sign in",
+    "signingIn": "Signing in...",
+    "dontHaveAccount": "Don’t have an account?",
+    "signUp": "Sign up",
+    "forgotPassword": "Forgot your password?"
 }

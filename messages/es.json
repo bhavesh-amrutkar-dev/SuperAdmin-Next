@@ -4,5 +4,16 @@
     "raffles": "Rifas",
     "winners": "Ganadores",
     "contact": "Contacto",
-    "cart": "Carrito"
+    "cart": "Carrito",
+    "welcomeBack": "Bienvenido de nuevo",
+    "signInToAccount": "Inicia sesión en tu cuenta",
+    "email": "Correo electrónico",
+    "emailPlaceholder": "tu@ejemplo.com",
+    "password": "Contraseña",
+    "passwordPlaceholder": "••••••••",
+    "signIn": "Acceder",
+    "signingIn": "Accediendo...",
+    "dontHaveAccount": "¿No tienes una cuenta?",
+    "signUp": "Registrarse",
+    "forgotPassword": "¿Olvidaste tu contraseña?"
 }

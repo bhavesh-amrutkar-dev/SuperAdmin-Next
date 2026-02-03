@@ -12,7 +12,6 @@ export default function Header() {
   const [open, setOpen] = useState(false);
   const t = useTranslations();
 
-  // ✅ ONE shared nav config (keys only)
   const navItems = [
     { key: "howItWorks", href: "#howItWorks" },
     { key: "raffles", href: "#raffles" },

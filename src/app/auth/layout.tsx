@@ -1,13 +1,21 @@
-import type { ReactNode } from "react";
+import Footer from "@/src/components/layout/Footer";
+import Header from "@/src/components/layout/Header";
+import PreFooterIconModule from "@/src/components/layout/PreFooterIconModule";
 
-export default function AuthLayout({ children }: { children: ReactNode }) {
-  return (
-    <html lang="en">
-      <body className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <main className="w-full max-w-md px-4">
-          {children}
-        </main>
-      </body>
-    </html>
-  );
+export default function AuthLayout({
+    children,
+}: {
+    children: React.ReactNode;
+}) {
+    return (
+        <>
+            <Header />
+            <div className="  min-h-screen  flex items-center justify-center p-4">
+                {children}
+            </div>
+            <PreFooterIconModule />
+            <Footer />
+        </>
+
+    );
 }
