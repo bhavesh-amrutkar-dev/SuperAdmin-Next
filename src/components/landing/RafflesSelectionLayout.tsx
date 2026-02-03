@@ -19,7 +19,7 @@ export default function RaffleSectionLayout({
                     className="
       inline-block
       w-[90%]
-      pt-[15px]
+      pt-3.75
       pb-2
       text-[14px] md:text-[19px]
       font-medium

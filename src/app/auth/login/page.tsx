@@ -1,10 +1,10 @@
 "use client";
 
+import ErrorMessage from "@/src/components/ui/errorMessage";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-
 export default function LoginPage() {
   const t = useTranslations();
   const router = useRouter();
@@ -13,16 +13,42 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+  }>({});
+
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     if (token) router.replace("/");
   }, [router]);
 
+  const validate = () => {
+    const newErrors: typeof errors = {};
+
+    if (!email) {
+      newErrors.email = t("emailRequired");
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = t("emailInvalid");
+    }
+
+    if (!password) {
+      newErrors.password = t("passwordRequired");
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validate()) return;
+
     setLoading(true);
     try {
       console.log({ email, password });
+      // TODO: API call
     } finally {
       setLoading(false);
     }
@@ -50,12 +76,16 @@ export default function LoginPage() {
           <input
             type="email"
             placeholder={t("emailPlaceholder")}
-            className="w-full rounded-lg bg-yellow-50 border border-gray-300 px-4 py-2.5
-              focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+            className={`w-full rounded-lg bg-yellow-50 border px-4 py-2.5
+              focus:outline-none focus:ring-2 focus:ring-yellow-400
+              ${errors.email ? "border-red-400" : "border-gray-300"}`}
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (errors.email) setErrors({ ...errors, email: undefined });
+            }}
           />
+          <ErrorMessage message={errors.email} />
         </div>
 
         {/* Password */}
@@ -66,12 +96,16 @@ export default function LoginPage() {
           <input
             type="password"
             placeholder={t("passwordPlaceholder")}
-            className="w-full rounded-lg bg-yellow-50 border border-gray-300 px-4 py-2.5
-              focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+            className={`w-full rounded-lg bg-yellow-50 border px-4 py-2.5
+              focus:outline-none focus:ring-2 focus:ring-yellow-400
+              ${errors.password ? "border-red-400" : "border-gray-300"}`}
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
+            onChange={(e) => {
+              setPassword(e.target.value);
+              if (errors.password) setErrors({ ...errors, password: undefined });
+            }}
           />
+          <ErrorMessage message={errors.password} />
         </div>
 
         {/* Forgot Password */}

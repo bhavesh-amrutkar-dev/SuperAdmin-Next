@@ -15,5 +15,7 @@
     "signingIn": "Accediendo...",
     "dontHaveAccount": "¿No tienes una cuenta?",
     "signUp": "Registrarse",
-    "forgotPassword": "¿Olvidaste tu contraseña?"
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "emailRequired": "Se requiere correo electrónico",
+    "passwordRequired": "Se requiere contraseña"
 }
