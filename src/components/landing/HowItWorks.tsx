@@ -12,7 +12,7 @@ export default function HowItWorksSection() {
       id="howItWorks"
       className="mx-auto w-full max-w-[1648px] px-2 md:px-6 pt-10 pb-[60px] lg:pb-[80px] xl:pb-[100px]"
     >
-      <div className="text-center mb-10">
+      <div className="text-center mb-14">
         <div className="text-center section_heading min-w-[200px] sm:min-w-[400px] inline-block px-8 py-3">
         <h2 className="pt-2
         pb-2
@@ -29,7 +29,7 @@ export default function HowItWorksSection() {
         </div>
       </div>
 
-      <div className="relative w-full overflow-hidden rounded-2xl border border-black/10">
+      <div className="relative w-full max-w-7xl mx-auto overflow-hidden">
         <Image
           src={HOW_IT_WORKS} 
           alt={t("howItWorks")}
