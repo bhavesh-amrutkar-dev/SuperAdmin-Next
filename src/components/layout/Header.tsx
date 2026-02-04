@@ -37,7 +37,7 @@ export default function Header() {
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden lg:flex items-center gap-14 text-sm text-white uppercase font-semibold">            {navItems.map((item) => (
+          <nav className="hidden lg:flex items-center gap-10 xl:gap-14 text-sm text-white uppercase font-semibold">            {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -78,7 +78,7 @@ export default function Header() {
 
             {/* Mobile Toggle */}
             <button
-              className="lg:hidden p-2 rounded-md hover:bg-black/5 transition"
+              className="lg:hidden p-2 rounded-md hover:bg-black/5 transition text-white"
               onClick={() => setOpen(!open)}
               aria-label="Toggle menu"
             >

@@ -58,7 +58,7 @@ body {
     -o-transition: all .4s ease-in-out;
     -webkit-transition: all .4s ease-in-out;
     transition: all .4s ease-in-out;
-    border-color: #ababab;
+    border-color: #fff;
 }
 
 .section_title{
@@ -92,4 +92,8 @@ body {
 
 .raffle-card .raffle-card-info {
     padding: 0px 16px 10px;
+}
+
+.download-app-box{
+  box-shadow: inset 0px -6px 14px 0px #00000026;
 }
