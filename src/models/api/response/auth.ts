@@ -28,3 +28,12 @@ export interface ILoginResponseDTO {
   user: IUserDTO;
   token: IAuthTokenDTO;
 }
+
+export interface LoginResponse {
+  token: {
+    accessToken: string;
+    refreshToken: string;
+  };
+  userId: string;
+  user: Record<string, any>;
+}
