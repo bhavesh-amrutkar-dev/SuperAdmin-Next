@@ -3,6 +3,7 @@
 import ErrorMessage from "@/src/components/ui/errorMessage";
 import { setupAuthSession } from "@/src/lib/auth";
 import { AuthService } from "@/src/lib/services/auth";
+import { IEmailLoginRM } from "@/src/models/api/request/auth";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -42,34 +43,35 @@ export default function LoginPage() {
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
-    const onSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const submitLogin = async (payload: IEmailLoginRM) => {
         setLoading(true);
 
         try {
-            const res = await AuthService.login({
-                email,
-                password,
-            });
-            console.log(res);
+            const res = await AuthService.login(payload);
+
             setupAuthSession(res.data);
-            // if (res.status === 200) {
-            //     console.log(res);
-
-            //     // toast.success(res.message)
-            // }
-            // else {
-            //     // toast.error(res?.message || "Login failed");
-            // }
-
             router.replace("/");
         } catch (err: any) {
-            toast.error(err.message || "Login failed");
-            setErrors(err.message);
+            toast.error(err?.message || "Login failed");
+            setErrors({
+                email: err?.errors?.email,
+                password: err?.errors?.password,
+            });
         } finally {
             setLoading(false);
         }
     };
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        const payload: IEmailLoginRM = {
+            email,
+            password,
+        };
+
+        submitLogin(payload);
+    };
+
 
 
     return (
@@ -85,7 +87,7 @@ export default function LoginPage() {
             </div>
 
             {/* Form */}
-            <form onSubmit={onSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Email */}
                 <div className="space-y-1">
                     <label className="text-sm font-medium text-gray-800">
