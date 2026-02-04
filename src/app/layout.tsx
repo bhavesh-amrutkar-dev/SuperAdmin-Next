@@ -7,6 +7,7 @@ import PreFooterIconModule from "../components/layout/PreFooterIconModule"
 import { NextIntlClientProvider } from "next-intl"
 import ClientProviders from "./providers"
 import { Toaster } from "sonner"
+import { AuthProvider } from "../context/authContext"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,16 +34,18 @@ export default function RootLayout({
       <body
         className="bg-[#ededed] {`${geistSans.variable} ${geistMono.variable} antialiased`}"
       >
-        <ClientProviders>
-          <NextIntlClientProvider>
-            {children}
-            <Toaster
-              position="top-center"
-              richColors
-              closeButton
-            />
-          </NextIntlClientProvider>
-        </ClientProviders>
+        <AuthProvider>
+          <ClientProviders>
+            <NextIntlClientProvider>
+              {children}
+              <Toaster
+                position="top-center"
+                richColors
+                closeButton
+              />
+            </NextIntlClientProvider>
+          </ClientProviders>
+        </AuthProvider>
       </body>
     </html>
   )

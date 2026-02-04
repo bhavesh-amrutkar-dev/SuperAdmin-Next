@@ -37,3 +37,15 @@ export interface LoginResponse {
   userId: string;
   user: Record<string, any>;
 }
+
+export interface AuthSession {
+  userId: string;
+  email: string;
+  name: string;
+  profilePic?: string;
+  roleType: number;
+  isKYCApproved: boolean;
+  accessToken: string;
+  refreshToken: string;
+  accessExpireAt: number;
+}

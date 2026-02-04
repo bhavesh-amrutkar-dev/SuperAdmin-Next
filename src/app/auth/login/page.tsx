@@ -11,6 +11,8 @@ import ErrorMessage from "@/src/components/ui/errorMessage";
 import { setupAuthSession } from "@/src/lib/auth";
 import { AuthService } from "@/src/lib/services/auth";
 import { IEmailLoginRM } from "@/src/models/api/request/auth";
+import { mapAuthSession } from "@/src/lib/mappers/auth";
+import { persistAuthSession } from "@/src/lib/session/auth";
 
 export default function LoginPage() {
     const t = useTranslations();
@@ -35,9 +37,11 @@ export default function LoginPage() {
 
             const res = await AuthService.login(payload);
             if (res) {
-                console.log(res);
-                toast.success(res.message)
-                setupAuthSession(res.data);
+                const session = mapAuthSession(res.data);
+
+                persistAuthSession(session);
+                // setUser(session); // context
+                router.replace("/");
             }
 
             //   router.replace("/");
