@@ -52,11 +52,11 @@ export default function LanguageSwitcher() {
             <button
               key={lng}
               onClick={() => changeLanguage(lng)}
-              className={`w-full px-4 py-3 text-left text-sm transition
+              className={`w-full px-4 py-3 text-left text-sm transition cursor-pointer
                 ${
                   locale === lng
-                    ? "bg-theme/10 text-theme font-semibold"
-                    : "hover:bg-black/5 text-black"
+                    ? "text-[#f3c200] font-semibold"
+                    : "hover:bg-[#2f2f2f]/10 text-black"
                 }
               `}
             >

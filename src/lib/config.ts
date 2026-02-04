@@ -244,6 +244,10 @@ export const ABOUT_MOBILE_IMG = "/images/banner/about-wireframe.png";
 export const MOBILE_PRODUCT = "/images/dummy/MobileProduct.png";
 export const STARIMG = CDN_IMAGE + "star-icon.svg";
 export const HOW_IT_WORKS = "/images/donrifa/howItWorks.webp"
+export const APP_STORE_IMG_NEW = "/images/donrifa/app-store.png";
+export const GOOGLE_STORE_IMG_NEW = "/images/donrifa/google-play.png";
+export const MAIL_DISCOUNT = "/images/donrifa/mail.png";
+export const ASSISTANCE = "/images/donrifa/operator.png";
 // Icons
 export const GOOGLEICON = "/icons/google_Icon.svg";
 export const FACEBOOKICON = "/icons/facebook_Icon.svg";
@@ -845,6 +849,11 @@ export const Twitter_icon = "/images/pedijaBanner/twitter.png";
 export const Instagram_icon = "/images/pedijaBanner/instagram.png";
 export const Linkedin_icon = "/images/pedijaBanner/linkedin.png";
 export const Clock_icon = "/images/pedijaBanner/clock.png";
+export const Facebook_icon_new = "/images/donrifa/facebook.png";
+export const Twitter_icon_new = "/images/donrifa/twitter.png";
+export const Instagram_icon_new = "/images/donrifa/instagram.png";
+export const Linkedin_icon_new = "/images/donrifa/linkedin.png";
+export const Youtube_icon_new = "/images/donrifa/youtube.png";
 
 // Service Icon
 export const Search_bar_icon = "/images/icons/search-bar.png";

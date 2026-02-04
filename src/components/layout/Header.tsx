@@ -44,7 +44,7 @@ export default function Header() {
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden lg:flex items-center gap-14 text-sm text-white uppercase font-semibold">
+          <nav className="hidden lg:flex items-center gap-10 xl:gap-14 text-sm text-white uppercase font-semibold">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -91,7 +91,7 @@ export default function Header() {
 
             {/* Mobile Toggle */}
             <button
-              className="lg:hidden p-2 rounded-md"
+              className="lg:hidden p-2 rounded-md hover:bg-black/5 transition text-white"
               onClick={() => setOpen(!open)}
             >
               {open ? <X size={22} /> : <Menu size={22} />}

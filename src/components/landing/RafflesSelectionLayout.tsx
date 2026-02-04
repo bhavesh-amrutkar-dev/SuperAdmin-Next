@@ -16,7 +16,7 @@ export default function RaffleSectionLayout({
             <div className="mx-auto w-full max-w-[1648px] px-2 md:px-6">
                 {/* Header */}
                 <div className="mb-14 text-center">
-                    <div className="text-center section_heading min-w-[400px] inline-block px-8 py-3">
+                    <div className="text-center section_heading min-w-[200px] sm:min-w-[400px] inline-block px-8 py-3">
                         <h2
                             className="
         pt-2
@@ -50,7 +50,7 @@ export default function RaffleSectionLayout({
                 </div>
 
                 {/* List */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 justify-center">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 justify-center">
                     {section.items.slice(0, 5).map((item) => (
                         <RaffleCard
                             key={item.id}
