@@ -17,5 +17,6 @@
     "signUp": "Sign up",
     "forgotPassword": "Forgot your password?",
     "emailRequired": "Email is required",
-    "passwordRequired": "Password is required"
+    "passwordRequired": "Password is required",
+    "emailInvalid": "Enter a valid email address"
 }

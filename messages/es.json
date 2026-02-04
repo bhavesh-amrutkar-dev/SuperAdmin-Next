@@ -17,5 +17,6 @@
     "signUp": "Registrarse",
     "forgotPassword": "¿Olvidaste tu contraseña?",
     "emailRequired": "Se requiere correo electrónico",
-    "passwordRequired": "Se requiere contraseña"
+    "passwordRequired": "Se requiere contraseña",
+    "emailInvalid": "Introduzca una dirección de correo electrónico válida"
 }
