@@ -1,5 +1,5 @@
-# ---------- base image ----------
-FROM node:24-alpine AS base
+# ---------- Base image ----------
+FROM public.ecr.aws/docker/library/node:24-alpine AS base
 WORKDIR /app
 
 # ---------- Dependencies ----------
@@ -14,7 +14,7 @@ COPY . .
 RUN npm run build
 
 # ---------- Production ----------
-FROM node:24-alpine AS runner
+FROM public.ecr.aws/docker/library/node:24-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
