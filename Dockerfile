@@ -1,23 +1,31 @@
-FROM 767417401669.dkr.ecr.us-east-1.amazonaws.com/donrifa/node-monolith:node-14.20.1
-
+# ---------- Base image ----------
+FROM node:24-alpine AS base
 WORKDIR /app
 
-# Install dependencies first (better caching)
-COPY package*.json ./
-RUN npm install
+# ---------- Dependencies ----------
+FROM base AS deps
+COPY package.json package-lock.json ./
+RUN npm ci
 
-# Copy application source
+# ---------- Build ----------
+FROM base AS builder
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-# 🔥 ENSURE NO STALE NEXT.JS FILES
-RUN rm -rf .next public/_next
-
-# Disable eslint safely
-ENV NEXT_DISABLE_ESLINT=1
-
-# Build fresh Next.js output
 RUN npm run build
+
+# ---------- Production ----------
+FROM node:24-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=6060
+
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/next.config.* ./
 
 EXPOSE 6060
 
-CMD ["node", "--max-old-space-size=6144", "Donrifa-web-server.js"]
+CMD ["npm", "start"]
