@@ -8,3 +8,4 @@ export interface IAPIResponse<T = unknown> {
     message: string;
   }>;
 }
+         

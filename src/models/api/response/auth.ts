@@ -49,3 +49,16 @@ export interface AuthSession {
   refreshToken: string;
   accessExpireAt: number;
 }
+
+export type CountryCurrency = {
+  _id: string;
+  name: string;
+  countryCode: string;        // "AU"
+  countryCodeAlpha3: string;  // "AUS"
+  currencyCode: string;       // "AUD"
+  currencyName: string;
+  currencySymbol: string;
+  countryCodeMobile: string;  // "+61"
+  emoji: string;              // 🇦🇺
+  ioc: string;
+};

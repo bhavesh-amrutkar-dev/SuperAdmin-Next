@@ -124,6 +124,26 @@ export default function LoginPage() {
                     {isSubmitting ? t("signingIn") : t("signIn")}
                 </button>
             </form>
+            {/* OR CONNECT WITH */}
+            <div className="mt-6">
+                <div className="flex items-center gap-3">
+                    <div className="flex-1 h-px bg-gray-300" />
+                    <span className="text-xs text-gray-500 font-medium">
+                        OR CONNECT WITH
+                    </span>
+                    <div className="flex-1 h-px bg-gray-300" />
+                </div>
+
+                <Link
+                    href="/auth/login-mobile"
+                    className="mt-4 flex items-center justify-center rounded-lg border border-[#2f2f2f]
+      py-2.5 text-sm font-semibold text-[#2f2f2f]
+      hover:border-[#f3c200] hover:text-[#f3c200] transition"
+                >
+                    LOG IN WITH NUMBER
+                </Link>
+            </div>
+
 
             {/* Footer */}
             <p className="mt-8 text-center text-sm text-[#2f2f2f]">

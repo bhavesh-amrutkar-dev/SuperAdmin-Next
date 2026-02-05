@@ -1,6 +1,6 @@
 "use client";
 
-import { initGuest } from "@/src/lib/bootstarp.ts/initGuest";
+import { initGuest } from "@/src/lib/bootstrap/initGuest";
 import { deleteCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
 

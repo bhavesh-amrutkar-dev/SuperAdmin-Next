@@ -7,9 +7,13 @@ import { Menu, X, ShoppingCart, User } from "lucide-react";
 import { website_logo } from "@/src/lib/config";
 import { useTranslations } from "next-intl";
 import LanguageSwitcher from "../LanguageSwitcher";
-import { getCookie } from "cookies-next";
+import { deleteCookie, getCookie } from "cookies-next";
+import { initGuest } from "@/src/lib/bootstrap/initGuest";
+import { useRouter } from "next/navigation";
 
 export default function Header() {
+  const router = useRouter();
+
   const [open, setOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const t = useTranslations();
@@ -93,7 +97,11 @@ export default function Header() {
 
                     <button
                       onClick={() => {
-                        // logout logic
+                        deleteCookie("access_token");
+                        deleteCookie("refresh_token");
+                        deleteCookie("token")
+                        initGuest();
+                        router.replace("/auth/login");
                         setUserMenuOpen(false);
                       }}
                       className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"

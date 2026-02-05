@@ -24,15 +24,15 @@ export default function ProfileClient() {
       <div className="bg-white shadow rounded-lg p-6 flex gap-6">
 
         {/* Profile Image */}
-        <div className="shrink-0">
+        {/* <div className="shrink-0">
           <Image
-            src={user.profilePic || "/avatar-placeholder.png"}
+            src={user?.profilePic || "/avatar-placeholder.png"}
             alt="Profile"
             width={120}
             height={120}
             className="rounded-full object-cover"
           />
-        </div>
+        </div> */}
 
         {/* Info */}
         <div className="flex-1">

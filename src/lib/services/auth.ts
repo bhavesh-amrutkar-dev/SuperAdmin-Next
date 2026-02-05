@@ -35,4 +35,7 @@ export const AuthService = {
   getCurrentUser(): Promise<IAPIResponse> {
     return apiClient.get(API_ROUTE_GET_CURRENT_USER);
   },
+  getCurrency(): Promise<IAPIResponse> {
+    return apiClient.get("/currencies")
+  }
 };
