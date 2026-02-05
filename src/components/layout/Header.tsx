@@ -13,6 +13,7 @@ export default function Header() {
   const [open, setOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const t = useTranslations();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const navItems = [
     { key: "howItWorks", href: "#howItWorks" },
@@ -70,13 +71,40 @@ export default function Header() {
                 {t("Login")}
               </Link>
             ) : (
-              <Link
-                href="/profile"
-                className="hidden lg:flex items-center gap-2 text-sm font-semibold btn-primary px-3 py-2 rounded-md"
-              >
-                <User size={18} />
-              </Link>
+              <div className="relative hidden lg:block">
+                {/* User Button */}
+                <button
+                  onClick={() => setUserMenuOpen((prev) => !prev)}
+                  className="flex items-center gap-2 text-sm font-semibold btn-primary px-3 py-2 rounded-md"
+                >
+                  <User size={18} />
+                </button>
+
+                {/* Dropdown */}
+                {userMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-44 rounded-md bg-white shadow-lg border z-50">
+                    <Link
+                      href="/profile"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setUserMenuOpen(false)}
+                    >
+                      Manage Profile
+                    </Link>
+
+                    <button
+                      onClick={() => {
+                        // logout logic
+                        setUserMenuOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
+
 
             {/* Cart */}
             <Link

@@ -1,5 +1,6 @@
 "use client";
 
+import { initGuest } from "@/src/lib/bootstarp.ts/initGuest";
 import { deleteCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
 
@@ -9,7 +10,8 @@ export default function LogoutButton() {
   const logout = () => {
     deleteCookie("access_token");
     deleteCookie("refresh_token");
-
+    deleteCookie("token")
+    initGuest();
     router.replace("/auth/login");
   };
 
