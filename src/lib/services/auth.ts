@@ -10,7 +10,7 @@ import {
   IVerifyOtpRM,
 } from "@/src/models/api/request/auth";
 
-import { IMobileLoginResponse } from "@/src/models/api/response/auth";
+import { CountryCurrency, IMobileLoginResponse } from "@/src/models/api/response/auth";
 
 export const AuthService = {
   async login(
@@ -44,9 +44,10 @@ export const AuthService = {
     return apiClient.get(API_ROUTE_GET_CURRENT_USER);
   },
 
-  getCurrency(): Promise<IAPIResponse> {
-    return apiClient.get("/currencies");
-  },
+getCurrency(): Promise<IAPIResponse<CountryCurrency[]>> {
+  return apiClient.get("/currencies");
+}
+,
 
   async mobileLogin(
     payload: IMobileLoginRM
