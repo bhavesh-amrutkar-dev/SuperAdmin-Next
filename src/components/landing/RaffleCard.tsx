@@ -2,6 +2,7 @@
 
 import { RaffleItem } from "@/src/models/api/response/home";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function RaffleCard({
   item,
@@ -35,7 +36,7 @@ export default function RaffleCard({
           alt={item.name || ""}
           fill
           unoptimized
-          className="object-contain"
+          className="object-contain p-2"
         />
       </div>
       <div className="raffle-card-info">

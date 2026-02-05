@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { initGuest } from "../lib/bootstarp.ts/initGuest";
+import { initGuest } from "../lib/bootstrap/initGuest";
 
 export default function ClientProviders({
   children,

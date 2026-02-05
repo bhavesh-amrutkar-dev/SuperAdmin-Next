@@ -4,6 +4,8 @@
 
 import { RaffleSection } from "@/src/models/api/response/home";
 import RaffleCard from "./RaffleCard";
+import { useTranslations } from "next-intl";
+import Link from "next/link";
 
 
 export default function RaffleSectionLayout({
@@ -11,6 +13,19 @@ export default function RaffleSectionLayout({
 }: {
     section: RaffleSection;
 }) {
+    const t = useTranslations();
+
+    const normalizedTitle = section.title?.toLowerCase() || "";
+    const isMerchandiseSection = normalizedTitle.includes("merchandise");
+    const isSaleSection = normalizedTitle.includes("sale");
+
+    let viewMoreHref = "/lotteries";
+    if (isMerchandiseSection) {
+        viewMoreHref = "/merchandise";
+    } else if (isSaleSection) {
+        viewMoreHref = "/sale";
+    }
+
     return (
         <section className="w-full pt-10 pb-[60px] lg:pb-[80px] xl:pb-[100px]">
             <div className="mx-auto w-full max-w-[1648px] px-2 md:px-6">
