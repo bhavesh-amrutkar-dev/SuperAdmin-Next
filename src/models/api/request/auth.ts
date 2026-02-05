@@ -1,10 +1,9 @@
 // ==============================
 // LOGIN
 // ==============================
-export interface ILoginRM {
-  email?: string;
-  password?: string;
-  mobile?: string;
+export interface IEmailLoginRM {
+  email: string;
+  password: string;
   countryCode?: string;
 }
 
