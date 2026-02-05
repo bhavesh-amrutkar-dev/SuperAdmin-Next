@@ -1,4 +1,4 @@
-# ---------- Base image ----------
+# ---------- base image ----------
 FROM node:24-alpine AS base
 WORKDIR /app
 
