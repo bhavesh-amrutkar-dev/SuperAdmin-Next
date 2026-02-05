@@ -5,26 +5,48 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
+import { toast } from "sonner";
+
+import { AuthService } from "@/src/lib/services/auth";
+import { IMobileLoginRM } from "@/src/models/api/request/auth";
 
 export default function LoginMobilePage() {
   const router = useRouter();
 
   const [mobile, setMobile] = useState("");
+  const [countryCode, setCountryCode] = useState("");
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!mobile) return;
+
+    if (!mobile || !countryCode) {
+      toast.error("Please enter a valid mobile number");
+      return;
+    }
+
+    const payload: IMobileLoginRM = {
+      mobile,
+      countryCode,
+    };
 
     setLoading(true);
     try {
-      console.log({ mobile });
+      const res = await AuthService.mobileLogin(payload);
 
-      // 🔹 Call mobile login / send OTP API here
+      if (!res?.data) {
+        throw new Error("Invalid OTP response");
+      }
+
+      const { otpId, otpExpiryTime } = res.data;
 
       router.push(
-        `/auth/verify-otp?method=mobile&value=${encodeURIComponent(mobile)}`
+        `/auth/verify-otp?method=mobile&value=${encodeURIComponent(
+          `${countryCode}${mobile}`
+        )}&otpId=${otpId}&expiry=${otpExpiryTime}`
       );
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to send OTP");
     } finally {
       setLoading(false);
     }
@@ -52,10 +74,12 @@ export default function LoginMobilePage() {
 
           <PhoneInput
             country="in"
-            value={mobile}
-            onChange={(phone) => setMobile(phone)}
-            inputClass="!w-full !h-[44px] !text-sm !rounded-lg !border-[#2f2f2f]
-              focus:!border-[#f3c200]"
+            value={`${countryCode.replace("+", "")}${mobile}`}
+            onChange={(value, data: any) => {
+              setCountryCode(`+${data.dialCode}`);
+              setMobile(value.slice(data.dialCode.length));
+            }}
+            inputClass="!w-full !h-[44px] !text-sm !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200]"
             buttonClass="!border-[#2f2f2f]"
             containerClass="!w-full"
           />
@@ -64,9 +88,8 @@ export default function LoginMobilePage() {
         {/* Submit */}
         <button
           type="submit"
-          disabled={!mobile || loading}
-          className="w-full rounded-lg btn-primary py-3 text-white font-semibold
-            hover:bg-yellow-400 hover:text-black transition disabled:opacity-50 !border-0"
+          disabled={loading || !mobile}
+          className="w-full rounded-lg btn-primary py-3 text-white font-semibold hover:bg-yellow-400 hover:text-black transition disabled:opacity-50 !border-0"
         >
           {loading ? "Sending OTP..." : "Send OTP"}
         </button>
@@ -83,10 +106,7 @@ export default function LoginMobilePage() {
 
           <Link
             href="/auth/login"
-            className="mt-4 flex items-center justify-center rounded-lg
-              border border-[#2f2f2f] py-2.5 text-sm font-semibold
-              text-[#2f2f2f] hover:border-[#f3c200]
-              hover:text-[#f3c200] transition"
+            className="mt-4 flex items-center justify-center rounded-lg border border-[#2f2f2f] py-2.5 text-sm font-semibold text-[#2f2f2f] hover:border-[#f3c200] hover:text-[#f3c200] transition"
           >
             LOG IN WITH EMAIL
           </Link>

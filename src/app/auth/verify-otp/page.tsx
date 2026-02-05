@@ -1,49 +1,121 @@
 "use client";
 
+import { mapAuthSession } from "@/src/lib/mappers/auth";
+import { AuthService } from "@/src/lib/services/auth";
+import { persistAuthSession } from "@/src/lib/session/auth";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 export default function VerifyOtpPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const method = searchParams.get("method");
-  const value = searchParams.get("value");
+  const method = searchParams.get("method") || "mobile";
+  const value = searchParams.get("value") || "";
+  const otpId = searchParams.get("otpId");
+
+  const expiry = Number(searchParams.get("expiry") || 180);
+  const [timer, setTimer] = useState(expiry);
 
   const [otp, setOtp] = useState<string[]>(Array(4).fill(""));
   const [loading, setLoading] = useState(false);
-  const [timer, setTimer] = useState(30);
 
+  /** Extract countryCode & mobile from value */
+  const { countryCode, mobile } = useMemo(() => {
+    if (!value) return { countryCode: "", mobile: "" };
+    const match = value.match(/^(\+\d+)(\d+)$/);
+    return {
+      countryCode: match?.[1] || "",
+      mobile: match?.[2] || "",
+    };
+  }, [value]);
+
+  /** Countdown */
   useEffect(() => {
-    if (timer === 0) return;
+    if (timer <= 0) return;
     const t = setTimeout(() => setTimer((s) => s - 1), 1000);
     return () => clearTimeout(t);
   }, [timer]);
 
-  const handleChange = (value: string, index: number) => {
-    if (!/^\d?$/.test(value)) return;
+  /** OTP Input */
+  const handleChange = (val: string, index: number) => {
+    if (!/^\d?$/.test(val)) return;
 
     const newOtp = [...otp];
-    newOtp[index] = value;
+    newOtp[index] = val;
     setOtp(newOtp);
 
-    if (value && index < 5) {
+    if (val && index < otp.length - 1) {
       document.getElementById(`otp-${index + 1}`)?.focus();
     }
   };
 
+  /** Verify OTP */
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const otpCode = otp.join("");
+    if (otpCode.length !== 4) {
+      toast.error("Please enter a valid 4-digit OTP");
+      return;
+    }
+
+    if (!otpId) {
+      toast.error("OTP session expired");
+      return;
+    }
+
     setLoading(true);
-
     try {
-      const code = otp.join("");
-      console.log({ code, method, value });
+      const res = await AuthService.verifyOtp({
+        otpCode,
+        otpId,
+        verifyType: 2,
+      });
 
-      // 🔹 Verify OTP API
-      router.push("/auth/reset-password");
+      if (!res?.data) {
+        throw new Error("Authentication failed");
+      }
+
+      const session = mapAuthSession(res.data);
+      persistAuthSession(session);
+
+      router.replace("/");
+    } catch (err: any) {
+      toast.error(err?.message || "Invalid OTP");
     } finally {
       setLoading(false);
+    }
+  };
+
+
+  /** Resend OTP */
+  const resendOtp = async () => {
+    if (!mobile || !countryCode) return;
+
+    try {
+      const res = await AuthService.mobileLogin({
+        mobile,
+        countryCode,
+      });
+
+      if (!res?.data) {
+        throw new Error("Failed to resend OTP");
+      }
+
+      const { otpId, otpExpiryTime } = res.data;
+
+      setOtp(Array(4).fill(""));
+      setTimer(otpExpiryTime);
+
+      router.replace(
+        `/auth/verify-otp?method=mobile&value=${encodeURIComponent(
+          `${countryCode}${mobile}`
+        )}&otpId=${otpId}&expiry=${otpExpiryTime}`
+      );
+    } catch {
+      toast.error("Failed to resend OTP");
     }
   };
 
@@ -79,7 +151,6 @@ export default function VerifyOtpPage() {
             ))}
           </div>
 
-          {/* Verify Button */}
           <button
             type="submit"
             disabled={loading || otp.some((d) => !d)}
@@ -99,7 +170,7 @@ export default function VerifyOtpPage() {
             </span>
           ) : (
             <button
-              onClick={() => setTimer(30)}
+              onClick={resendOtp}
               className="font-semibold text-[#f3c200] hover:underline"
             >
               Resend OTP

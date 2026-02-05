@@ -62,3 +62,8 @@ export type CountryCurrency = {
   emoji: string;              // 🇦🇺
   ioc: string;
 };
+
+export interface IMobileLoginResponse {
+  otpId: string;
+  otpExpiryTime: number;
+}

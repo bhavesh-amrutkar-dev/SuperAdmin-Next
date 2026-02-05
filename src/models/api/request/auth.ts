@@ -7,6 +7,11 @@ export interface IEmailLoginRM {
   countryCode?: string;
 }
 
+export interface IMobileLoginRM {
+  mobile: string;
+  countryCode: string;
+}
+
 // ==============================
 // REFRESH TOKEN
 // ==============================
@@ -14,3 +19,11 @@ export interface IEmailLoginRM {
 export interface IRefreshTokenRM {
   refreshToken: string;
 }
+
+
+export interface IVerifyOtpRM {
+  otpCode: string;
+  otpId: string;
+  verifyType: number;
+}
+
