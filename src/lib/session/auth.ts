@@ -1,0 +1,30 @@
+// lib/auth/session.ts
+import { AuthSession } from "@/src/models/api/response/auth";
+import { setCookie, deleteCookie } from "cookies-next";
+
+export function persistAuthSession(session: AuthSession) {
+  // 1. Remove existing cookies
+  deleteCookie("token", { path: "/" });
+  deleteCookie("access_token", { path: "/" });
+  deleteCookie("refresh_token", { path: "/" });
+  deleteCookie("access_exp", { path: "/" });
+
+  // 2. Set new cookies
+  setCookie("access_token", session.accessToken, {
+    path: "/",
+    sameSite: "lax",
+  });
+  setCookie("token", session.accessToken, {
+    path: "/",
+    sameSite: "lax",
+  });
+
+  setCookie("refresh_token", session.refreshToken, {
+    path: "/",
+    sameSite: "lax",
+  });
+
+  setCookie("access_exp", session.accessExpireAt, {
+    path: "/",
+  });
+}

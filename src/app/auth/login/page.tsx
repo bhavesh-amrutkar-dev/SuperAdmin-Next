@@ -1,78 +1,54 @@
 "use client";
 
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { toast } from "sonner";
+import { useTranslations } from "next-intl";
+
 import ErrorMessage from "@/src/components/ui/errorMessage";
 import { setupAuthSession } from "@/src/lib/auth";
 import { AuthService } from "@/src/lib/services/auth";
 import { IEmailLoginRM } from "@/src/models/api/request/auth";
-import { useTranslations } from "next-intl";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { mapAuthSession } from "@/src/lib/mappers/auth";
+import { persistAuthSession } from "@/src/lib/session/auth";
+
 export default function LoginPage() {
     const t = useTranslations();
     const router = useRouter();
 
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [loading, setLoading] = useState(false);
+    const {
+        register,
+        handleSubmit,
+        formState: { errors, isSubmitting },
+    } = useForm<IEmailLoginRM>({
+    });
 
-    const [errors, setErrors] = useState<{
-        email?: string;
-        password?: string;
-    }>({});
+    /** Redirect if already logged in */
+    // useEffect(() => {
+    //     const token = localStorage.getItem("access_token");
+    //     if (token) router.replace("/");
+    // }, [router]);
 
-    useEffect(() => {
-        const token = localStorage.getItem("access_token");
-        if (token) router.replace("/");
-    }, [router]);
-
-    const validate = () => {
-        const newErrors: typeof errors = {};
-
-        if (!email) {
-            newErrors.email = t("emailRequired");
-        } else if (!/\S+@\S+\.\S+/.test(email)) {
-            newErrors.email = t("emailInvalid");
-        }
-
-        if (!password) {
-            newErrors.password = t("passwordRequired");
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-    const submitLogin = async (payload: IEmailLoginRM) => {
-        setLoading(true);
-
+    /** Submit handler */
+    const onSubmit = async (payload: IEmailLoginRM) => {
         try {
-            const res = await AuthService.login(payload);
 
-            setupAuthSession(res.data);
-            router.replace("/");
+            const res = await AuthService.login(payload);
+            if (res) {
+                const session = mapAuthSession(res.data);
+
+                persistAuthSession(session);
+                // setUser(session); // context
+                router.replace("/");
+            }
+
+            //   router.replace("/");
         } catch (err: any) {
             toast.error(err?.message || "Login failed");
-            setErrors({
-                email: err?.errors?.email,
-                password: err?.errors?.password,
-            });
-        } finally {
-            setLoading(false);
         }
     };
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-
-        const payload: IEmailLoginRM = {
-            email,
-            password,
-        };
-
-        submitLogin(payload);
-    };
-
-
 
     return (
         <div className="w-full max-w-md rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] border border-gray-200 p-8">
@@ -87,7 +63,7 @@ export default function LoginPage() {
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 {/* Email */}
                 <div className="space-y-1">
                     <label className="text-sm font-medium text-[#2f2f2f]">
@@ -99,13 +75,15 @@ export default function LoginPage() {
                         className={`w-full rounded-lg border !border-[#2f2f2f] px-4 py-2.5
               focus:outline-none focus:!border-[#f3c200]
               ${errors.email ? "border-red-400" : "border-gray-300"}`}
-                        value={email}
-                        onChange={(e) => {
-                            setEmail(e.target.value);
-                            if (errors.email) setErrors({ ...errors, email: undefined });
-                        }}
+                        {...register("email", {
+                            required: t("emailRequired"),
+                            pattern: {
+                                value: /\S+@\S+\.\S+/,
+                                message: t("emailInvalid"),
+                            },
+                        })}
                     />
-                    <ErrorMessage message={errors.email} />
+                    <ErrorMessage message={errors.email?.message} />
                 </div>
 
                 {/* Password */}
@@ -119,13 +97,11 @@ export default function LoginPage() {
                         className={`w-full rounded-lg border !border-[#2f2f2f] px-4 py-2.5
               focus:outline-none focus:!border-[#f3c200]
               ${errors.password ? "border-red-400" : "border-gray-300"}`}
-                        value={password}
-                        onChange={(e) => {
-                            setPassword(e.target.value);
-                            if (errors.password) setErrors({ ...errors, password: undefined });
-                        }}
+                        {...register("password", {
+                            required: t("passwordRequired"),
+                        })}
                     />
-                    <ErrorMessage message={errors.password} />
+                    <ErrorMessage message={errors.password?.message} />
                 </div>
 
                 {/* Forgot Password */}
@@ -141,11 +117,11 @@ export default function LoginPage() {
                 {/* Submit */}
                 <button
                     type="submit"
-                    disabled={loading}
+                    disabled={isSubmitting}
                     className="w-full rounded-lg btn-primary py-3 text-white font-semibold
             hover:bg-yellow-400 hover:text-black transition disabled:opacity-50 !border-0"
                 >
-                    {loading ? t("signingIn") : t("signIn")}
+                    {isSubmitting ? t("signingIn") : t("signIn")}
                 </button>
             </form>
 

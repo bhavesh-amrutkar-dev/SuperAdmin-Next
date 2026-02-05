@@ -1,19 +1,21 @@
-import { ILoginResponseDTO, IUserDTO } from "@/src/models/api/response/auth";
+
 import { IAPIResponse } from "@/src/models/api/response/common";
 import { apiClient } from "../api/axios";
-import { API_ROUTE_GET_CURRENT_USER, API_ROUTE_SIGNIN } from "../api/routes";
+import { API_ROUTE_GET_CURRENT_USER } from "../api/routes";
 import { getDeviceInfo } from "../utils/device";
 import { APP_VERSION, DEVICE_TYPE_WEB } from "../config";
 import { IEmailLoginRM } from "@/src/models/api/request/auth";
-import { LocationService } from "./address";
-
 export const AuthService = {
-  async login(payload: IEmailLoginRM) {
+  async login(
+    payload: IEmailLoginRM
+  ): Promise<IAPIResponse> {
     const device = getDeviceInfo();
 
     let ipAddress = "0.0.0.0";
     try {
-      ipAddress = await LocationService.getMyIP();
+      const res = await fetch("https://ipapi.co/json/");
+      const data = await res.json();
+      ipAddress = data.ip
     } catch (e) {
       console.warn("Failed to resolve IP, using fallback");
     }
@@ -30,9 +32,7 @@ export const AuthService = {
       ...payload,
     });
   },
-
-  getCurrentUser: () =>
-    apiClient.get<IAPIResponse<IUserDTO>>(
-      API_ROUTE_GET_CURRENT_USER
-    ),
+  getCurrentUser(): Promise<IAPIResponse> {
+    return apiClient.get(API_ROUTE_GET_CURRENT_USER);
+  },
 };

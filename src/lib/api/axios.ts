@@ -7,12 +7,11 @@ export const apiClient = axios.create({
   timeout: 15000,
 });
 
-/* Request Interceptor */
+/* ---------------- Request Interceptor ---------------- */
 apiClient.interceptors.request.use(
   (config) => {
     const headers = getCommonHeaders();
 
-    // Axios v1 safe header mutation
     if (config.headers instanceof AxiosHeaders) {
       Object.entries(headers).forEach(([key, value]) => {
         if (value !== undefined) {
@@ -27,19 +26,23 @@ apiClient.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
-/* Response Interceptor */
+
+/* ---------------- Response Interceptor ---------------- */
 apiClient.interceptors.response.use(
-  (response) => response.data, 
+  (response) => response.data,
   async (error) => {
     const status = error?.response?.status;
 
-    if (status === 401) {
-      // token expired / invalid
-      if (typeof window !== "undefined") {
-        localStorage.clear();
-        window.location.href = "/auth/login";
-      }
-    }
+    // if (status === 401 && typeof window !== "undefined") {
+    //   // clear cookies instead of localStorage
+    //   document.cookie =
+    //     "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    //   document.cookie =
+    //     "refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+
+    //   // soft redirect
+    //   window.location.replace("/");
+    // }
 
     return Promise.reject({
       status,
@@ -60,7 +63,9 @@ pyApiClient.interceptors.request.use((config) => {
 
   if (config.headers instanceof AxiosHeaders) {
     Object.entries(headers).forEach(([key, value]) => {
-      config.headers.set(key, value);
+      if (value !== undefined) {
+        config.headers.set(key, value);
+      }
     });
   }
 
@@ -68,12 +73,12 @@ pyApiClient.interceptors.request.use((config) => {
 });
 
 pyApiClient.interceptors.response.use(
-  (response) => response.data, 
+  (response) => response.data,
   (error) =>
     Promise.reject({
       status: error?.response?.status,
       message:
-        error?.response?.data?.message ??
+        error?.response?.data?.message ||
         "Python service error",
     })
 );
