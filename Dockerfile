@@ -1,5 +1,6 @@
 # Use your ECR image as the bases
-FROM 767417401669.dkr.ecr.us-east-1.amazonaws.com/donrifa-stage/landing-page:latest
+#FROM 767417401669.dkr.ecr.us-east-1.amazonaws.com/donrifa-stage/landing-page:latest
+FROM 767417401669.dkr.ecr.us-east-1.amazonaws.com/donrifa-stage/landing-page:node-newstage-24-alpine
 
 WORKDIR /app
 
