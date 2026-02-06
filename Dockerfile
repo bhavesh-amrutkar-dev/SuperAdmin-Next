@@ -1,4 +1,4 @@
-# Use your ECR image as the base
+# Use your ECR image as the bases
 FROM 767417401669.dkr.ecr.us-east-1.amazonaws.com/donrifa-stage/landing-page:latest
 
 WORKDIR /app
