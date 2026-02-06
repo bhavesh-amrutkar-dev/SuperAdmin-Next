@@ -26,10 +26,10 @@ export default function Header() {
   const router = useRouter();
 
   const navItems = [
-    { key: "howItWorks", href: "#howItWorks" },
+    { key: "howItWorks", href: "/#howItWorks" },
     { key: "raffles", href: "/reffles" },
-    { key: "winners", href: "#winners" },
-    { key: "contact", href: "#contact" },
+    { key: "winners", href: "/#winners" },
+    { key: "contact", href: "/#contact" },
   ];
 
   /** Check session on client */
@@ -108,10 +108,13 @@ export default function Header() {
               <div className="relative hidden lg:block">
                 {/* User Button */}
                 <button
+                  type="button"
                   onClick={() => setUserMenuOpen((prev) => !prev)}
+                  aria-label="Open account menu"
+                  title="Account"
                   className="flex items-center gap-2 text-sm font-semibold btn-primary px-3 py-2 rounded-md"
                 >
-                  <User size={18} />
+                  <User size={18} aria-hidden="true" />
                 </button>
 
                 {/* Dropdown */}

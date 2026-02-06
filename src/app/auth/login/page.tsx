@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -25,13 +24,6 @@ export default function LoginPage() {
     } = useForm<IEmailLoginRM>({
     });
 
-    /** Redirect if already logged in */
-    // useEffect(() => {
-    //     const token = localStorage.getItem("access_token");
-    //     if (token) router.replace("/");
-    // }, [router]);
-
-    /** Submit handler */
     const onSubmit = async (payload: IEmailLoginRM) => {
         try {
 
@@ -46,7 +38,7 @@ export default function LoginPage() {
 
             //   router.replace("/");
         } catch (err: any) {
-            toast.error(err?.message || "Login failed");
+            toast.error(err?.message || t("loginFailed"));
         }
     };
 
@@ -129,7 +121,7 @@ export default function LoginPage() {
                 <div className="flex items-center gap-3">
                     <div className="flex-1 h-px bg-gray-300" />
                     <span className="text-xs text-gray-500 font-medium">
-                        OR CONNECT WITH
+                        {t("orConnectWith")}
                     </span>
                     <div className="flex-1 h-px bg-gray-300" />
                 </div>
@@ -140,7 +132,7 @@ export default function LoginPage() {
       py-2.5 text-sm font-semibold text-[#2f2f2f]
       hover:border-[#f3c200] hover:text-[#f3c200] transition"
                 >
-                    LOG IN WITH NUMBER
+                  {t("loginWithNumber")}
                 </Link>
             </div>
 

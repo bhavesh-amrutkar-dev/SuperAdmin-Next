@@ -23,10 +23,6 @@ export default function ForgotPasswordPage() {
     try {
       const value = method === "email" ? email : mobile;
 
-      console.log({ method, value });
-      // 🔹 call forgot-password API here
-
-      // ✅ redirect after success
       router.push(
         `/auth/verify-otp?method=${method}&value=${encodeURIComponent(value)}`
       );

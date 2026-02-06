@@ -9,7 +9,7 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import type { CountryData } from "react-phone-input-2";
 import { useRouter } from "next/navigation";
-
+import { useTranslations } from "next-intl";
 type RegisterForm = {
   firstName: string;
   lastName: string;
@@ -27,7 +27,7 @@ export default function RegisterPage() {
   const [countries, setCountries] = useState<CountryCurrency[]>([]);
   const [countriesLoading, setCountriesLoading] = useState(false);
   const [countriesError, setCountriesError] = useState<string | null>(null);
-
+  const t = useTranslations();
   const [form, setForm] = useState<RegisterForm>({
     firstName: "",
     lastName: "",
@@ -94,7 +94,7 @@ export default function RegisterPage() {
         )}&otpId=${otpId}&expiry=${otpExpiryTime}&flow=signup`
       );
     } catch (err: any) {
-      setOtpError(err?.response?.data?.message || "Failed to send OTP");
+     setOtpError(err?.response?.data?.message || t("otpSendFailed"));
     } finally {
       setOtpLoading(false);
     }
@@ -235,39 +235,44 @@ export default function RegisterPage() {
     };
   }, []);
 
+const validate = (): boolean => {
+  const newErrors: Errors = {};
 
-  const validate = (): boolean => {
-    const newErrors: Errors = {};
+  if (!form.firstName.trim())
+    newErrors.firstName = t("firstNameRequired");
 
-    if (!form.firstName.trim()) newErrors.firstName = "First name is required";
-    if (!form.lastName.trim()) newErrors.lastName = "Last name is required";
+  if (!form.lastName.trim())
+    newErrors.lastName = t("lastNameRequired");
 
-    if (!form.email) {
-      newErrors.email = "Email is required";
-    } else if (!/^\S+@\S+\.\S+$/.test(form.email)) {
-      newErrors.email = "Enter a valid email address";
-    }
+  if (!form.email) {
+    newErrors.email = t("emailRequired");
+  } else if (!/^\S+@\S+\.\S+$/.test(form.email)) {
+    newErrors.email = t("emailInvalid");
+  }
 
-    if (!form.dob) {
-      newErrors.dob = "Date of birth is required";
-    } else {
-      const age =
-        new Date().getFullYear() - new Date(form.dob).getFullYear();
-      if (age < 18) newErrors.dob = "You must be at least 18 years old";
-    }
+  if (!form.dob) {
+    newErrors.dob = t("dobRequired");
+  } else {
+    const age =
+      new Date().getFullYear() - new Date(form.dob).getFullYear();
+    if (age < 18) newErrors.dob = t("ageRestriction");
+  }
 
-    if (!form.mobile) newErrors.mobile = "Mobile number is required";
-    if (!form.country) newErrors.country = "Please select a country";
+  if (!form.mobile)
+    newErrors.mobile = t("mobileRequired");
 
-    if (!form.password) {
-      newErrors.password = "Password is required";
-    } else if (form.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters";
-    }
+  if (!form.country)
+    newErrors.country = t("countryRequired");
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  if (!form.password) {
+    newErrors.password = t("passwordRequired");
+  } else if (form.password.length < 8) {
+    newErrors.password = t("passwordMinLength");
+  }
+
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
@@ -292,12 +297,12 @@ export default function RegisterPage() {
     }
   `;
 
-
+ 
   return (
     <div className="w-full max-w-md rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] p-8">
       <div className="mb-8 text-center">
         <h1 className="text-2xl font-bold section_title mb-1">
-          Create account
+          {t("createAccount")}
         </h1>
       </div>
 
@@ -309,9 +314,8 @@ export default function RegisterPage() {
         <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* First Name */}
           <div>
-            <label className="text-sm font-medium">First name</label>
-            <input
-              placeholder="John"
+            <label className="text-sm font-medium">{t("firstName")}</label>
+            <input placeholder={t("firstNamePlaceholder")}
               className={inputClass(errors.firstName)}
               value={form.firstName}
               onChange={(e) => {
@@ -326,9 +330,8 @@ export default function RegisterPage() {
 
           {/* Last Name */}
           <div>
-            <label className="text-sm font-medium">Last name</label>
-            <input
-              placeholder="Doe"
+            <label className="text-sm font-medium">{t("lastName")}</label>
+            <input placeholder={t("lastNamePlaceholder")}
               className={inputClass(errors.lastName)}
               value={form.lastName}
               onChange={(e) => {
@@ -345,9 +348,8 @@ export default function RegisterPage() {
 
         {/* Email */}
         <div>
-          <label className="text-sm font-medium">Email</label>
+          <label className="text-sm font-medium">{t("email")}</label>
           <input
-            type="email"
             placeholder="you@example.com"
             className={inputClass(errors.email)}
             value={form.email}
@@ -357,7 +359,9 @@ export default function RegisterPage() {
             }}
           />
           {emailValidating && (
-            <p className="text-xs text-gray-400 mt-1">Checking email…</p>
+            <p className="text-xs text-gray-400 mt-1">
+              {t("checkingEmail")}
+            </p>
           )}
           {errors.email && (
             <p className="text-xs text-red-500 mt-1">{errors.email}</p>
@@ -366,7 +370,7 @@ export default function RegisterPage() {
 
         {/* DOB */}
         <div>
-          <label className="text-sm font-medium">Date of birth</label>
+          <label className="text-sm font-medium">{t("dateOfBirth")}</label>
           <input
             type="date"
             className={inputClass(errors.dob)}
@@ -383,7 +387,7 @@ export default function RegisterPage() {
 
         {/* Mobile */}
         <div>
-          <label className="text-sm font-medium">Mobile</label>
+          <label className="text-sm font-medium">{t("mobile")}</label>
           <PhoneInput
             country="us"
             value={`${form.countryCode}${form.mobile}`}
@@ -413,7 +417,7 @@ export default function RegisterPage() {
 
         {/* Country */}
         <div>
-          <label className="text-sm font-medium">Country</label>
+          <label className="text-sm font-medium">{t("country")}</label>
           <select
             className={inputClass(errors.country)}
             value={form.country}
@@ -422,7 +426,7 @@ export default function RegisterPage() {
               setErrors({ ...errors, country: undefined });
             }}
           >
-            <option value="">Select country</option>
+            <option value="">{t("selectCountry")}</option>
             {countries.map((c) => (
               <option key={c._id} value={c.countryCode}>
                 {c.emoji} {c.name}
@@ -437,10 +441,10 @@ export default function RegisterPage() {
 
 
         <div className="md:col-span-2">
-          <label className="text-sm font-medium">Password</label>
+          <label className="text-sm font-medium">{t("password")}</label>
           <input
             type="password"
-            placeholder="At least 8 characters"
+            placeholder={t("passwordPlaceholder")}
             className={inputClass(errors.password)}
             value={form.password}
             onChange={(e) => {
@@ -461,7 +465,7 @@ export default function RegisterPage() {
     hover:bg-yellow-400 transition
   "
         >
-          {loading ? "Sending OTP…" : "Sign up"}
+          {loading ? t("sendingOtp") : t("signUp")}
         </button>
 
 
@@ -469,42 +473,12 @@ export default function RegisterPage() {
 
       <div className="mt-8 text-center">
         <p className="text-sm">
-          Already have an account?{" "}
+          {t("alreadyHaveAccount")}{" "}
           <Link href="/auth/login" className="font-semibold hover:underline">
-            Sign in
+            {t("signIn")}
           </Link>
         </p>
       </div>
-
-
-      {/* {step === "OTP" && (
-        <div className="space-y-3">
-          <label className="text-sm font-medium">
-            Enter OTP sent to your mobile
-          </label>
-
-          <input
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            className={inputClass(otpError || undefined)}
-            placeholder="Enter OTP"
-          />
-
-          {otpError && (
-            <p className="text-xs text-red-500">{otpError}</p>
-          )}
-
-          <button
-            type="button"
-            onClick={verifyOtp}
-            disabled={otpLoading}
-            className="w-full rounded-lg btn-primary py-3 text-white font-semibold"
-          >
-            {otpLoading ? "Verifying..." : "Verify OTP"}
-          </button>
-        </div>
-      )} */}
-
     </div>
   );
 }

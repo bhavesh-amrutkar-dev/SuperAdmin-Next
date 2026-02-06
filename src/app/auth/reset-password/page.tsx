@@ -35,7 +35,6 @@ export default function ResetPasswordPage() {
     setError("");
 
     try {
-      console.log({ password });
       // 🔹 Reset password API
       router.push("/auth/login");
     } finally {

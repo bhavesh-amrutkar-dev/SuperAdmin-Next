@@ -101,7 +101,7 @@ export default function CountrySelectorModal({
             maxAge: 60 * 60 * 24 * 365,
         });
 
-        // Mirror country code in localStorage for compatibility with legacy logic
+        
         try {
             if (typeof window !== "undefined") {
                 window.localStorage.setItem("C_code", selected.code);

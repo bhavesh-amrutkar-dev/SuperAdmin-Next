@@ -125,10 +125,6 @@ export default function RaffleSectionLayout({
                         // Construct URL with validated campaignId
                         const href = `/reffles/${slug}?pid=${campaignId}${childProductId ? `&cpid=${childProductId}` : ""}`;
 
-                        // Log for debugging language change issues
-                        if (typeof window !== "undefined" && window.location.search.includes("lang=")) {
-                            console.log("Constructing raffle URL:", { campaignId, slug, href, item });
-                        }
 
                         return (
                             <Link

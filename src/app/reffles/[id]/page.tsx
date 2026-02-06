@@ -78,108 +78,6 @@ type LegacyRaffleDetail = {
 };
 import CountdownTimer from "@/src/components/CountdownTimer";
 
-// Add CSS for animations at the top of the file
-const animationStyles = `
-    @keyframes slideDown {
-        from {
-            opacity: 0;
-            max-height: 0;
-            overflow: hidden;
-        }
-        to {
-            opacity: 1;
-            max-height: 1000px;
-            overflow: visible;
-        }
-    }
-
-    @keyframes slideUp {
-        from {
-            opacity: 1;
-            max-height: 1000px;
-            overflow: visible;
-        }
-        to {
-            opacity: 0;
-            max-height: 0;
-            overflow: hidden;
-        }
-    }
-
-    @keyframes fillCircle {
-        from {
-            stroke-dashoffset: var(--dash-offset);
-        }
-        to {
-            stroke-dashoffset: 0;
-        }
-    }
-
-    @keyframes countUp {
-        from {
-            opacity: 0;
-        }
-        to {
-            opacity: 1;
-        }
-    }
-
-    .accordion-enter {
-        animation: slideDown 0.4s ease-out;
-    }
-
-    .accordion-exit {
-        animation: slideUp 0.3s ease-in;
-    }
-
-    .circle-fill {
-        animation: fillCircle 1.5s ease-out forwards;
-    }
-
-    .count-up {
-        animation: countUp 1s ease-out;
-    }
-
-    .accordion-content {
-        font-size: 0.875rem;
-        line-height: 1.6;
-        color: #797979;
-    }
-
-    .accordion-content p {
-        margin-bottom: 0.75rem;
-        font-size: 0.875rem;
-    }
-
-    .accordion-content h1,
-    .accordion-content h2,
-    .accordion-content h3,
-    .accordion-content h4,
-    .accordion-content h5,
-    .accordion-content h6 {
-        font-size: 1rem;
-        font-weight: 600;
-        margin-top: 1rem;
-        margin-bottom: 0.5rem;
-        color: #2f2f2f;
-    }
-
-    .accordion-content ul,
-    .accordion-content ol {
-        margin-bottom: 0.75rem;
-        padding-left: 1.25rem;
-    }
-
-    .accordion-content li {
-        margin-bottom: 0.25rem;
-        font-size: 0.875rem;
-    }
-
-    .accordion-content a {
-        color: #D4AF37;
-        text-decoration: underline;
-    }
-`;
 
 export default function RefflesDetailPage() {
     const params = useParams();
@@ -315,7 +213,7 @@ export default function RefflesDetailPage() {
 
         RaffleService.getRaffleDetails(lotteryId)
             .then((payload) => {
-                console.log("🚀 ~ RefflesDetailPage ~ payload:", payload)
+
                 try {
                     const raw = payload as any;
                     let data: LegacyRaffleDetail | undefined = raw?.data;
@@ -1133,7 +1031,12 @@ export default function RefflesDetailPage() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
+                                        <label htmlFor="ticketQuantity" className="mr-2 text-white">
+                                            Tickets
+                                        </label>
+
                                         <input
+                                            id="ticketQuantity"
                                             type="number"
                                             min="0"
                                             max={userTickets}

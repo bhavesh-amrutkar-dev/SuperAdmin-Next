@@ -222,3 +222,7 @@ body {
     min-height: 250px;
   }
 }
+
+html {
+  scroll-behavior: smooth;
+}

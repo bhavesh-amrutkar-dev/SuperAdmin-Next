@@ -9,24 +9,33 @@ const getCountryId = (): string => {
 };
 
 export const RaffleService = {
-    getAllRaffles: (catId?: string) => {
-        const params: Record<string, string> = {
-            countryId: getCountryId(),
-        };
+  getAllRaffles: (
+    catId?: string,
+    options?: { signal?: AbortSignal }
+  ) => {
+    const params: Record<string, string> = {
+      countryId: getCountryId(),
+    };
 
-        if (catId) {
-            params.subCategoryId = catId;
-        }
+    if (catId) {
+      params.subCategoryId = catId;
+    }
 
-        return apiClient.get("/home/raffles/all", { params });
-    },
+    return apiClient.get("/home/raffles/all", {
+      params,
+      signal: options?.signal,
+    });
+  },
 
-    getRaffleDetails: (campaignId: string) => {
-        const params = {
-            campaignId,
-            countryId: getCountryId(),
-        };
+  getRaffleDetails: (campaignId: string, options?: { signal?: AbortSignal }) => {
+    const params = {
+      campaignId,
+      countryId: getCountryId(),
+    };
 
-        return apiClient.get("/raffleCampaignDetail", { params });
-    },
+    return apiClient.get("/raffleCampaignDetail", {
+      params,
+      signal: options?.signal,
+    });
+  },
 };

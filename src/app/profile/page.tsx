@@ -4,7 +4,6 @@ import { getServerSession } from "@/src/lib/session/getServerSession";
 
 export default function ProfilePage() {
   const session = getServerSession();
-console.log(session);
 
 //   if (!session) {
 //     redirect("/");
