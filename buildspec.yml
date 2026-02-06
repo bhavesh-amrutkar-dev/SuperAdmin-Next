@@ -21,10 +21,6 @@ phases:
     commands:
       - echo Build started on `date`
 
-      # 🔥 Clean old Next.js artifacts before Docker build
-      - rm -rf .next
-      - rm -rf public/_next
-
       - docker build --build-arg ENV_FILE=.env -t $REPOSITORY_URI:latest .
       - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
 
