@@ -8,9 +8,11 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 export default function VerifyOtpPage() {
+
+
   const searchParams = useSearchParams();
   const router = useRouter();
-
+  const flow = searchParams.get("flow");
   const method = searchParams.get("method") || "mobile";
   const value = searchParams.get("value") || "";
   const otpId = searchParams.get("otpId");
@@ -66,6 +68,7 @@ export default function VerifyOtpPage() {
       return;
     }
 
+
     setLoading(true);
     try {
       const res = await AuthService.verifyOtp({
@@ -77,10 +80,26 @@ export default function VerifyOtpPage() {
       if (!res?.data) {
         throw new Error("Authentication failed");
       }
+      if (flow === "signup") {
+        const payload = sessionStorage.getItem("signup_payload");
+        if (!payload) throw new Error("Signup data missing");
 
+        const signupData = JSON.parse(payload);
+
+        const signupRes = await AuthService.signUp(signupData);
+
+        const session = mapAuthSession(signupRes.data);
+        persistAuthSession(session);
+
+        sessionStorage.removeItem("signup_payload");
+        router.replace("/");
+        return;
+      }
+
+
+      // login flow (existing behavior)
       const session = mapAuthSession(res.data);
       persistAuthSession(session);
-
       router.replace("/");
     } catch (err: any) {
       toast.error(err?.message || "Invalid OTP");
@@ -88,6 +107,7 @@ export default function VerifyOtpPage() {
       setLoading(false);
     }
   };
+
 
 
   /** Resend OTP */

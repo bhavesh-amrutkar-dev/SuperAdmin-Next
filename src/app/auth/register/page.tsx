@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import type { CountryData } from "react-phone-input-2";
+import { useRouter } from "next/navigation";
 
 type RegisterForm = {
   firstName: string;
@@ -51,9 +52,10 @@ export default function RegisterPage() {
   const [otpVerified, setOtpVerified] = useState(false);
   const [otpId, setOtpId] = useState<string | null>(null);
 
+  const router = useRouter();
+
   const sendOtp = async () => {
     setOtpLoading(true);
-    setOtpError(null);
 
     try {
       const res = await AuthService.sendOtp({
@@ -64,54 +66,78 @@ export default function RegisterPage() {
         triggeredBy: "Customer Signup Verification Code",
       });
 
-      setOtpId(res.data.otpId);
-      setStep("OTP");
+      const { otpId, otpExpiryTime } = res.data;
+
+      sessionStorage.setItem(
+        "signup_payload",
+        JSON.stringify({
+          email: form.email,
+          password: form.password,
+          firstName: form.firstName,
+          lastName: form.lastName,
+          dateOfBirth: form.dob,
+          gender: 1,
+          mobile: form.mobile,
+          countryCode: form.countryCode,
+          sortCountryCode: form.country.toLowerCase(),
+          nationality: form.country,
+          termsAndCond: 1,
+          userType: 1,
+          signUpType: 1,
+          customerType: 1,
+        })
+      );
+
+      router.push(
+        `/auth/verify-otp?method=mobile&value=${encodeURIComponent(
+          `${form.countryCode}${form.mobile}`
+        )}&otpId=${otpId}&expiry=${otpExpiryTime}&flow=signup`
+      );
     } catch (err: any) {
       setOtpError(err?.response?.data?.message || "Failed to send OTP");
     } finally {
       setOtpLoading(false);
     }
   };
+  // const verifyOtp = async () => {
+  //   setOtpLoading(true);
+  //   setOtpError(null);
 
-  const verifyOtp = async () => {
-    setOtpLoading(true);
-    setOtpError(null);
+  //   try {
+  //     await AuthService.verifyOtp({
+  //       verifyType: 2,
+  //       otpCode: otp,     
+  //       otpId: otpId!,
+  //     });
+  //     setOtpVerified(true);
+  //     await completeSignup();
+  //   } catch (err: any) {
+  //     setOtpError(
+  //       err?.response?.data?.message || "Invalid OTP"
+  //     );
+  //   } finally {
+  //     setOtpLoading(false);
+  //   }
+  // };
 
-    try {
-      await AuthService.verifyOtp({
-        verifyType: 2,
-        otpCode: otp,     // ✅ correct key
-        otpId: otpId!,
-      });
-      setOtpVerified(true);
-      await completeSignup();
-    } catch (err: any) {
-      setOtpError(
-        err?.response?.data?.message || "Invalid OTP"
-      );
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
-  const completeSignup = async () => {
-    await AuthService.signUp({
-      email: form.email,
-      password: form.password,
-      firstName: form.firstName,
-      lastName: form.lastName,
-      dateOfBirth: form.dob,
-      gender: 1,
-      mobile: form.mobile,
-      countryCode: form.countryCode,
-      sortCountryCode: form.country.toLowerCase(),
-      nationality: form.country,
-      termsAndCond: 1,
-      userType: 1,
-      signUpType: 1,
-      customerType: 1,
-    });
-  };
+  // const completeSignup = async () => {
+  //   await AuthService.signUp({
+  //     email: form.email,
+  //     password: form.password,
+  //     firstName: form.firstName,
+  //     lastName: form.lastName,
+  //     dateOfBirth: form.dob,
+  //     gender: 1,
+  //     mobile: form.mobile,
+  //     countryCode: form.countryCode,
+  //     sortCountryCode: form.country.toLowerCase(),
+  //     nationality: form.country,
+  //     termsAndCond: 1,
+  //     userType: 1,
+  //     signUpType: 1,
+  //     customerType: 1,
+  //   });
+  // };
 
 
 
@@ -254,10 +280,18 @@ export default function RegisterPage() {
     }
   };
 
-
   const inputClass = (error?: string) =>
-    `auth-input w-full rounded-lg border px-4 py-2.5 focus:outline-none
-     ${error ? "!border-red-500" : "!border-[#2f2f2f] focus:!border-[#f3c200]"}`;
+    `
+  w-full rounded-lg border bg-white px-4 py-3 text-sm
+  placeholder:text-gray-400
+  focus:!border-[#f3c200] focus:!ring-2 focus:!ring-yellow-200
+  transition-all duration-200
+  ${error
+      ? "border-red-500 focus:ring-red-200"
+      : "border-gray-300 hover:border-gray-400 focus:border-[#f3c200]"
+    }
+  `;
+
 
   return (
     <div className="w-full max-w-md rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] p-8">
@@ -267,44 +301,54 @@ export default function RegisterPage() {
         </h1>
       </div>
 
-      <form onSubmit={onSubmit} className="space-y-5">
-        {/* First Name */}
-        <div>
-          <label className="text-sm font-medium">First name</label>
-          <input
-            className={inputClass(errors.firstName)}
-            value={form.firstName}
-            onChange={(e) => {
-              setForm({ ...form, firstName: e.target.value });
-              setErrors({ ...errors, firstName: undefined });
-            }}
-          />
-          {errors.firstName && (
-            <p className="text-xs text-red-500 mt-1">{errors.firstName}</p>
-          )}
+      <form
+        onSubmit={onSubmit}
+        className="grid grid-cols-1 gap-4 md:grid-cols-2"
+      >
+
+        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* First Name */}
+          <div>
+            <label className="text-sm font-medium">First name</label>
+            <input
+              placeholder="John"
+              className={inputClass(errors.firstName)}
+              value={form.firstName}
+              onChange={(e) => {
+                setForm({ ...form, firstName: e.target.value });
+                setErrors({ ...errors, firstName: undefined });
+              }}
+            />
+            {errors.firstName && (
+              <p className="text-xs text-red-500 mt-1">{errors.firstName}</p>
+            )}
+          </div>
+
+          {/* Last Name */}
+          <div>
+            <label className="text-sm font-medium">Last name</label>
+            <input
+              placeholder="Doe"
+              className={inputClass(errors.lastName)}
+              value={form.lastName}
+              onChange={(e) => {
+                setForm({ ...form, lastName: e.target.value });
+                setErrors({ ...errors, lastName: undefined });
+              }}
+            />
+            {errors.lastName && (
+              <p className="text-xs text-red-500 mt-1">{errors.lastName}</p>
+            )}
+          </div>
         </div>
 
-        {/* Last Name */}
-        <div>
-          <label className="text-sm font-medium">Last name</label>
-          <input
-            className={inputClass(errors.lastName)}
-            value={form.lastName}
-            onChange={(e) => {
-              setForm({ ...form, lastName: e.target.value });
-              setErrors({ ...errors, lastName: undefined });
-            }}
-          />
-          {errors.lastName && (
-            <p className="text-xs text-red-500 mt-1">{errors.lastName}</p>
-          )}
-        </div>
 
         {/* Email */}
         <div>
-          <label className="text-sm font-medium">Email address</label>
+          <label className="text-sm font-medium">Email</label>
           <input
             type="email"
+            placeholder="you@example.com"
             className={inputClass(errors.email)}
             value={form.email}
             onChange={(e) => {
@@ -312,6 +356,9 @@ export default function RegisterPage() {
               setErrors({ ...errors, email: undefined });
             }}
           />
+          {emailValidating && (
+            <p className="text-xs text-gray-400 mt-1">Checking email…</p>
+          )}
           {errors.email && (
             <p className="text-xs text-red-500 mt-1">{errors.email}</p>
           )}
@@ -336,7 +383,7 @@ export default function RegisterPage() {
 
         {/* Mobile */}
         <div>
-          <label className="text-sm font-medium">Mobile number</label>
+          <label className="text-sm font-medium">Mobile</label>
           <PhoneInput
             country="us"
             value={`${form.countryCode}${form.mobile}`}
@@ -351,14 +398,14 @@ export default function RegisterPage() {
                 countryCode: dialCode,
                 mobile,
               }));
-
               setErrors((prev) => ({ ...prev, mobile: undefined }));
             }}
-            inputClass={`!w-full !h-[44px] !text-sm !rounded-lg ${errors.mobile ? "!border-red-500" : "!border-[#2f2f2f]"
-              }`}
+            inputClass={`
+      !w-full !h-[44px] !rounded-lg !border !border-gray-300
+      !pl-14 !text-sm focus:!border-[#f3c200]
+      ${errors.mobile ? "!border-red-500" : ""}
+    `}
           />
-
-
           {errors.mobile && (
             <p className="text-xs text-red-500 mt-1">{errors.mobile}</p>
           )}
@@ -367,43 +414,33 @@ export default function RegisterPage() {
         {/* Country */}
         <div>
           <label className="text-sm font-medium">Country</label>
-
           <select
             className={inputClass(errors.country)}
             value={form.country}
-            disabled={countriesLoading}
             onChange={(e) => {
               setForm({ ...form, country: e.target.value });
               setErrors({ ...errors, country: undefined });
             }}
           >
-            <option value="">
-              {countriesLoading ? "Loading countries..." : "Select country"}
-            </option>
-
+            <option value="">Select country</option>
             {countries.map((c) => (
               <option key={c._id} value={c.countryCode}>
-                {c.emoji} {c.name} ({c.currencyCode})
+                {c.emoji} {c.name}
               </option>
             ))}
           </select>
-
           {errors.country && (
             <p className="text-xs text-red-500 mt-1">{errors.country}</p>
-          )}
-
-          {countriesError && (
-            <p className="text-xs text-red-500 mt-1">{countriesError}</p>
           )}
         </div>
 
 
 
-        {/* Password */}
-        <div>
+        <div className="md:col-span-2">
           <label className="text-sm font-medium">Password</label>
           <input
             type="password"
+            placeholder="At least 8 characters"
             className={inputClass(errors.password)}
             value={form.password}
             onChange={(e) => {
@@ -417,11 +454,16 @@ export default function RegisterPage() {
         </div>
 
         <button
-          disabled={loading || step === "OTP"}
-          className="w-full rounded-lg btn-primary py-3 text-white font-semibold disabled:opacity-50"
+          disabled={loading}
+          className="
+    md:col-span-2 w-full rounded-lg bg-[#f3c200]
+    py-3 text-sm font-semibold text-black
+    hover:bg-yellow-400 transition
+  "
         >
-          {loading ? "Sending OTP..." : "Sign up"}
+          {loading ? "Sending OTP…" : "Sign up"}
         </button>
+
 
       </form>
 
@@ -435,7 +477,7 @@ export default function RegisterPage() {
       </div>
 
 
-      {step === "OTP" && (
+      {/* {step === "OTP" && (
         <div className="space-y-3">
           <label className="text-sm font-medium">
             Enter OTP sent to your mobile
@@ -461,7 +503,7 @@ export default function RegisterPage() {
             {otpLoading ? "Verifying..." : "Verify OTP"}
           </button>
         </div>
-      )}
+      )} */}
 
     </div>
   );

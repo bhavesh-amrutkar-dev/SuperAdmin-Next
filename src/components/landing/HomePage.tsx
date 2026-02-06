@@ -23,6 +23,8 @@ import { getContentSection } from "@/src/lib/filters/homeContent";
 import HomeContentSection from "./HomeContentSection";
 import RaffleSectionLayout from "./RafflesSelectionLayout";
 import HowItWorksSection from "./HowItWorks";
+import Loader from "../loader";
+import { FullScreenLoader } from "../fullScreenLoader";
 
 export default function HomePage() {
   const router = useRouter();
@@ -67,9 +69,7 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading...
-      </div>
+      <FullScreenLoader/>
     );
   }
 
