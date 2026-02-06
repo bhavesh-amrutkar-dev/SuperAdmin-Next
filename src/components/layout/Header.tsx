@@ -13,6 +13,8 @@ import { useTranslations } from "next-intl";
 import LanguageSwitcher from "../LanguageSwitcher";
 import { getCookie } from "cookies-next";
 import CountrySelectorModal from "./CountrySelectorModal";
+import { logout as logoutUser } from "@/src/lib/utils/logout";
+import { useRouter } from "next/navigation";
 
 export default function Header() {
   const [open, setOpen] = useState(false);
@@ -21,6 +23,7 @@ export default function Header() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [countryModalOpen, setCountryModalOpen] = useState(false);
   const [currentCountry, setCurrentCountry] = useState<string>(DEFAULT_COUNTRY);
+  const router = useRouter();
 
   const navItems = [
     { key: "howItWorks", href: "#howItWorks" },
@@ -123,9 +126,11 @@ export default function Header() {
                     </Link>
 
                     <button
-                      onClick={() => {
-                        // logout logic
+                      onClick={async () => {
                         setUserMenuOpen(false);
+                        await logoutUser();
+                        setIsLoggedIn(false);
+                        router.replace("/auth/login");
                       }}
                       className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                     >
@@ -173,14 +178,37 @@ export default function Header() {
               </Link>
             ))}
 
-            {!isLoggedIn && (
+            {!isLoggedIn ? (
               <Link
                 href="/auth/login"
                 className="flex items-center gap-2 pt-4 font-medium"
+                onClick={() => setOpen(false)}
               >
                 <User size={18} />
                 {t("Login")}
               </Link>
+            ) : (
+              <>
+                <Link
+                  href="/profile"
+                  className="flex items-center gap-2 pt-4 font-medium"
+                  onClick={() => setOpen(false)}
+                >
+                  <User size={18} />
+                  Manage Profile
+                </Link>
+                <button
+                  onClick={async () => {
+                    setOpen(false);
+                    await logoutUser();
+                    setIsLoggedIn(false);
+                    router.replace("/auth/login");
+                  }}
+                  className="flex items-center gap-2 pt-2 text-red-600 font-medium text-left"
+                >
+                  Logout
+                </button>
+              </>
             )}
           </nav>
         </div>

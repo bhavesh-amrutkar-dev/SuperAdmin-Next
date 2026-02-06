@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "dkzgp10lku01a.cloudfront.net" },
       { protocol: "https", hostname: "de76f8ebaaega.cloudfront.net" },
       { protocol: "https", hostname: "s3.us-east-1.amazonaws.com" },
+      { protocol: "https", hostname: "donrifa-b35473f7c0199882.s3.us-east-1.amazonaws.com" },
       { protocol: "https", hostname: "res.cloudinary.com" },
     ],
   },
