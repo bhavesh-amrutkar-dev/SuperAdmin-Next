@@ -104,7 +104,7 @@ export default function ForgotPasswordPage() {
             </label>
 
             <PhoneInput
-              country="in"
+              country="us"
               value={mobile}
               onChange={(phone) => setMobile(phone)}
               inputClass="!w-full !h-[44px] !text-sm !rounded-lg !border-[#2f2f2f]"

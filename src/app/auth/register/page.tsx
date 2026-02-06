@@ -1,11 +1,13 @@
 "use client";
 
+import { useDebounce } from "@/src/lib/hooks/useDebounce";
 import { AuthService } from "@/src/lib/services/auth";
 import { CountryCurrency } from "@/src/models/api/response/auth";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
+import type { CountryData } from "react-phone-input-2";
 
 type RegisterForm = {
   firstName: string;
@@ -13,6 +15,7 @@ type RegisterForm = {
   email: string;
   dob: string;
   mobile: string;
+  countryCode: string;
   country: string;
   password: string;
 };
@@ -30,12 +33,76 @@ export default function RegisterPage() {
     email: "",
     dob: "",
     mobile: "",
+    countryCode: "",
     country: "",
     password: "",
   });
 
   const [errors, setErrors] = useState<Errors>({});
   const [loading, setLoading] = useState(false);
+  const [emailValidating, setEmailValidating] = useState(false);
+  const [phoneValidating, setPhoneValidating] = useState(false);
+  const debouncedEmail = useDebounce(form.email, 600);
+  const debouncedMobile = useDebounce(form.mobile, 600);
+  useEffect(() => {
+    if (!debouncedEmail || errors.email) return;
+
+    const validateEmail = async () => {
+      setEmailValidating(true);
+      try {
+        await AuthService.emailPhoneValidate({
+          verifyType: 1,
+          email: debouncedEmail,
+        });
+        setErrors((prev) => ({ ...prev, email: undefined }));
+      } catch (err: any) {
+        setErrors((prev) => ({
+          ...prev,
+          email: err?.response?.data?.message || "Email already exists",
+        }));
+      } finally {
+        setEmailValidating(false);
+      }
+    };
+
+    validateEmail();
+  }, [debouncedEmail]);
+  useEffect(() => {
+    if (
+      !debouncedMobile ||
+      !form.countryCode ||
+      !form.email ||
+      errors.mobile
+    )
+      return;
+
+    const validatePhone = async () => {
+      setPhoneValidating(true);
+      try {
+        await AuthService.emailPhoneValidate({
+          verifyType: 2,
+          countryCode: form.countryCode,
+          mobile: debouncedMobile,
+          email: form.email,
+        });
+
+        setErrors((prev) => ({ ...prev, mobile: undefined }));
+      } catch (err: any) {
+        setErrors((prev) => ({
+          ...prev,
+          mobile:
+            err?.response?.data?.message || "Mobile number already exists",
+        }));
+      } finally {
+        setPhoneValidating(false);
+      }
+    };
+
+    validatePhone();
+  }, [debouncedMobile, form.countryCode, form.email]);
+
+
+
   useEffect(() => {
     let mounted = true;
 
@@ -200,15 +267,27 @@ export default function RegisterPage() {
         <div>
           <label className="text-sm font-medium">Mobile number</label>
           <PhoneInput
-            country="in"
-            value={form.mobile}
-            onChange={(phone) => {
-              setForm({ ...form, mobile: phone });
-              setErrors({ ...errors, mobile: undefined });
+            country="us"
+            value={`${form.countryCode}${form.mobile}`}
+            onChange={(value, country) => {
+              if (!("dialCode" in country)) return;
+
+              const dialCode = `+${country.dialCode}`;
+              const mobile = value.replace(country.dialCode, "");
+
+              setForm((prev) => ({
+                ...prev,
+                countryCode: dialCode,
+                mobile,
+              }));
+
+              setErrors((prev) => ({ ...prev, mobile: undefined }));
             }}
             inputClass={`!w-full !h-[44px] !text-sm !rounded-lg ${errors.mobile ? "!border-red-500" : "!border-[#2f2f2f]"
               }`}
           />
+
+
           {errors.mobile && (
             <p className="text-xs text-red-500 mt-1">{errors.mobile}</p>
           )}

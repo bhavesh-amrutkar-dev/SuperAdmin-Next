@@ -7,6 +7,8 @@ import { APP_VERSION, DEVICE_TYPE_WEB } from "../config";
 import {
   IEmailLoginRM,
   IMobileLoginRM,
+  ISendOtpPayload,
+  ISignUpPayload,
   IVerifyOtpRM,
 } from "@/src/models/api/request/auth";
 
@@ -44,10 +46,10 @@ export const AuthService = {
     return apiClient.get(API_ROUTE_GET_CURRENT_USER);
   },
 
-getCurrency(): Promise<IAPIResponse<CountryCurrency[]>> {
-  return apiClient.get("/currencies");
-}
-,
+  getCurrency(): Promise<IAPIResponse<CountryCurrency[]>> {
+    return apiClient.get("/currencies");
+  }
+  ,
 
   async mobileLogin(
     payload: IMobileLoginRM
@@ -83,5 +85,49 @@ getCurrency(): Promise<IAPIResponse<CountryCurrency[]>> {
       "/customer/verifyOtp",
       payload
     );
+  },
+
+  emailPhoneValidate(payload: {
+    verifyType: 1 | 2;
+    email?: string;
+    mobile?: string;
+    countryCode?: string;
+  }): Promise<IAPIResponse> {
+    return apiClient.post("/emailPhoneValidate", payload);
+  }
+  ,
+  sendOtp(
+    payload: ISendOtpPayload
+  ): Promise<IAPIResponse> {
+    return apiClient.post("/customer/sendOtp", payload);
+  },
+
+  async signUp(
+    payload: ISignUpPayload
+  ): Promise<IAPIResponse> {
+    const device = getDeviceInfo();
+
+    let ipAddress = "0.0.0.0";
+    try {
+      const res = await fetch("https://ipapi.co/json/");
+      const data = await res.json();
+      ipAddress = data.ip;
+    } catch {
+      console.warn("IP resolution failed");
+    }
+
+    return apiClient.post("/signUp", {
+      deviceId: `web_app_id_${Date.now()}`,
+      deviceType: DEVICE_TYPE_WEB,
+      appVersion: APP_VERSION,
+      deviceTime: new Date().toISOString(),
+      ipAddress,
+      latitude: "0",
+      longitude: "0",
+      city: "",
+      country: "",
+      ...device,
+      ...payload,
+    });
   },
 };

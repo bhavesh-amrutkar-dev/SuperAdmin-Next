@@ -27,3 +27,29 @@ export interface IVerifyOtpRM {
   verifyType: number;
 }
 
+export interface ISendOtpPayload {
+  verifyType: 1 | 2; // 1 = email, 2 = mobile
+  email?: string;
+  mobile?: string;
+  countryCode?: string;
+  triggeredBy: string;
+}
+
+export interface ISignUpPayload {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  gender: number;
+  mobile: string;
+  countryCode: string;
+  sortCountryCode: string;
+  nationality: string;
+  termsAndCond: 1;
+  userType: number;
+  signUpType: number;
+  customerType: number;
+  googleId?: string;
+  facebookId?: string;
+}

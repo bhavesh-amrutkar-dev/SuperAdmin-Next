@@ -73,7 +73,7 @@ export default function LoginMobilePage() {
           </label>
 
           <PhoneInput
-            country="in"
+            country="us"
             value={`${countryCode.replace("+", "")}${mobile}`}
             onChange={(value, data: any) => {
               setCountryCode(`+${data.dialCode}`);
