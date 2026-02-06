@@ -1,31 +1,21 @@
-# ---------- Base image ----------
-FROM public.ecr.aws/docker/library/node:24-alpine AS base
+# Use your ECR image as the bases
+FROM 767417401669.dkr.ecr.us-east-1.amazonaws.com/donrifa-stage/landing-page:latest
+
 WORKDIR /app
 
-# ---------- Dependencies ----------
-FROM base AS deps
-COPY package.json package-lock.json ./
-RUN npm ci
-
-# ---------- Build ----------
-FROM base AS builder
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-RUN npm run build
-
-# ---------- Production ----------
-FROM public.ecr.aws/docker/library/node:24-alpine AS runner
-WORKDIR /app
-
-ENV NODE_ENV=production
+# Set environment variables
+ENV NODE_ENV=development
 ENV PORT=6060
 
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/next.config.* ./
+# Copy package files and install dependencies 
+COPY package.json package-lock.json ./
+RUN npm install
 
+# Copy the rest of your code
+COPY . .
+
+# Expose the port
 EXPOSE 6060
 
-CMD ["npm", "start"]
+# Start the app
+CMD ["npm", "run", "dev", "--", "-p", "6060"]
