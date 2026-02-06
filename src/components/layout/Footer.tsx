@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { APP_STORE_IMG, CDN_IMAGE, Facebook_icon_new, Instagram_icon_new, Linkedin_icon_new, Twitter_icon_new,Youtube_icon_new, Mastercard, PLAY_STORE_IMG, Twitter_icon, website_logo } from "@/src/lib/config";
+import { APP_STORE_IMG, CDN_IMAGE, Facebook_icon_new, Instagram_icon_new, Linkedin_icon_new, Twitter_icon_new, Youtube_icon_new, Mastercard, PLAY_STORE_IMG, Twitter_icon, website_logo } from "@/src/lib/config";
 
 export default function Footer() {
     return (
@@ -31,28 +31,28 @@ export default function Footer() {
                     </div>
 
                     {/* Company */}
-                    <div className="xl:ps-[100px]">
+                    <div className="lg:ps-[60px] xl:ps-[100px]">
                         <h4 className="uppercase text-base font-semibold tracking-wide mb-5 !text-[#f3c200]">
                             DonRifa
                         </h4>
                         <ul className="space-y-3 text-sm ">
                             <li>
-                                <Link href="#" className="text-white hover:text-[#f3c200] transition">
+                                <Link href="/about" className="text-white hover:text-[#f3c200] transition">
                                     About
                                 </Link>
                             </li>
                             <li>
-                                <Link href="#" className="text-white hover:text-[#f3c200] transition">
+                                <Link href="/blog" className="text-white hover:text-[#f3c200] transition">
                                     Blogs
                                 </Link>
                             </li>
                             <li>
-                                <Link href="#" className="text-white hover:text-[#f3c200] transition">
+                                <Link href="/contact" className="text-white hover:text-[#f3c200] transition">
                                     Contact
                                 </Link>
                             </li>
                             <li>
-                                <Link href="#" className="text-white hover:text-[#f3c200] transition">
+                                <Link href="/rules" className="text-white hover:text-[#f3c200] transition">
                                     Rules
                                 </Link>
                             </li>
@@ -66,32 +66,32 @@ export default function Footer() {
                         </h4>
                         <ul className="space-y-3 text-sm text-white/70">
                             <li>
-                                <Link href="#" className="text-white hover:text-[#f3c200] transition">
+                                <Link href="/orders-shipping" className="text-white hover:text-[#f3c200] transition">
                                     Orders & Shipping
                                 </Link>
                             </li>
                             <li>
-                                <Link href="#" className="text-white hover:text-[#f3c200] transition">
+                                <Link href="/payment-pricing" className="text-white hover:text-[#f3c200] transition">
                                     Payment & Pricing
                                 </Link>
                             </li>
                             <li>
-                                <Link href="#" className="text-white hover:text-[#f3c200] transition">
+                                <Link href="/returns-refunds" className="text-white hover:text-[#f3c200] transition">
                                     Returns & Refunds
                                 </Link>
                             </li>
                             <li>
-                                <Link href="#" className="text-white hover:text-[#f3c200] transition">
+                                <Link href="/faqs" className="text-white hover:text-[#f3c200] transition">
                                     FAQs
                                 </Link>
                             </li>
                             <li>
-                                <Link href="#" className="text-white hover:text-[#f3c200] transition">
+                                <Link href="/privacy-policy" className="text-white hover:text-[#f3c200] transition">
                                     Privacy Policy
                                 </Link>
                             </li>
                             <li>
-                                <Link href="#" className="text-white hover:text-[#f3c200] transition">
+                                <Link href="/terms-conditions" className="text-white hover:text-[#f3c200] transition">
                                     Terms & Condition
                                 </Link>
                             </li>
@@ -123,7 +123,7 @@ export default function Footer() {
                         </h4>
 
                         {/* Social Icons */}
-                        <div className="flex items-center gap-5">
+                        <div className="flex items-center gap-5 flex-wrap">
                             {[
                                 { src: Facebook_icon_new, alt: "Facebook" },
                                 { src: Instagram_icon_new, alt: "Instagram" },

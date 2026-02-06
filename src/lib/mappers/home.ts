@@ -11,7 +11,7 @@ export function mapBanners(
             banner.data?.[0]?.name?.[locale] ||
             banner.data?.[0]?.name?.en ||
             "",
-        categories: banner.data.map((cat) => ({
+        categories: (banner.data || []).map((cat) => ({
             id: cat.id,
             label: cat.name[locale] || cat.name.en,
         })),
@@ -38,20 +38,20 @@ export function mapContentSection(section: HomeSection): MappedContentSection {
 
 
 export function mapRaffleSection(section: any): RaffleSection {
-  return {
-    id: section._id,
-    title: section.title,
-    description: section.description,
-    cellType: section.cellType,
-    items: (section.entity || []).map((item: any) => ({
-      id: item._id || item.id,
-      name: item.name,
-      description: item.desc,
-      price: item.price,
-      currencySymbol: item.currencySymbol,
-      image:
-        item.images?.[0]?.extraLarge ||
-        item.images?.[0]?.large 
-    })),
-  };
+    return {
+        id: section._id,
+        title: section.title,
+        description: section.description,
+        cellType: section.cellType,
+        items: (section.entity || []).map((item: any) => ({
+            id: item._id || item.id,
+            name: item.name,
+            description: item.desc,
+            price: item.price,
+            currencySymbol: item.currencySymbol,
+            image:
+                item.images?.[0]?.extraLarge ||
+                item.images?.[0]?.large
+        })),
+    };
 }

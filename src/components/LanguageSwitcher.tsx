@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Globe, ChevronDown } from "lucide-react";
 import { useLocale } from "next-intl";
 import { setCookie } from "cookies-next";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { locales, type Locale } from "@/src/i18n/config";
 
 const languageLabels: Record<Locale, string> = {
@@ -17,6 +17,7 @@ export default function LanguageSwitcher() {
   const locale = useLocale() as Locale;
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const changeLanguage = (nextLocale: Locale) => {
     if (nextLocale === locale) return;
@@ -24,7 +25,18 @@ export default function LanguageSwitcher() {
     setCookie("NEXT_LOCALE", nextLocale, { path: "/" });
     setOpen(false);
 
-    router.replace(pathname);
+    // Dispatch custom event for locale change
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("localeChanged", { detail: { locale: nextLocale } }));
+    }
+
+    // Preserve all query parameters when changing language
+    const currentSearchParams = searchParams.toString();
+    const newUrl = currentSearchParams
+      ? `${pathname}?${currentSearchParams}`
+      : pathname;
+
+    router.replace(newUrl);
     router.refresh();
   };
 
@@ -53,10 +65,9 @@ export default function LanguageSwitcher() {
               key={lng}
               onClick={() => changeLanguage(lng)}
               className={`w-full px-4 py-3 text-left text-sm transition cursor-pointer
-                ${
-                  locale === lng
-                    ? "text-[#f3c200] font-semibold"
-                    : "hover:bg-[#2f2f2f]/10 text-black"
+                ${locale === lng
+                  ? "text-[#f3c200] font-semibold"
+                  : "hover:bg-[#2f2f2f]/10 text-black"
                 }
               `}
             >

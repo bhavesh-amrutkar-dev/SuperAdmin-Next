@@ -3,6 +3,7 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin();
 
+/** @type {NextConfig} */
 const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
@@ -19,6 +20,10 @@ const nextConfig: NextConfig = {
   compress: true,
   productionBrowserSourceMaps: false,
 
+  env: {
+    NEXT_PUBLIC_NODE_DMS_API: process.env.NEXT_PUBLIC_NODE_DMS_API,
+    NEXT_PUBLIC_PYTHON_API: process.env.NEXT_PUBLIC_PYTHON_API,
+  },
 
   async headers() {
     return [
@@ -40,12 +45,47 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value:
+              "public, max-age=0, s-maxage=86400, stale-while-revalidate=86400",
+          },
+        ],
+      },
     ];
-  }
-  ,
+  },
 
   experimental: {
     scrollRestoration: true,
+  },
+
+  async redirects() {
+    return [
+      // Normalize common misspelling
+      {
+        source: "/reffels",
+        destination: "/reffles",
+        permanent: true,
+      },
+      {
+        source: "/reffels/:path*",
+        destination: "/reffles/:path*",
+        permanent: true,
+      },
+      {
+        source: "/raffles_list_details",
+        destination: "/reffles",
+        permanent: true,
+      },
+      {
+        source: "/raffles_list_details/:path*",
+        destination: "/reffles/:path*",
+        permanent: true,
+      },
+    ];
   },
 };
 

@@ -52,7 +52,7 @@ export default function PreFooterIconModule() {
     return (
 
         <>
-            <div className="bg-[#f3f3f3] rounded-[92px] max-w-[600px] mx-auto mb-20 download-app-box">
+            <div className="bg-[#f3f3f3] rounded-[92px] max-w-[600px] mx-auto mb-20 download-app-box mt-6 xl:mt-0">
                 <div className="px-[60px] py-[30px]">
                     <h3 className="font-bold text-[#2f2f2f] text-2xl text-center">
                         Download DONRIFA on your mobile
@@ -66,10 +66,10 @@ export default function PreFooterIconModule() {
 
             <section className="bg-[#e7e5e5]">
                 <div className="max-w-7xl mx-auto px-6 py-10">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 xl:gap-[100px] relative">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-[40px] xl:gap-[100px] relative">
 
                         {/* Newsletter */}
-                        <div className="flex flex-col sm:flex-row items-center sm:justify-start gap-6 px-10 py-5">
+                        <div className="flex flex-col sm:flex-row items-center sm:justify-start gap-4 xl:gap-6 px-4 xl:px-10 xl:py-5">
                             <div className="">
                                 <Image src={MAIL_DISCOUNT} alt="" width={86} height={86} />
                             </div>
@@ -144,7 +144,7 @@ export default function PreFooterIconModule() {
                         </div> */}
 
                         {/* WhatsApp Support */}
-                        <div className="flex flex-col sm:flex-row items-center sm:justify-start gap-6">
+                        <div className="flex flex-col sm:flex-row items-center sm:justify-start gap-4 xl:gap-6">
                             <div className="">
                                 <Image src={ASSISTANCE} alt="" width={86} height={86} />
                             </div>

@@ -6,11 +6,10 @@ export function getContentSection(
   sections: HomeSection[]
 ): HomeSection | null {
   return (
-    sections.find(
-      (section) =>
-        section.type === 1 &&
-        section.sectionType === 1 &&
-        section.visible
-    ) || null
+    sections && Array.isArray(sections) && sections.length > 0 ? sections.find((section) =>
+      section.type === 1 &&
+      section.sectionType === 1 &&
+      section.visible
+    ) || null : null
   );
 }

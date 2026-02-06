@@ -31,9 +31,8 @@ export default function RaffleSectionLayout({
             <div className="mx-auto w-full max-w-[1648px] px-2 md:px-6">
                 {/* Header */}
                 <div className="mb-14 text-center">
-                    <div className="text-center section_heading min-w-[200px] sm:min-w-[400px] inline-block px-8 py-3">
-                        <h2
-                            className="
+                    <h2
+                        className="
         pt-2
         pb-2
         text-lg md:text-2xl lg:text-3xl xl:text-4xl
@@ -45,34 +44,105 @@ export default function RaffleSectionLayout({
         overflow-hidden
         text-ellipsis
         "
-                        >
-                            {section.title}
-                        </h2>
+                    >
+                        {section.title}
+                    </h2>
 
-                        {section.description && (
-                            <div
-                                className="
+                    {section.description && (
+                        <div
+                            className="
             text-sm md:text-base 
             capitalize
             text-[#7c7878]
             leading-relaxed
             font-medium
+            mt-2
         "
-                                dangerouslySetInnerHTML={{ __html: section.description }}
-                            />
-                        )}
-                    </div>
+                            dangerouslySetInnerHTML={{ __html: section.description }}
+                        />
+                    )}
                 </div>
 
                 {/* List */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 justify-center">
-                    {section.items.slice(0, 5).map((item) => (
-                        <RaffleCard
-                            key={item.id}
-                            item={item}
-                            cellType={section.cellType}
-                        />
-                    ))}
+                    {section.items.slice(0, 5).map((item) => {
+                        const slugifyName = (name: string) =>
+                            name
+                                .toLowerCase()
+                                .trim()
+                                .replace(/[^a-z0-9]+/g, "-")
+                                .replace(/^-+|-+$/g, "");
+
+                        const slug = item.name ? slugifyName(item.name) : item.id;
+
+                        // Validate MongoDB ObjectId format (24 hex characters)
+                        const isValidObjectId = (id: string | null | undefined): id is string => {
+                            if (!id || typeof id !== "string") return false;
+                            // MongoDB ObjectId: 24 hex characters, no hyphens
+                            return /^[a-f0-9]{24}$/i.test(id);
+                        };
+
+                        // Get campaignId from item - it MUST be a valid ObjectId
+                        let campaignId = (item as any).campaignId;
+
+                        // Validate campaignId - it must be a valid MongoDB ObjectId
+                        if (!campaignId || !isValidObjectId(campaignId)) {
+                            // If campaignId is missing or invalid, check item.id
+                            if (item.id && isValidObjectId(item.id)) {
+                                campaignId = item.id;
+                                console.warn("Using item.id as campaignId (campaignId field missing/invalid):", {
+                                    campaignId: (item as any).campaignId,
+                                    itemId: item.id,
+                                    name: item.name
+                                });
+                            } else {
+                                // Both are invalid - skip this item
+                                console.error("Skipping raffle card - no valid campaignId (must be 24 hex chars):", {
+                                    campaignId: (item as any).campaignId,
+                                    itemId: item.id,
+                                    slug,
+                                    name: item.name,
+                                    item
+                                });
+                                return null;
+                            }
+                        }
+
+                        // Double-check: campaignId must not be the slug
+                        if (campaignId === slug) {
+                            console.error("campaignId matches slug - this should never happen:", {
+                                campaignId,
+                                slug,
+                                itemId: item.id,
+                                name: item.name,
+                                item
+                            });
+                            return null;
+                        }
+
+                        const childProductId = (item as any).childProductId || "";
+
+                        // Construct URL with validated campaignId
+                        const href = `/reffles/${slug}?pid=${campaignId}${childProductId ? `&cpid=${childProductId}` : ""}`;
+
+                        // Log for debugging language change issues
+                        if (typeof window !== "undefined" && window.location.search.includes("lang=")) {
+                            console.log("Constructing raffle URL:", { campaignId, slug, href, item });
+                        }
+
+                        return (
+                            <Link
+                                key={item.id}
+                                href={href}
+                                className="block"
+                            >
+                                <RaffleCard
+                                    item={item}
+                                    cellType={section.cellType}
+                                />
+                            </Link>
+                        );
+                    })}
                 </div>
             </div>
         </section>

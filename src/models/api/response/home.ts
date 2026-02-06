@@ -66,36 +66,17 @@ export interface BannerImage {
     };
 }
 
-// export interface HomeSection {
-//   _id: string;
-//   title: string;
-//   type: number;
-//   sectionType: number;
-//   visible: boolean;
-//   banner_image: BannerImage[];
-// }
-
 export interface HomeSection {
-    _id: string;
-    title: string;
-    afterLoginTitle?: string;
+    _id?: string;
+    title?: string;
     description?: string;
-    linkedWith?: number;
-    visible: boolean;
-    type: number;
-    sectionType: number;
+    type?: number;
+    sectionType?: number;
+    visible?: boolean;
+    banner_image?: BannerImage[];
     buttonText?: string;
-    image?: string[];
-    width?: number;
-    height?: number;
-    cellType?: number;
-    numberOfRows?: {
-        row: number;
-        cellCount: number;
-    };
     entity?: any[];
-    seqId?: number;
-    banner_image: BannerImage[];
+    cellType?: number;
 }
 
 

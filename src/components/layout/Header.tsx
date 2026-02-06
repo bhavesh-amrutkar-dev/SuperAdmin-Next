@@ -4,24 +4,27 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Menu, X, ShoppingCart, User } from "lucide-react";
-import { website_logo } from "@/src/lib/config";
+import {
+  COUNTRY,
+  DEFAULT_COUNTRY,
+  website_logo,
+} from "@/src/lib/config";
 import { useTranslations } from "next-intl";
 import LanguageSwitcher from "../LanguageSwitcher";
-import { deleteCookie, getCookie } from "cookies-next";
-import { initGuest } from "@/src/lib/bootstrap/initGuest";
-import { useRouter } from "next/navigation";
+import { getCookie } from "cookies-next";
+import CountrySelectorModal from "./CountrySelectorModal";
 
 export default function Header() {
-  const router = useRouter();
-
   const [open, setOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const t = useTranslations();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [countryModalOpen, setCountryModalOpen] = useState(false);
+  const [currentCountry, setCurrentCountry] = useState<string>(DEFAULT_COUNTRY);
 
   const navItems = [
     { key: "howItWorks", href: "#howItWorks" },
-    { key: "raffles", href: "#raffles" },
+    { key: "raffles", href: "/reffles" },
     { key: "winners", href: "#winners" },
     { key: "contact", href: "#contact" },
   ];
@@ -30,10 +33,19 @@ export default function Header() {
   useEffect(() => {
     const token = getCookie("access_token");
     setIsLoggedIn(!!token);
+
+    const countryFromCookie =
+      (getCookie(COUNTRY) as string | undefined) || DEFAULT_COUNTRY;
+    setCurrentCountry(countryFromCookie);
+
+    const hasCountryCode = getCookie("C_code");
+    if (!hasCountryCode) {
+      setCountryModalOpen(true);
+    }
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 bg-[#2F2F2F] border-b shadow mb-4">
+    <header className="sticky top-0 z-50 bg-[#2F2F2F]">
       <div className="mx-auto w-full max-w-[1648px] px-2 md:px-6">
         <div className="flex h-20 items-center justify-between">
 
@@ -49,7 +61,7 @@ export default function Header() {
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden lg:flex items-center gap-10 xl:gap-14 text-sm text-white uppercase font-semibold">
+          <nav className="hidden lg:flex items-center lg:gap-6 xl:gap-14 text-sm text-white uppercase font-semibold">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -63,6 +75,21 @@ export default function Header() {
 
           {/* Right Side */}
           <div className="flex items-center gap-3">
+            {/* Country selector trigger */}
+            <button
+              type="button"
+              onClick={() => setCountryModalOpen(true)}
+              className="hidden md:inline-flex items-center rounded-md bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white hover:bg-white/20"
+            >
+              <span className="mr-1 text-base" aria-hidden="true">
+                🌎
+              </span>
+              <span className="mr-1">Deliver to</span>
+              <span className="font-bold text-[#FECB02]">
+                {currentCountry}
+              </span>
+            </button>
+
             <LanguageSwitcher />
 
             {/* Login / Account */}
@@ -97,11 +124,7 @@ export default function Header() {
 
                     <button
                       onClick={() => {
-                        deleteCookie("access_token");
-                        deleteCookie("refresh_token");
-                        deleteCookie("token")
-                        initGuest();
-                        router.replace("/auth/login");
+                        // logout logic
                         setUserMenuOpen(false);
                       }}
                       className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
@@ -162,6 +185,12 @@ export default function Header() {
           </nav>
         </div>
       )}
+
+      <CountrySelectorModal
+        open={countryModalOpen}
+        onClose={() => setCountryModalOpen(false)}
+        onCountryChange={(country) => setCurrentCountry(country.name)}
+      />
     </header>
   );
 }
