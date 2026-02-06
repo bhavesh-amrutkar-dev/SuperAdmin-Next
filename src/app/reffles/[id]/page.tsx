@@ -541,6 +541,14 @@ export default function RefflesDetailPage() {
     // Fetch user's ticket balance
     useEffect(() => {
         const fetchTicketBalance = async () => {
+            // Check if user is authenticated before making API call
+            const token = getCookie("access_token");
+            if (!token) {
+                setUserTicketBalance(0);
+                setLoadingTicketBalance(false);
+                return;
+            }
+
             setLoadingTicketBalance(true);
             try {
                 const response = await TicketWalletService.getTicketBalance();
