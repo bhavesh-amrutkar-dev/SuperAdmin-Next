@@ -44,6 +44,77 @@ export default function RegisterPage() {
   const [phoneValidating, setPhoneValidating] = useState(false);
   const debouncedEmail = useDebounce(form.email, 600);
   const debouncedMobile = useDebounce(form.mobile, 600);
+  const [step, setStep] = useState<"FORM" | "OTP">("FORM");
+  const [otp, setOtp] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [otpId, setOtpId] = useState<string | null>(null);
+
+  const sendOtp = async () => {
+    setOtpLoading(true);
+    setOtpError(null);
+
+    try {
+      const res = await AuthService.sendOtp({
+        verifyType: 2,
+        countryCode: form.countryCode,
+        mobile: form.mobile,
+        email: form.email,
+        triggeredBy: "Customer Signup Verification Code",
+      });
+
+      setOtpId(res.data.otpId);
+      setStep("OTP");
+    } catch (err: any) {
+      setOtpError(err?.response?.data?.message || "Failed to send OTP");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const verifyOtp = async () => {
+    setOtpLoading(true);
+    setOtpError(null);
+
+    try {
+      await AuthService.verifyOtp({
+        verifyType: 2,
+        otpCode: otp,     // ✅ correct key
+        otpId: otpId!,
+      });
+      setOtpVerified(true);
+      await completeSignup();
+    } catch (err: any) {
+      setOtpError(
+        err?.response?.data?.message || "Invalid OTP"
+      );
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const completeSignup = async () => {
+    await AuthService.signUp({
+      email: form.email,
+      password: form.password,
+      firstName: form.firstName,
+      lastName: form.lastName,
+      dateOfBirth: form.dob,
+      gender: 1,
+      mobile: form.mobile,
+      countryCode: form.countryCode,
+      sortCountryCode: form.country.toLowerCase(),
+      nationality: form.country,
+      termsAndCond: 1,
+      userType: 1,
+      signUpType: 1,
+      customerType: 1,
+    });
+  };
+
+
+
   useEffect(() => {
     if (!debouncedEmail || errors.email) return;
 
@@ -177,12 +248,12 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      console.log(form);
-      // call register API here
+      await sendOtp();
     } finally {
       setLoading(false);
     }
   };
+
 
   const inputClass = (error?: string) =>
     `auth-input w-full rounded-lg border px-4 py-2.5 focus:outline-none
@@ -346,11 +417,12 @@ export default function RegisterPage() {
         </div>
 
         <button
-          disabled={loading}
+          disabled={loading || step === "OTP"}
           className="w-full rounded-lg btn-primary py-3 text-white font-semibold disabled:opacity-50"
         >
-          {loading ? "Creating account..." : "Sign up"}
+          {loading ? "Sending OTP..." : "Sign up"}
         </button>
+
       </form>
 
       <div className="mt-8 text-center">
@@ -361,6 +433,36 @@ export default function RegisterPage() {
           </Link>
         </p>
       </div>
+
+
+      {step === "OTP" && (
+        <div className="space-y-3">
+          <label className="text-sm font-medium">
+            Enter OTP sent to your mobile
+          </label>
+
+          <input
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+            className={inputClass(otpError || undefined)}
+            placeholder="Enter OTP"
+          />
+
+          {otpError && (
+            <p className="text-xs text-red-500">{otpError}</p>
+          )}
+
+          <button
+            type="button"
+            onClick={verifyOtp}
+            disabled={otpLoading}
+            className="w-full rounded-lg btn-primary py-3 text-white font-semibold"
+          >
+            {otpLoading ? "Verifying..." : "Verify OTP"}
+          </button>
+        </div>
+      )}
+
     </div>
   );
 }

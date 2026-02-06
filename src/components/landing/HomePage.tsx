@@ -77,13 +77,13 @@ export default function HomePage() {
     <>
       {banners.length > 0 && <HeroSlider banners={banners} />}
 
-      {contentSection && <HomeContentSection {...contentSection} />}
+      {/* {contentSection && <HomeContentSection {...contentSection} />} */}
 
       <HowItWorksSection />
 
-      {raffleSections.map((section) => (
+      {/* {raffleSections.map((section) => (
         <RaffleSectionLayout key={section.id} section={section} />
-      ))}
+      ))} */}
     </>
   );
 }
