@@ -12,6 +12,7 @@ import { mapRaffleSection } from "@/src/lib/mappers/home";
 import Header from "@/src/components/layout/Header";
 import Footer from "@/src/components/layout/Footer";
 import PreFooterIconModule from "@/src/components/layout/PreFooterIconModule";
+import Loader from "@/src/components/loader";
 
 export default function SaleDetailPage() {
   const params = useParams();
@@ -69,9 +70,7 @@ export default function SaleDetailPage() {
     return (
       <main>
         <Header />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-lg text-[#797979]">Loading...</div>
-        </div>
+        <Loader/>
         <PreFooterIconModule />
         <Footer />
       </main>

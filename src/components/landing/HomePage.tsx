@@ -27,6 +27,7 @@ import HomeContentSection from "./HomeContentSection";
 import RaffleSectionLayout from "./RafflesSelectionLayout";
 import HowItWorksSection from "./HowItWorks";
 import { useTranslations } from "next-intl";
+import { FullScreenLoader } from "../fullScreenLoader";
 
 type LegacyRaffleItem = {
   _id: string;
@@ -246,9 +247,7 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading...
-      </div>
+      <FullScreenLoader />
     );
   }
 
