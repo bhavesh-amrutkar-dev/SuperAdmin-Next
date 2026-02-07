@@ -13,6 +13,7 @@ import {
     MAIL_DISCOUNT,
     ASSISTANCE,
 } from "@/src/lib/config";
+import Link from "next/link";
 
 export default function PreFooterIconModule() {
     const [email, setEmail] = useState("");
@@ -57,9 +58,36 @@ export default function PreFooterIconModule() {
                     <h3 className="font-bold text-[#2f2f2f] text-2xl text-center">
                         Download DONRIFA on your mobile
                     </h3>
-                    <div className="flex gap-3 mt-4 justify-center">
-                        <Image src={APP_STORE_IMG_NEW} alt="App Store" width={160} height={60} />
-                        <Image src={GOOGLE_STORE_IMG_NEW} alt="App Store" width={160} height={60} />
+                    <div className="flex gap-3 mt-4 justify-center flex-wrap">
+                        <Link
+                            href="https://apps.apple.com/us/app/don-rifa/id1497938169"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="Download Don Rifa on App Store"
+                        >
+                            <Image
+                                src={APP_STORE_IMG_NEW}
+                                alt="Download on the App Store"
+                                width={160}
+                                height={60}
+                                className="hover:scale-105 transition-transform"
+                            />
+                        </Link>
+
+                        <Link
+                            href="https://play.google.com/store/apps/details?id=com.donrifa.donrifa&hl=en_IN"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="Download Don Rifa on Google Play"
+                        >
+                            <Image
+                                src={GOOGLE_STORE_IMG_NEW}
+                                alt="Get it on Google Play"
+                                width={160}
+                                height={60}
+                                className="hover:scale-105 transition-transform"
+                            />
+                        </Link>
                     </div>
                 </div>
             </div>

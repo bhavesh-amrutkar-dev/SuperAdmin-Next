@@ -5,6 +5,33 @@ import Image from "next/image";
 import { APP_STORE_IMG, CDN_IMAGE, Facebook_icon_new, Instagram_icon_new, Linkedin_icon_new, Twitter_icon_new, Youtube_icon_new, Mastercard, PLAY_STORE_IMG, Twitter_icon, website_logo } from "@/src/lib/config";
 
 export default function Footer() {
+    const SOCIAL_MEDIA_LINKS = [
+        {
+            name: "Facebook",
+            href: "https://www.facebook.com/donrifallc/",
+            icon: Facebook_icon_new,
+        },
+        {
+            name: "Instagram",
+            href: "https://www.instagram.com/donrifallc",
+            icon: Instagram_icon_new,
+        },
+        {
+            name: "Twitter",
+            href: "https://x.com/donrifallc/",
+            icon: Twitter_icon_new,
+        },
+        {
+            name: "LinkedIn",
+            href: "https://www.linkedin.com/donrifallc",
+            icon: Linkedin_icon_new,
+        },
+        {
+            name: "YouTube",
+            href: "https://www.youtube.com/channel/UCeeQ4yfMdHvK_ViM_5oRvow/videos",
+            icon: Youtube_icon_new,
+        },
+    ];
     return (
         <footer className="bg-[#2f2f2f] text-black">
 
@@ -124,25 +151,26 @@ export default function Footer() {
 
                         {/* Social Icons */}
                         <div className="flex items-center gap-5 flex-wrap">
-                            {[
-                                { src: Facebook_icon_new, alt: "Facebook" },
-                                { src: Instagram_icon_new, alt: "Instagram" },
-                                { src: Twitter_icon_new, alt: "Twitter" },
-                                { src: Linkedin_icon_new, alt: "LinkedIn" },
-                                { src: Youtube_icon_new, alt: "YouTube" },
-                            ].map((item) => (
-                                <div
-                                    key={item.alt}
-                                    className="group cursor-pointer transition-transform duration-300 hover:scale-110 w-10 h-10 flex items-center justify-center rounded-full bg-white !shadow-[0px_0px_0px_2px_#ffffff5c]"
+                            {SOCIAL_MEDIA_LINKS.map((item) => (
+                                <Link
+                                    key={item.name}
+                                    href={item.href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label={item.name}
+                                    title={item.name}
+                                    className="group transition-transform duration-300 hover:scale-110"
                                 >
-                                    <Image
-                                        src={item.src}
-                                        alt={item.alt}
-                                        width={26}
-                                        height={26}
-                                        className="social-icon transition-opacity duration-300"
-                                    />
-                                </div>
+                                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-white !shadow-[0px_0px_0px_2px_#ffffff5c]">
+                                        <Image
+                                            src={item.icon}
+                                            alt={item.name}
+                                            width={26}
+                                            height={26}
+                                            className="transition-opacity duration-300"
+                                        />
+                                    </div>
+                                </Link>
                             ))}
                         </div>
                     </div>
