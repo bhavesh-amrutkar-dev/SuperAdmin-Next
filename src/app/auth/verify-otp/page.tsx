@@ -6,12 +6,13 @@ import { persistAuthSession } from "@/src/lib/session/auth";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 export default function VerifyOtpPage() {
-
-
+  const t = useTranslations();
   const searchParams = useSearchParams();
   const router = useRouter();
+
   const flow = searchParams.get("flow");
   const method = searchParams.get("method") || "mobile";
   const value = searchParams.get("value") || "";
@@ -36,17 +37,17 @@ export default function VerifyOtpPage() {
   /** Countdown */
   useEffect(() => {
     if (timer <= 0) return;
-    const t = setTimeout(() => setTimer((s) => s - 1), 1000);
-    return () => clearTimeout(t);
+    const tId = setTimeout(() => setTimer((s) => s - 1), 1000);
+    return () => clearTimeout(tId);
   }, [timer]);
 
   /** OTP Input */
   const handleChange = (val: string, index: number) => {
     if (!/^\d?$/.test(val)) return;
 
-    const newOtp = [...otp];
-    newOtp[index] = val;
-    setOtp(newOtp);
+    const next = [...otp];
+    next[index] = val;
+    setOtp(next);
 
     if (val && index < otp.length - 1) {
       document.getElementById(`otp-${index + 1}`)?.focus();
@@ -59,15 +60,14 @@ export default function VerifyOtpPage() {
 
     const otpCode = otp.join("");
     if (otpCode.length !== 4) {
-      toast.error("Please enter a valid 4-digit OTP");
+      toast.error(t("otpInvalid"));
       return;
     }
 
     if (!otpId) {
-      toast.error("OTP session expired");
+      toast.error(t("otpExpired"));
       return;
     }
-
 
     setLoading(true);
     try {
@@ -78,14 +78,14 @@ export default function VerifyOtpPage() {
       });
 
       if (!res?.data) {
-        throw new Error("Authentication failed");
+        throw new Error(t("otpAuthFailed"));
       }
+
       if (flow === "signup") {
         const payload = sessionStorage.getItem("signup_payload");
         if (!payload) throw new Error("Signup data missing");
 
         const signupData = JSON.parse(payload);
-
         const signupRes = await AuthService.signUp(signupData);
 
         const session = mapAuthSession(signupRes.data);
@@ -96,19 +96,15 @@ export default function VerifyOtpPage() {
         return;
       }
 
-
-      // login flow (existing behavior)
       const session = mapAuthSession(res.data);
       persistAuthSession(session);
       router.replace("/");
     } catch (err: any) {
-      toast.error(err?.message || "Invalid OTP");
+      toast.error(err?.message || t("otpInvalidGeneric"));
     } finally {
       setLoading(false);
     }
   };
-
-
 
   /** Resend OTP */
   const resendOtp = async () => {
@@ -135,7 +131,7 @@ export default function VerifyOtpPage() {
         )}&otpId=${otpId}&expiry=${otpExpiryTime}`
       );
     } catch {
-      toast.error("Failed to resend OTP");
+      toast.error(t("otpInvalidGeneric"));
     }
   };
 
@@ -144,9 +140,11 @@ export default function VerifyOtpPage() {
       <div className="w-full max-w-md rounded-2xl bg-white shadow-[0_20px_40px_-15px_rgba(0,0,0,0.2)] p-8">
         {/* Header */}
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold mb-1">Verify OTP</h1>
+          <h1 className="text-2xl font-bold mb-1">
+            {t("verifyOtpTitle")}
+          </h1>
           <p className="text-sm text-gray-500">
-            We sent a 4-digit code to your {method}
+            {t("verifyOtpSubtitle", { method })}
           </p>
           <p className="mt-1 text-sm font-medium text-gray-800 break-all">
             {value}
@@ -177,23 +175,23 @@ export default function VerifyOtpPage() {
             className="w-full rounded-lg bg-[#f3c200] py-3 font-semibold text-black
               hover:bg-yellow-400 transition disabled:opacity-50"
           >
-            {loading ? "Verifying..." : "Verify & Continue"}
+            {loading ? t("verifying") : t("verifyContinue")}
           </button>
         </form>
 
         {/* Footer */}
         <div className="mt-6 text-center text-sm text-gray-500">
-          Didn’t receive the code?{" "}
+          {t("didntReceiveCode")}{" "}
           {timer > 0 ? (
             <span className="font-medium text-gray-700">
-              Resend in {timer}s
+              {t("resendIn", { time: timer })}
             </span>
           ) : (
             <button
               onClick={resendOtp}
               className="font-semibold text-[#f3c200] hover:underline"
             >
-              Resend OTP
+              {t("resendOtp")}
             </button>
           )}
         </div>

@@ -6,12 +6,14 @@ import { useState } from "react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 import { AuthService } from "@/src/lib/services/auth";
 import { IMobileLoginRM } from "@/src/models/api/request/auth";
 
 export default function LoginMobilePage() {
   const router = useRouter();
+  const t = useTranslations();
 
   const [mobile, setMobile] = useState("");
   const [countryCode, setCountryCode] = useState("");
@@ -21,7 +23,7 @@ export default function LoginMobilePage() {
     e.preventDefault();
 
     if (!mobile || !countryCode) {
-      toast.error("Please enter a valid mobile number");
+      toast.error(t("invalidMobile"));
       return;
     }
 
@@ -46,7 +48,7 @@ export default function LoginMobilePage() {
         )}&otpId=${otpId}&expiry=${otpExpiryTime}`
       );
     } catch (err: any) {
-      toast.error(err?.message || "Failed to send OTP");
+      toast.error(err?.message || t("otpSendFailed"));
     } finally {
       setLoading(false);
     }
@@ -57,10 +59,10 @@ export default function LoginMobilePage() {
       {/* Header */}
       <div className="mb-8 text-center">
         <h1 className="text-2xl font-bold section_title">
-          Log in with phone
+          {t("loginWithPhoneTitle")}
         </h1>
         <p className="text-sm text-[#7c7878] mt-1">
-          We’ll send a one-time password to your number
+          {t("loginWithPhoneSubtitle")}
         </p>
       </div>
 
@@ -69,7 +71,7 @@ export default function LoginMobilePage() {
         {/* Mobile */}
         <div className="space-y-1">
           <label className="text-sm font-medium text-[#2f2f2f]">
-            Mobile number
+            {t("mobileNumberLabel")}
           </label>
 
           <PhoneInput
@@ -91,7 +93,7 @@ export default function LoginMobilePage() {
           disabled={loading || !mobile}
           className="w-full rounded-lg btn-primary py-3 text-white font-semibold hover:bg-yellow-400 hover:text-black transition disabled:opacity-50 !border-0"
         >
-          {loading ? "Sending OTP..." : "Send OTP"}
+          {loading ? t("sendingOtp") : t("sendOtp")}
         </button>
 
         {/* OR CONNECT WITH */}
@@ -99,7 +101,7 @@ export default function LoginMobilePage() {
           <div className="flex items-center gap-3">
             <div className="flex-1 h-px bg-gray-300" />
             <span className="text-xs text-gray-500 font-medium">
-              OR CONNECT WITH
+              {t("orConnectWith")}
             </span>
             <div className="flex-1 h-px bg-gray-300" />
           </div>
@@ -108,19 +110,19 @@ export default function LoginMobilePage() {
             href="/auth/login"
             className="mt-4 flex items-center justify-center rounded-lg border border-[#2f2f2f] py-2.5 text-sm font-semibold text-[#2f2f2f] hover:border-[#f3c200] hover:text-[#f3c200] transition"
           >
-            LOG IN WITH EMAIL
+            {t("loginWithEmail")}
           </Link>
         </div>
       </form>
 
       {/* Footer */}
       <p className="mt-8 text-center text-sm text-[#2f2f2f]">
-        Don’t have an account?{" "}
+        {t("noAccount")}{" "}
         <Link
           href="/auth/register"
           className="font-semibold hover:text-[#f3c200] hover:underline transition"
         >
-          Sign up
+          {t("signUp")}
         </Link>
       </p>
     </div>

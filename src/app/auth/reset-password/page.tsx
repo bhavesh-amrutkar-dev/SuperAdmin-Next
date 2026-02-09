@@ -2,9 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
+  const t = useTranslations();
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -14,10 +16,10 @@ export default function ResetPasswordPage() {
 
   const validate = () => {
     if (password.length < 8) {
-      return "Password must be at least 8 characters";
+      return t("passwordMinError");
     }
     if (password !== confirmPassword) {
-      return "Passwords do not match";
+      return t("passwordMismatchError");
     }
     return "";
   };
@@ -56,10 +58,10 @@ export default function ResetPasswordPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold tracking-tight">
-            Reset your password
+            {t("resetPasswordTitle")}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Choose a strong password you haven’t used before
+            {t("resetPasswordSubtitle")}
           </p>
         </div>
 
@@ -67,7 +69,7 @@ export default function ResetPasswordPage() {
           {/* New Password */}
           <div>
             <label className="text-sm font-medium text-gray-700">
-              New password
+              {t("newPassword")}
             </label>
             <div className="relative mt-1">
               <input
@@ -84,26 +86,26 @@ export default function ResetPasswordPage() {
                   setPassword(e.target.value);
                   setError("");
                 }}
-                placeholder="Enter new password"
+                placeholder={t("passwordPlaceholder")}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((s) => !s)}
                 className="absolute inset-y-0 right-4 text-xs font-medium text-gray-500 hover:text-gray-800"
               >
-                {showPassword ? "HIDE" : "SHOW"}
+                {showPassword ? t("hide") : t("show")}
               </button>
             </div>
 
             <p className="mt-1 text-xs text-gray-400">
-              Minimum 8 characters
+              {t("passwordHint")}
             </p>
           </div>
 
           {/* Confirm Password */}
           <div>
             <label className="text-sm font-medium text-gray-700">
-              Confirm password
+              {t("confirmPassword")}
             </label>
             <input
               type={showPassword ? "text" : "password"}
@@ -119,7 +121,7 @@ export default function ResetPasswordPage() {
                 setConfirmPassword(e.target.value);
                 setError("");
               }}
-              placeholder="Re-enter new password"
+              placeholder={t("confirmPasswordPlaceholder")}
             />
           </div>
 
@@ -141,7 +143,7 @@ export default function ResetPasswordPage() {
               hover:from-yellow-500 hover:to-yellow-600
               transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Saving..." : "Save password"}
+            {loading ? t("saving") : t("savePassword")}
           </button>
         </form>
       </div>

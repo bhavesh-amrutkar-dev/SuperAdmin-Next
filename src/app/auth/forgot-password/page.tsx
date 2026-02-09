@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
+import { useTranslations } from "next-intl";
 
 type Method = "email" | "mobile" | "";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
+  const t = useTranslations();
 
   const [method, setMethod] = useState<Method>("");
   const [email, setEmail] = useState("");
@@ -33,12 +35,13 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="w-full max-w-md rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] p-8">
+      {/* Header */}
       <div className="mb-8 text-center">
         <h1 className="text-2xl font-bold section_title mb-1">
-          Forgot password
+          {t("forgotPasswordTitle")}
         </h1>
         <p className="text-sm text-gray-500 mb-6">
-          Choose how you want to receive the verification code
+          {t("forgotPasswordSubtitle")}
         </p>
       </div>
 
@@ -46,7 +49,7 @@ export default function ForgotPasswordPage() {
         {/* Method Selection */}
         <div className="space-y-3">
           <label className="text-sm font-medium text-[#2f2f2f]">
-            Select method
+            {t("selectMethod")}
           </label>
 
           <div className="flex gap-3">
@@ -54,24 +57,26 @@ export default function ForgotPasswordPage() {
               type="button"
               onClick={() => setMethod("email")}
               className={`flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium
-                ${method === "email"
-                  ? "border-[#f3c200] bg-yellow-50"
-                  : "border-[#2f2f2f]"
+                ${
+                  method === "email"
+                    ? "border-[#f3c200] bg-yellow-50"
+                    : "border-[#2f2f2f]"
                 }`}
             >
-              Email
+              {t("email")}
             </button>
 
             <button
               type="button"
               onClick={() => setMethod("mobile")}
               className={`flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium
-                ${method === "mobile"
-                  ? "border-[#f3c200] bg-yellow-50"
-                  : "border-[#2f2f2f]"
+                ${
+                  method === "mobile"
+                    ? "border-[#f3c200] bg-yellow-50"
+                    : "border-[#2f2f2f]"
                 }`}
             >
-              Mobile
+              {t("mobile")}
             </button>
           </div>
         </div>
@@ -79,11 +84,11 @@ export default function ForgotPasswordPage() {
         {method === "email" && (
           <div className="space-y-1">
             <label className="text-sm font-medium text-[#2f2f2f]">
-              Email address
+              {t("emailAddress")}
             </label>
             <input
               type="email"
-              placeholder="Enter your email"
+              placeholder={t("emailPlaceholder")}
               className="auth-input w-full rounded-lg border !border-[#2f2f2f] px-4 py-2.5
                 focus:outline-none focus:!border-[#f3c200]"
               value={email}
@@ -96,7 +101,7 @@ export default function ForgotPasswordPage() {
         {method === "mobile" && (
           <div className="space-y-1">
             <label className="text-sm font-medium text-[#2f2f2f]">
-              Mobile number
+              {t("mobileNumber")}
             </label>
 
             <PhoneInput
@@ -114,7 +119,7 @@ export default function ForgotPasswordPage() {
           className="auth-button w-full rounded-lg btn-primary py-3 font-semibold
             hover:bg-yellow-400 hover:text-black transition disabled:opacity-50"
         >
-          {loading ? "Sending..." : "Send OTP"}
+          {loading ? t("sending") : t("sendOtp")}
         </button>
 
         <p className="text-center text-sm">
@@ -122,7 +127,7 @@ export default function ForgotPasswordPage() {
             href="/auth/login"
             className="font-semibold hover:text-[#f3c200] hover:underline"
           >
-            Back to Login
+            {t("backToLogin")}
           </Link>
         </p>
       </form>
