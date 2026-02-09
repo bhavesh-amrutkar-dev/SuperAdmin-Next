@@ -96,3 +96,13 @@ export interface RaffleSection {
     cellType: number;
     items: RaffleItem[];
 }
+
+export type HomeApiResponseV2 = {
+  homePageSeo: {
+    metatags: string;
+    metatagsdesc: string;
+    title: string;
+    copyRight: string;
+  };
+  banner_images: BannerImage[];
+};

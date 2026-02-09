@@ -45,7 +45,7 @@ export default function LanguageSwitcher() {
       <button
         onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-2 px-3 py-2 rounded-md border border-black/10 
-                   btn-primary text-sm font-medium text-black
+                   btn-primary text-sm text-black
                    hover:bg-black/5 transition focus:outline-none font-semibold"
       >
         <Globe size={16} />

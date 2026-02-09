@@ -28,7 +28,7 @@ export default function HeroSlider({ banners, autoPlay = true }: Props) {
 
   return (
     <section className="w-full">
-      <div className="mx-auto w-full max-w-[1648px]">
+      <div className="mx-auto w-full max-w-412">
         {/* Image container MUST be relative */}
         <div className="relative h-[40vh] sm:h-[50vh] md:h-[60vh] overflow-hidden">
           <Image

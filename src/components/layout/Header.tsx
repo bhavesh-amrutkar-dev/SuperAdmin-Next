@@ -48,7 +48,7 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 bg-[#2F2F2F]">
       {/* MAIN BAR */}
-      <div className="mx-auto max-w-[1648px] px-4">
+      <div className="mx-auto max-w-412 px-4">
         <div className="flex h-16 md:h-20 items-center justify-between">
 
           {/* Logo */}
@@ -59,7 +59,7 @@ export default function Header() {
               width={160}
               height={40}
               priority
-              className="md:w-[200px]"
+              className="md:w-50"
             />
           </Link>
 
@@ -97,7 +97,7 @@ export default function Header() {
                 className="hidden lg:flex btn-primary px-3 py-2 rounded-md text-sm font-semibold"
               >
                 <User size={16} />
-                {t("Login")}
+                {t("login")}
               </Link>
             ) : (
               <div className="relative hidden lg:block">
@@ -115,7 +115,7 @@ export default function Header() {
                       className="block px-4 py-2 text-sm hover:bg-gray-100"
                       onClick={() => setUserMenuOpen(false)}
                     >
-                      Manage Profile
+                      {t("manageProfile")}
                     </Link>
                     <button
                       onClick={async () => {
@@ -125,7 +125,7 @@ export default function Header() {
                       }}
                       className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                     >
-                      Logout
+                      {t("logout")}
                     </button>
                   </div>
                 )}
@@ -158,7 +158,7 @@ export default function Header() {
       {/* MOBILE MENU */}
       <div
         className={`lg:hidden overflow-hidden transition-all duration-300 ${
-          menuOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+          menuOpen ? "max-h-125 opacity-100" : "max-h-0 opacity-0"
         } bg-white`}
       >
         <nav className="flex flex-col px-6 py-6 space-y-4 text-sm font-medium">
@@ -187,7 +187,7 @@ export default function Header() {
               className="flex items-center gap-2 pt-4"
             >
               <User size={16} />
-              {t("Login")}
+              {t("login")}
             </Link>
           ) : (
             <>
@@ -196,7 +196,7 @@ export default function Header() {
                 onClick={() => setMenuOpen(false)}
                 className="pt-4"
               >
-                Manage Profile
+                {t("manageProfile")}
               </Link>
               <button
                 onClick={async () => {
@@ -206,7 +206,7 @@ export default function Header() {
                 }}
                 className="text-left text-red-600"
               >
-                Logout
+                {t("logout")}
               </button>
             </>
           )}

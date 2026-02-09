@@ -35,16 +35,17 @@ export default function RootLayout({
         className="bg-[#ededed] {`${geistSans.variable} ${geistMono.variable} antialiased`}"
       >
         <AuthProvider>
-          <ClientProviders>
+          {/* <ClientProviders> */}
             <NextIntlClientProvider>
-              {children}
+
               <Toaster
                 position="top-center"
                 richColors
                 closeButton
               />
+              {children}
             </NextIntlClientProvider>
-          </ClientProviders>
+          {/* </ClientProviders> */}
         </AuthProvider>
       </body>
     </html>

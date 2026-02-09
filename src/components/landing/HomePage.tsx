@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { getCookie } from "cookies-next";
 
 import { HomeService } from "@/src/lib/services/home";
 import { RaffleService } from "@/src/lib/services/raffles";
@@ -19,6 +20,7 @@ import HeroSlider from "./Hero";
 import HowItWorksSection from "./HowItWorks";
 import RaffleSectionLayout from "./RafflesSelectionLayout";
 import { FullScreenLoader } from "../fullScreenLoader";
+import { useAuth } from "@/src/context/authContext";
 
 type LegacyRaffleItem = {
   _id?: string;
@@ -39,6 +41,7 @@ const isObjectId = (id?: string) =>
 export default function HomePage() {
   const locale = useLocale();
   const t = useTranslations();
+  const { ready } = useAuth();
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -47,16 +50,48 @@ export default function HomePage() {
 
   const [banners, setBanners] = useState<HomeBanner[]>([]);
   const [raffleSection, setRaffleSection] = useState<RaffleSection | null>(null);
+  const [countryId, setCountryId] = useState<string | null>(null);
+
+  /* -----------------------------
+     Resolve Country ID
+  ------------------------------ */
+  useEffect(() => {
+    const id = getCookie("C_id");
+    if (id) setCountryId(id as string);
+  }, []);
+  /* -----------------------------
+     Listen for country changes
+  ------------------------------ */
+  useEffect(() => {
+    const handleCountryChange = (e: Event) => {
+      const customEvent = e as CustomEvent<{ id: string }>;
+      if (customEvent.detail?.id) {
+        setCountryId(customEvent.detail.id);
+      } else {
+        // fallback: re-read cookie
+        const id = getCookie("C_id");
+        if (id) setCountryId(id as string);
+      }
+    };
+
+    window.addEventListener("countryChanged", handleCountryChange);
+
+    return () => {
+      window.removeEventListener("countryChanged", handleCountryChange);
+    };
+  }, []);
 
   /* -----------------------------
      Fetch Home Page Content
   ------------------------------ */
   useEffect(() => {
+    if (!ready) return;
+
     let active = true;
 
     (async () => {
       try {
-        const res: any = await HomeService.getHomePage(1);
+        const res = await HomeService.getHomePage(1);
 
         if (!active) return;
 
@@ -64,7 +99,7 @@ export default function HomePage() {
           setBanners(mapBanners(res.banner_images, locale));
         }
       } catch {
-        // silent fail – home page should not break
+        // silent fail
       } finally {
         if (active) setLoading(false);
       }
@@ -73,20 +108,26 @@ export default function HomePage() {
     return () => {
       active = false;
     };
-  }, [locale]);
+  }, [ready, locale]);
 
   /* -----------------------------
-     Fetch Raffles (SAFE)
+     Fetch Raffles
   ------------------------------ */
   const fetchRaffles = useCallback(async () => {
-    abortRef.current?.abort();
-    abortRef.current = new AbortController();
+    if (!countryId) return;
+
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     setLoadingRaffles(true);
 
     try {
       const payload: any = await RaffleService.getAllRaffles(undefined, {
-        signal: abortRef.current.signal,
+        signal: controller.signal,
       });
 
       const items: LegacyRaffleItem[] = Array.isArray(payload?.data)
@@ -123,35 +164,37 @@ export default function HomePage() {
         })
         .filter(Boolean) as RaffleItem[];
 
-      if (raffleItems.length === 0) {
-        setRaffleSection(null);
-        return;
+      if (raffleItems.length > 0) {
+        setRaffleSection({
+          id: "all-raffles",
+          title: t("allRaffles") ?? "ALL RAFFLES",
+          description: t("playAndWin") ?? "PLAY AND WIN!",
+          cellType: 1,
+          items: raffleItems,
+        });
       }
-
-      setRaffleSection({
-        id: "all-raffles",
-        title: t("allRaffles") ?? "ALL RAFFLES",
-        description: t("playAndWin") ?? "PLAY AND WIN!",
-        cellType: 1,
-        items: raffleItems,
-      });
+      
     } catch (err: any) {
-      if (err?.name !== "AbortError") {
-       
-        setRaffleSection(null);
-      }
+      // if (err?.name !== "AbortError") {
+      //   console.error("Failed to load raffles", err);
+      // }
     } finally {
       setLoadingRaffles(false);
     }
-  }, [t]);
+  }, [countryId, t]);
 
   /* -----------------------------
-     Re-fetch on locale change
+     Trigger Raffle Fetch
   ------------------------------ */
   useEffect(() => {
+    if (!ready || !countryId) return;
+
     fetchRaffles();
-    return () => abortRef.current?.abort();
-  }, [locale, fetchRaffles]);
+
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, [ready, countryId, locale, fetchRaffles]);
 
   /* -----------------------------
      Render
@@ -168,6 +211,7 @@ export default function HomePage() {
 
       {loadingRaffles ? (
         <section className="py-20 text-center text-[#797979]">
+
           {t("loading") ?? "Loading..."}
         </section>
       ) : raffleSection ? (
