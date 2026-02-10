@@ -1,16 +1,18 @@
+// app/providers.tsx
 "use client";
 
-import { useEffect } from "react";
-import { initGuest } from "../lib/bootstrap/initGuest";
+import { AuthProvider } from "@/src/context/authContext";
+import { Toaster } from "sonner";
 
 export default function ClientProviders({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  useEffect(() => {
-    initGuest();
-  }, []);
-
-  return <>{children}</>;
+  return (
+    <AuthProvider>
+      <Toaster position="top-center" richColors closeButton />
+      {children}
+    </AuthProvider>
+  );
 }

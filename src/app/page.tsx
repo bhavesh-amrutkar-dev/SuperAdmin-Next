@@ -1,22 +1,16 @@
-"use client"
-import "./globals.css"
-import Header from "../components/layout/Header";
-import PreFooterIconModule from "../components/layout/PreFooterIconModule";
-import Footer from "../components/layout/Footer";
-import HomePage from "../components/landing/HomePage";
-import { useAuth } from "../context/authContext";
-import { FullScreenLoader } from "../components/fullScreenLoader";
+// app/page.tsx
+import Header from "@/src/components/layout/Header";
+import Footer from "@/src/components/layout/Footer";
+import PreFooterIconModule from "@/src/components/layout/PreFooterIconModule";
+import HomePageShell from "../components/landing/HomePageShell";
 
 export default function LandingPage() {
-  const { ready } = useAuth();
-  if (!ready) return <FullScreenLoader />;
   return (
-
     <main>
       <Header />
-      <HomePage />
+      <HomePageShell />
       <PreFooterIconModule />
       <Footer />
     </main>
-  )
+  );
 }

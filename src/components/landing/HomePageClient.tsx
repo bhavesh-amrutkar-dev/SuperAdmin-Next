@@ -38,7 +38,7 @@ type LegacyRaffleItem = {
 const isObjectId = (id?: string) =>
   typeof id === "string" && /^[a-f0-9]{24}$/i.test(id);
 
-export default function HomePage() {
+export default function HomePageClient() {
   const locale = useLocale();
   const t = useTranslations();
   const { ready } = useAuth();
