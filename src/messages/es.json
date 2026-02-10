@@ -294,5 +294,8 @@
     "addressTypeOtherRequired": "Por favor especifica el tipo de dirección",
     "continue": "Continuar",
     "addressSaveFailed": "No se pudo guardar la dirección",
-    "addressPlaceholder": "Apartamento, calle, zona"
+    "addressPlaceholder": "Apartamento, calle, zona",
+    "landmark": "Punto de referencia",
+    "landmarkPlaceholder": "Punto de referencia cercano (opcional)",
+    "landmarkRequired": "El punto de referencia es obligatorio"
 }

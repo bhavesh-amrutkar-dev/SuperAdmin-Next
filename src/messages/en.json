@@ -291,8 +291,11 @@
     "addressTypeOffice": "Office",
     "addressTypeOther": "Other",
     "addressTypeOtherPlaceholder": "e.g. Warehouse, Friend's place",
-    "addressTypeOtherRequired" : "Please specify the type of address",
+    "addressTypeOtherRequired": "Please specify the type of address",
     "continue": "Continue",
     "addressSaveFailed": "Failed to save address",
-    "addressPlaceholder": "Flat, Street, Area"
+    "addressPlaceholder": "Flat, Street, Area",
+    "landmark": "Landmark",
+    "landmarkPlaceholder": "Nearby landmark (optional)",
+    "landmarkRequired": "Landmark is required"
 }

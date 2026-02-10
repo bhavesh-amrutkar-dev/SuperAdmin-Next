@@ -62,11 +62,15 @@ export interface ICreateAddressRM {
   state: string;
   country: string;
   pincode: string;
+  landmark?: string;
+
   mobileNumber: string;
-  countryCode: string;
+  mobileNumberCode: string;
+  mobileNumberSortCode: string;
+
   tagged: number;
   taggedAs?: string;
   default: boolean;
-  latitude?: string;
-  longitude?: string;
+  latitude?: number;
+  longitude?: number;
 }
