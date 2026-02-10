@@ -226,3 +226,11 @@ body {
 html {
   scroll-behavior: smooth;
 }
+
+.form-label {
+  @apply text-sm font-medium text-gray-700;
+}
+
+.form-input {
+  @apply w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:border-yellow-400 placeholder:text-gray-400;
+}
