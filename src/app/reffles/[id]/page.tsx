@@ -4,17 +4,18 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import Image from "next/image";
-import { ArrowLeft, Search, ChevronDown, ChevronUp, X } from "lucide-react";
+import { ArrowLeft, Search, ChevronDown, ChevronUp, X, Minus, Plus } from "lucide-react";
 import Link from "next/link";
 import Header from "@/src/components/layout/Header";
 import Footer from "@/src/components/layout/Footer";
 import PreFooterIconModule from "@/src/components/layout/PreFooterIconModule";
 import { RaffleService } from "@/src/lib/services/raffles";
 import { QuestionService, Question, QuestionsResponse } from "@/src/lib/services/question";
-import { CartService, OrderService } from "@/src/lib/services/cart";
+import { CartService } from "@/src/lib/services/cart";
 import { TicketWalletService } from "@/src/lib/services/ticketWallet";
 import { UserAddressService } from "@/src/lib/services/userAddress";
 import ComingSoon from "@/src/components/common/ComingSoon";
+import LoginModal from "@/src/components/modals/LoginModal";
 import { PRODUCT_CART, STORE_CATEGORY_ID } from "@/src/lib/config";
 import { getCookie } from "cookies-next";
 
@@ -91,6 +92,7 @@ export default function RefflesDetailPage() {
     const [qaSearchQuery, setQaSearchQuery] = useState<string>("");
     const [qaSortBy, setQaSortBy] = useState<string>("recent");
     const [showScrollTop, setShowScrollTop] = useState(false);
+    const [defaultAddressId, setDefaultAddressId] = useState<string>("");
     const [selectedEntries, setSelectedEntries] = useState<number>(0);
     const [selectedTicket, setSelectedTicket] = useState<string | null>(null);
     const [ticketQuantity, setTicketQuantity] = useState<number>(0);
@@ -110,13 +112,19 @@ export default function RefflesDetailPage() {
         sellerInfo: false,
         questionsAnswers: true,
     });
-    const [showAskQuestionModal, setShowAskQuestionModal] = useState(false);
-    const [showTermsModal, setShowTermsModal] = useState(false);
     const [questionText, setQuestionText] = useState("");
     const [submittingQuestion, setSubmittingQuestion] = useState(false);
     const [questions, setQuestions] = useState<Question[]>([]);
     const [questionsLoading, setQuestionsLoading] = useState(false);
     const [questionsCount, setQuestionsCount] = useState(0);
+    const [freeTicketError, setFreeTicketError] = useState<string | null>(null);
+    const [selectedQuantity, setSelectedQuantity] = useState<number>(1);
+    const [showQuantitySelector, setShowQuantitySelector] = useState(false);
+    const [showLoginModal, setShowLoginModal] = useState(false);
+    const [pendingCartData, setPendingCartData] = useState<{
+        ticketId: string;
+        quantity: number;
+    } | null>(null);
     const maxQuestionLength = 1000;
     const [allRaffles, setAllRaffles] = useState<Array<LegacyRaffleDetail & { _id?: string }>>([]);
     const [displayedRafflesCount, setDisplayedRafflesCount] = useState(5);
@@ -172,6 +180,7 @@ export default function RefflesDetailPage() {
         }
     }, []);
 
+    console.log("p.id", pid);
     useEffect(() => {
         // Validate MongoDB ObjectId format (24 hex characters)
         const isValidObjectId = (id: string | null | undefined): id is string => {
@@ -210,6 +219,7 @@ export default function RefflesDetailPage() {
         }
 
         setLoading(true);
+        console.log("lotteryId ----- 1", lotteryId);
 
         RaffleService.getRaffleDetails(lotteryId)
             .then((payload) => {
@@ -485,13 +495,16 @@ export default function RefflesDetailPage() {
         fetchTicketBalance();
     }, []);
 
-    // Fetch user addresses (/address API) on detail page load, similar to old project
+    // Fetch user addresses (/address API) on detail page load and store default address id
     useEffect(() => {
         const fetchAddresses = async () => {
             try {
-                await UserAddressService.getAddresses();
-                // In old project this also populated cart delivery/billing address.
-                // For now we just ensure the API is called successfully.
+                const response = await UserAddressService.getAddresses();
+                const addresses = response?.data || [];
+                const defaultAddress = addresses.find((addr: any) => addr?.default === true);
+                if (defaultAddress?._id) {
+                    setDefaultAddressId(defaultAddress._id);
+                }
             } catch (err) {
                 // eslint-disable-next-line no-console
                 console.warn("Error fetching addresses (non-blocking):", err);
@@ -544,17 +557,27 @@ export default function RefflesDetailPage() {
         }
     }, [lotteryItem, selectedTicket]);
 
-    // Prevent body scroll when modal is open
+    // Reset quantity and hide quantity selector when ticket selection changes
     useEffect(() => {
-        if (showAskQuestionModal) {
-            document.body.style.overflow = "hidden";
-        } else {
-            document.body.style.overflow = "unset";
+        setShowQuantitySelector(false); // Hide quantity selector when ticket changes
+        if (selectedTicket) {
+            const ticketsSource: any[] =
+                lotteryItem?.tickets ||
+                (lotteryItem as any)?.ticketPackages ||
+                (lotteryItem as any)?.ticketOptions ||
+                (lotteryItem as any)?.entryOptions ||
+                [];
+
+            ticketsSource.forEach((ticket: any, index: number) => {
+                const ticketId = ticket.ticketId || ticket.id || ticket._id || index.toString();
+                if (selectedTicket === ticketId) {
+                    const numberOfTickets = ticket.numberOfTicket || ticket.numberOfTickets || ticket.quantity || 0;
+                    setSelectedQuantity(numberOfTickets || 1);
+                }
+            });
         }
-        return () => {
-            document.body.style.overflow = "unset";
-        };
-    }, [showAskQuestionModal]);
+    }, [selectedTicket, lotteryItem]);
+
 
     if (loading) {
         return (
@@ -643,6 +666,111 @@ export default function RefflesDetailPage() {
     // Handle load more raffles
     const handleLoadMore = () => {
         setDisplayedRafflesCount((prev) => Math.min(prev + 5, allRaffles.length));
+    };
+
+    // Handle paid ticket purchase
+    const handlePaidTicketPurchase = async (ticketId: string, quantity: number) => {
+        if (!lotteryItem || applyingTicket || quantity <= 0) return;
+
+        setApplyingTicket(true);
+        try {
+            await TicketWalletService.purchasePaidTicket({
+                lotteryItem,
+                ticketId,
+                quantity,
+                productId: params.id as string,
+                defaultAddressId,
+            });
+
+            router.push("/thank-you");
+        } catch (err) {
+            const errorMessage =
+                err instanceof Error
+                    ? err.message
+                    : typeof err === "string"
+                        ? err
+                        : err && typeof err === "object" && "message" in err
+                            ? String((err as any).message)
+                            : "Failed to place order";
+            // eslint-disable-next-line no-console
+            console.warn("Order placement failed:", errorMessage);
+        } finally {
+            setApplyingTicket(false);
+        }
+    };
+
+    // Check if user is authenticated
+    const isAuthenticated = (): boolean => {
+        const token = getCookie("access_token");
+        return !!token;
+    };
+
+    // Handle add to cart
+    const handleAddToCart = async (ticketId: string, quantity: number) => {
+        if (!lotteryItem || applyingTicket || quantity <= 0) return;
+
+        setApplyingTicket(true);
+        try {
+            await CartService.addToCart({
+                centralProductId: lotteryItem.childProductId || lotteryItem.productId || (params.id as string),
+                productId: lotteryItem.childProductId || lotteryItem.productId || (params.id as string),
+                unitId: lotteryItem.unitId || "",
+                userType: 1,
+                storeId: lotteryItem.storeId || "",
+                ticketId: ticketId || null,
+                campaignId: lotteryItem.campaignId,
+                countryId: (getCookie("C_id") as string) || "633a6c3dd17f0000ea00102e",
+                newQuantity: quantity,
+                action: 1,
+                cartType: 2,
+                offers: {},
+                storeTypeId: 8,
+                deliveryAddress: {
+                    latitude: (getCookie("lat") as string) || "0",
+                    longitude: (getCookie("long") as string) || "0",
+                },
+                storeCategoryId: STORE_CATEGORY_ID,
+            });
+
+            // Redirect to cart page
+            router.push("/cart");
+        } catch (err) {
+            const errorMessage =
+                err instanceof Error
+                    ? err.message
+                    : typeof err === "string"
+                        ? err
+                        : err && typeof err === "object" && "message" in err
+                            ? String((err as any).message)
+                            : "Failed to add to cart";
+            // eslint-disable-next-line no-console
+            console.warn("Add to cart failed:", errorMessage);
+        } finally {
+            setApplyingTicket(false);
+        }
+    };
+
+    // Handle login success - call add to cart with pending data
+    const handleLoginSuccess = async () => {
+        if (pendingCartData) {
+            // Wait a bit for the token to be set in cookies
+            setTimeout(async () => {
+                await handleAddToCart(pendingCartData.ticketId, pendingCartData.quantity);
+                setPendingCartData(null);
+            }, 500);
+        }
+    };
+
+    // Handle continue button click - check auth first
+    const handleContinueClick = (ticketId: string, quantity: number) => {
+        if (!isAuthenticated()) {
+            // Store cart data and show login modal
+            setPendingCartData({ ticketId, quantity });
+            setShowLoginModal(true);
+        } else {
+            // User is authenticated, add to cart directly
+            handleAddToCart(ticketId, quantity);
+        }
     };
 
     // Get displayed raffles
@@ -780,21 +908,21 @@ export default function RefflesDetailPage() {
 
             <div className="w-full px-4 py-4 md:py-6">
                 {/* Campaign Title and Product Name - Full Width */}
-                <div className="max-w-7xl mx-auto mb-6">
+                <div className="mx-auto mb-6">
                     <div className="bg-white rounded-lg shadow-lg p-4">
                         {lotteryItem.campaignTitle && (
                             <h3 className="text-lg font-bold text-[#2f2f2f] uppercase mb-2">
                                 {lotteryItem.campaignTitle}
                             </h3>
                         )}
-                        <h1 className="text-xl md:text-2xl font-bold text-[#2f2f2f]">
+                        {/* <h1 className="text-xl md:text-2xl font-bold text-[#2f2f2f]">
                             {displayName || t("product") || "Product"}
-                        </h1>
+                        </h1> */}
                     </div>
                 </div>
 
                 {/* Main Content Layout */}
-                <div className="flex flex-col lg:flex-row gap-6 mb-6 max-w-7xl mx-auto">
+                <div className="flex flex-col lg:flex-row gap-6 mb-6 mx-auto items-start">
                     {/* Left Side - Product Image and Win Probability */}
                     <div className="w-full lg:w-2/5 space-y-6">
 
@@ -820,15 +948,15 @@ export default function RefflesDetailPage() {
 
                             {/* Row 2: Statistics */}
                             <div className="mb-6">
-                                <div className="flex flex-col md:flex-row md:justify-around gap-4 md:gap-6">
-                                    <div className="text-center md:text-left">
+                                <div className="flex flex-col md:flex-row md:justify-center gap-4 md:gap-6">
+                                    <div className="text-center">
                                         <div className="text-sm md:text-base text-[#2f2f2f]">
                                             <span className="font-semibold">{t("totalEntriesSold")}:</span>
                                             <br />
                                             <span className="text-[#797979]">{totalEntries.toLocaleString()}</span>
                                         </div>
                                     </div>
-                                    <div className="text-center md:text-left">
+                                    <div className="text-center">
                                         <div className="text-sm md:text-base text-[#2f2f2f]">
                                             <span className="font-semibold">{t("myPaidEntries")}:</span>
                                             <br />
@@ -837,7 +965,7 @@ export default function RefflesDetailPage() {
                                             </span>
                                         </div>
                                     </div>
-                                    <div className="text-center md:text-left">
+                                    <div className="text-center">
                                         <div className="text-sm md:text-base text-[#2f2f2f]">
                                             <span className="font-semibold">{t("myFreeEntries")}:</span>
                                             <br />
@@ -881,7 +1009,7 @@ export default function RefflesDetailPage() {
                     </div>
 
                     {/* Right Side - Sidebar */}
-                    <div className="w-full lg:w-3/5 space-y-4">
+                    <div className="w-full lg:w-3/5 space-y-6">
                         {/* Countdown Timer */}
                         <div className="bg-black rounded-lg p-4">
                             <div className="grid grid-cols-4 gap-2">
@@ -951,7 +1079,12 @@ export default function RefflesDetailPage() {
 
                         {/* Entry Selection */}
                         <div className="bg-white rounded-lg shadow-lg p-4">
-                            <p className="text-sm font-semibold text-[#797979] mb-3">{t("selectEntries")}</p>
+                            <p className="text-sm font-semibold text-[#797979] mb-1">{t("selectEntries")}</p>
+                            {freeTicketError && (
+                                <p className="mb-2 text-xs text-red-500">
+                                    {freeTicketError}
+                                </p>
+                            )}
                             <div className="flex gap-3 overflow-x-auto pb-2 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-track]:bg-gray-100">
                                 {(() => {
                                     // Check multiple possible ticket field names
@@ -1045,105 +1178,198 @@ export default function RefflesDetailPage() {
                                                 const val = Math.max(0, Math.min(userTickets, parseInt(e.target.value) || 0));
                                                 setTicketQuantity(val);
                                             }}
-                                            className="w-16 h-12 bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold rounded text-center focus:outline-none focus:ring-2 focus:ring-white transition-colors"
-                                            style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
+                                            className="ticket-quantity w-16 h-12 bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold rounded text-center focus:outline-none focus:ring-2 focus:ring-white transition-colors"
                                         />
-                                        {ticketQuantity > 0 && (
-                                            <button
-                                                onClick={async () => {
-                                                    if (ticketQuantity <= 0 || ticketQuantity > userTickets) {
-                                                        return;
-                                                    }
-
-                                                    setApplyingTicket(true);
-                                                    try {
-                                                        // Get IP address
-                                                        let myIp = "0.0.0.0";
-                                                        try {
-                                                            const ipResponse = await fetch("https://api.ipify.org?format=json");
-                                                            const ipData = await ipResponse.json();
-                                                            myIp = ipData.ip || "0.0.0.0";
-                                                        } catch (ipError) {
-                                                            // eslint-disable-next-line no-console
-                                                            console.warn("Could not fetch IP address, using default");
-                                                        }
-
-                                                        const payload = {
-                                                            centralProductId: lotteryItem.childProductId || lotteryItem.productId || (params.id as string),
-                                                            productId: lotteryItem.childProductId || lotteryItem.productId || (params.id as string),
-                                                            unitId: lotteryItem.unitId || "",
-                                                            userType: 1,
-                                                            storeId: lotteryItem.storeId || "",
-                                                            ticketId: selectedTicket || "", // Use selected ticket package if available, otherwise empty when using walletTickets
-                                                            campaignId: lotteryItem.campaignId,
-                                                            countryId: (getCookie("C_id") as string) || "633a6c3dd17f0000ea00102e",
-                                                            addToCartOnId: "",
-                                                            newQuantity: ticketQuantity,
-                                                            cartType: 2,
-                                                            offers: {},
-                                                            storeTypeId: 8,
-                                                            action: 1,
-                                                            walletTickets: String(ticketQuantity), // Ticket quantity when using tickets
-                                                            deliveryAddress: {
-                                                                latitude: (getCookie("lat") as string) || "0",
-                                                                longitude: (getCookie("long") as string) || "0",
-                                                            },
-                                                            storeCategoryId: STORE_CATEGORY_ID,
-                                                            ipAddress: myIp,
-                                                            addressId: "",
-                                                            billingAddressId: "",
-                                                        };
-
-                                                        await OrderService.expressCheckoutRaffle(payload);
-
-                                                        // Show success message
-                                                        // eslint-disable-next-line no-console
-                                                        console.log("Order placed successfully with tickets");
-
-                                                        // Reset quantity after successful apply
-                                                        setTicketQuantity(0);
-
-                                                        // Redirect to thank-you page
-                                                        router.push("/thank-you");
-                                                    } catch (err) {
-                                                        const errorMessage =
-                                                            err instanceof Error
-                                                                ? err.message
-                                                                : typeof err === "string"
-                                                                    ? err
-                                                                    : err && typeof err === "object" && "message" in err
-                                                                        ? String(err.message)
-                                                                        : "Failed to place order with tickets";
-                                                        // eslint-disable-next-line no-console
-                                                        console.warn("Order placement failed:", errorMessage);
-                                                        // TODO: replace with in-UI toast/notification instead of console output
-                                                    } finally {
-                                                        setApplyingTicket(false);
-                                                    }
-                                                }}
-                                                disabled={ticketQuantity <= 0 || ticketQuantity > userTickets || applyingTicket || !lotteryItem}
-                                                className="px-8 py-2 bg-[#D4AF37] hover:bg-[#B8860B] disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-bold rounded transition-colors uppercase"
-                                            >
-                                                {applyingTicket ? (t("applying") || "APPLYING...") : (t("apply") || "APPLY")}
-                                            </button>
-                                        )}
                                     </div>
                                 </div>
-                                <div className="mb-3">
-                                    <button className="text-sm text-white hover:text-[#D4AF37] font-semibold transition-colors">
-                                        {t("howToEarn") || "How to Earn?"}
-                                    </button>
+                                {/* How to earn text and Apply button in one row */}
+                                <div className="mt-4 mb-1 flex items-center justify-between gap-4">
+                                    <div className="flex-1">
+                                        <button className="text-sm text-white hover:text-[#D4AF37] font-semibold transition-colors">
+                                            {t("howToEarn") || "How to Earn?"}
+                                        </button>
+                                        <p className="mt-2 text-xs text-white italic">
+                                            {t("ticketPurchaseNote") || "NOTE: Please click on Request purchase with ticket"}
+                                        </p>
+                                    </div>
+                                    {ticketQuantity > 0 && (
+                                        <button
+                                            onClick={async () => {
+                                                if (ticketQuantity <= 0 || ticketQuantity > userTickets || !lotteryItem) {
+                                                    return;
+                                                }
+
+                                                setApplyingTicket(true);
+                                                try {
+                                                    await TicketWalletService.applyWalletTickets({
+                                                        lotteryItem,
+                                                        selectedTicket,
+                                                        ticketQuantity,
+                                                        productId: pid as string,
+                                                        defaultAddressId,
+                                                    });
+
+                                                    // Show success message
+                                                    // eslint-disable-next-line no-console
+                                                    console.log("Order placed successfully with tickets");
+
+                                                    // Reset quantity after successful apply
+                                                    setTicketQuantity(0);
+
+                                                    // Redirect to thank-you page
+                                                    router.push("/thank-you");
+                                                } catch (err) {
+                                                    const errorMessage =
+                                                        err instanceof Error
+                                                            ? err.message
+                                                            : typeof err === "string"
+                                                                ? err
+                                                                : err && typeof err === "object" && "message" in err
+                                                                    ? String(err.message)
+                                                                    : "Failed to place order with tickets";
+                                                    // eslint-disable-next-line no-console
+                                                    console.warn("Order placement failed:", errorMessage);
+                                                    // TODO: replace with in-UI toast/notification instead of console output
+                                                } finally {
+                                                    setApplyingTicket(false);
+                                                }
+                                            }}
+                                            disabled={ticketQuantity <= 0 || ticketQuantity > userTickets || applyingTicket || !lotteryItem}
+                                            className="px-8 py-2 bg-[#D4AF37] hover:bg-[#B8860B] disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-bold rounded transition-colors uppercase whitespace-nowrap"
+                                        >
+                                            {applyingTicket ? (t("applying") || "APPLYING...") : (t("apply") || "APPLY")}
+                                        </button>
+                                    )}
                                 </div>
-                                <p className="text-xs text-white italic">
-                                    {t("ticketPurchaseNote") || "NOTE: Please click on Request purchase with ticket"}
-                                </p>
                             </div>
                         </div>
 
-                        {/* Participate Button */}
-                        <button className="w-full bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-4 rounded-lg transition-colors shadow-lg">
-                            {t("participate")}
-                        </button>
+                        {/* Participate/Continue Button */}
+                        {showQuantitySelector ? (
+                            // Show quantity selector + CONTINUE button together in one row
+                            <div className="flex items-center gap-4">
+                                {/* Quantity Selector */}
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const currentQty = Number(selectedQuantity) || 1;
+                                            if (currentQty > 1) {
+                                                setSelectedQuantity(currentQty - 1);
+                                            }
+                                        }}
+                                        disabled={Number(selectedQuantity) <= 1}
+                                        className="w-12 h-12 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-[#D4AF37] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-100 disabled:hover:text-[#797979] transition-all duration-200"
+                                    >
+                                        <Minus size={22} className="text-[#797979]" />
+                                    </button>
+
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={selectedQuantity}
+                                        onChange={(e) => {
+                                            const val = Math.max(1, parseInt(e.target.value) || 1);
+                                            setSelectedQuantity(val);
+                                        }}
+                                        className="w-20 h-12 text-center text-xl font-bold text-[#797979] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:ring-opacity-50 ticket-quantity bg-gray-50"
+                                    />
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const currentQty = Number(selectedQuantity) || 1;
+                                            setSelectedQuantity(currentQty + 1);
+                                        }}
+                                        className="w-12 h-12 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-[#D4AF37] hover:text-white transition-all duration-200"
+                                    >
+                                        <Plus size={22} className="text-[#797979]" />
+                                    </button>
+                                </div>
+
+                                {/* Continue Button */}
+                                <button
+                                    className="flex-1 bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-4 px-6 rounded-lg transition-colors shadow-lg"
+                                    onClick={() => {
+                                        if (!lotteryItem || !selectedTicket) return;
+
+                                        const ticketsSource: any[] =
+                                            lotteryItem.tickets ||
+                                            (lotteryItem as any).ticketPackages ||
+                                            (lotteryItem as any).ticketOptions ||
+                                            (lotteryItem as any).entryOptions ||
+                                            [];
+
+                                        let selectedTicketData: any = null;
+                                        ticketsSource.forEach((ticket: any, index: number) => {
+                                            const ticketId = ticket.ticketId || ticket.id || ticket._id || index.toString();
+                                            if (selectedTicket === ticketId) {
+                                                selectedTicketData = {
+                                                    id: ticketId,
+                                                    price: ticket.price || ticket.ticketPrice || 0,
+                                                };
+                                            }
+                                        });
+
+                                        if (selectedTicketData && selectedTicketData.price > 0) {
+                                            // Use handleContinueClick which checks auth and adds to cart
+                                            handleContinueClick(selectedTicketData.id, selectedQuantity);
+                                        }
+                                    }}
+                                    disabled={applyingTicket}
+                                >
+                                    {t("continue") || "CONTINUE"}
+                                </button>
+                            </div>
+                        ) : (
+                            // Show PARTICIPATE button
+                            <button
+                                className="w-full bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-4 rounded-lg transition-colors shadow-lg"
+                                onClick={() => {
+                                    if (!lotteryItem) return;
+
+                                    const ticketsSource: any[] =
+                                        lotteryItem.tickets ||
+                                        (lotteryItem as any).ticketPackages ||
+                                        (lotteryItem as any).ticketOptions ||
+                                        (lotteryItem as any).entryOptions ||
+                                        [];
+
+                                    let selectedTicketData: any = null;
+
+                                    ticketsSource.forEach((ticket: any, index: number) => {
+                                        const ticketId = ticket.ticketId || ticket.id || ticket._id || index.toString();
+                                        if (selectedTicket && ticketId === selectedTicket) {
+                                            const ticketPrice = ticket.price || ticket.ticketPrice || 0;
+                                            const numberOfTickets = ticket.numberOfTicket || ticket.numberOfTickets || ticket.quantity || 0;
+                                            selectedTicketData = {
+                                                id: ticketId,
+                                                price: ticketPrice,
+                                                quantity: numberOfTickets || 0,
+                                            };
+                                        }
+                                    });
+
+                                    // Free ticket flow - navigate to confirmation page
+                                    if (selectedTicketData && selectedTicketData.price === 0) {
+                                        router.push(
+                                            `/reffles/${pid}/free-ticket-confirmation?ticketId=${selectedTicketData.id}&quantity=${selectedTicketData.quantity}`
+                                        );
+                                        return;
+                                    }
+
+                                    // Paid ticket flow - show quantity selector (PARTICIPATE action)
+                                    if (selectedTicketData && selectedTicketData.price > 0) {
+                                        setSelectedQuantity(1); // Reset to default quantity
+                                        setShowQuantitySelector(true);
+                                        return;
+                                    }
+                                }}
+                                disabled={applyingTicket}
+                            >
+                                {t("participate") || "PARTICIPATE"}
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -1243,7 +1469,7 @@ export default function RefflesDetailPage() {
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm text-[#797979]">-</span>
                                     <button
-                                        onClick={() => setShowTermsModal(true)}
+                                        onClick={() => router.push(`/reffles/${pid}/terms`)}
                                         className="text-xs md:text-sm font-bold text-[#D4AF37] hover:text-[#B8860B] transition-colors uppercase"
                                     >
                                         {t("allDetails")}
@@ -1386,117 +1612,6 @@ export default function RefflesDetailPage() {
                 </div>
             </div>
 
-            {/* Ask a Question Modal */}
-            {showAskQuestionModal && (
-                <div
-                    className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
-                    onClick={(e) => {
-                        if (e.target === e.currentTarget) {
-                            setShowAskQuestionModal(false);
-                            setQuestionText("");
-                        }
-                    }}
-                >
-                    <div
-                        className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {/* Modal Header */}
-                        <div className="flex items-start justify-between p-6 border-b border-gray-200">
-                            <div>
-                                <h2 className="text-2xl md:text-3xl font-bold text-[#D4AF37]">
-                                    {t("askAQuestion")}
-                                </h2>
-                                <p className="mt-1 text-xs md:text-sm font-semibold uppercase text-red-500">
-                                    Coming Soon
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => {
-                                    setShowAskQuestionModal(false);
-                                    setQuestionText("");
-                                }}
-                                className="text-gray-500 hover:text-gray-700 transition-colors"
-                                aria-label="Close"
-                            >
-                                <X size={28} />
-                            </button>
-                        </div>
-
-                        {/* Modal Content */}
-                        <div className="p-6">
-                            {/* Product Information */}
-                            <div className="flex gap-4 mb-6 pb-6 border-b border-gray-200">
-                                <div className="relative w-24 h-24 md:w-32 md:h-32 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
-                                    <Image
-                                        src={displayImage}
-                                        alt={displayName}
-                                        fill
-                                        unoptimized
-                                        className="object-cover"
-                                    />
-                                </div>
-                                <div className="flex-1">
-                                    <h3 className="text-base md:text-lg font-semibold text-[#2f2f2f] mb-2">
-                                        {displayName || t("product") || "Product"}
-                                    </h3>
-                                    <p className="text-sm text-[#797979] line-clamp-2">
-                                        {lotteryItem.detailDesc || lotteryItem.description
-                                            ? (lotteryItem.detailDesc || lotteryItem.description || "").replace(/<[^>]*>/g, "").substring(0, 150) + "..."
-                                            : t("noDataAvailable")
-                                        }
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Coming Soon Placeholder (hide form while API disabled) */}
-                            <ComingSoon
-                                description="The question &amp; answer feature is not yet available on this new site. You&apos;ll soon be able to ask the seller and community anything about this raffle."
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Terms & Conditions - All Details Modal */}
-            {showTermsModal && (
-                <div
-                    className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
-                    onClick={(e) => {
-                        if (e.target === e.currentTarget) {
-                            setShowTermsModal(false);
-                        }
-                    }}
-                >
-                    <div
-                        className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                            <h2 className="text-xl md:text-2xl font-bold text-[#2f2f2f] uppercase">
-                                {t("termsAndConditions")}
-                            </h2>
-                            <button
-                                onClick={() => setShowTermsModal(false)}
-                                className="text-gray-500 hover:text-gray-700 transition-colors"
-                                aria-label="Close"
-                            >
-                                <X size={24} />
-                            </button>
-                        </div>
-                        <div className="p-6">
-                            {lotteryItem.termsAndConditions ? (
-                                <div
-                                    className="accordion-content text-sm md:text-base text-[#797979] leading-relaxed"
-                                    dangerouslySetInnerHTML={{ __html: lotteryItem.termsAndConditions }}
-                                />
-                            ) : (
-                                <p className="text-sm text-[#797979]">{t("noDataAvailable")}</p>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Scroll to Top Button */}
             {showScrollTop && (
@@ -1508,6 +1623,16 @@ export default function RefflesDetailPage() {
                     <ChevronUp size={24} />
                 </button>
             )}
+
+            {/* Login Modal */}
+            <LoginModal
+                isOpen={showLoginModal}
+                onClose={() => {
+                    setShowLoginModal(false);
+                    setPendingCartData(null);
+                }}
+                onLoginSuccess={handleLoginSuccess}
+            />
 
             <PreFooterIconModule />
             <Footer />

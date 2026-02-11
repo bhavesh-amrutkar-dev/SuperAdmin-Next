@@ -226,3 +226,14 @@ body {
 html {
   scroll-behavior: smooth;
 }
+
+/* Hide spinner arrows for ticket quantity input */
+.ticket-quantity::-webkit-outer-spin-button,
+.ticket-quantity::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.ticket-quantity {
+  -moz-appearance: textfield;
+}
