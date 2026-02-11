@@ -10,9 +10,8 @@ export function createProductDeepLink(product: {
         ? "https://donrifa.com"
         : "https://stage.donrifa.com"
 
-    const fallbackUrl = `${BASE_URL}/reffles/${product.id}`
+    const fallbackUrl = `${BASE_URL}/raffles/${product.id}`
 
-    // If branch not loaded → fallback immediately
     if (!window.branch) {
       console.warn("Branch not loaded, using fallback URL")
       return resolve(fallbackUrl)
