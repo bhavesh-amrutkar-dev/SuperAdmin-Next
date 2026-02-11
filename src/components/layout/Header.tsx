@@ -15,6 +15,7 @@ import { getCookie } from "cookies-next";
 import CountrySelectorModal from "./CountrySelectorModal";
 import { logout as logoutUser } from "@/src/lib/utils/logout";
 import { useRouter } from "next/navigation";
+import { CartService } from "@/src/lib/services/cart";
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -22,6 +23,7 @@ export default function Header() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [countryModalOpen, setCountryModalOpen] = useState(false);
   const [currentCountry, setCurrentCountry] = useState(DEFAULT_COUNTRY);
+  const [cartCount, setCartCount] = useState(0);
 
   const t = useTranslations();
   const router = useRouter();
@@ -43,6 +45,43 @@ export default function Header() {
     if (!getCookie("C_code")) {
       setCountryModalOpen(true);
     }
+
+    // Fetch cart count
+    const fetchCartCount = async () => {
+      try {
+        const response = await CartService.getCart();
+        const data = (response as any)?.data?.data || (response as any)?.data || response;
+
+        // Check if cart is empty
+        if (data && typeof data === 'object' && data.message === "Data not found") {
+          setCartCount(0);
+          return;
+        }
+
+        // Count items in cart
+        if (data?.sellers && Array.isArray(data.sellers)) {
+          let count = 0;
+          data.sellers.forEach((seller: any) => {
+            if (seller.products && Array.isArray(seller.products)) {
+              count += seller.products.length;
+            }
+          });
+          setCartCount(count);
+        } else {
+          setCartCount(0);
+        }
+      } catch (error: any) {
+        // Handle empty cart or errors gracefully
+        if (error?.response?.data?.message === "Data not found" || error?.message === "Data not found") {
+          setCartCount(0);
+        } else {
+          // Silently fail for other errors
+          setCartCount(0);
+        }
+      }
+    };
+
+    fetchCartCount();
   }, []);
 
   return (
@@ -117,6 +156,13 @@ export default function Header() {
                     >
                       {t("manageProfile")}
                     </Link>
+                    <Link
+                      href="/addresses"
+                      className="block px-4 py-2 text-sm hover:bg-gray-100"
+                      onClick={() => setUserMenuOpen(false)}
+                    >
+                      {t("savedAddresses")}
+                    </Link>
                     <button
                       onClick={async () => {
                         setUserMenuOpen(false);
@@ -138,9 +184,11 @@ export default function Header() {
               className="relative flex items-center rounded-md btn-primary p-2"
             >
               <ShoppingCart size={20} />
-              <span className="absolute -top-1 -right-1 bg-black text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                0
-              </span>
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs min-w-[20px] h-5 rounded-full flex items-center justify-center px-1">
+                  {cartCount > 99 ? '99+' : cartCount}
+                </span>
+              )}
             </Link>
 
             {/* Mobile Menu Button */}
@@ -157,9 +205,8 @@ export default function Header() {
 
       {/* MOBILE MENU */}
       <div
-        className={`lg:hidden overflow-hidden transition-all duration-300 ${
-          menuOpen ? "max-h-125 opacity-100" : "max-h-0 opacity-0"
-        } bg-white`}
+        className={`lg:hidden overflow-hidden transition-all duration-300 ${menuOpen ? "max-h-125 opacity-100" : "max-h-0 opacity-0"
+          } bg-white`}
       >
         <nav className="flex flex-col px-6 py-6 space-y-4 text-sm font-medium">
           {navItems.map((item) => (

@@ -18,23 +18,6 @@ type CountryOption = {
     name: string;
 };
 
-const FALLBACK_COUNTRIES: CountryOption[] = [
-    {
-        id: "fallback-do",
-        code: "DO",
-        name: "Dominican Republic",
-    },
-    {
-        id: "fallback-pr",
-        code: "PR",
-        name: "Puerto Rico",
-    },
-    {
-        id: "fallback-us",
-        code: "US",
-        name: "United States of America",
-    },
-];
 
 type CountrySelectorModalProps = {
     open: boolean;
@@ -48,7 +31,7 @@ export default function CountrySelectorModal({
     onCountryChange,
 }: CountrySelectorModalProps) {
     const [selectedCode, setSelectedCode] = useState<string | null>(null);
-    const [countries, setCountries] = useState<CountryOption[]>(FALLBACK_COUNTRIES);
+    const [countries, setCountries] = useState<CountryOption[]>([]);
     const t = useTranslations();
 
     useEffect(() => {
@@ -101,7 +84,7 @@ export default function CountrySelectorModal({
             maxAge: 60 * 60 * 24 * 365,
         });
 
-        
+
         try {
             if (typeof window !== "undefined") {
                 window.localStorage.setItem("C_code", selected.code);

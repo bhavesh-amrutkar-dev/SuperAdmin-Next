@@ -233,4 +233,13 @@ html {
 
 .form-input {
   @apply w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:border-yellow-400 placeholder:text-gray-400;
+/* Hide spinner arrows for ticket quantity input */}
+.ticket-quantity::-webkit-outer-spin-button,
+.ticket-quantity::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.ticket-quantity {
+  -moz-appearance: textfield;
 }

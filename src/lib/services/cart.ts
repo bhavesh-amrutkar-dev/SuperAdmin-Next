@@ -14,6 +14,7 @@ export type AddToCartPayload = {
     centralProductId?: string;
     productId: string;
     unitId?: string;
+    userType?: number;
     storeId?: string;
     ticketId?: string | null;
     campaignId?: string;
@@ -21,6 +22,7 @@ export type AddToCartPayload = {
     newQuantity: number;
     action: number; // 1 = add, 2 = update, 3 = delete
     cartType?: number;
+    typeOfCart?: number;
     offers?: Record<string, any>;
     storeCategoryId?: string;
     storeTypeId?: number;
@@ -28,7 +30,9 @@ export type AddToCartPayload = {
         latitude: string;
         longitude: string;
     };
+    deliveryAddressId?: string;
     addToCartOnId?: string;
+    cartStatus?: string; // e.g., "removedcart" for remove action
 };
 
 export const CartService = {
@@ -38,20 +42,38 @@ export const CartService = {
             storeCategoryId: payload.storeCategoryId || DEFAULT_STORE_CATEGORY_ID,
             countryId: payload.countryId || getCountryId(),
             cartType: payload.cartType || 2,
-            storeTypeId: payload.storeTypeId || 8,
+            typeOfCart: payload.typeOfCart !== undefined ? payload.typeOfCart : (payload.action === 3 ? 1 : undefined),
+            storeTypeId: payload.storeTypeId !== undefined ? payload.storeTypeId : (payload.action === 3 ? 1 : 8),
+            userType: payload.userType || 1,
             deliveryAddress: payload.deliveryAddress || {
                 latitude: (getCookie("lat") as string) || "0",
                 longitude: (getCookie("long") as string) || "0",
             },
+            deliveryAddressId: payload.deliveryAddressId !== undefined ? payload.deliveryAddressId : (getCookie("addressid") as string) || "",
+            addToCartOnId: payload.addToCartOnId ? String(payload.addToCartOnId) : payload.addToCartOnId,
         };
 
         return apiClient.post("/cart", finalPayload);
     },
 
     getCart: () => {
-        const lat = (getCookie("lat") as string) || "0";
-        const long = (getCookie("long") as string) || "0";
-        const addressId = (getCookie("AddressID") as string) || (getCookie("addressid") as string) || "";
+        // Match old project's logic for address ID
+        const addressIdCookie = getCookie("AddressID") as string | undefined;
+        const addressidCookie = getCookie("addressid") as string | undefined;
+        const applyingCheck = getCookie("appyingCheck");
+
+        let addressId = "";
+        if (addressIdCookie && addressIdCookie !== "undefined" && addressIdCookie !== "") {
+            addressId = applyingCheck === "1" ? addressIdCookie : (addressidCookie || "");
+        } else {
+            addressId = addressidCookie || "";
+        }
+
+        // Handle lat/long - check for null/undefined strings
+        const latCookie = getCookie("lat") as string | undefined;
+        const longCookie = getCookie("long") as string | undefined;
+        const lat = (latCookie && latCookie !== 'null' && latCookie !== 'undefined') ? latCookie : "0";
+        const long = (longCookie && longCookie !== 'null' && longCookie !== 'undefined') ? longCookie : "0";
 
         return apiClient.get(
             `/cart?storeCategoryId=${DEFAULT_STORE_CATEGORY_ID}&deliveryAddressLatitude=${lat}&deliveryAddressLongitude=${long}&deliveryAddressId=${addressId}&deliveryFeeCalculate=1`
