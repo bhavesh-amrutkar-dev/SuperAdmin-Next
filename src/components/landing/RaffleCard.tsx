@@ -1,55 +1,38 @@
-// src/components/sections/RaffleCard.tsx
-
 import { RaffleItem } from "@/src/models/api/response/home";
 import Image from "next/image";
-import Link from "next/link";
 
-export default function RaffleCard({
-  item,
-  cellType,
-}: {
+interface RaffleCardProps {
   item: RaffleItem;
   cellType: number;
-}) {
-  const aspect =
-    cellType === 1 || cellType === 2
-      ? "aspect-square"
-      : "aspect-[1/1]";
+}
+
+export default function RaffleCard({ item, cellType }: RaffleCardProps) {
+  // Dynamic aspect ratio
+  const aspect = cellType === 1 || cellType === 2 ? "aspect-square" : "aspect-[1/1]";
 
   return (
-    <div className="shrink-0 text-center raffle-card">
+    <div className="shrink-0 text-center raffle-card w-full rounded-2xl overflow-hidden bg-white shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col">
       {/* Image Wrapper */}
-      <div
-        className={`
-          relative
-          w-full
-          ${aspect}
-          flex
-          items-center
-          justify-center
-          bg-transparent
-          raffle-card-image
-        `}
-      >
+      <div className={`w-full ${aspect} relative bg-gray-50 flex items-center justify-center rounded-t-2xl overflow-hidden`}>
         <Image
           src={item.image}
           alt={item.name || ""}
           fill
-          unoptimized
-          className="object-contain p-2"
+          className="object-contain p-3 transition-transform duration-300 ease-in-out hover:scale-105"
+          priority={false}
         />
       </div>
-      <div className="raffle-card-info">
-        {/* Name */}
+
+      {/* Info */}
+      <div className="raffle-card-info px-4 py-4 flex flex-col items-center justify-center flex-1">
         {item.name && (
-          <h2 className="mt-2 text-sm md:text-base lg:text-lg xl:text-xl font-bold text-[#2F2F2F] truncate">
+          <h2 className="truncate text-sm md:text-base lg:text-lg xl:text-xl font-semibold text-gray-800 text-center w-full">
             {item.name}
           </h2>
         )}
 
-        {/* Price */}
         {item.price && (
-          <p className="text-sm md:text-lg xl:text-[24px] font-semibold text-[#f3c200] mt-4">
+          <p className="mt-2 text-sm md:text-lg xl:text-[22px] font-bold text-yellow-500 w-full text-center">
             {item.currencySymbol} {item.price}
           </p>
         )}
