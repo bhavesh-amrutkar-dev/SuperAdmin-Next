@@ -7,6 +7,7 @@ import ClientProviders from "./providers";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import BranchProvider from "../components/BranchProvider";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,9 +38,26 @@ export default async function RootLayout({
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#ededed]`}
       >
+        {/* Load Branch SDK */}
+        <Script
+          src="https://cdn.branch.io/branch-latest.min.js"
+          strategy="afterInteractive"
+        />
+
+        {/* Initialize Branch safely */}
+        <Script id="branch-init" strategy="afterInteractive">
+          {`
+            document.addEventListener("DOMContentLoaded", function () {
+              if (window.branch) {
+                window.branch.init("${process.env.NEXT_PUBLIC_BRANCH_KEY}");
+              }
+            });
+          `}
+        </Script>
+
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ClientProviders>
-              <BranchProvider />
+            <BranchProvider />
             {children}
           </ClientProviders>
         </NextIntlClientProvider>

@@ -8,12 +8,12 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { useState, useEffect } from "react";
 
-import ErrorMessage from "@/src/components/ui/errorMessage";
 import { AuthService } from "@/src/lib/services/auth";
 import Header from "@/src/components/layout/Header";
 import PreFooterIconModule from "@/src/components/layout/PreFooterIconModule";
 import Footer from "@/src/components/layout/Footer";
 import { CountryCurrency } from "@/src/models/api/response/auth";
+import ErrorMessage from "@/src/components/ui/errorMessage";
 
 type AddressFormRM = {
     firstName: string;

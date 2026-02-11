@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import Image from "next/image";
-import { ArrowLeft, Search, ChevronDown, ChevronUp, X, Minus, Plus } from "lucide-react";
+import { ArrowLeft, Search, ChevronDown, ChevronUp, X, Minus, Plus, Share2 } from "lucide-react";
 import Link from "next/link";
 import Header from "@/src/components/layout/Header";
 import Footer from "@/src/components/layout/Footer";
@@ -16,7 +16,7 @@ import { TicketWalletService } from "@/src/lib/services/ticketWallet";
 import { UserAddressService } from "@/src/lib/services/userAddress";
 import ComingSoon from "@/src/components/common/ComingSoon";
 import LoginModal from "@/src/components/modals/LoginModal";
-import { PRODUCT_CART, STORE_CATEGORY_ID } from "@/src/lib/config";
+import { BASE_URL, PRODUCT_CART, STORE_CATEGORY_ID } from "@/src/lib/config";
 import { getCookie } from "cookies-next";
 
 type Ticket = {
@@ -78,9 +78,13 @@ type LegacyRaffleDetail = {
     storeId?: string;
 };
 import CountdownTimer from "@/src/components/CountdownTimer";
+import { createProductDeepLink } from "@/src/lib/services/deeplink";
+import { toast } from "sonner";
 
 
 export default function RefflesDetailPage() {
+    const [sharing, setSharing] = useState(false)
+
     const params = useParams();
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -902,6 +906,60 @@ export default function RefflesDetailPage() {
         );
     };
 
+    // const handleShare = async () => {
+    //     if (!lotteryItem) return
+    //     console.log("lotteryItem", lotteryItem);
+
+    //     try {
+    //         setSharing(true)
+
+    //         const link = await createProductDeepLink({
+    //             id: pid as string,
+    //             name: displayName || "Product",
+    //             description:
+
+    //                 lotteryItem.description ||
+    //                 lotteryItem.detailDesc ||
+    //                 "Check this out on Donrifa!",
+    //             image: displayImage,
+    //         })
+
+    //         // Mobile native share
+    //         if (navigator.share) {
+    //             await navigator.share({
+    //                 title: displayName,
+    //                 text: "Check this out!",
+    //                 url: link,
+    //             })
+    //         } else {
+    //             // Desktop fallback → copy link
+    //             await navigator.clipboard.writeText(link)
+    //             alert("Link copied to clipboard")
+    //         }
+    //     } catch (err) {
+    //         console.error("Share failed:", err)
+    //     } finally {
+    //         setSharing(false)
+    //     }
+    // }
+
+    const handleShare = async () => {
+        const url = `${BASE_URL}raffles/${pid}`
+
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: displayName, url })
+            } catch (err) {
+                console.warn("Share failed:", err)
+            }
+        } else {
+            await navigator.clipboard.writeText(url)
+            toast.success("Link copied to clipboard!")
+        }
+    }
+
+
+
     return (
         <main className="bg-gray-50 min-h-screen">
             <Header />
@@ -909,16 +967,25 @@ export default function RefflesDetailPage() {
             <div className="w-full px-4 py-4 md:py-6">
                 {/* Campaign Title and Product Name - Full Width */}
                 <div className="mx-auto mb-6">
-                    <div className="bg-white rounded-lg shadow-lg p-4">
-                        {lotteryItem.campaignTitle && (
-                            <h3 className="text-lg font-bold text-[#2f2f2f] uppercase mb-2">
-                                {lotteryItem.campaignTitle}
-                            </h3>
-                        )}
-                        {/* <h1 className="text-xl md:text-2xl font-bold text-[#2f2f2f]">
-                            {displayName || t("product") || "Product"}
-                        </h1> */}
+                    <div className="bg-white rounded-lg shadow-lg p-4 flex items-start justify-between">
+                        <div>
+                            {lotteryItem.campaignTitle && (
+                                <h3 className="text-lg font-bold text-[#2f2f2f] uppercase mb-2">
+                                    {lotteryItem.campaignTitle}
+                                </h3>
+                            )}
+                        </div>
+
+                        <button
+                            onClick={handleShare}
+                            disabled={sharing}
+                            className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-[#2f2f2f] border border-gray-200 rounded-lg hover:bg-gray-100 cursor-pointer transition"
+                        >
+                            <Share2 size={18} />
+                            {sharing ? "Sharing..." : "Share"}
+                        </button>
                     </div>
+
                 </div>
 
                 {/* Main Content Layout */}

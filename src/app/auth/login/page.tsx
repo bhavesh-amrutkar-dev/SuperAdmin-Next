@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-
 import ErrorMessage from "@/src/components/ui/errorMessage";
 import { setupAuthSession } from "@/src/lib/auth";
 import { AuthService } from "@/src/lib/services/auth";
