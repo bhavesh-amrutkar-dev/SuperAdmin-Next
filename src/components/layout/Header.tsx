@@ -35,6 +35,41 @@ export default function Header() {
     { key: "contact", href: "/contact" },
   ];
 
+  // Fetch cart count function
+  const fetchCartCount = async () => {
+    try {
+      const response = await CartService.getCart();
+      const data = (response as any)?.data?.data || (response as any)?.data || response;
+
+      // Check if cart is empty
+      if (data && typeof data === 'object' && data.message === "Data not found") {
+        setCartCount(0);
+        return;
+      }
+
+      // Count items in cart
+      if (data?.sellers && Array.isArray(data.sellers)) {
+        let count = 0;
+        data.sellers.forEach((seller: any) => {
+          if (seller.products && Array.isArray(seller.products)) {
+            count += seller.products.length;
+          }
+        });
+        setCartCount(count);
+      } else {
+        setCartCount(0);
+      }
+    } catch (error: any) {
+      // Handle empty cart or errors gracefully
+      if (error?.response?.data?.message === "Data not found" || error?.message === "Data not found") {
+        setCartCount(0);
+      } else {
+        // Silently fail for other errors
+        setCartCount(0);
+      }
+    }
+  };
+
   useEffect(() => {
     setIsLoggedIn(!!getCookie("access_token"));
 
@@ -46,42 +81,19 @@ export default function Header() {
       setCountryModalOpen(true);
     }
 
-    // Fetch cart count
-    const fetchCartCount = async () => {
-      try {
-        const response = await CartService.getCart();
-        const data = (response as any)?.data?.data || (response as any)?.data || response;
+    // Fetch cart count on mount
+    fetchCartCount();
 
-        // Check if cart is empty
-        if (data && typeof data === 'object' && data.message === "Data not found") {
-          setCartCount(0);
-          return;
-        }
-
-        // Count items in cart
-        if (data?.sellers && Array.isArray(data.sellers)) {
-          let count = 0;
-          data.sellers.forEach((seller: any) => {
-            if (seller.products && Array.isArray(seller.products)) {
-              count += seller.products.length;
-            }
-          });
-          setCartCount(count);
-        } else {
-          setCartCount(0);
-        }
-      } catch (error: any) {
-        // Handle empty cart or errors gracefully
-        if (error?.response?.data?.message === "Data not found" || error?.message === "Data not found") {
-          setCartCount(0);
-        } else {
-          // Silently fail for other errors
-          setCartCount(0);
-        }
-      }
+    // Listen for cart update events
+    const handleCartUpdate = () => {
+      fetchCartCount();
     };
 
-    fetchCartCount();
+    window.addEventListener('cartUpdated', handleCartUpdate);
+
+    return () => {
+      window.removeEventListener('cartUpdated', handleCartUpdate);
+    };
   }, []);
 
   return (

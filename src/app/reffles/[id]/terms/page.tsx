@@ -30,9 +30,7 @@ export default function TermsPage() {
             try {
                 setLoading(true);
                 // Use params.id as campaignId for getRaffleDetails
-                console.log("params.id ----- 5", params.id);
                 const response = await RaffleService.getRaffleDetails(params.id as string);
-                console.log("response ----- 6", response);
                 const raw = response as any;
                 let data: LegacyRaffleDetail | undefined = raw?.data;
 

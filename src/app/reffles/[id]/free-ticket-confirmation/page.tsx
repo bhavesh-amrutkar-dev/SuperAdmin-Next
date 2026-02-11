@@ -76,7 +76,6 @@ export default function FreeTicketConfirmationPage() {
                 setLoading(true);
 
                 // Fetch raffle data
-                console.log("params.id ----- 4", params.id);
                 const raffleResponse = await RaffleService.getRaffleDetails(params.id as string);
                 const raw = raffleResponse as any;
                 let data: LegacyRaffleDetail | undefined = raw?.data;

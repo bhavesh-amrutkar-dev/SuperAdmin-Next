@@ -124,7 +124,6 @@ export default function CartPage() {
 
       // Debug: Log the cart data structure
       // eslint-disable-next-line no-console
-      console.log("Cart data:", JSON.stringify(data, null, 2));
       setCartData(data);
     } catch (error: any) {
       // Check if error response contains "Data not found" message
@@ -176,6 +175,10 @@ export default function CartPage() {
 
       await CartService.addToCart(payload);
       await fetchCart(); // Refresh cart after update
+
+      // Dispatch event to update header cart count
+      window.dispatchEvent(new Event('cartUpdated'));
+
       toast.success(t("cartUpdated") || "Cart updated successfully");
     } catch (error: any) {
       console.error("Error updating cart:", error);
@@ -218,6 +221,10 @@ export default function CartPage() {
 
       await CartService.addToCart(payload);
       await fetchCart(); // Refresh cart after deletion
+
+      // Dispatch event to update header cart count
+      window.dispatchEvent(new Event('cartUpdated'));
+
       toast.success(t("itemRemoved") || "Item removed from cart");
     } catch (error: any) {
       console.error("Error removing item from cart:", error);

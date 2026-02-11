@@ -115,7 +115,7 @@ export default function OrdersPage() {
     const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState<number>(0); // 0 = all
-    const [timeFilter, setTimeFilter] = useState<number>(0); // 0 = all
+    const [timeFilter, setTimeFilter] = useState<number>(3); // 3 = last 3 months (default)
 
     const fetchOrders = useCallback(() => {
         setLoading(true);

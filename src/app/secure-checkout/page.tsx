@@ -233,11 +233,6 @@ export default function SecureCheckoutPage() {
       return;
     }
     // TODO: Implement payment processing
-    console.log("Continue to payment", {
-      selectedAddress,
-      billingSameAsShipping,
-      paymentMethod,
-    });
   };
 
   const shippingFee = Number((accounting as any).deliveryFee ?? (accounting as any).shippingFee ?? 0);

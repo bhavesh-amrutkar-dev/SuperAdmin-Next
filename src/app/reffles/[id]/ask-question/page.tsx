@@ -35,9 +35,7 @@ export default function AskQuestionPage() {
             try {
                 setLoading(true);
                 // Use params.id as campaignId for getRaffleDetails
-                console.log("params.id ----- 2", params.id);
                 const response = await RaffleService.getRaffleDetails(params.id as string);
-                console.log("response ----- 3", response);
                 const raw = response as any;
                 let data: LegacyRaffleDetail | undefined = raw?.data;
 
