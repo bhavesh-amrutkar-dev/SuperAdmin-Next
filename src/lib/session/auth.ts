@@ -8,6 +8,7 @@ export function persistAuthSession(session: AuthSession) {
   deleteCookie("access_token", { path: "/" });
   deleteCookie("refresh_token", { path: "/" });
   deleteCookie("access_exp", { path: "/" });
+  deleteCookie("uid", { path: "/" });
 
   // 2. Set new cookies
   setCookie("access_token", session.accessToken, {
@@ -27,4 +28,12 @@ export function persistAuthSession(session: AuthSession) {
   setCookie("access_exp", session.accessExpireAt, {
     path: "/",
   });
+
+  // Set uid cookie for compatibility with checkout and other pages
+  if (session.userId) {
+    setCookie("uid", session.userId, {
+      path: "/",
+      sameSite: "lax",
+    });
+  }
 }

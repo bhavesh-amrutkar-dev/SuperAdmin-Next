@@ -82,9 +82,8 @@ import { createProductDeepLink } from "@/src/lib/services/deeplink";
 import { toast } from "sonner";
 
 
-export default function RefflesDetailPage() {
-    const [sharing, setSharing] = useState(false)
-
+export default function RafflesDetailPage() {
+     const [sharing, setSharing] = useState(false)
     const params = useParams();
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -184,7 +183,6 @@ export default function RefflesDetailPage() {
         }
     }, []);
 
-    console.log("p.id", pid);
     useEffect(() => {
         // Validate MongoDB ObjectId format (24 hex characters)
         const isValidObjectId = (id: string | null | undefined): id is string => {
@@ -223,7 +221,6 @@ export default function RefflesDetailPage() {
         }
 
         setLoading(true);
-        console.log("lotteryId ----- 1", lotteryId);
 
         RaffleService.getRaffleDetails(lotteryId)
             .then((payload) => {
@@ -612,7 +609,7 @@ export default function RefflesDetailPage() {
                         <div className="text-center">
                             <p className="text-lg text-[#797979] mb-4">{t("raffleNotFound")}</p>
                             <button
-                                onClick={() => router.push("/reffles")}
+                                onClick={() => router.push("/raffles")}
                                 className="px-6 py-2 text-sm font-medium text-white bg-[#797979] hover:bg-[#5a5a5a] rounded-md transition-colors"
                             >
                                 {t("viewAllRaffles")}
@@ -710,7 +707,7 @@ export default function RefflesDetailPage() {
     };
 
     // Handle add to cart
-    const handleAddToCart = async (ticketId: string, quantity: number) => {
+    const handleAddToCart = async (ticketId: string, quantity: number, redirectToCart: boolean = true) => {
         if (!lotteryItem || applyingTicket || quantity <= 0) return;
 
         setApplyingTicket(true);
@@ -736,8 +733,13 @@ export default function RefflesDetailPage() {
                 storeCategoryId: STORE_CATEGORY_ID,
             });
 
-            // Redirect to cart page
-            router.push("/cart");
+            // Dispatch event to update header cart count
+            window.dispatchEvent(new Event('cartUpdated'));
+
+            // Only redirect if redirectToCart is true
+            if (redirectToCart) {
+                router.push("/cart");
+            }
         } catch (err) {
             const errorMessage =
                 err instanceof Error
@@ -759,21 +761,38 @@ export default function RefflesDetailPage() {
         if (pendingCartData) {
             // Wait a bit for the token to be set in cookies
             setTimeout(async () => {
-                await handleAddToCart(pendingCartData.ticketId, pendingCartData.quantity);
+                // Add to cart without redirect, then show quantity selector
+                await handleAddToCart(pendingCartData.ticketId, pendingCartData.quantity, false);
+                setSelectedQuantity(pendingCartData.quantity);
+                setShowQuantitySelector(true);
                 setPendingCartData(null);
             }, 500);
         }
     };
 
-    // Handle continue button click - check auth first
+    // Handle participate button click - add to cart without redirect, show quantity selector
+    const handleParticipateClick = async (ticketId: string, quantity: number) => {
+        if (!isAuthenticated()) {
+            // Store cart data and show login modal
+            setPendingCartData({ ticketId, quantity });
+            setShowLoginModal(true);
+        } else {
+            // User is authenticated, add to cart without redirect
+            await handleAddToCart(ticketId, quantity, false);
+            setSelectedQuantity(quantity);
+            setShowQuantitySelector(true);
+        }
+    };
+
+    // Handle continue button click - check auth first, then redirect to cart
     const handleContinueClick = (ticketId: string, quantity: number) => {
         if (!isAuthenticated()) {
             // Store cart data and show login modal
             setPendingCartData({ ticketId, quantity });
             setShowLoginModal(true);
         } else {
-            // User is authenticated, add to cart directly
-            handleAddToCart(ticketId, quantity);
+            // User is authenticated, add to cart and redirect
+            handleAddToCart(ticketId, quantity, true);
         }
     };
 
@@ -1117,6 +1136,43 @@ export default function RefflesDetailPage() {
                             </div>
                         </div>
 
+                        {/* Ticket Offer Section - Mobile View */}
+                        {selectedTicket && (() => {
+                            const ticketsSource: any[] =
+                                lotteryItem.tickets ||
+                                (lotteryItem as any).ticketPackages ||
+                                (lotteryItem as any).ticketOptions ||
+                                (lotteryItem as any).entryOptions ||
+                                [];
+
+                            let selectedTicketData: any = null;
+                            ticketsSource.forEach((ticket: any) => {
+                                const ticketId = ticket.ticketId || ticket.id || ticket._id || "";
+                                if (selectedTicket === ticketId) {
+                                    selectedTicketData = ticket;
+                                }
+                            });
+
+                            if (selectedTicketData) {
+                                const ticketPrice = selectedTicketData.price || selectedTicketData.ticketPrice || 0;
+                                const numberOfTickets = selectedTicketData.numberOfTicket || selectedTicketData.numberOfTickets || selectedTicketData.quantity || 0;
+
+                                return (
+                                    <div className="bg-gray-100 rounded-lg p-3 md:hidden">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-base font-semibold text-[#797979]">
+                                                {displayCurrency} {ticketPrice?.toFixed(2) || "0.00"}
+                                            </span>
+                                            <span className="text-sm text-[#797979]">
+                                                ({numberOfTickets} {t("tickets") || "Tickets"})
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            }
+                            return null;
+                        })()}
+
                         {/* Timeline */}
                         {timelineData.length > 0 && (
                             <div className="bg-white rounded-lg shadow-lg p-4">
@@ -1163,12 +1219,6 @@ export default function RefflesDetailPage() {
                                         [];
 
                                     // eslint-disable-next-line no-console
-                                    console.log("Tickets check:", {
-                                        tickets: lotteryItem.tickets,
-                                        ticketPackages: (lotteryItem as any).ticketPackages,
-                                        ticketOptions: (lotteryItem as any).ticketOptions,
-                                        allKeys: Object.keys(lotteryItem || {})
-                                    });
 
                                     if (tickets && Array.isArray(tickets) && tickets.length > 0) {
                                         return (
@@ -1219,22 +1269,59 @@ export default function RefflesDetailPage() {
                                         {t("useWithRestrictions") || "Use with Restrictions"}
                                     </button>
                                 </div>
-                                <div className="flex items-center justify-between gap-4 mb-4">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-[#D4AF37] rounded-full flex items-center justify-center">
-                                            <span className="text-white font-bold text-xl">⭐</span>
+                                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+                                    <div className="flex items-center gap-3 md:gap-4">
+                                        <div className="w-12 h-12 md:w-14 md:h-14 bg-[#D4AF37] rounded-full flex items-center justify-center flex-shrink-0">
+                                            <span className="text-white font-bold text-xl md:text-2xl">⭐</span>
                                         </div>
-                                        <div className="flex-1">
-                                            <p className="text-2xl font-bold text-[#D4AF37] uppercase">
-                                                {userTickets} {t("tickets") || "TICKETS"}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xl md:text-2xl font-bold text-[#D4AF37] uppercase break-words">
+                                                {userTickets?.toLocaleString() || "0"} {t("tickets") || "TICKETS"}
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <label htmlFor="ticketQuantity" className="mr-2 text-white">
+                                    <div className="flex md:hidden items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                if (ticketQuantity > 0) {
+                                                    setTicketQuantity(ticketQuantity - 1);
+                                                }
+                                            }}
+                                            disabled={ticketQuantity <= 0}
+                                            className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-700 hover:bg-gray-600 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                                        >
+                                            <Minus size={20} />
+                                        </button>
+                                        <input
+                                            id="ticketQuantityMobile"
+                                            type="number"
+                                            min="0"
+                                            max={userTickets}
+                                            value={ticketQuantity}
+                                            onChange={(e) => {
+                                                const val = Math.max(0, Math.min(userTickets, parseInt(e.target.value) || 0));
+                                                setTicketQuantity(val);
+                                            }}
+                                            className="w-16 h-10 bg-gray-700 text-white font-bold rounded text-center focus:outline-none focus:ring-2 focus:ring-[#D4AF37] transition-colors"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                if (ticketQuantity < userTickets) {
+                                                    setTicketQuantity(ticketQuantity + 1);
+                                                }
+                                            }}
+                                            disabled={ticketQuantity >= userTickets}
+                                            className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-700 hover:bg-gray-600 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                                        >
+                                            <Plus size={20} />
+                                        </button>
+                                    </div>
+                                    <div className="hidden md:flex items-center gap-3">
+                                        <label htmlFor="ticketQuantity" className="text-white text-sm">
                                             Tickets
                                         </label>
-
                                         <input
                                             id="ticketQuantity"
                                             type="number"
@@ -1249,8 +1336,8 @@ export default function RefflesDetailPage() {
                                         />
                                     </div>
                                 </div>
-                                {/* How to earn text and Apply button in one row */}
-                                <div className="mt-4 mb-1 flex items-center justify-between gap-4">
+                                {/* How to earn text and Apply button */}
+                                <div className="mt-4 mb-1 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                                     <div className="flex-1">
                                         <button className="text-sm text-white hover:text-[#D4AF37] font-semibold transition-colors">
                                             {t("howToEarn") || "How to Earn?"}
@@ -1278,7 +1365,6 @@ export default function RefflesDetailPage() {
 
                                                     // Show success message
                                                     // eslint-disable-next-line no-console
-                                                    console.log("Order placed successfully with tickets");
 
                                                     // Reset quantity after successful apply
                                                     setTicketQuantity(0);
@@ -1314,74 +1400,69 @@ export default function RefflesDetailPage() {
                         {/* Participate/Continue Button */}
                         {showQuantitySelector ? (
                             // Show quantity selector + CONTINUE button together in one row
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 md:gap-4">
                                 {/* Quantity Selector */}
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2">
                                     <button
                                         type="button"
-                                        onClick={() => {
+                                        onClick={async () => {
                                             const currentQty = Number(selectedQuantity) || 1;
-                                            if (currentQty > 1) {
-                                                setSelectedQuantity(currentQty - 1);
+                                            if (currentQty > 1 && !applyingTicket && selectedTicket) {
+                                                const newQty = currentQty - 1;
+                                                setSelectedQuantity(newQty);
+                                                // Update cart with new quantity
+                                                await handleAddToCart(selectedTicket, newQty, false);
                                             }
                                         }}
-                                        disabled={Number(selectedQuantity) <= 1}
-                                        className="w-12 h-12 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-[#D4AF37] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-100 disabled:hover:text-[#797979] transition-all duration-200"
+                                        disabled={Number(selectedQuantity) <= 1 || applyingTicket}
+                                        className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-gray-100 hover:bg-[#D4AF37] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-100 disabled:hover:text-[#797979] transition-all duration-200"
                                     >
-                                        <Minus size={22} className="text-[#797979]" />
+                                        <Minus size={20} className="text-[#797979]" />
                                     </button>
 
                                     <input
                                         type="number"
                                         min="1"
                                         value={selectedQuantity}
+                                        onBlur={async (e) => {
+                                            const val = Math.max(1, parseInt(e.target.value) || 1);
+                                            if (val !== selectedQuantity && !applyingTicket && selectedTicket) {
+                                                setSelectedQuantity(val);
+                                                // Update cart with new quantity when user finishes editing
+                                                await handleAddToCart(selectedTicket, val, false);
+                                            }
+                                        }}
                                         onChange={(e) => {
                                             const val = Math.max(1, parseInt(e.target.value) || 1);
                                             setSelectedQuantity(val);
                                         }}
-                                        className="w-20 h-12 text-center text-xl font-bold text-[#797979] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:ring-opacity-50 ticket-quantity bg-gray-50"
+                                        className="w-16 md:w-20 h-10 md:h-12 text-center text-lg md:text-xl font-bold text-[#797979] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:ring-opacity-50 ticket-quantity bg-gray-50"
                                     />
 
                                     <button
                                         type="button"
-                                        onClick={() => {
+                                        onClick={async () => {
                                             const currentQty = Number(selectedQuantity) || 1;
-                                            setSelectedQuantity(currentQty + 1);
+                                            const newQty = currentQty + 1;
+                                            setSelectedQuantity(newQty);
+                                            // Update cart with new quantity
+                                            if (!applyingTicket && selectedTicket) {
+                                                await handleAddToCart(selectedTicket, newQty, false);
+                                            }
                                         }}
-                                        className="w-12 h-12 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-[#D4AF37] hover:text-white transition-all duration-200"
+                                        disabled={applyingTicket}
+                                        className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-gray-100 hover:bg-[#D4AF37] hover:text-white transition-all duration-200"
                                     >
-                                        <Plus size={22} className="text-[#797979]" />
+                                        <Plus size={20} className="text-[#797979]" />
                                     </button>
                                 </div>
 
                                 {/* Continue Button */}
                                 <button
-                                    className="flex-1 bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-4 px-6 rounded-lg transition-colors shadow-lg"
+                                    className="flex-1 bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg uppercase text-sm md:text-base"
                                     onClick={() => {
-                                        if (!lotteryItem || !selectedTicket) return;
-
-                                        const ticketsSource: any[] =
-                                            lotteryItem.tickets ||
-                                            (lotteryItem as any).ticketPackages ||
-                                            (lotteryItem as any).ticketOptions ||
-                                            (lotteryItem as any).entryOptions ||
-                                            [];
-
-                                        let selectedTicketData: any = null;
-                                        ticketsSource.forEach((ticket: any, index: number) => {
-                                            const ticketId = ticket.ticketId || ticket.id || ticket._id || index.toString();
-                                            if (selectedTicket === ticketId) {
-                                                selectedTicketData = {
-                                                    id: ticketId,
-                                                    price: ticket.price || ticket.ticketPrice || 0,
-                                                };
-                                            }
-                                        });
-
-                                        if (selectedTicketData && selectedTicketData.price > 0) {
-                                            // Use handleContinueClick which checks auth and adds to cart
-                                            handleContinueClick(selectedTicketData.id, selectedQuantity);
-                                        }
+                                        // Just redirect to cart page (cart is already updated via quantity selector)
+                                        router.push("/cart");
                                     }}
                                     disabled={applyingTicket}
                                 >
@@ -1393,7 +1474,7 @@ export default function RefflesDetailPage() {
                             <button
                                 className="w-full bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-4 rounded-lg transition-colors shadow-lg"
                                 onClick={() => {
-                                    if (!lotteryItem) return;
+                                    if (!lotteryItem || !selectedTicket) return;
 
                                     const ticketsSource: any[] =
                                         lotteryItem.tickets ||
@@ -1420,19 +1501,19 @@ export default function RefflesDetailPage() {
                                     // Free ticket flow - navigate to confirmation page
                                     if (selectedTicketData && selectedTicketData.price === 0) {
                                         router.push(
-                                            `/reffles/${pid}/free-ticket-confirmation?ticketId=${selectedTicketData.id}&quantity=${selectedTicketData.quantity}`
+                                            `/raffles/${pid}/free-ticket-confirmation?ticketId=${selectedTicketData.id}&quantity=${selectedTicketData.quantity}`
                                         );
                                         return;
                                     }
 
-                                    // Paid ticket flow - show quantity selector (PARTICIPATE action)
+                                    // Paid ticket flow - add 1 quantity to cart without redirect, show quantity selector
                                     if (selectedTicketData && selectedTicketData.price > 0) {
-                                        setSelectedQuantity(1); // Reset to default quantity
-                                        setShowQuantitySelector(true);
+                                        // Use handleParticipateClick which checks auth, adds to cart, and shows quantity selector
+                                        handleParticipateClick(selectedTicketData.id, 1);
                                         return;
                                     }
                                 }}
-                                disabled={applyingTicket}
+                                disabled={applyingTicket || !selectedTicket}
                             >
                                 {t("participate") || "PARTICIPATE"}
                             </button>
@@ -1536,7 +1617,7 @@ export default function RefflesDetailPage() {
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm text-[#797979]">-</span>
                                     <button
-                                        onClick={() => router.push(`/reffles/${pid}/terms`)}
+                                        onClick={() => router.push(`/raffles/${pid}/terms`)}
                                         className="text-xs md:text-sm font-bold text-[#D4AF37] hover:text-[#B8860B] transition-colors uppercase"
                                     >
                                         {t("allDetails")}

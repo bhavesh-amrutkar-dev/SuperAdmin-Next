@@ -66,7 +66,7 @@ export default function RaffleSectionLayout({ section }: { section: RaffleSectio
                             const campaignId = (item as any).campaignId || item.id;
                             const childProductId = (item as any).childProductId || "";
 
-                            const href = `/reffles/${slug}?pid=${campaignId}${childProductId ? `&cpid=${childProductId}` : ""
+                            const href = `/raffles/${slug}?pid=${campaignId}${childProductId ? `&cpid=${childProductId}` : ""
                                 }`;
 
                             return (

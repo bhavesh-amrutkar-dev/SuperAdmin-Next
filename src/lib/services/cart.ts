@@ -72,8 +72,8 @@ export const CartService = {
         // Handle lat/long - check for null/undefined strings
         const latCookie = getCookie("lat") as string | undefined;
         const longCookie = getCookie("long") as string | undefined;
-        const lat = (latCookie && latCookie !== 'null' && latCookie !== 'undefined') ? latCookie : "0";
-        const long = (longCookie && longCookie !== 'null' && longCookie !== 'undefined') ? longCookie : "0";
+        const lat = (latCookie && latCookie !== "null" && latCookie !== "undefined") ? latCookie : "0";
+        const long = (longCookie && longCookie !== "null" && longCookie !== "undefined") ? longCookie : "0";
 
         return apiClient.get(
             `/cart?storeCategoryId=${DEFAULT_STORE_CATEGORY_ID}&deliveryAddressLatitude=${lat}&deliveryAddressLongitude=${long}&deliveryAddressId=${addressId}&deliveryFeeCalculate=1`

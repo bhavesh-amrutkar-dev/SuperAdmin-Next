@@ -163,6 +163,9 @@
     "quantity": "Qty",
     "storeTotal": "Store Total",
     "viewDetails": "View Details",
+    "productId": "Product Id",
+    "store": "Store",
+    "products": "Products",
     "noOrdersFound": "No orders found",
     "startShopping": "Start Shopping",
     "loading": "Loading...",
@@ -354,5 +357,7 @@
     "totalAmount": "TOTAL AMOUNT",
     "secureCheckout": "SECURE CHECKOUT",
     "cartEmpty": "Your cart is empty",
-    "backToCart": "Back to Cart"
+    "backToCart": "Back to Cart",
+    "payWithPlaceToPay": "PAY WITH PLACE TO PAY",
+    "placingOrder": "Placing Order..."
 }

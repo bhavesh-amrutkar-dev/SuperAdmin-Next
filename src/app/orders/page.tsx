@@ -8,7 +8,7 @@ import { Package, Search, Filter, Calendar, CheckCircle2, XCircle, Clock, Truck,
 import Header from "@/src/components/layout/Header";
 import Footer from "@/src/components/layout/Footer";
 import PreFooterIconModule from "@/src/components/layout/PreFooterIconModule";
-import { OrderService, type Order, type StoreOrder } from "@/src/lib/services/order";
+import { OrderService, type Order, type StoreOrder, type OrderProduct } from "@/src/lib/services/order";
 import { PRODUCT_CART } from "@/src/lib/config";
 
 // Order status codes
@@ -22,7 +22,17 @@ const ORDER_STATUS = {
     COMPLETED: 7,
 };
 
-const getStatusLabel = (status: number): string => {
+const getStatusLabel = (status: number, statusName?: string): string => {
+    // Use statusName from API if available
+    if (statusName && statusName.trim() !== "") {
+        return statusName;
+    }
+
+    // Handle status 0 or undefined
+    if (!status || status === 0) {
+        return "Pending";
+    }
+
     switch (status) {
         case ORDER_STATUS.NEW:
             return "New";
@@ -39,11 +49,16 @@ const getStatusLabel = (status: number): string => {
         case ORDER_STATUS.COMPLETED:
             return "Completed";
         default:
-            return "Unknown";
+            return `Status ${status}`;
     }
 };
 
 const getStatusColor = (status: number): string => {
+    // Handle status 0 or undefined
+    if (!status || status === 0) {
+        return "bg-orange-100 text-orange-800";
+    }
+
     switch (status) {
         case ORDER_STATUS.COMPLETED:
             return "bg-green-100 text-green-800";
@@ -57,6 +72,8 @@ const getStatusColor = (status: number): string => {
             return "bg-purple-100 text-purple-800";
         case ORDER_STATUS.ACCEPTED:
             return "bg-blue-100 text-blue-800";
+        case ORDER_STATUS.NEW:
+            return "bg-gray-100 text-gray-800";
         default:
             return "bg-gray-100 text-gray-800";
     }
@@ -115,7 +132,7 @@ export default function OrdersPage() {
     const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState<number>(0); // 0 = all
-    const [timeFilter, setTimeFilter] = useState<number>(0); // 0 = all
+    const [timeFilter, setTimeFilter] = useState<number>(3); // 3 = last 3 months (default)
 
     const fetchOrders = useCallback(() => {
         setLoading(true);
@@ -196,6 +213,120 @@ export default function OrdersPage() {
         return isNaN(parsed) ? 0 : parsed;
     };
 
+    // Helper to extract order total from various possible locations
+    const getOrderTotal = (order: Order): number => {
+        // Check root level fields first
+        if (order.finalTotal !== undefined && order.finalTotal !== null) {
+            return getNumericValue(order.finalTotal);
+        }
+        if (order.finalTotalMulti !== undefined && order.finalTotalMulti !== null) {
+            return getNumericValue(order.finalTotalMulti);
+        }
+        if (order.finalUnitPrice !== undefined && order.finalUnitPrice !== null) {
+            return getNumericValue(order.finalUnitPrice);
+        }
+        if (order.totalPrice !== undefined && order.totalPrice !== null) {
+            return getNumericValue(order.totalPrice);
+        }
+
+        // Check accounting object
+        if (order.accounting) {
+            if (order.accounting.finalTotal !== undefined && order.accounting.finalTotal !== null) {
+                return getNumericValue(order.accounting.finalTotal);
+            }
+            if (order.accounting.finalTotalMulti !== undefined && order.accounting.finalTotalMulti !== null) {
+                return getNumericValue(order.accounting.finalTotalMulti);
+            }
+            if (order.accounting.finalUnitPrice !== undefined && order.accounting.finalUnitPrice !== null) {
+                return getNumericValue(order.accounting.finalUnitPrice);
+            }
+            // Calculate from payBy if available
+            if (order.accounting.payBy) {
+                const payByTotal =
+                    getNumericValue(order.accounting.payBy.card) +
+                    getNumericValue(order.accounting.payBy.cash) +
+                    getNumericValue(order.accounting.payBy.wallet) +
+                    getNumericValue(order.accounting.payBy.rewardWallet);
+                if (payByTotal > 0) {
+                    return payByTotal;
+                }
+            }
+        }
+
+        // Calculate from store orders
+        if (order.storeOrders && order.storeOrders.length > 0) {
+            const storeTotal = order.storeOrders.reduce((sum, so) => {
+                if (so.accounting) {
+                    return sum + getNumericValue(
+                        so.accounting.finalTotal ||
+                        so.accounting.finalTotalMulti ||
+                        so.accounting.finalUnitPrice ||
+                        so.accounting.finalPrice ||
+                        (so.accounting.payBy && (
+                            getNumericValue(so.accounting.payBy.card) +
+                            getNumericValue(so.accounting.payBy.cash) +
+                            getNumericValue(so.accounting.payBy.wallet) +
+                            getNumericValue(so.accounting.payBy.rewardWallet)
+                        ))
+                    );
+                }
+                return sum;
+            }, 0);
+            if (storeTotal > 0) {
+                return storeTotal;
+            }
+        }
+
+        return 0;
+    };
+
+    // Helper to extract store order total
+    const getStoreOrderTotal = (storeOrder: StoreOrder): number => {
+        if (storeOrder.accounting) {
+            if (storeOrder.accounting.finalTotal !== undefined && storeOrder.accounting.finalTotal !== null) {
+                return getNumericValue(storeOrder.accounting.finalTotal);
+            }
+            if (storeOrder.accounting.finalTotalMulti !== undefined && storeOrder.accounting.finalTotalMulti !== null) {
+                return getNumericValue(storeOrder.accounting.finalTotalMulti);
+            }
+            if (storeOrder.accounting.finalUnitPrice !== undefined && storeOrder.accounting.finalUnitPrice !== null) {
+                return getNumericValue(storeOrder.accounting.finalUnitPrice);
+            }
+            if (storeOrder.accounting.finalPrice !== undefined && storeOrder.accounting.finalPrice !== null) {
+                return getNumericValue(storeOrder.accounting.finalPrice);
+            }
+            // Calculate from payBy if available
+            if (storeOrder.accounting.payBy) {
+                const payByTotal =
+                    getNumericValue(storeOrder.accounting.payBy.card) +
+                    getNumericValue(storeOrder.accounting.payBy.cash) +
+                    getNumericValue(storeOrder.accounting.payBy.wallet) +
+                    getNumericValue(storeOrder.accounting.payBy.rewardWallet);
+                if (payByTotal > 0) {
+                    return payByTotal;
+                }
+            }
+        }
+        return 0;
+    };
+
+    // Helper to extract product total
+    const getProductTotal = (product: OrderProduct, storeOrder?: StoreOrder): number => {
+        if (product.totalPrice !== undefined && product.totalPrice !== null) {
+            return getNumericValue(product.totalPrice);
+        }
+        if (product.price !== undefined && product.price !== null) {
+            const qty = getNumericValue(product.quantity) || 1;
+            return getNumericValue(product.price) * qty;
+        }
+        // Try to get from store order accounting
+        if (storeOrder?.accounting?.finalUnitPrice) {
+            const qty = getNumericValue(product.quantity) || 1;
+            return getNumericValue(storeOrder.accounting.finalUnitPrice) * qty;
+        }
+        return 0;
+    };
+
     const getStringValue = (value: any): string => {
         if (value === undefined || value === null) return "";
         if (typeof value === "string") return value;
@@ -207,6 +338,14 @@ export default function OrdersPage() {
 
     const formatCurrency = (amount?: number | { value?: number; unit?: number }, currencySymbol?: string | { value?: string; unit?: string }) => {
         const numericAmount = getNumericValue(amount);
+        // If amount is 0 or invalid, return formatted 0
+        if (numericAmount === 0 || isNaN(numericAmount)) {
+            let symbol = "$";
+            if (currencySymbol) {
+                symbol = getStringValue(currencySymbol) || "$";
+            }
+            return `${symbol}0.00`;
+        }
         let symbol = "$";
         if (currencySymbol) {
             symbol = getStringValue(currencySymbol) || "$";
@@ -323,7 +462,7 @@ export default function OrdersPage() {
                             <ShoppingBag className="w-24 h-24 text-gray-300 mb-4" />
                             <p className="text-lg text-[#797979]">{t("noOrdersFound") || "No orders found"}</p>
                             <Link
-                                href="/reffles"
+                                href="/raffles"
                                 className="mt-4 px-6 py-2 bg-[#f3c200] text-[#2f2f2f] rounded-lg font-semibold hover:bg-[#e6b800] transition-colors"
                             >
                                 {t("startShopping") || "Start Shopping"}
@@ -351,19 +490,33 @@ export default function OrdersPage() {
                                                             )}`}
                                                         >
                                                             {getStatusIcon(order.status.status)}
-                                                            {getStatusLabel(order.status.status)}
+                                                            {getStatusLabel(order.status.status, order.status.statusName)}
                                                         </span>
                                                     )}
                                                 </div>
-                                                {order.createdAt && (
+                                                {(order.createdAt || order.createdTimeStamp) && (
                                                     <p className="text-sm text-[#797979]">
-                                                        {t("orderedOn") || "Ordered on"}: {formatDate(order.createdAt)}
+                                                        {t("orderedOn") || "Ordered on"}: {formatDate(order.createdAt || order.createdTimeStamp)}
+                                                    </p>
+                                                )}
+                                                {order.storeOrders && order.storeOrders.length > 0 && (
+                                                    <p className="text-sm text-[#797979] mt-1">
+                                                        {order.storeOrders.reduce((total, so) => total + (so.products?.length || 0), 0)} {t("products") || "Products"}
                                                     </p>
                                                 )}
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-2xl font-bold text-[#2f2f2f]">
-                                                    {formatCurrency(order.totalPrice, order.currencySymbol)}
+                                                    {formatCurrency(
+                                                        getOrderTotal(order),
+                                                        order.currencySymbol ||
+                                                        order.accounting?.currencySymbol ||
+                                                        order.storeOrders?.[0]?.accounting?.currencySymbol ||
+                                                        order.currencyCode ||
+                                                        order.accounting?.currencyCode ||
+                                                        order.storeOrders?.[0]?.accounting?.currencyCode ||
+                                                        "$"
+                                                    )}
                                                 </p>
                                                 {order.status?.status !== ORDER_STATUS.CANCELLED && (
                                                     <button
@@ -390,7 +543,7 @@ export default function OrdersPage() {
                                                         {storeOrder.storeLogo?.logoImageweb && (
                                                             <Image
                                                                 src={storeOrder.storeLogo.logoImageweb}
-                                                                alt={storeOrder.storeName || "Store"}
+                                                                alt={storeOrder.storeName || storeOrder.storeOrderId || t("store") || "Store"}
                                                                 width={40}
                                                                 height={40}
                                                                 className="rounded-full object-cover"
@@ -399,7 +552,7 @@ export default function OrdersPage() {
                                                         )}
                                                         <div>
                                                             <h4 className="font-semibold text-[#2f2f2f]">
-                                                                {storeOrder.storeName}
+                                                                {storeOrder.storeName || storeOrder.storeOrderId || t("store") || "Store"}
                                                             </h4>
                                                             {storeOrder.storeOrderId && (
                                                                 <p className="text-sm text-[#797979]">
@@ -432,20 +585,30 @@ export default function OrdersPage() {
                                                                     {/* Product Details */}
                                                                     <div className="flex-grow">
                                                                         <h5 className="font-semibold text-[#2f2f2f] mb-1">
-                                                                            {product.name || t("product") || "Product"}
+                                                                            {product.name || product.productId || t("product") || "Product"}
                                                                         </h5>
+                                                                        {product.productId && (
+                                                                            <p className="text-xs text-[#797979] mb-1">
+                                                                                {t("productId") || "Product Id"}: {product.productId}
+                                                                            </p>
+                                                                        )}
                                                                         {product.campaignId && (
-                                                                            <span className="inline-block px-2 py-1 bg-[#f3c200] text-[#2f2f2f] text-xs font-semibold rounded mb-2">
-                                                                                {t("entries") || "Entries"}
+                                                                            <span className="inline-block px-2 py-1 bg-purple-600 text-white text-xs font-semibold rounded mb-2">
+                                                                                {t("entries") || "ENTRIES"}
                                                                             </span>
                                                                         )}
-                                                                        <div className="flex items-center gap-4 text-sm text-[#797979]">
+                                                                        <div className="flex flex-wrap items-center gap-4 text-sm text-[#797979] mt-2">
                                                                             <span>
                                                                                 {t("quantity") || "Qty"}: {getNumericValue(product.quantity) || 1}
                                                                             </span>
-                                                                            <span>
-                                                                                {t("price") || "Price"}: {formatCurrency(product.price, order.currencySymbol)}
-                                                                            </span>
+                                                                            {product.totalPrice !== undefined || product.price !== undefined ? (
+                                                                                <span>
+                                                                                    {t("price") || "Price"}: {formatCurrency(
+                                                                                        product.totalPrice || product.price,
+                                                                                        order.currencySymbol || storeOrder.accounting?.currencySymbol
+                                                                                    )}
+                                                                                </span>
+                                                                            ) : null}
                                                                         </div>
                                                                         {product.status && (
                                                                             <div className="mt-2">
@@ -454,7 +617,7 @@ export default function OrdersPage() {
                                                                                         product.status.status
                                                                                     )}`}
                                                                                 >
-                                                                                    {getStatusLabel(product.status.status)}
+                                                                                    {getStatusLabel(product.status.status, product.status.statusName)}
                                                                                 </span>
                                                                             </div>
                                                                         )}
@@ -463,7 +626,13 @@ export default function OrdersPage() {
                                                                     {/* Product Total */}
                                                                     <div className="text-right">
                                                                         <p className="font-bold text-[#2f2f2f]">
-                                                                            {formatCurrency(product.totalPrice || product.price, order.currencySymbol)}
+                                                                            {formatCurrency(
+                                                                                getProductTotal(product, storeOrder),
+                                                                                storeOrder.accounting?.currencySymbol ||
+                                                                                order.currencySymbol ||
+                                                                                order.accounting?.currencySymbol ||
+                                                                                "$"
+                                                                            )}
                                                                         </p>
                                                                     </div>
                                                                 </div>
@@ -480,8 +649,11 @@ export default function OrdersPage() {
                                                                 </p>
                                                                 <p className="text-xl font-bold text-[#2f2f2f]">
                                                                     {formatCurrency(
-                                                                        storeOrder.accounting.finalPrice,
-                                                                        storeOrder.accounting.currencySymbol
+                                                                        getStoreOrderTotal(storeOrder),
+                                                                        storeOrder.accounting.currencySymbol ||
+                                                                        order.currencySymbol ||
+                                                                        order.accounting?.currencySymbol ||
+                                                                        "$"
                                                                     )}
                                                                 </p>
                                                             </div>

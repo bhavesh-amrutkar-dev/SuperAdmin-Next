@@ -124,7 +124,6 @@ export default function CartPage() {
 
       // Debug: Log the cart data structure
       // eslint-disable-next-line no-console
-      console.log("Cart data:", JSON.stringify(data, null, 2));
       setCartData(data);
     } catch (error: any) {
       // Check if error response contains "Data not found" message
@@ -176,6 +175,10 @@ export default function CartPage() {
 
       await CartService.addToCart(payload);
       await fetchCart(); // Refresh cart after update
+
+      // Dispatch event to update header cart count
+      window.dispatchEvent(new Event('cartUpdated'));
+
       toast.success(t("cartUpdated") || "Cart updated successfully");
     } catch (error: any) {
       console.error("Error updating cart:", error);
@@ -218,6 +221,10 @@ export default function CartPage() {
 
       await CartService.addToCart(payload);
       await fetchCart(); // Refresh cart after deletion
+
+      // Dispatch event to update header cart count
+      window.dispatchEvent(new Event('cartUpdated'));
+
       toast.success(t("itemRemoved") || "Item removed from cart");
     } catch (error: any) {
       console.error("Error removing item from cart:", error);
@@ -361,7 +368,7 @@ export default function CartPage() {
             <h2 className="text-2xl font-bold text-gray-800 mb-4">{t("cartEmpty")}</h2>
             <p className="text-gray-600 mb-6">{t("cartEmptyMessage")}</p>
             <button
-              onClick={() => router.push("/reffles")}
+              onClick={() => router.push("/raffles")}
               className="bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-3 px-8 rounded-lg transition-colors"
             >
               {t("browseRaffles")}
@@ -399,7 +406,7 @@ export default function CartPage() {
                       0;
 
                     const price = Number(rawPrice) || 0;
-                    const totalPrice = price * quantity;
+                    // const totalPrice = price * quantity;
 
                     return (
                       <div key={itemId} className="border-b border-gray-200 pb-6 last:border-b-0">
@@ -492,7 +499,7 @@ export default function CartPage() {
                               {t("remove")}
                             </button>
                             <p className="text-lg font-bold text-gray-800">
-                              {currency} {formatCurrency(totalPrice)}
+                              {currency} {formatCurrency(price)}
                             </p>
                           </div>
                         </div>

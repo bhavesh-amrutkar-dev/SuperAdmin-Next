@@ -4,12 +4,16 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { getCookie } from "cookies-next";
+import { getCookie, setCookie } from "cookies-next";
 
 import Header from "@/src/components/layout/Header";
 import Footer from "@/src/components/layout/Footer";
 import { CartService } from "@/src/lib/services/cart";
 import { UserAddressService } from "@/src/lib/services/userAddress";
+import { PaymentService } from "@/src/lib/services/payment";
+import { OrderService } from "@/src/lib/services/order";
+import { AuthService } from "@/src/lib/services/auth";
+import PlaceToPayLightbox from "@/src/components/checkout/PlaceToPayLightbox";
 
 type TaxItem = {
   taxName?: string;
@@ -123,9 +127,11 @@ export default function SecureCheckoutPage() {
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<UserAddress | null>(null);
   const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
-  const [walletBalance, setWalletBalance] = useState<number>(0);
-  const [paymentMethod, setPaymentMethod] = useState<string>("athMovil");
+  const [paymentMethod, setPaymentMethod] = useState<string>("creditCard");
   const [loading, setLoading] = useState(true);
+  const [placingOrder, setPlacingOrder] = useState(false);
+  const [placeToPayUrl, setPlaceToPayUrl] = useState<string | null>(null);
+  const [useWalletBalance, setUseWalletBalance] = useState(false);
 
   const currency = cartData?.currencySymbol || "$";
   const accounting = cartData?.accounting || {};
@@ -179,6 +185,7 @@ export default function SecureCheckoutPage() {
       const response = await CartService.getCart();
       const data = (response as any)?.data?.data || (response as any)?.data || response;
 
+      // Handle "Data not found" as a valid empty cart response
       if (data && typeof data === "object" && data.message === "Data not found") {
         setCartData({
           sellers: [],
@@ -195,6 +202,28 @@ export default function SecureCheckoutPage() {
 
       setCartData(data as CartData);
     } catch (error: any) {
+      // Check if error is "Data not found" - this is a valid empty cart state
+      const errorMessage = error?.message || error?.response?.data?.message || "";
+      const isDataNotFound = errorMessage === "Data not found" ||
+        error?.response?.data?.message === "Data not found" ||
+        (error?.response?.data && typeof error.response.data === "object" && error.response.data.message === "Data not found");
+
+      if (isDataNotFound) {
+        // Silently handle empty cart - this is expected when cart is empty
+        setCartData({
+          sellers: [],
+          accounting: {
+            bagTotal: 0,
+            subTotal: 0,
+            tax: 0,
+            deliveryFee: 0,
+            finalTotal: 0,
+          },
+        });
+        return;
+      }
+
+      // Only log actual errors, not empty cart cases
       console.error("Error fetching cart:", error);
       setCartData({
         sellers: [],
@@ -228,30 +257,190 @@ export default function SecureCheckoutPage() {
     router.push("/shipping-address");
   };
 
-  const handleContinue = () => {
-    if (!selectedAddress) {
+  const getMyIP = async (): Promise<string> => {
+    try {
+      const response = await fetch("https://api.ipify.org?format=json");
+      const data = await response.json();
+      return data.ip || "0.0.0.0";
+    } catch (error) {
+      console.error("Error fetching IP:", error);
+      return "0.0.0.0";
+    }
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!selectedAddress || !cartData) {
       return;
     }
-    // TODO: Implement payment processing
-    console.log("Continue to payment", {
-      selectedAddress,
-      billingSameAsShipping,
-      paymentMethod,
-    });
+
+    // Check if user is authenticated
+    const token = getCookie("access_token");
+    let uid = getCookie("uid") as string | undefined;
+
+    // If access_token exists but uid doesn't, try to get user ID from API
+    if (token && !uid) {
+      try {
+        const userResponse = await AuthService.getCurrentUser();
+        const userData = (userResponse as any)?.data?.data || (userResponse as any)?.data;
+        if (userData?._id || userData?.id || userData?.userId) {
+          uid = userData._id || userData.id || userData.userId;
+          // Set uid cookie for future use
+          if (uid) {
+            setCookie("uid", uid, { path: "/", sameSite: "lax" });
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user ID:", error);
+        // Continue with fallback - API might handle userId internally
+      }
+    }
+
+    if (!token) {
+      router.push("/auth/login");
+      return;
+    }
+
+    setPlacingOrder(true);
+
+    try {
+      // Get cart ID from cartData
+      const cartId = (cartData as any)?._id || (cartData as any)?.cartId;
+      if (!cartId) {
+        throw new Error("Cart ID not found");
+      }
+
+      // Get user IP address
+      const ipAddress = await getMyIP();
+
+      // Determine online payment method based on selected method
+      let onlinePaymentMethod = 18; // Default: Place to Pay (Credit Card)
+      if (paymentMethod === "athMovil") {
+        onlinePaymentMethod = 10; // ATH Móvil
+      } else if (paymentMethod === "creditCard") {
+        onlinePaymentMethod = 18; // Place to Pay (Credit Card)
+      } else if (paymentMethod === "manual") {
+        onlinePaymentMethod = 12; // Manual Payment
+      }
+
+      // Get address ID
+      const addressId = selectedAddress._id || (getCookie("addressid") as string) || (getCookie("AddressID") as string) || "";
+      const billingAddressId = billingSameAsShipping ? addressId : addressId;
+      const latitude = (getCookie("lat") as string) || "0";
+      const longitude = (getCookie("long") as string) || "0";
+
+      // Prepare order payload (matching old project structure)
+      const orderPayload = {
+        cartId: cartId,
+        addressId: addressId,
+        billingAddressId: billingAddressId,
+        coupon: "",
+        promoId: "",
+        discount: 0,
+        latitude: latitude,
+        longitude: longitude,
+        ipAddress: ipAddress,
+        storeType: 8,
+        delivery: [],
+        orderType: 2,
+        extraNote: "",
+        tip: 0,
+        orderImages: [],
+        onlinePaymentMethod: onlinePaymentMethod,
+        payByRewardWallet: false,
+        cardId: "",
+        paymentType: 1,
+        payByWallet: false, // Wallet payment not implemented yet
+        userId: (uid as string) || "1",
+      };
+
+      // Call order API
+      const response = await OrderService.placeOrder(orderPayload);
+      const orderData = (response as any)?.data?.data || (response as any)?.data || response;
+
+      // Check if order was placed successfully
+      if (orderData?.checkoutProcessUrl) {
+        // Store order ID for later use
+        if (orderData.orderId) {
+          if (typeof window !== "undefined") {
+            localStorage.setItem("orderId", orderData.orderId);
+            localStorage.setItem("cartId", cartId);
+            if (orderData.numberOfFreeTickets) {
+              localStorage.setItem("TotalFreeTicket", String(orderData.numberOfFreeTickets));
+            }
+          }
+        }
+
+        // Open Place to Pay lightbox
+        setPlaceToPayUrl(orderData.checkoutProcessUrl);
+      } else {
+        throw new Error(orderData?.message || "Failed to get checkout URL");
+      }
+    } catch (error: any) {
+      // Extract error message from various possible locations
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        error?.data?.message ||
+        (typeof error === "string" ? error : null) ||
+        "Failed to place order. Please try again.";
+
+      console.error("Error placing order:", {
+        message: errorMessage,
+        error: error,
+        status: error?.status || error?.response?.status,
+        data: error?.response?.data || error?.data,
+      });
+
+      // Show error message to user
+      alert(errorMessage);
+      setPlacingOrder(false);
+    }
+  };
+
+  const handlePlaceToPaySuccess = () => {
+    setPlaceToPayUrl(null);
+    setPlacingOrder(false);
+    router.push("/thank-you");
+  };
+
+  const handlePlaceToPayError = () => {
+    setPlaceToPayUrl(null);
+    setPlacingOrder(false);
+    // Optionally show error message
+  };
+
+  const handlePlaceToPayClose = () => {
+    setPlaceToPayUrl(null);
+    setPlacingOrder(false);
   };
 
   const shippingFee = Number((accounting as any).deliveryFee ?? (accounting as any).shippingFee ?? 0);
   const tax = accounting.tax;
   const taxItems = Array.isArray(tax) ? (tax as TaxItem[]) : null;
   const hasNamedTax = !!taxItems?.some((x) => x.taxName && x.taxName.length > 0);
-  const bagTotal = Number(accounting.bagTotal ?? accounting.subTotal ?? 0);
-  const subTotal = Number(accounting.subTotal ?? bagTotal);
+
+  // Calculate bagTotal from individual items to ensure accuracy
+  const calculatedBagTotal = useMemo(() => {
+    return cartItems.reduce((sum, item) => {
+      const qty = typeof item.quantity === "object" ? item.quantity?.value || 1 : item.quantity || 1;
+      const itemTotal = item.accounting?.subTotal
+        ? Number(item.accounting.subTotal)
+        : item.accounting?.finalUnitPrice
+          ? Number(item.accounting.finalUnitPrice) * qty
+          : Number(item.price ?? item.unitPrice ?? item.ticketPrice ?? item.accounting?.unitPrice ?? 0) * qty;
+      return sum + itemTotal;
+    }, 0);
+  }, [cartItems]);
+
+  // Use calculated total if available, otherwise fallback to API values
+  const bagTotal = calculatedBagTotal > 0 ? calculatedBagTotal : Number(accounting.bagTotal ?? accounting.subTotal ?? 0);
+  const subTotal = bagTotal;
   const taxAmount = hasNamedTax
     ? taxItems!.reduce((sum, item) => sum + Number(item.totalValue || 0), 0)
     : Number(tax || 0);
   const grandTotal = Number(accounting.finalTotal ?? accounting.grandTotal ?? bagTotal + taxAmount + shippingFee);
 
-  const billingAddress = billingSameAsShipping ? selectedAddress : selectedAddress; // For now, same as shipping
+  const billingAddress = billingSameAsShipping ? selectedAddress : selectedAddress;
 
   if (loading) {
     return (
@@ -408,13 +597,14 @@ export default function SecureCheckoutPage() {
                       value="athMovil"
                       checked={paymentMethod === "athMovil"}
                       onChange={(e) => setPaymentMethod(e.target.value)}
+                      disabled={grandTotal <= 0}
                       className="sr-only"
                     />
                     <div
                       className={`px-4 py-2 border-2 rounded-lg transition-all ${paymentMethod === "athMovil"
                         ? "border-[#D4AF37] border-dashed bg-yellow-50"
                         : "border-gray-300 hover:border-gray-400"
-                        }`}
+                        } ${(grandTotal <= 0) ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                       <span className="text-sm text-gray-800 font-medium">{t("payWithATHMovil")}</span>
                     </div>
@@ -426,13 +616,14 @@ export default function SecureCheckoutPage() {
                       value="creditCard"
                       checked={paymentMethod === "creditCard"}
                       onChange={(e) => setPaymentMethod(e.target.value)}
+                      disabled={grandTotal <= 0}
                       className="sr-only"
                     />
                     <div
                       className={`px-4 py-2 border-2 rounded-lg transition-all ${paymentMethod === "creditCard"
                         ? "border-[#D4AF37] border-dashed bg-yellow-50"
                         : "border-gray-300 hover:border-gray-400"
-                        }`}
+                        } ${(grandTotal <= 0) ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-gray-800 font-medium">{t("payWithCreditCard")}</span>
@@ -452,13 +643,14 @@ export default function SecureCheckoutPage() {
                       value="manual"
                       checked={paymentMethod === "manual"}
                       onChange={(e) => setPaymentMethod(e.target.value)}
+                      disabled={grandTotal <= 0}
                       className="sr-only"
                     />
                     <div
                       className={`px-4 py-2 border-2 rounded-lg transition-all ${paymentMethod === "manual"
                         ? "border-[#D4AF37] border-dashed bg-yellow-50"
                         : "border-gray-300 hover:border-gray-400"
-                        }`}
+                        } ${(grandTotal <= 0) ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                       <span className="text-sm text-gray-800 font-medium">{t("manualPaymentMethods")}</span>
                     </div>
@@ -478,8 +670,19 @@ export default function SecureCheckoutPage() {
               <div className="p-6 space-y-4">
                 {cartItems.map((item, idx) => {
                   const qty = typeof item.quantity === "object" ? item.quantity?.value || 1 : item.quantity || 1;
-                  const price = Number(item.price ?? item.unitPrice ?? item.ticketPrice ?? item.accounting?.unitPrice ?? 0);
-                  const totalPrice = price * qty;
+                  // Use accounting.finalUnitPrice or accounting.subTotal if available, otherwise calculate from unit price
+                  const itemTotal = item.accounting?.subTotal
+                    ? Number(item.accounting.subTotal)
+                    : item.accounting?.finalUnitPrice
+                      ? Number(item.accounting.finalUnitPrice) * qty
+                      : Number(item.price ?? item.unitPrice ?? item.ticketPrice ?? item.accounting?.unitPrice ?? 0) * qty;
+
+                  const unitPrice = item.accounting?.finalUnitPrice
+                    ? Number(item.accounting.finalUnitPrice)
+                    : item.accounting?.unitPrice
+                      ? Number(item.accounting.unitPrice)
+                      : Number(item.price ?? item.unitPrice ?? item.ticketPrice ?? 0);
+
                   const ticketCount = item.ticketCount || item.ticketDetails?.numberOfTicket || 0;
                   const sellerName = item.sellerName || item.storeName || "Unknown";
 
@@ -500,9 +703,9 @@ export default function SecureCheckoutPage() {
                         )}
                         <div className="flex justify-between items-center mt-2">
                           <span className="text-xs text-gray-600">
-                            {qty} x {currency} {formatCurrency(price)}
+                            {qty} x {currency} {formatCurrency(unitPrice)}
                           </span>
-                          <span className="text-sm font-semibold text-gray-800">{currency} {formatCurrency(totalPrice)}</span>
+                          <span className="text-sm font-semibold text-gray-800">{currency} {formatCurrency(itemTotal)}</span>
                         </div>
                       </div>
                     </div>
@@ -566,16 +769,26 @@ export default function SecureCheckoutPage() {
                 <p className="text-lg font-bold text-gray-800">{currency} {formatCurrency(grandTotal)}</p>
               </div>
               <button
-                onClick={handleContinue}
-                disabled={!selectedAddress}
+                onClick={handlePlaceOrder}
+                disabled={!selectedAddress || placingOrder}
                 className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-8 rounded-lg transition-colors"
               >
-                {t("continue")}
+                {placingOrder ? t("placingOrder") || "Placing Order..." : t("payWithPlaceToPay") || "PAY WITH PLACE TO PAY"}
               </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Place to Pay Lightbox */}
+      {placeToPayUrl && (
+        <PlaceToPayLightbox
+          url={placeToPayUrl}
+          onSuccess={handlePlaceToPaySuccess}
+          onError={handlePlaceToPayError}
+          onClose={handlePlaceToPayClose}
+        />
+      )}
 
       <Footer />
     </div>

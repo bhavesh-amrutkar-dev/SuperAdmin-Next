@@ -30,9 +30,7 @@ export default function TermsPage() {
             try {
                 setLoading(true);
                 // Use params.id as campaignId for getRaffleDetails
-                console.log("params.id ----- 5", params.id);
                 const response = await RaffleService.getRaffleDetails(params.id as string);
-                console.log("response ----- 6", response);
                 const raw = response as any;
                 let data: LegacyRaffleDetail | undefined = raw?.data;
 
@@ -76,7 +74,7 @@ export default function TermsPage() {
                 <div className="text-center">
                     <h1 className="text-2xl font-bold text-gray-800 mb-4">{t("notFound") || "Not Found"}</h1>
                     <Link
-                        href="/reffles"
+                        href="/raffles"
                         className="text-[#D4AF37] hover:underline"
                     >
                         {t("backToRaffles") || "Back to Raffles"}

@@ -40,7 +40,7 @@ const getProgressPercentage = (total?: number, goal?: number): number => {
     return Math.round(percentage);
 };
 
-export default function RefflesPage() {
+export default function RafflesPage() {
     const locale = useLocale();
     const t = useTranslations();
     const [loading, setLoading] = useState(true);
@@ -205,7 +205,7 @@ export default function RefflesPage() {
                     </p>
                 </div>
 
-                {/* Reffles Grid */}
+                {/* Raffles Grid */}
                 <div className="mx-auto w-full max-w-[1648px] px-2 md:px-6 lg:pt-[60px] pb-[100px]">
                     <div className="mb-6 border-b border-gray-300 pb-2 flex items-center justify-between">
                         <h2 className="text-base font-bold text-[#2f2f2f] uppercase tracking-tight">
@@ -242,7 +242,7 @@ export default function RefflesPage() {
                                 return (
                                     <Link
                                         key={`${id}-${index}`}
-                                        href={id ? `/reffles/${slug}?pid=${id}&cpid=${raffle.childProductId ?? ""}` : "#"}
+                                        href={id ? `/raffles/${slug}?pid=${id}&cpid=${raffle.childProductId ?? ""}` : "#"}
                                         className="bg-white rounded-[25px] shadow-xl overflow-hidden flex flex-col xl:flex-row p-4 hover:shadow-2xl transition-shadow"
                                     >
                                         <div className="aspect-video flex items-center justify-center w-full max-w-[320px] overflow-hidden rounded-[25px] bg-[#f5f5f5]">
