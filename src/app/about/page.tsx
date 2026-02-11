@@ -44,14 +44,6 @@ export default function AboutUsPage() {
             .finally(() => setLoading(false));
     }, [locale]);
 
-    // Get banner image based on screen size
-    const getBannerImage = () => {
-        if (!aboutData?.bannerImages) return null;
-        if (typeof window !== "undefined" && window.innerWidth < 768) {
-            return aboutData.bannerImages.mobileUrl || aboutData.bannerImages.webUrl;
-        }
-        return aboutData.bannerImages.webUrl || aboutData.bannerImages.mobileUrl;
-    };
 
     // Get gallery images from API
     const getGalleryImages = () => {
@@ -117,10 +109,14 @@ export default function AboutUsPage() {
         );
     }
 
-    const bannerImage = getBannerImage();
     const galleryImages = getGalleryImages();
     const teamMembers = getTeamMembers();
     const aboutContent = getAboutContent();
+
+    const mobileBannerUrl = aboutData?.bannerImages?.mobileUrl;
+    const webBannerUrl = aboutData?.bannerImages?.webUrl;
+    const bannerUrl = mobileBannerUrl || webBannerUrl; // Fallback to either if one is missing
+    const hasBanner = !!bannerUrl;
 
     return (
         <main>
@@ -128,16 +124,51 @@ export default function AboutUsPage() {
 
             {/* About Us Banner */}
             <div className="w-full">
-                {bannerImage ? (
+                {hasBanner ? (
                     <div className="relative w-full h-[350px] md:h-[400px] overflow-hidden">
-                        <Image
-                            src={bannerImage}
-                            alt="About Us Banner"
-                            fill
-                            className="object-cover"
-                            priority
-                            unoptimized
-                        />
+                        {/* Mobile Banner - visible on mobile (< 768px), hidden on desktop */}
+                        {mobileBannerUrl && (
+                            <Image
+                                src={mobileBannerUrl}
+                                alt="About Us Banner"
+                                fill
+                                className="object-cover block md:hidden"
+                                priority
+                                unoptimized
+                            />
+                        )}
+                        {/* Web Banner - hidden on mobile, visible on desktop (>= 768px) */}
+                        {webBannerUrl && (
+                            <Image
+                                src={webBannerUrl}
+                                alt="About Us Banner"
+                                fill
+                                className="object-cover hidden md:block"
+                                priority
+                                unoptimized
+                            />
+                        )}
+                        {/* Fallback: if only one image exists, show it for both views */}
+                        {!mobileBannerUrl && webBannerUrl && (
+                            <Image
+                                src={webBannerUrl}
+                                alt="About Us Banner"
+                                fill
+                                className="object-cover block md:hidden"
+                                priority
+                                unoptimized
+                            />
+                        )}
+                        {!webBannerUrl && mobileBannerUrl && (
+                            <Image
+                                src={mobileBannerUrl}
+                                alt="About Us Banner"
+                                fill
+                                className="object-cover hidden md:block"
+                                priority
+                                unoptimized
+                            />
+                        )}
                         <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                             <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold uppercase tracking-[1px] text-white">
                                 {t("aboutUs")}

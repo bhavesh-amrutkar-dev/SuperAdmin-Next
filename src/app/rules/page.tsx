@@ -42,14 +42,6 @@ export default function RulesPage() {
             .finally(() => setLoading(false));
     }, [locale]);
 
-    // Get banner image based on screen size
-    const getBannerImage = () => {
-        if (!rulesData?.returnsBannerImages) return null;
-        if (typeof window !== "undefined" && window.innerWidth < 768) {
-            return rulesData.returnsBannerImages.mobileUrl || rulesData.returnsBannerImages.webUrl;
-        }
-        return rulesData.returnsBannerImages.webUrl || rulesData.returnsBannerImages.mobileUrl;
-    };
 
     if (loading) {
         return (
@@ -77,8 +69,11 @@ export default function RulesPage() {
         );
     }
 
-    const bannerImage = getBannerImage();
     const rulesContent = rulesData?.raffleRulesObj || "";
+
+    const mobileBannerUrl = rulesData?.returnsBannerImages?.mobileUrl;
+    const webBannerUrl = rulesData?.returnsBannerImages?.webUrl;
+    const hasBanner = mobileBannerUrl || webBannerUrl;
 
     return (
         <main>
@@ -86,16 +81,51 @@ export default function RulesPage() {
 
             <div className="w-full">
                 {/* Rules Banner – match About Us hero style */}
-                {bannerImage ? (
+                {hasBanner ? (
                     <div className="relative w-full h-[350px] md:h-[400px] overflow-hidden">
-                        <Image
-                            src={bannerImage}
-                            alt="Rules Banner"
-                            fill
-                            className="object-cover"
-                            priority
-                            unoptimized
-                        />
+                        {/* Mobile Banner - visible on mobile (< 768px), hidden on desktop */}
+                        {mobileBannerUrl && (
+                            <Image
+                                src={mobileBannerUrl}
+                                alt="Rules Banner"
+                                fill
+                                className="object-cover block md:hidden"
+                                priority
+                                unoptimized
+                            />
+                        )}
+                        {/* Web Banner - hidden on mobile, visible on desktop (>= 768px) */}
+                        {webBannerUrl && (
+                            <Image
+                                src={webBannerUrl}
+                                alt="Rules Banner"
+                                fill
+                                className="object-cover hidden md:block"
+                                priority
+                                unoptimized
+                            />
+                        )}
+                        {/* Fallback: if only one image exists, show it for both views */}
+                        {!mobileBannerUrl && webBannerUrl && (
+                            <Image
+                                src={webBannerUrl}
+                                alt="Rules Banner"
+                                fill
+                                className="object-cover block md:hidden"
+                                priority
+                                unoptimized
+                            />
+                        )}
+                        {!webBannerUrl && mobileBannerUrl && (
+                            <Image
+                                src={mobileBannerUrl}
+                                alt="Rules Banner"
+                                fill
+                                className="object-cover hidden md:block"
+                                priority
+                                unoptimized
+                            />
+                        )}
                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30 text-center px-4">
                             <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold uppercase tracking-[1px] text-white">
                                 {t("rules") || "Rules"}
