@@ -6,6 +6,7 @@ import ClientProviders from "./providers";
 
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
+import BranchProvider from "../components/BranchProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,6 +39,7 @@ export default async function RootLayout({
       >
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ClientProviders>
+              <BranchProvider />
             {children}
           </ClientProviders>
         </NextIntlClientProvider>

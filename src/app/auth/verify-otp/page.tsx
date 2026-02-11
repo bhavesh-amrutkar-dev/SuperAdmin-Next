@@ -92,7 +92,7 @@ export default function VerifyOtpPage() {
         persistAuthSession(session);
 
         sessionStorage.removeItem("signup_payload");
-        router.replace("/");
+        router.replace("/address");
         return;
       }
 
@@ -136,7 +136,7 @@ export default function VerifyOtpPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-50 via-white to-gray-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-yellow-50 via-white to-gray-100 px-4">
       <div className="w-full max-w-md rounded-2xl bg-white shadow-[0_20px_40px_-15px_rgba(0,0,0,0.2)] p-8">
         {/* Header */}
         <div className="text-center mb-6">

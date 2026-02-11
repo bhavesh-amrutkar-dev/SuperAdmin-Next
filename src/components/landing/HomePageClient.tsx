@@ -173,7 +173,7 @@ export default function HomePageClient() {
           items: raffleItems,
         });
       }
-      
+
     } catch (err: any) {
       // if (err?.name !== "AbortError") {
       //   console.error("Failed to load raffles", err);
@@ -207,7 +207,7 @@ export default function HomePageClient() {
     <>
       {banners.length > 0 && <HeroSlider banners={banners} />}
 
-      <HowItWorksSection />
+
 
       {loadingRaffles ? (
         <section className="py-20 text-center text-[#797979]">
@@ -217,6 +217,8 @@ export default function HomePageClient() {
       ) : raffleSection ? (
         <RaffleSectionLayout section={raffleSection} />
       ) : null}
+
+      <HowItWorksSection />
     </>
   );
 }

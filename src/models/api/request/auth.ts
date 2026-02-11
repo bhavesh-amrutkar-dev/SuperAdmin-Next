@@ -53,3 +53,24 @@ export interface ISignUpPayload {
   googleId?: string;
   facebookId?: string;
 }
+
+
+export interface ICreateAddressRM {
+  name: string;
+  addLine1: string;
+  city: string;
+  state: string;
+  country: string;
+  pincode: string;
+  landmark?: string;
+
+  mobileNumber: string;
+  mobileNumberCode: string;
+  mobileNumberSortCode: string;
+
+  tagged: number;
+  taggedAs?: string;
+  default: boolean;
+  latitude?: number;
+  longitude?: number;
+}

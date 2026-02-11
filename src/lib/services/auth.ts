@@ -5,6 +5,7 @@ import { getDeviceInfo } from "../utils/device";
 import { APP_VERSION, DEVICE_TYPE_WEB } from "../config";
 
 import {
+  ICreateAddressRM,
   IEmailLoginRM,
   IMobileLoginRM,
   ISendOtpPayload,
@@ -130,4 +131,17 @@ export const AuthService = {
       ...payload,
     });
   },
-};
+
+  async createAddress(
+    payload: ICreateAddressRM
+  ): Promise<IAPIResponse> {
+    const device = getDeviceInfo();
+
+    return apiClient.post("/address", {
+      // deviceType: DEVICE_TYPE_WEB,
+      // appVersion: APP_VERSION,
+      // deviceTime: new Date().toISOString(),
+      // ...device,
+      ...payload,
+    })
+  }}
