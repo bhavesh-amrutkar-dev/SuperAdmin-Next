@@ -163,6 +163,9 @@
     "quantity": "Cantidad",
     "storeTotal": "Total de Tienda",
     "viewDetails": "Ver Detalles",
+    "productId": "ID del Producto",
+    "store": "Tienda",
+    "products": "Productos",
     "noOrdersFound": "No se encontraron pedidos",
     "startShopping": "Comenzar a Comprar",
     "loading": "Cargando...",
@@ -354,5 +357,7 @@
     "totalAmount": "MONTO TOTAL",
     "secureCheckout": "PAGO SEGURO",
     "cartEmpty": "Tu carrito está vacío",
-    "backToCart": "Volver al carrito"
+    "backToCart": "Volver al carrito",
+    "payWithPlaceToPay": "PAGAR CON PLACE TO PAY",
+    "placingOrder": "Realizando pedido..."
 }

@@ -190,7 +190,7 @@ export default function FreeTicketConfirmationPage() {
                 <div className="text-center">
                     <h1 className="text-2xl font-bold text-gray-800 mb-4">{t("notFound") || "Not Found"}</h1>
                     <Link
-                        href="/reffles"
+                        href="/raffles"
                         className="text-[#D4AF37] hover:underline"
                     >
                         {t("backToRaffles") || "Back to Raffles"}

@@ -14,6 +14,7 @@ export async function logout() {
     deleteCookie("token", { path: "/" });
     deleteCookie("access_exp", { path: "/" });
     deleteCookie("sid", { path: "/" });
+    deleteCookie("uid", { path: "/" });
 
     // Initialize guest session
     await initGuest();

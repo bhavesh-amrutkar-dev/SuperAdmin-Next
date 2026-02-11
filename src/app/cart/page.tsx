@@ -368,7 +368,7 @@ export default function CartPage() {
             <h2 className="text-2xl font-bold text-gray-800 mb-4">{t("cartEmpty")}</h2>
             <p className="text-gray-600 mb-6">{t("cartEmptyMessage")}</p>
             <button
-              onClick={() => router.push("/reffles")}
+              onClick={() => router.push("/raffles")}
               className="bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-3 px-8 rounded-lg transition-colors"
             >
               {t("browseRaffles")}
@@ -406,7 +406,7 @@ export default function CartPage() {
                       0;
 
                     const price = Number(rawPrice) || 0;
-                    const totalPrice = price * quantity;
+                    // const totalPrice = price * quantity;
 
                     return (
                       <div key={itemId} className="border-b border-gray-200 pb-6 last:border-b-0">
@@ -499,7 +499,7 @@ export default function CartPage() {
                               {t("remove")}
                             </button>
                             <p className="text-lg font-bold text-gray-800">
-                              {currency} {formatCurrency(totalPrice)}
+                              {currency} {formatCurrency(price)}
                             </p>
                           </div>
                         </div>

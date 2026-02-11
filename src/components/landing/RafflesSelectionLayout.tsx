@@ -123,7 +123,7 @@ export default function RaffleSectionLayout({
                         const childProductId = (item as any).childProductId || "";
 
                         // Construct URL with validated campaignId
-                        const href = `/reffles/${slug}?pid=${campaignId}${childProductId ? `&cpid=${childProductId}` : ""}`;
+                        const href = `/raffles/${slug}?pid=${campaignId}${childProductId ? `&cpid=${childProductId}` : ""}`;
 
 
                         return (

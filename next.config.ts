@@ -65,25 +65,15 @@ const nextConfig: NextConfig = {
 
   async redirects() {
     return [
-      // Normalize common misspelling
-      {
-        source: "/reffels",
-        destination: "/reffles",
-        permanent: true,
-      },
-      {
-        source: "/reffels/:path*",
-        destination: "/reffles/:path*",
-        permanent: true,
-      },
+      // Normalize common misspelling - redirect old path to new path
       {
         source: "/raffles_list_details",
-        destination: "/reffles",
+        destination: "/raffles",
         permanent: true,
       },
       {
         source: "/raffles_list_details/:path*",
-        destination: "/reffles/:path*",
+        destination: "/raffles/:path*",
         permanent: true,
       },
     ];

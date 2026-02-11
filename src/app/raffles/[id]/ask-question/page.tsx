@@ -3,21 +3,26 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import Image from "next/image";
 import { ArrowLeft, X } from "lucide-react";
 import Link from "next/link";
 import Header from "@/src/components/layout/Header";
 import Footer from "@/src/components/layout/Footer";
 import PreFooterIconModule from "@/src/components/layout/PreFooterIconModule";
 import { RaffleService } from "@/src/lib/services/raffles";
+import ComingSoon from "@/src/components/common/ComingSoon";
+import { PRODUCT_CART } from "@/src/lib/config";
 
 type LegacyRaffleDetail = {
     productName?: string;
     campaignTitle?: string;
     name?: string;
-    termsAndConditions?: string;
+    image?: { medium: string }[];
+    description?: string;
+    detailDesc?: string;
 };
 
-export default function TermsPage() {
+export default function AskQuestionPage() {
     const params = useParams();
     const router = useRouter();
     const t = useTranslations();
@@ -74,7 +79,7 @@ export default function TermsPage() {
                 <div className="text-center">
                     <h1 className="text-2xl font-bold text-gray-800 mb-4">{t("notFound") || "Not Found"}</h1>
                     <Link
-                        href="/reffles"
+                        href="/raffles"
                         className="text-[#D4AF37] hover:underline"
                     >
                         {t("backToRaffles") || "Back to Raffles"}
@@ -83,6 +88,9 @@ export default function TermsPage() {
             </div>
         );
     }
+
+    const displayName = lotteryItem.campaignTitle || lotteryItem.productName || lotteryItem.name || "";
+    const displayImage = lotteryItem.image?.[0]?.medium ?? PRODUCT_CART;
 
     return (
         <main className="min-h-screen bg-gray-50">
@@ -100,29 +108,54 @@ export default function TermsPage() {
                 {/* Page Content */}
                 <div className="bg-white rounded-lg shadow-xl overflow-hidden">
                     {/* Page Header */}
-                    <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                        <h1 className="text-xl md:text-2xl font-bold text-[#2f2f2f] uppercase">
-                            {t("termsAndConditions")}
-                        </h1>
+                    <div className="flex items-start justify-between p-6 border-b border-gray-200">
+                        <div>
+                            <h1 className="text-2xl md:text-3xl font-bold text-[#D4AF37]">
+                                {t("askAQuestion")}
+                            </h1>
+                            <p className="mt-1 text-xs md:text-sm font-semibold uppercase text-red-500">
+                                Coming Soon
+                            </p>
+                        </div>
                         <button
                             onClick={() => router.back()}
                             className="text-gray-500 hover:text-gray-700 transition-colors"
                             aria-label="Close"
                         >
-                            <X size={24} />
+                            <X size={28} />
                         </button>
                     </div>
 
                     {/* Page Content */}
                     <div className="p-6">
-                        {lotteryItem.termsAndConditions ? (
-                            <div
-                                className="text-sm md:text-base text-[#797979] leading-relaxed"
-                                dangerouslySetInnerHTML={{ __html: lotteryItem.termsAndConditions }}
-                            />
-                        ) : (
-                            <p className="text-sm text-[#797979]">{t("noDataAvailable")}</p>
-                        )}
+                        {/* Product Information */}
+                        <div className="flex gap-4 mb-6 pb-6 border-b border-gray-200">
+                            <div className="relative w-24 h-24 md:w-32 md:h-32 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
+                                <Image
+                                    src={displayImage}
+                                    alt={displayName}
+                                    fill
+                                    unoptimized
+                                    className="object-cover"
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-base md:text-lg font-semibold text-[#2f2f2f] mb-2">
+                                    {displayName || t("product") || "Product"}
+                                </h3>
+                                <p className="text-sm text-[#797979] line-clamp-2">
+                                    {lotteryItem.detailDesc || lotteryItem.description
+                                        ? (lotteryItem.detailDesc || lotteryItem.description || "").replace(/<[^>]*>/g, "").substring(0, 150) + "..."
+                                        : t("noDataAvailable")
+                                    }
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Coming Soon Placeholder */}
+                        <ComingSoon
+                            description="The question &amp; answer feature is not yet available on this new site. You&apos;ll soon be able to ask the seller and community anything about this raffle."
+                        />
                     </div>
                 </div>
             </div>

@@ -80,7 +80,7 @@ type LegacyRaffleDetail = {
 import CountdownTimer from "@/src/components/CountdownTimer";
 
 
-export default function RefflesDetailPage() {
+export default function RafflesDetailPage() {
     const params = useParams();
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -606,7 +606,7 @@ export default function RefflesDetailPage() {
                         <div className="text-center">
                             <p className="text-lg text-[#797979] mb-4">{t("raffleNotFound")}</p>
                             <button
-                                onClick={() => router.push("/reffles")}
+                                onClick={() => router.push("/raffles")}
                                 className="px-6 py-2 text-sm font-medium text-white bg-[#797979] hover:bg-[#5a5a5a] rounded-md transition-colors"
                             >
                                 {t("viewAllRaffles")}
@@ -1435,7 +1435,7 @@ export default function RefflesDetailPage() {
                                     // Free ticket flow - navigate to confirmation page
                                     if (selectedTicketData && selectedTicketData.price === 0) {
                                         router.push(
-                                            `/reffles/${pid}/free-ticket-confirmation?ticketId=${selectedTicketData.id}&quantity=${selectedTicketData.quantity}`
+                                            `/raffles/${pid}/free-ticket-confirmation?ticketId=${selectedTicketData.id}&quantity=${selectedTicketData.quantity}`
                                         );
                                         return;
                                     }
@@ -1551,7 +1551,7 @@ export default function RefflesDetailPage() {
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm text-[#797979]">-</span>
                                     <button
-                                        onClick={() => router.push(`/reffles/${pid}/terms`)}
+                                        onClick={() => router.push(`/raffles/${pid}/terms`)}
                                         className="text-xs md:text-sm font-bold text-[#D4AF37] hover:text-[#B8860B] transition-colors uppercase"
                                     >
                                         {t("allDetails")}

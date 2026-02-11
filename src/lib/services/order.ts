@@ -39,8 +39,17 @@ export type StoreOrder = {
     products?: OrderProduct[];
     accounting?: {
         finalPrice?: number;
+        finalTotal?: number;
+        finalTotalMulti?: number;
+        finalUnitPrice?: number;
         currencyCode?: string | { value?: string; unit?: string };
         currencySymbol?: string | { value?: string; unit?: string };
+        payBy?: {
+            cash?: number;
+            card?: number;
+            wallet?: number;
+            rewardWallet?: number;
+        };
     };
     storeRattingData?: {
         isRated?: boolean;
@@ -60,10 +69,27 @@ export type Order = {
     storeOrders?: StoreOrder[];
     status?: OrderStatus;
     totalPrice?: number;
+    finalTotal?: number;
+    finalTotalMulti?: number;
+    finalUnitPrice?: number;
     currencyCode?: string | { value?: string; unit?: string };
     currencySymbol?: string | { value?: string; unit?: string };
+    accounting?: {
+        finalTotal?: number;
+        finalTotalMulti?: number;
+        finalUnitPrice?: number;
+        currencyCode?: string | { value?: string; unit?: string };
+        currencySymbol?: string | { value?: string; unit?: string };
+        payBy?: {
+            cash?: number;
+            card?: number;
+            wallet?: number;
+            rewardWallet?: number;
+        };
+    };
     createdAt?: number;
     updatedAt?: number;
+    createdTimeStamp?: number;
 };
 
 export type OrdersResponse = {
@@ -119,6 +145,32 @@ export const OrderService = {
         productOrderId?: string;
     }) => {
         return apiClient.post("/reOrder", data);
+    },
+
+    placeOrder: (data: {
+        cartId?: string;
+        addressId?: string;
+        billingAddressId?: string;
+        coupon?: string;
+        promoId?: string;
+        discount?: number;
+        latitude?: string;
+        longitude?: string;
+        ipAddress?: string;
+        storeType?: number;
+        delivery?: any[];
+        orderType?: number;
+        extraNote?: string;
+        tip?: number;
+        orderImages?: any[];
+        onlinePaymentMethod?: number;
+        payByRewardWallet?: boolean;
+        cardId?: string;
+        paymentType?: number;
+        payByWallet?: boolean;
+        userId?: string | number;
+    }) => {
+        return apiClient.post("/order", data);
     },
 };
 
