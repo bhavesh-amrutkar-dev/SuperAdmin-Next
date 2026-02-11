@@ -8,7 +8,8 @@ import { Sheet, SheetContent } from "./sheet"
 import { Button } from "./button"
 import { Input } from "./input"
 import { Separator } from "./separator"
-import { Skeleton } from "./skeleton"
+import { useIsMobile } from "@/src/lib/utils/isMobile"
+import Skeleton from "./skeleton"
 
 const SIDEBAR_COOKIE_NAME = "sidebar:state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
