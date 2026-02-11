@@ -133,7 +133,7 @@ export default function Header() {
             {!isLoggedIn ? (
               <Link
                 href="/auth/login"
-                className="hidden lg:flex btn-primary px-3 py-2 rounded-md text-sm font-semibold"
+                className="hidden lg:flex btn-primary gap-1 px-3 py-2 rounded-md text-sm font-semibold"
               >
                 <User size={16} />
                 {t("login")}
