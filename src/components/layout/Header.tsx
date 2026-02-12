@@ -122,6 +122,24 @@ export default function Header() {
     return () => window.removeEventListener("cartUpdated", handleCartUpdate);
   }, []);
 
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (userMenuOpen && !target.closest('.user-menu-container')) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    if (userMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [userMenuOpen]);
+
   return (
     <header className="sticky top-0 z-50 bg-[#2F2F2F]">
 

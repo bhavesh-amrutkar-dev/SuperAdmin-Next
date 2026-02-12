@@ -21,8 +21,8 @@ export const AuthService = {
   ): Promise<IAPIResponse> {
     const device = getDeviceInfo();
 
-    // let ipAddress = "123.201.110.196";
-        let ipAddress = "0.0.0.0";
+    let ipAddress = "123.201.110.196";
+    // let ipAddress = "0.0.0.0";
     try {
       const res = await fetch("https://ipapi.co/json/");
       const data = await res.json();
@@ -39,8 +39,8 @@ export const AuthService = {
       verifyType: 1, // email
       loginType: 1,
       ipAddress,
-      // latitude:"0.0",
-      // longitude:"0.0",
+      latitude: "0.0",
+      longitude: "0.0",
       ...device,
       ...payload,
     });
@@ -147,4 +147,5 @@ export const AuthService = {
       // ...device,
       ...payload,
     })
-  }}
+  }
+}

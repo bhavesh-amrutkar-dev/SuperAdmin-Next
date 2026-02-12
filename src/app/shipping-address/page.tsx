@@ -238,59 +238,59 @@ export default function ShippingAddressPage() {
       <Header />
 
       {/* Progress */}
-      <div className="bg-white border-b border-gray-200 py-4">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-center gap-8 max-w-3xl mx-auto">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-white font-semibold">1</div>
-              <span className="font-semibold text-gray-600">{t("bag")}</span>
+      <div className="bg-white border-b border-gray-200 py-3 sm:py-4">
+        <div className="container mx-auto px-2 sm:px-4">
+          <div className="flex items-center justify-center gap-2 sm:gap-4 md:gap-8 max-w-3xl mx-auto">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-white font-semibold text-xs sm:text-sm">1</div>
+              <span className="font-semibold text-gray-600 text-xs sm:text-sm md:text-base">{t("bag")}</span>
             </div>
-            <div className="flex-1 h-0.5 bg-[#D4AF37]"></div>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-white font-semibold">2</div>
-              <span className="font-semibold text-[#D4AF37]">{t("shippingDetails")}</span>
+            <div className="flex-1 h-0.5 bg-[#D4AF37] hidden sm:block"></div>
+            <div className="flex items-center gap-1 sm:gap-2">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-white font-semibold text-xs sm:text-sm">2</div>
+              <span className="font-semibold text-[#D4AF37] text-xs sm:text-sm md:text-base hidden sm:inline">{t("shippingDetails")}</span>
             </div>
-            <div className="flex-1 h-0.5 bg-gray-300"></div>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold">3</div>
-              <span className="font-semibold text-gray-400">{t("secureCheckout")}</span>
+            <div className="flex-1 h-0.5 bg-gray-300 hidden sm:block"></div>
+            <div className="flex items-center gap-1 sm:gap-2">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold text-xs sm:text-sm">3</div>
+              <span className="font-semibold text-gray-400 text-xs sm:text-sm md:text-base hidden md:inline">{t("secureCheckout")}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 pb-28">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 md:py-8 pb-20 sm:pb-24 md:pb-28">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* LEFT: ADDRESS */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-md">
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                <h2 className="text-sm font-bold text-gray-800 uppercase">{t("addressTitle") || "Address"}</h2>
+              <div className="flex items-center justify-between px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-200">
+                <h2 className="text-xs sm:text-sm font-bold text-gray-800 uppercase">{t("addressTitle") || "Address"}</h2>
                 <button
                   onClick={() => router.push("/profile?tab=addresses")}
-                  className="text-sm font-semibold text-[#D4AF37] hover:text-[#B8860B]"
+                  className="text-xs sm:text-sm font-semibold text-[#D4AF37] hover:text-[#B8860B] whitespace-nowrap"
                 >
                   + {t("addAddress").toUpperCase?.() ? t("addAddress").toUpperCase() : t("addAddress")}
                 </button>
               </div>
 
-              <div className="p-6">
+              <div className="p-3 sm:p-4 md:p-6">
                 {loadingAddresses ? (
                   <div className="flex items-center justify-center py-10">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#D4AF37]"></div>
                   </div>
                 ) : addresses.length === 0 ? (
-                  <div className="text-center py-10">
-                    <p className="text-gray-600">{t("noAddressFound")}</p>
+                  <div className="text-center py-6 sm:py-10">
+                    <p className="text-sm sm:text-base text-gray-600">{t("noAddressFound")}</p>
                     <button
                       onClick={() => router.push("/profile?tab=addresses")}
-                      className="mt-4 bg-[#D4AF37] hover:bg-[#B8860B] text-white font-semibold py-2 px-6 rounded-lg transition-colors"
+                      className="mt-3 sm:mt-4 bg-[#D4AF37] hover:bg-[#B8860B] text-white font-semibold py-2 px-4 sm:px-6 rounded-lg transition-colors text-sm sm:text-base"
                     >
                       + {t("addAddress")}
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {addresses.map((addr) => {
                       const id = addr._id || "";
                       const selected = id && selectedAddressId === id;
@@ -299,53 +299,51 @@ export default function ShippingAddressPage() {
                           key={id}
                           type="button"
                           onClick={() => id && selectAddress(id)}
-                          className={`w-full text-left border-2 rounded-lg p-4 transition ${
-                            selected ? "border-[#D4AF37] bg-yellow-50" : "border-gray-200 hover:border-gray-300"
-                          }`}
+                          className={`w-full text-left border-2 rounded-lg p-3 sm:p-4 transition ${selected ? "border-[#D4AF37] bg-yellow-50" : "border-gray-200 hover:border-gray-300"
+                            }`}
                         >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex items-start gap-3">
+                          <div className="flex items-start justify-between gap-2 sm:gap-4">
+                            <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
                               <div
-                                className={`mt-1 w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                                  selected ? "border-[#D4AF37]" : "border-gray-300"
-                                }`}
+                                className={`mt-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${selected ? "border-[#D4AF37]" : "border-gray-300"
+                                  }`}
                               >
                                 {selected && <div className="w-2 h-2 rounded-full bg-[#D4AF37]" />}
                               </div>
 
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <p className="font-bold text-gray-800">{addr.name || t("name")}</p>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
+                                  <p className="font-bold text-gray-800 text-sm sm:text-base">{addr.name || t("name")}</p>
                                   {addr.tag && (
-                                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-gray-100 text-gray-700">
+                                    <span className="text-[9px] sm:text-[10px] font-semibold px-1.5 sm:px-2 py-0.5 rounded bg-gray-100 text-gray-700 whitespace-nowrap">
                                       {addr.tag}
                                     </span>
                                   )}
                                   {addr.default && (
-                                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#D4AF37] text-white">
+                                    <span className="text-[9px] sm:text-[10px] font-semibold px-1.5 sm:px-2 py-0.5 rounded bg-[#D4AF37] text-white whitespace-nowrap">
                                       {t("default")}
                                     </span>
                                   )}
                                 </div>
                                 {(addr.mobileNumber || addr.mobileNumberCode) && (
-                                  <p className="text-sm text-gray-700">
+                                  <p className="text-xs sm:text-sm text-gray-700 mb-1">
                                     {addr.mobileNumberCode ? `+${addr.mobileNumberCode} ` : ""}
                                     {addr.mobileNumber || ""}
                                   </p>
                                 )}
-                                <p className="text-sm text-gray-600 mt-2">
+                                <p className="text-xs sm:text-sm text-gray-600 mt-1 sm:mt-2 break-words">
                                   {[addr.flatNumber, addr.addLine1, addr.addLine2, addr.locality]
                                     .filter(Boolean)
                                     .join(", ")}
                                 </p>
-                                <p className="text-sm text-gray-600">
+                                <p className="text-xs sm:text-sm text-gray-600 break-words">
                                   {[addr.city, addr.state, addr.pincode].filter(Boolean).join(", ")}
                                 </p>
-                                <p className="text-sm text-gray-600">
+                                <p className="text-xs sm:text-sm text-gray-600 break-words">
                                   {[addr.emiratesRegionName, addr.country].filter(Boolean).join(", ")}
                                 </p>
                                 {addr.landmark && (
-                                  <p className="text-xs text-gray-500 mt-2">
+                                  <p className="text-xs text-gray-500 mt-1 sm:mt-2">
                                     <span className="font-semibold text-gray-700">{t("landmark") || "Landmark"}:</span>{" "}
                                     {addr.landmark}
                                   </p>
@@ -360,7 +358,7 @@ export default function ShippingAddressPage() {
                                   e.stopPropagation();
                                   router.push(`/profile?tab=addresses&edit=${id}`);
                                 }}
-                                className="text-xs font-semibold text-[#D4AF37] hover:text-[#B8860B] mt-1"
+                                className="text-xs font-semibold text-[#D4AF37] hover:text-[#B8860B] mt-1 flex-shrink-0"
                               >
                                 {t("edit").toUpperCase?.() ? t("edit").toUpperCase() : t("edit")}
                               </span>
@@ -376,12 +374,12 @@ export default function ShippingAddressPage() {
           </div>
 
           {/* RIGHT: ORDER + PAYMENT */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-4 sm:space-y-6">
             <div className="bg-white rounded-lg shadow-md">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-sm font-bold text-gray-800 uppercase">{t("orderDetails")}</h2>
+              <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-200">
+                <h2 className="text-xs sm:text-sm font-bold text-gray-800 uppercase">{t("orderDetails")}</h2>
               </div>
-              <div className="p-6 space-y-4">
+              <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
                 {cartItems.length === 0 ? (
                   <p className="text-gray-600">{t("cartEmpty")}</p>
                 ) : (
@@ -398,8 +396,8 @@ export default function ShippingAddressPage() {
                     const unit = Number(rawPrice) || 0;
                     const lineTotal = unit * qty;
                     return (
-                      <div key={String(item.addToCartOnId || item._id || item.productId)} className="flex gap-3">
-                        <div className="w-14 h-14 rounded bg-gray-100 overflow-hidden flex-shrink-0">
+                      <div key={String(item.addToCartOnId || item._id || item.productId)} className="flex gap-2 sm:gap-3">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded bg-gray-100 overflow-hidden flex-shrink-0">
                           <Image
                             src={getProductImage(item)}
                             alt={item.name || item.productName || "Product"}
@@ -409,7 +407,7 @@ export default function ShippingAddressPage() {
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-800 truncate">{item.name || item.productName}</p>
+                          <p className="font-semibold text-gray-800 truncate text-xs sm:text-sm">{item.name || item.productName}</p>
                           <p className="text-xs text-gray-600">
                             {t("soldBy")} <span className="font-medium">{item.storeName || item.sellerName || t("unknown")}</span>
                           </p>
@@ -422,7 +420,7 @@ export default function ShippingAddressPage() {
                             {qty} x {currency} {formatCurrency(unit)}
                           </p>
                         </div>
-                        <div className="text-sm font-semibold text-gray-800">
+                        <div className="text-xs sm:text-sm font-semibold text-gray-800 flex-shrink-0">
                           {currency} {formatCurrency(lineTotal)}
                         </div>
                       </div>
@@ -433,10 +431,10 @@ export default function ShippingAddressPage() {
             </div>
 
             <div className="bg-white rounded-lg shadow-md">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-sm font-bold text-gray-800 uppercase">{t("paymentInformation")}</h2>
+              <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-200">
+                <h2 className="text-xs sm:text-sm font-bold text-gray-800 uppercase">{t("paymentInformation")}</h2>
               </div>
-              <div className="p-6 space-y-3 text-sm">
+              <div className="p-3 sm:p-4 md:p-6 space-y-2 sm:space-y-3 text-xs sm:text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-700">{t("bagTotal")}</span>
                   <span className="font-semibold text-gray-900">
@@ -484,18 +482,18 @@ export default function ShippingAddressPage() {
 
       {/* Bottom bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-xs text-gray-500">{t("totalAmount")}</p>
-              <p className="text-xl font-bold text-[#D4AF37]">
+        <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+            <div className="flex items-center justify-between sm:justify-start gap-2 flex-1">
+              <p className="text-xs sm:text-sm text-gray-500">{t("totalAmount")}</p>
+              <p className="text-lg sm:text-xl font-bold text-[#D4AF37]">
                 {currency} {formatCurrency((accounting as any).finalTotal)}
               </p>
             </div>
             <button
               onClick={handleContinue}
               disabled={!selectedAddressId || cartItems.length === 0}
-              className="bg-[#D4AF37] hover:bg-[#B8860B] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3 px-10 rounded-lg transition-colors"
+              className="bg-[#D4AF37] hover:bg-[#B8860B] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-2.5 sm:py-3 px-6 sm:px-10 rounded-lg transition-colors text-sm sm:text-base w-full sm:w-auto"
             >
               {t("continue")}
             </button>

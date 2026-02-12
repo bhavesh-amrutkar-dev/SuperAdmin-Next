@@ -86,10 +86,10 @@ export default function RafflesPage() {
                         errorMessage = String(err);
                     }
                     // eslint-disable-next-line no-console
-                    console.error("Error fetching raffles:", errorMessage);
+                    console.warn("Error fetching raffles:", errorMessage);
                 } catch {
                     // eslint-disable-next-line no-console
-                    console.error("Error fetching raffles: Unknown error");
+                    console.warn("Error fetching raffles: Unknown error");
                 }
                 setRaffles([]); // Set empty array on error
             })
@@ -112,10 +112,10 @@ export default function RafflesPage() {
                 try {
                     const errorMessage = err instanceof Error ? err.message : String(err);
                     // eslint-disable-next-line no-console
-                    console.error("Error handling country change:", errorMessage);
+                    console.warn("Error handling country change:", errorMessage);
                 } catch {
                     // eslint-disable-next-line no-console
-                    console.error("Error handling country change: Unknown error");
+                    console.warn("Error handling country change: Unknown error");
                 }
             }
         };
@@ -133,10 +133,10 @@ export default function RafflesPage() {
             try {
                 const errorMessage = err instanceof Error ? err.message : String(err);
                 // eslint-disable-next-line no-console
-                console.error("Error reading cookie:", errorMessage);
+                console.warn("Error reading cookie:", errorMessage);
             } catch {
                 // eslint-disable-next-line no-console
-                console.error("Error reading cookie: Unknown error");
+                console.warn("Error reading cookie: Unknown error");
             }
         }
 
@@ -151,10 +151,10 @@ export default function RafflesPage() {
                 try {
                     const errorMessage = err instanceof Error ? err.message : String(err);
                     // eslint-disable-next-line no-console
-                    console.error("Error checking country change:", errorMessage);
+                    console.warn("Error checking country change:", errorMessage);
                 } catch {
                     // eslint-disable-next-line no-console
-                    console.error("Error checking country change: Unknown error");
+                    console.warn("Error checking country change: Unknown error");
                 }
             }
         }, 2000); // Check every 2 seconds as fallback

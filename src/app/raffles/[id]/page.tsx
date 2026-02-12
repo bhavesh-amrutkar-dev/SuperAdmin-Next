@@ -16,6 +16,8 @@ import { TicketWalletService } from "@/src/lib/services/ticketWallet";
 import { UserAddressService } from "@/src/lib/services/userAddress";
 import ComingSoon from "@/src/components/common/ComingSoon";
 import LoginModal from "@/src/components/modals/LoginModal";
+import FreeTicketConfirmationModal from "@/src/components/modals/FreeTicketConfirmationModal";
+import ApplyTicketConfirmationModal from "@/src/components/modals/ApplyTicketConfirmationModal";
 import { BASE_URL, PRODUCT_CART, STORE_CATEGORY_ID } from "@/src/lib/config";
 import { getCookie } from "cookies-next";
 
@@ -83,7 +85,7 @@ import { toast } from "sonner";
 
 
 export default function RafflesDetailPage() {
-     const [sharing, setSharing] = useState(false)
+    const [sharing, setSharing] = useState(false)
     const params = useParams();
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -100,6 +102,7 @@ export default function RafflesDetailPage() {
     const [selectedTicket, setSelectedTicket] = useState<string | null>(null);
     const [ticketQuantity, setTicketQuantity] = useState<number>(0);
     const [applyingTicket, setApplyingTicket] = useState(false);
+    const [showApplyConfirmationModal, setShowApplyConfirmationModal] = useState(false);
     const [userTicketBalance, setUserTicketBalance] = useState<number>(0);
     const [loadingTicketBalance, setLoadingTicketBalance] = useState(false);
     const [openSections, setOpenSections] = useState<{
@@ -126,6 +129,11 @@ export default function RafflesDetailPage() {
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [pendingCartData, setPendingCartData] = useState<{
         ticketId: string;
+        quantity: number;
+    } | null>(null);
+    const [showFreeTicketModal, setShowFreeTicketModal] = useState(false);
+    const [pendingFreeTicket, setPendingFreeTicket] = useState<{
+        id: string;
         quantity: number;
     } | null>(null);
     const maxQuestionLength = 1000;
@@ -648,41 +656,34 @@ export default function RafflesDetailPage() {
         }
     };
 
-    // Helper function to slugify name for URL
-    const slugifyName = (name: string) =>
-        name
-            .toLowerCase()
-            .trim()
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-+|-+$/g, "");
-
-    // Helper function to calculate progress percentage
-    const getProgressPercentage = (total?: number, goal?: number): number => {
-        if (!total || !goal || total <= 0) return 0;
-        const percentage = (goal / total) * 100;
-        if (percentage > 100) return 100;
-        return Math.round(percentage);
+    // Check if user is authenticated
+    const isAuthenticated = (): boolean => {
+        const token = getCookie("access_token");
+        return !!token;
     };
 
-    // Handle load more raffles
-    const handleLoadMore = () => {
-        setDisplayedRafflesCount((prev) => Math.min(prev + 5, allRaffles.length));
-    };
-
-    // Handle paid ticket purchase
-    const handlePaidTicketPurchase = async (ticketId: string, quantity: number) => {
-        if (!lotteryItem || applyingTicket || quantity <= 0) return;
+    // Handle apply tickets confirmation
+    const handleApplyTicketsConfirm = async () => {
+        if (ticketQuantity <= 0 || ticketQuantity > userTickets || !lotteryItem) {
+            setShowApplyConfirmationModal(false);
+            return;
+        }
 
         setApplyingTicket(true);
         try {
-            await TicketWalletService.purchasePaidTicket({
+            await TicketWalletService.applyWalletTickets({
                 lotteryItem,
-                ticketId,
-                quantity,
-                productId: params.id as string,
+                selectedTicket,
+                ticketQuantity,
+                productId: pid as string,
                 defaultAddressId,
             });
 
+            // Reset quantity after successful apply
+            setTicketQuantity(0);
+            setShowApplyConfirmationModal(false);
+
+            // Redirect to thank-you page
             router.push("/thank-you");
         } catch (err) {
             const errorMessage =
@@ -691,19 +692,14 @@ export default function RafflesDetailPage() {
                     : typeof err === "string"
                         ? err
                         : err && typeof err === "object" && "message" in err
-                            ? String((err as any).message)
-                            : "Failed to place order";
+                            ? String(err.message)
+                            : "Failed to place order with tickets";
             // eslint-disable-next-line no-console
             console.warn("Order placement failed:", errorMessage);
+            // TODO: replace with in-UI toast/notification instead of console output
         } finally {
             setApplyingTicket(false);
         }
-    };
-
-    // Check if user is authenticated
-    const isAuthenticated = (): boolean => {
-        const token = getCookie("access_token");
-        return !!token;
     };
 
     // Handle add to cart
@@ -712,6 +708,45 @@ export default function RafflesDetailPage() {
 
         setApplyingTicket(true);
         try {
+            // Check if item already exists in cart
+            let existingItemId: string | undefined = undefined;
+            let existingQuantity = 0;
+
+            try {
+                const cartResponse = await CartService.getCart();
+                const cartData = (cartResponse as any)?.data?.data || (cartResponse as any)?.data;
+
+                if (cartData && cartData.sellers) {
+                    const productId = lotteryItem.childProductId || lotteryItem.productId || (params.id as string);
+
+                    for (const seller of cartData.sellers) {
+                        if (seller.products) {
+                            for (const product of seller.products) {
+                                const prodId = product.productId || product.centralProductId || product._id;
+                                const prodTicketId = product.ticketId || (product.ticketDetails?.ticketId);
+
+                                // Match by productId and ticketId
+                                if (prodId === productId && prodTicketId === (ticketId || null)) {
+                                    existingItemId = product.addToCartOnId || product._id;
+                                    existingQuantity = typeof product.quantity === 'object' && product.quantity !== null
+                                        ? Number(product.quantity.value) || 0
+                                        : Number(product.quantity) || 0;
+                                    break;
+                                }
+                            }
+                            if (existingItemId) break;
+                        }
+                    }
+                }
+            } catch (cartError) {
+                // If cart fetch fails, proceed with add action
+                console.warn("Could not fetch cart to check for existing items:", cartError);
+            }
+
+            // If item exists, update it; otherwise add new
+            const finalQuantity = existingItemId ? existingQuantity + quantity : quantity;
+            const action = existingItemId ? 2 : 1; // 2 = update, 1 = add
+
             await CartService.addToCart({
                 centralProductId: lotteryItem.childProductId || lotteryItem.productId || (params.id as string),
                 productId: lotteryItem.childProductId || lotteryItem.productId || (params.id as string),
@@ -721,8 +756,8 @@ export default function RafflesDetailPage() {
                 ticketId: ticketId || null,
                 campaignId: lotteryItem.campaignId,
                 countryId: (getCookie("C_id") as string) || "633a6c3dd17f0000ea00102e",
-                newQuantity: quantity,
-                action: 1,
+                newQuantity: finalQuantity,
+                action: action,
                 cartType: 2,
                 offers: {},
                 storeTypeId: 8,
@@ -731,6 +766,7 @@ export default function RafflesDetailPage() {
                     longitude: (getCookie("long") as string) || "0",
                 },
                 storeCategoryId: STORE_CATEGORY_ID,
+                addToCartOnId: existingItemId, // Include addToCartOnId if updating existing item
             });
 
             // Dispatch event to update header cart count
@@ -772,32 +808,12 @@ export default function RafflesDetailPage() {
 
     // Handle participate button click - add to cart without redirect, show quantity selector
     const handleParticipateClick = async (ticketId: string, quantity: number) => {
-        if (!isAuthenticated()) {
-            // Store cart data and show login modal
-            setPendingCartData({ ticketId, quantity });
-            setShowLoginModal(true);
-        } else {
-            // User is authenticated, add to cart without redirect
-            await handleAddToCart(ticketId, quantity, false);
-            setSelectedQuantity(quantity);
-            setShowQuantitySelector(true);
-        }
+        // Add to cart for both authenticated and guest users
+        // Guest users will have items added to their guest cart
+        await handleAddToCart(ticketId, quantity, false);
+        setSelectedQuantity(quantity);
+        setShowQuantitySelector(true);
     };
-
-    // Handle continue button click - check auth first, then redirect to cart
-    const handleContinueClick = (ticketId: string, quantity: number) => {
-        if (!isAuthenticated()) {
-            // Store cart data and show login modal
-            setPendingCartData({ ticketId, quantity });
-            setShowLoginModal(true);
-        } else {
-            // User is authenticated, add to cart and redirect
-            handleAddToCart(ticketId, quantity, true);
-        }
-    };
-
-    // Get displayed raffles
-    const displayedRaffles = allRaffles.slice(0, displayedRafflesCount);
 
     // Get timeline data
     const getTimelineData = (): TimelineDate[] => {
@@ -925,43 +941,6 @@ export default function RafflesDetailPage() {
         );
     };
 
-    // const handleShare = async () => {
-    //     if (!lotteryItem) return
-    //     console.log("lotteryItem", lotteryItem);
-
-    //     try {
-    //         setSharing(true)
-
-    //         const link = await createProductDeepLink({
-    //             id: pid as string,
-    //             name: displayName || "Product",
-    //             description:
-
-    //                 lotteryItem.description ||
-    //                 lotteryItem.detailDesc ||
-    //                 "Check this out on Donrifa!",
-    //             image: displayImage,
-    //         })
-
-    //         // Mobile native share
-    //         if (navigator.share) {
-    //             await navigator.share({
-    //                 title: displayName,
-    //                 text: "Check this out!",
-    //                 url: link,
-    //             })
-    //         } else {
-    //             // Desktop fallback → copy link
-    //             await navigator.clipboard.writeText(link)
-    //             alert("Link copied to clipboard")
-    //         }
-    //     } catch (err) {
-    //         console.error("Share failed:", err)
-    //     } finally {
-    //         setSharing(false)
-    //     }
-    // }
-
     const handleShare = async () => {
         const url = `${BASE_URL}raffles/${pid}`
 
@@ -976,8 +955,6 @@ export default function RafflesDetailPage() {
             toast.success("Link copied to clipboard!")
         }
     }
-
-
 
     return (
         <main className="bg-gray-50 min-h-screen">
@@ -1348,49 +1325,16 @@ export default function RafflesDetailPage() {
                                     </div>
                                     {ticketQuantity > 0 && (
                                         <button
-                                            onClick={async () => {
+                                            onClick={() => {
                                                 if (ticketQuantity <= 0 || ticketQuantity > userTickets || !lotteryItem) {
                                                     return;
                                                 }
-
-                                                setApplyingTicket(true);
-                                                try {
-                                                    await TicketWalletService.applyWalletTickets({
-                                                        lotteryItem,
-                                                        selectedTicket,
-                                                        ticketQuantity,
-                                                        productId: pid as string,
-                                                        defaultAddressId,
-                                                    });
-
-                                                    // Show success message
-                                                    // eslint-disable-next-line no-console
-
-                                                    // Reset quantity after successful apply
-                                                    setTicketQuantity(0);
-
-                                                    // Redirect to thank-you page
-                                                    router.push("/thank-you");
-                                                } catch (err) {
-                                                    const errorMessage =
-                                                        err instanceof Error
-                                                            ? err.message
-                                                            : typeof err === "string"
-                                                                ? err
-                                                                : err && typeof err === "object" && "message" in err
-                                                                    ? String(err.message)
-                                                                    : "Failed to place order with tickets";
-                                                    // eslint-disable-next-line no-console
-                                                    console.warn("Order placement failed:", errorMessage);
-                                                    // TODO: replace with in-UI toast/notification instead of console output
-                                                } finally {
-                                                    setApplyingTicket(false);
-                                                }
+                                                setShowApplyConfirmationModal(true);
                                             }}
                                             disabled={ticketQuantity <= 0 || ticketQuantity > userTickets || applyingTicket || !lotteryItem}
                                             className="px-8 py-2 bg-[#D4AF37] hover:bg-[#B8860B] disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-bold rounded transition-colors uppercase whitespace-nowrap"
                                         >
-                                            {applyingTicket ? (t("applying") || "APPLYING...") : (t("apply") || "APPLY")}
+                                            {t("apply") || "APPLY"}
                                         </button>
                                     )}
                                 </div>
@@ -1498,11 +1442,13 @@ export default function RafflesDetailPage() {
                                         }
                                     });
 
-                                    // Free ticket flow - navigate to confirmation page
+                                    // Free ticket flow - show confirmation modal
                                     if (selectedTicketData && selectedTicketData.price === 0) {
-                                        router.push(
-                                            `/raffles/${pid}/free-ticket-confirmation?ticketId=${selectedTicketData.id}&quantity=${selectedTicketData.quantity}`
-                                        );
+                                        setPendingFreeTicket({
+                                            id: selectedTicketData.id,
+                                            quantity: selectedTicketData.quantity || 1,
+                                        });
+                                        setShowFreeTicketModal(true);
                                         return;
                                     }
 
@@ -1780,6 +1726,37 @@ export default function RafflesDetailPage() {
                     setPendingCartData(null);
                 }}
                 onLoginSuccess={handleLoginSuccess}
+            />
+
+            {/* Free Ticket Confirmation Modal */}
+            {lotteryItem && (
+                <FreeTicketConfirmationModal
+                    isOpen={showFreeTicketModal}
+                    onClose={() => {
+                        setShowFreeTicketModal(false);
+                        setPendingFreeTicket(null);
+                        setFreeTicketError(null);
+                    }}
+                    pendingFreeTicket={pendingFreeTicket}
+                    displayName={displayName}
+                    lotteryItem={lotteryItem}
+                    productId={params.id as string}
+                    defaultAddressId={defaultAddressId}
+                    onError={(error) => {
+                        setFreeTicketError(error);
+                    }}
+                />
+            )}
+
+            {/* Apply Ticket Confirmation Modal */}
+            <ApplyTicketConfirmationModal
+                isOpen={showApplyConfirmationModal}
+                onClose={() => {
+                    setShowApplyConfirmationModal(false);
+                }}
+                onConfirm={handleApplyTicketsConfirm}
+                ticketQuantity={ticketQuantity}
+                isApplying={applyingTicket}
             />
 
             <PreFooterIconModule />

@@ -40,7 +40,8 @@ export default function BlogPage() {
                             : "Failed to load blog posts";
                 setError(errorMessage);
                 // eslint-disable-next-line no-console
-                console.error("Error fetching blogs:", errorMessage);
+                // console.error("Error fetching blogs:", errorMessage);
+                console.warn("Error fetching blogs:", errorMessage);
             } catch {
                 setError("Unknown error occurred");
             }
