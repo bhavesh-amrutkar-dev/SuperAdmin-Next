@@ -34,7 +34,7 @@ export default function NewsletterForm({ mailIcon }: Props) {
       setSuccess(t("subscribeSuccess"));
       setEmail("");
     } catch (err) {
-      console.error("Newsletter error:", err);
+      console.warn("Newsletter error:", err);
       setError(t("subscribeError"));
     } finally {
       setLoading(false);
