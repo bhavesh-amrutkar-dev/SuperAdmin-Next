@@ -940,17 +940,20 @@ export default function RafflesDetailPage() {
             </div>
         );
     };
-
+    const slugifyName = (name: string) =>
+        name
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "");
     const handleShare = async () => {
         if (!lotteryItem) return;
 
-        // Slugify the raffle name for the URL path
         const displaySlug = slugifyName(displayName || "raffle");
 
-        // Construct the URL
-        const url = new URL(`${BASE_URL}raffles/${displaySlug}`);
+        // Absolute URL for Safari
+        const url = new URL(`raffles/${displaySlug}`, window.location.origin);
 
-        // Append required query params
         if (pid) url.searchParams.append("pid", pid);
         if (lotteryItem.childProductId) url.searchParams.append("cpid", lotteryItem.childProductId);
 
@@ -958,15 +961,24 @@ export default function RafflesDetailPage() {
             setSharing(true);
 
             if (navigator.share) {
-                // Mobile native share
+                // Mobile native share (Safari iOS works on HTTPS + user gesture)
                 await navigator.share({
                     title: displayName,
                     text: lotteryItem.description || lotteryItem.detailDesc || "Check this out on Donrifa!",
                     url: url.toString(),
                 });
             } else {
-                // Fallback → copy link to clipboard
-                await navigator.clipboard.writeText(url.toString());
+                // Clipboard fallback with Safari support
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(url.toString());
+                } else {
+                    const textarea = document.createElement("textarea");
+                    textarea.value = url.toString();
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(textarea);
+                }
                 toast.success("Link copied to clipboard!");
             }
         } catch (err) {
