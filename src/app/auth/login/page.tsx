@@ -11,6 +11,8 @@ import { AuthService } from "@/src/lib/services/auth";
 import { IEmailLoginRM } from "@/src/models/api/request/auth";
 import { mapAuthSession } from "@/src/lib/mappers/auth";
 import { persistAuthSession } from "@/src/lib/session/auth";
+import { Label } from "@/src/components/ui/label";
+import { Input } from "@/src/components/ui/input";
 
 export default function LoginPage() {
     const t = useTranslations();
@@ -48,24 +50,29 @@ export default function LoginPage() {
                 <h1 className="text-2xl font-bold section_title">
                     {t("welcomeBack")}
                 </h1>
-                <p className="text-sm text-[#7c7878] mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                     {t("signInToAccount")}
                 </p>
             </div>
 
             {/* Form */}
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+
                 {/* Email */}
-                <div className="space-y-1">
-                    <label className="text-sm font-medium text-[#2f2f2f]">
+                <div className="space-y-2">
+                    <Label
+                        htmlFor="email"
+                        error={!!errors.email}
+                        required
+                    >
                         {t("email")}
-                    </label>
-                    <input
+                    </Label>
+
+                    <Input
+                        id="email"
                         type="email"
                         placeholder={t("emailPlaceholder")}
-                        className={`w-full rounded-lg border !border-[#2f2f2f] px-4 py-2.5
-              focus:outline-none focus:!border-[#f3c200]
-              ${errors.email ? "border-red-400" : "border-gray-300"}`}
+                        error={!!errors.email}
                         {...register("email", {
                             required: t("emailRequired"),
                             pattern: {
@@ -74,24 +81,30 @@ export default function LoginPage() {
                             },
                         })}
                     />
+
                     <ErrorMessage message={errors.email?.message} />
                 </div>
 
                 {/* Password */}
-                <div className="space-y-1">
-                    <label className="text-sm font-medium text-[#2f2f2f]">
+                <div className="space-y-2">
+                    <Label
+                        htmlFor="password"
+                        error={!!errors.password}
+                        required
+                    >
                         {t("password")}
-                    </label>
-                    <input
+                    </Label>
+
+                    <Input
+                        id="password"
                         type="password"
                         placeholder={t("passwordPlaceholder")}
-                        className={`w-full rounded-lg border !border-[#2f2f2f] px-4 py-2.5
-              focus:outline-none focus:!border-[#f3c200]
-              ${errors.password ? "border-red-400" : "border-gray-300"}`}
+                        error={!!errors.password}
                         {...register("password", {
                             required: t("passwordRequired"),
                         })}
                     />
+
                     <ErrorMessage message={errors.password?.message} />
                 </div>
 
@@ -99,7 +112,7 @@ export default function LoginPage() {
                 <div className="flex justify-end">
                     <Link
                         href="/auth/forgot-password"
-                        className="text-sm font-medium text-[#2f2f2f] hover:text-[#f3c200] transition"
+                        className="text-sm font-medium text-foreground hover:text-primary transition"
                     >
                         {t("forgotPassword")}
                     </Link>
@@ -109,17 +122,19 @@ export default function LoginPage() {
                 <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full rounded-lg btn-primary py-3 text-white font-semibold
-            hover:bg-yellow-400 hover:text-black transition disabled:opacity-50 !border-0"
+                    className="w-full rounded-lg btn-primary py-3 font-semibold
+      hover:bg-yellow-400 hover:text-black transition disabled:opacity-50"
                 >
                     {isSubmitting ? t("signingIn") : t("signIn")}
                 </button>
+
             </form>
+
             {/* OR CONNECT WITH */}
             <div className="mt-6">
                 <div className="flex items-center gap-3">
-                    <div className="flex-1 h-px bg-gray-300" />
-                    <span className="text-xs text-gray-500 font-medium">
+                    <div className="flex-1 h-px bg-border" />
+                    <span className="text-xs text-muted-foreground font-medium">
                         {t("orConnectWith")}
                     </span>
                     <div className="flex-1 h-px bg-gray-300" />
@@ -127,17 +142,18 @@ export default function LoginPage() {
 
                 <Link
                     href="/auth/login-mobile"
-                    className="mt-4 flex items-center justify-center rounded-lg border border-[#2f2f2f]
-      py-2.5 text-sm font-semibold text-[#2f2f2f]
-      hover:border-[#f3c200] hover:text-[#f3c200] transition"
+                    className="mt-4 flex items-center justify-center rounded-lg border border-input
+py-2.5 text-sm font-semibold text-foreground
+hover:border-primary hover:text-primary transition"
+
                 >
-                  {t("loginWithNumber")}
+                    {t("loginWithNumber")}
                 </Link>
             </div>
 
 
             {/* Footer */}
-            <p className="mt-8 text-center text-sm text-[#2f2f2f]">
+            <p className="mt-8 text-center text-sm text-foreground">
                 {t("dontHaveAccount")}{" "}
                 <Link
                     href="/auth/register"

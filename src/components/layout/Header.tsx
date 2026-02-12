@@ -56,6 +56,12 @@ export default function Header() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+
+  useEffect(() => {
+  console.log("user", user);
+  
+  }, []);
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (

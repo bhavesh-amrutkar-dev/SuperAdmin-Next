@@ -10,6 +10,9 @@ import "react-phone-input-2/lib/style.css";
 import type { CountryData } from "react-phone-input-2";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { Input } from "@/src/components/ui/input";
+import { Label } from "@/src/components/ui/label";
+import ErrorMessage from "@/src/components/ui/errorMessage";
 type RegisterForm = {
   firstName: string;
   lastName: string;
@@ -94,7 +97,7 @@ export default function RegisterPage() {
         )}&otpId=${otpId}&expiry=${otpExpiryTime}&flow=signup`
       );
     } catch (err: any) {
-     setOtpError(err?.response?.data?.message || t("otpSendFailed"));
+      setOtpError(err?.response?.data?.message || t("otpSendFailed"));
     } finally {
       setOtpLoading(false);
     }
@@ -235,44 +238,44 @@ export default function RegisterPage() {
     };
   }, []);
 
-const validate = (): boolean => {
-  const newErrors: Errors = {};
+  const validate = (): boolean => {
+    const newErrors: Errors = {};
 
-  if (!form.firstName.trim())
-    newErrors.firstName = t("firstNameRequired");
+    if (!form.firstName.trim())
+      newErrors.firstName = t("firstNameRequired");
 
-  if (!form.lastName.trim())
-    newErrors.lastName = t("lastNameRequired");
+    if (!form.lastName.trim())
+      newErrors.lastName = t("lastNameRequired");
 
-  if (!form.email) {
-    newErrors.email = t("emailRequired");
-  } else if (!/^\S+@\S+\.\S+$/.test(form.email)) {
-    newErrors.email = t("emailInvalid");
-  }
+    if (!form.email) {
+      newErrors.email = t("emailRequired");
+    } else if (!/^\S+@\S+\.\S+$/.test(form.email)) {
+      newErrors.email = t("emailInvalid");
+    }
 
-  if (!form.dob) {
-    newErrors.dob = t("dobRequired");
-  } else {
-    const age =
-      new Date().getFullYear() - new Date(form.dob).getFullYear();
-    if (age < 18) newErrors.dob = t("ageRestriction");
-  }
+    if (!form.dob) {
+      newErrors.dob = t("dobRequired");
+    } else {
+      const age =
+        new Date().getFullYear() - new Date(form.dob).getFullYear();
+      if (age < 18) newErrors.dob = t("ageRestriction");
+    }
 
-  if (!form.mobile)
-    newErrors.mobile = t("mobileRequired");
+    if (!form.mobile)
+      newErrors.mobile = t("mobileRequired");
 
-  if (!form.country)
-    newErrors.country = t("countryRequired");
+    if (!form.country)
+      newErrors.country = t("countryRequired");
 
-  if (!form.password) {
-    newErrors.password = t("passwordRequired");
-  } else if (form.password.length < 8) {
-    newErrors.password = t("passwordMinLength");
-  }
+    if (!form.password) {
+      newErrors.password = t("passwordRequired");
+    } else if (form.password.length < 8) {
+      newErrors.password = t("passwordMinLength");
+    }
 
-  setErrors(newErrors);
-  return Object.keys(newErrors).length === 0;
-};
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
@@ -297,7 +300,7 @@ const validate = (): boolean => {
     }
   `;
 
- 
+
   return (
     <div className="w-full max-w-md rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] p-8">
       <div className="mb-8 text-center">
@@ -305,90 +308,115 @@ const validate = (): boolean => {
           {t("createAccount")}
         </h1>
       </div>
+      <form onSubmit={onSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-      <form
-        onSubmit={onSubmit}
-        className="grid grid-cols-1 gap-4 md:grid-cols-2"
-      >
-
-        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* First Name */}
-          <div>
-            <label className="text-sm font-medium">{t("firstName")}</label>
-            <input placeholder={t("firstNamePlaceholder")}
-              className={inputClass(errors.firstName)}
-              value={form.firstName}
-              onChange={(e) => {
-                setForm({ ...form, firstName: e.target.value });
-                setErrors({ ...errors, firstName: undefined });
-              }}
-            />
-            {errors.firstName && (
-              <p className="text-xs text-red-500 mt-1">{errors.firstName}</p>
-            )}
-          </div>
-
-          {/* Last Name */}
-          <div>
-            <label className="text-sm font-medium">{t("lastName")}</label>
-            <input placeholder={t("lastNamePlaceholder")}
-              className={inputClass(errors.lastName)}
-              value={form.lastName}
-              onChange={(e) => {
-                setForm({ ...form, lastName: e.target.value });
-                setErrors({ ...errors, lastName: undefined });
-              }}
-            />
-            {errors.lastName && (
-              <p className="text-xs text-red-500 mt-1">{errors.lastName}</p>
-            )}
-          </div>
+        {/* First Name */}
+        <div className="space-y-2">
+          <Label
+            htmlFor="firstName"
+            error={!!errors.firstName}
+            required
+          >
+            {t("firstName")}
+          </Label>
+          <Input
+            id="firstName"
+            placeholder={t("firstNamePlaceholder")}
+            value={form.firstName}
+            error={!!errors.firstName}
+            onChange={(e) => {
+              setForm({ ...form, firstName: e.target.value });
+              setErrors({ ...errors, firstName: undefined });
+            }}
+          />
+          <ErrorMessage message={errors.firstName} />
         </div>
 
+        {/* Last Name */}
+        <div className="space-y-2">
+          <Label
+            htmlFor="lastName"
+            error={!!errors.lastName}
+            required
+          >
+            {t("lastName")}
+          </Label>
+          <Input
+            id="lastName"
+            placeholder={t("lastNamePlaceholder")}
+            value={form.lastName}
+            error={!!errors.lastName}
+            onChange={(e) => {
+              setForm({ ...form, lastName: e.target.value });
+              setErrors({ ...errors, lastName: undefined });
+            }}
+          />
+          <ErrorMessage message={errors.lastName} />
+
+        </div>
 
         {/* Email */}
-        <div>
-          <label className="text-sm font-medium">{t("email")}</label>
-          <input
+        <div className="md:col-span-2 space-y-2">
+          <Label
+            htmlFor="email"
+            error={!!errors.email}
+            required
+          >
+            {t("email")}
+          </Label>
+          <Input
+            id="email"
+            type="email"
             placeholder="you@example.com"
-            className={inputClass(errors.email)}
             value={form.email}
+            error={!!errors.email}
             onChange={(e) => {
               setForm({ ...form, email: e.target.value });
               setErrors({ ...errors, email: undefined });
             }}
           />
           {emailValidating && (
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-muted-foreground">
               {t("checkingEmail")}
             </p>
           )}
-          {errors.email && (
-            <p className="text-xs text-red-500 mt-1">{errors.email}</p>
-          )}
+          <ErrorMessage message={errors.email} />
         </div>
 
-        {/* DOB */}
-        <div>
-          <label className="text-sm font-medium">{t("dateOfBirth")}</label>
-          <input
-            type="date"
-            className={inputClass(errors.dob)}
-            value={form.dob}
+        {/* Password */}
+        <div className="md:col-span-2 space-y-2">
+          <Label
+            htmlFor="password"
+            error={!!errors.password}
+            required
+          >
+            {t("password")}
+          </Label>
+          <Input
+            id="password"
+            type="password"
+            placeholder={t("passwordPlaceholder")}
+            value={form.password}
+            error={!!errors.password}
             onChange={(e) => {
-              setForm({ ...form, dob: e.target.value });
-              setErrors({ ...errors, dob: undefined });
+              setForm({ ...form, password: e.target.value });
+              setErrors({ ...errors, password: undefined });
             }}
           />
-          {errors.dob && (
-            <p className="text-xs text-red-500 mt-1">{errors.dob}</p>
-          )}
+          <ErrorMessage message={errors.password} />
         </div>
 
         {/* Mobile */}
-        <div>
-          <label className="text-sm font-medium">{t("mobile")}</label>
+        <div className="md:col-span-2 space-y-2">
+          <Label
+            htmlFor="mobile"
+            error={!!errors.mobile}
+            required
+          >
+            {t("mobile")}
+          </Label>
           <PhoneInput
+            inputProps={{ id: "mobile" }}
             country="us"
             value={`${form.countryCode}${form.mobile}`}
             onChange={(value, country) => {
@@ -405,21 +433,62 @@ const validate = (): boolean => {
               setErrors((prev) => ({ ...prev, mobile: undefined }));
             }}
             inputClass={`
-      !w-full !h-[44px] !rounded-lg !border !border-gray-300
-      !pl-14 !text-sm focus:!border-[#f3c200]
-      ${errors.mobile ? "!border-red-500" : ""}
-    `}
+        !w-full !h-[44px] !rounded-lg
+        !border ${errors.mobile ? "!border-red-500" : "!border-input"}
+        !pl-14 !text-sm
+        focus:!border-ring
+        focus:!ring-2 focus:!ring-ring
+      `}
           />
-          {errors.mobile && (
-            <p className="text-xs text-red-500 mt-1">{errors.mobile}</p>
-          )}
+          {/* {errors.mobile && (
+            <p className="text-xs text-red-500">{errors.mobile}</p>
+          )} */}
+          <ErrorMessage message={errors.mobile} />
+        </div>
+
+        {/* DOB */}
+        <div className="space-y-2">
+          <Label
+            htmlFor="dob"
+            error={!!errors.dob}
+            required
+          >
+            {t("dateOfBirth")}
+          </Label>
+          <Input
+            id="dob"
+            type="date"
+            value={form.dob}
+            error={!!errors.dob}
+            onChange={(e) => {
+              setForm({ ...form, dob: e.target.value });
+              setErrors({ ...errors, dob: undefined });
+            }}
+          />
+          <ErrorMessage message={errors.dob} />
         </div>
 
         {/* Country */}
-        <div>
-          <label className="text-sm font-medium">{t("country")}</label>
+        <div className="space-y-2">
+          <Label
+            htmlFor="country"
+            error={!!errors.country}
+            required
+          >
+            {t("country")}
+          </Label>
           <select
-            className={inputClass(errors.country)}
+            id="country"
+            className={`
+        w-full h-[44px] rounded-lg border bg-background
+        px-4 text-sm
+        transition-all duration-200
+        focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring
+        ${errors.country
+                ? "border-red-500 focus:ring-red-200 focus:border-red-500"
+                : "border-input hover:border-muted-foreground/40"
+              }
+      `}
             value={form.country}
             onChange={(e) => {
               setForm({ ...form, country: e.target.value });
@@ -433,43 +502,24 @@ const validate = (): boolean => {
               </option>
             ))}
           </select>
-          {errors.country && (
-            <p className="text-xs text-red-500 mt-1">{errors.country}</p>
-          )}
+          {/* {errors.country && (
+            <p className="text-xs text-red-500">{errors.country}</p>
+          )} */}
+          <ErrorMessage message={errors.country} />
         </div>
 
-
-
-        <div className="md:col-span-2">
-          <label className="text-sm font-medium">{t("password")}</label>
-          <input
-            type="password"
-            placeholder={t("passwordPlaceholder")}
-            className={inputClass(errors.password)}
-            value={form.password}
-            onChange={(e) => {
-              setForm({ ...form, password: e.target.value });
-              setErrors({ ...errors, password: undefined });
-            }}
-          />
-          {errors.password && (
-            <p className="text-xs text-red-500 mt-1">{errors.password}</p>
-          )}
-        </div>
-
+        {/* Button */}
         <button
           disabled={loading}
-          className="
-    md:col-span-2 w-full rounded-lg bg-[#f3c200]
-    py-3 text-sm font-semibold text-black
-    hover:bg-yellow-400 transition
-  "
+          className="md:col-span-2 w-full rounded-lg bg-[#f3c200] py-3 text-sm font-semibold text-black hover:bg-yellow-400 transition"
         >
           {loading ? t("sendingOtp") : t("signUp")}
         </button>
 
-
       </form>
+
+
+
 
       <div className="mt-8 text-center">
         <p className="text-sm">

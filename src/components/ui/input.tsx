@@ -1,22 +1,42 @@
 import * as React from "react"
-
 import { cn } from "@/src/lib/utils"
 
-const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
-  ({ className, type, ...props }, ref) => {
+export interface InputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {
+  error?: boolean
+}
+
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, error, ...props }, ref) => {
     return (
       <input
         type={type}
+        ref={ref}
         className={cn(
-          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+          `
+          w-full h-[44px] rounded-lg border bg-background
+          px-4 text-sm
+          placeholder:text-muted-foreground
+          transition-colors duration-200
+
+          focus:outline-none
+          focus:ring-2
+           focus:ring-yellow-200
+            focus:border-[#f3c200]
+
+          disabled:opacity-50 disabled:cursor-not-allowed
+          `,
+          error
+            ? "border-red-500 focus:ring-red-200 focus:border-red-500"
+            : "border-gray-300 hover:border-gray-400",
           className
         )}
-        ref={ref}
         {...props}
       />
     )
   }
 )
+
 Input.displayName = "Input"
 
 export { Input }
