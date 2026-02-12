@@ -7,7 +7,10 @@ const withNextIntl = createNextIntlPlugin();
 const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
-    minimumCacheTTL: 86400,
+
+    // 🔥 Disable image cache
+    minimumCacheTTL: 0,
+
     remotePatterns: [
       { protocol: "https", hostname: "cdn.donrifa.com" },
       { protocol: "https", hostname: "dkzgp10lku01a.cloudfront.net" },
@@ -29,30 +32,19 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/_next/static/:path*",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
-          },
-        ],
-      },
-      {
-        source: "/images/:path*",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
-          },
-        ],
-      },
-      {
         source: "/:path*",
         headers: [
           {
             key: "Cache-Control",
-            value:
-              "public, max-age=0, s-maxage=86400, stale-while-revalidate=86400",
+            value: "no-store, no-cache, must-revalidate, proxy-revalidate",
+          },
+          {
+            key: "Pragma",
+            value: "no-cache",
+          },
+          {
+            key: "Expires",
+            value: "0",
           },
         ],
       },
@@ -65,7 +57,6 @@ const nextConfig: NextConfig = {
 
   async redirects() {
     return [
-      // Normalize common misspelling - redirect old path to new path
       {
         source: "/raffles_list_details",
         destination: "/raffles",
