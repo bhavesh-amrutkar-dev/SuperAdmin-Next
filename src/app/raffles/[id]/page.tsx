@@ -942,19 +942,40 @@ export default function RafflesDetailPage() {
     };
 
     const handleShare = async () => {
-        const url = `${BASE_URL}raffles/${pid}`
+        if (!lotteryItem) return;
 
-        if (navigator.share) {
-            try {
-                await navigator.share({ title: displayName, url })
-            } catch (err) {
-                console.warn("Share failed:", err)
+        // Slugify the raffle name for the URL path
+        const displaySlug = slugifyName(displayName || "raffle");
+
+        // Construct the URL
+        const url = new URL(`${BASE_URL}raffles/${displaySlug}`);
+
+        // Append required query params
+        if (pid) url.searchParams.append("pid", pid);
+        if (lotteryItem.childProductId) url.searchParams.append("cpid", lotteryItem.childProductId);
+
+        try {
+            setSharing(true);
+
+            if (navigator.share) {
+                // Mobile native share
+                await navigator.share({
+                    title: displayName,
+                    text: lotteryItem.description || lotteryItem.detailDesc || "Check this out on Donrifa!",
+                    url: url.toString(),
+                });
+            } else {
+                // Fallback → copy link to clipboard
+                await navigator.clipboard.writeText(url.toString());
+                toast.success("Link copied to clipboard!");
             }
-        } else {
-            await navigator.clipboard.writeText(url)
-            toast.success("Link copied to clipboard!")
+        } catch (err) {
+            console.error("Share failed:", err);
+        } finally {
+            setSharing(false);
         }
-    }
+    };
+
 
     return (
         <main className="bg-gray-50 min-h-screen">
