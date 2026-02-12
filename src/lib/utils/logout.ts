@@ -8,7 +8,8 @@ import { initGuest } from "../bootstrap/initGuest";
  * Clears all authentication cookies and initializes guest session
  */
 export async function logout() {
-    // Clear all authentication-related cookies
+  try {
+    
     deleteCookie("access_token", { path: "/" });
     deleteCookie("refresh_token", { path: "/" });
     deleteCookie("token", { path: "/" });
@@ -16,7 +17,16 @@ export async function logout() {
     deleteCookie("sid", { path: "/" });
     deleteCookie("uid", { path: "/" });
 
-    // Initialize guest session
-    await initGuest();
-}
+    // Optional: if you store these
+    deleteCookie("user_name", { path: "/" });
+    deleteCookie("profile_pic", { path: "/" });
 
+    // Notify app (optional but recommended)
+    window.dispatchEvent(new Event("userLoggedOut"));
+
+    // Reinitialize guest session
+    await initGuest();
+  } catch (error) {
+    console.error("Logout error:", error);
+  }
+}

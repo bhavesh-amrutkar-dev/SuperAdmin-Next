@@ -28,6 +28,9 @@ export function persistAuthSession(session: AuthSession) {
   setCookie("access_exp", session.accessExpireAt, {
     path: "/",
   });
+  setCookie("user_name", session.name, { path: "/" });
+  setCookie("profile_pic", session.profilePic || "", { path: "/" });
+
 
   // Set uid cookie for compatibility with checkout and other pages
   if (session.userId) {

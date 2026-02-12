@@ -1,192 +1,253 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  memo,
+} from "react";
 import { getCookie, setCookie } from "cookies-next";
 import { useTranslations } from "next-intl";
 
 import {
-    COUNTRY,
-    COUNTRY_CODE,
-    DEFAULT_COUNTRY,
-    DEFAULT_COUNTRY_CODE,
+  COUNTRY,
+  COUNTRY_CODE,
+  DEFAULT_COUNTRY,
+  DEFAULT_COUNTRY_CODE,
 } from "@/src/lib/config";
 import { CountryService, CountryApiItem } from "@/src/lib/services/country";
 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/src/components/ui/dialog";
+import { Button } from "@/src/components/ui/button";
+
 type CountryOption = {
-    id: string;
-    code: string;
-    name: string;
+  id: string;
+  code: string;
+  name: string;
 };
 
-
-type CountrySelectorModalProps = {
-    open: boolean;
-    onClose: () => void;
-    onCountryChange?: (country: CountryOption) => void;
+type Props = {
+  open: boolean;
+  onClose: () => void;
+  onCountryChange?: (country: CountryOption) => void;
 };
+
+/* ------------------ */
+/* Global Cache (Important) */
+/* ------------------ */
+
+let countriesCache: CountryOption[] | null = null;
+let countriesPromise: Promise<CountryOption[]> | null = null;
+
+/* ------------------ */
+/* Memoized Country Card */
+/* ------------------ */
+
+const CountryCard = memo(function CountryCard({
+  country,
+  selectedCode,
+  onSelect,
+}: {
+  country: CountryOption;
+  selectedCode: string | null;
+  onSelect: (code: string) => void;
+}) {
+  const isSelected = selectedCode === country.code;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(country.code)}
+      className={`
+        group flex flex-col items-center rounded-xl border
+        px-4 py-4 transition-all duration-150
+        ${
+          isSelected
+            ? "border-[#FECB02] ring-2 ring-[#FECB02]/40 shadow-sm"
+            : "border-gray-200 hover:border-[#FECB02]/60 hover:shadow-sm"
+        }
+      `}
+    >
+      <div
+        className={`
+          mb-2 flex h-12 w-12 items-center justify-center
+          rounded-full text-xs font-semibold transition
+          ${
+            isSelected
+              ? "bg-[#FECB02]/20 text-black"
+              : "bg-gray-100 text-gray-600 group-hover:bg-[#FECB02]/10"
+          }
+        `}
+      >
+        {country.code}
+      </div>
+
+      <span className="text-center text-sm font-medium text-gray-800">
+        {country.name}
+      </span>
+    </button>
+  );
+});
+
+/* ------------------ */
+/* Component */
+/* ------------------ */
 
 export default function CountrySelectorModal({
-    open,
-    onClose,
-    onCountryChange,
-}: CountrySelectorModalProps) {
-    const [selectedCode, setSelectedCode] = useState<string | null>(null);
-    const [countries, setCountries] = useState<CountryOption[]>([]);
-    const t = useTranslations();
+  open,
+  onClose,
+  onCountryChange,
+}: Props) {
+  const t = useTranslations();
 
-    useEffect(() => {
-        if (!open) return;
+  const [selectedCode, setSelectedCode] = useState<string | null>(null);
+  const [countries, setCountries] = useState<CountryOption[]>([]);
+  const [loading, setLoading] = useState(false);
 
-        const existingCode =
-            (getCookie(COUNTRY_CODE) as string | undefined) || DEFAULT_COUNTRY_CODE;
-        setSelectedCode(existingCode);
+  /* ------------------ */
+  /* Fetch Countries (Cached) */
+  /* ------------------ */
 
-        CountryService.getCountries()
-            .then((payload) => {
-                const apiCountries = (payload as any)?.data ?? [];
+  useEffect(() => {
+    if (!open) return;
 
-                const mapped: CountryOption[] = (apiCountries as CountryApiItem[]).map(
-                    (c) => ({
-                        id: c._id,
-                        code: c.countryCode,
-                        name: c.countryName,
-                    })
-                );
+    const existingCode =
+      (getCookie(COUNTRY_CODE) as string | undefined) ||
+      DEFAULT_COUNTRY_CODE;
 
-                if (mapped.length) {
-                    setCountries(mapped);
-                }
-            })
-            .catch(() => {
-                // fall back silently to static list
-            });
-    }, [open]);
+    setSelectedCode(existingCode);
 
-    if (!open) return null;
+    if (countriesCache) {
+      setCountries(countriesCache);
+      return;
+    }
 
-    const handleContinue = () => {
-        const selected =
-            countries.find((c) => c.code === selectedCode) ??
-            countries.find((c) => c.code === DEFAULT_COUNTRY_CODE) ??
-            countries[0];
+    if (!countriesPromise) {
+      setLoading(true);
 
-        if (!selected) {
-            return;
-        }
+      countriesPromise = CountryService.getCountries()
+        .then((payload) => {
+          const apiCountries = (payload as any)?.data ?? [];
 
-        setCookie(COUNTRY_CODE, selected.code, {
-            maxAge: 60 * 60 * 24 * 365,
-        });
-        setCookie(COUNTRY, selected.name || DEFAULT_COUNTRY, {
-            maxAge: 60 * 60 * 24 * 365,
-        });
-        setCookie("C_id", selected.id, {
-            maxAge: 60 * 60 * 24 * 365,
-        });
+          const mapped: CountryOption[] = (
+            apiCountries as CountryApiItem[]
+          ).map((c) => ({
+            id: c._id,
+            code: c.countryCode,
+            name: c.countryName,
+          }));
 
+          countriesCache = mapped;
+          return mapped;
+        })
+        .finally(() => setLoading(false));
+    }
 
-        try {
-            if (typeof window !== "undefined") {
-                window.localStorage.setItem("C_code", selected.code);
-            }
-        } catch {
-            // ignore localStorage errors (e.g. in private mode)
-        }
+    countriesPromise.then((data) => {
+      setCountries(data);
+    });
+  }, [open]);
 
-        onCountryChange?.(selected);
+  /* ------------------ */
+  /* Memoized Handlers */
+  /* ------------------ */
 
-        // Dispatch custom event for country change
-        try {
-            if (typeof window !== "undefined") {
-                window.dispatchEvent(new CustomEvent("countryChanged", { detail: selected }));
-            }
-        } catch (err) {
-            // eslint-disable-next-line no-console
-            console.error("Error dispatching country change event:", err);
-        }
+  const handleSelect = useCallback((code: string) => {
+    setSelectedCode(code);
+  }, []);
 
-        onClose();
-    };
+  const handleContinue = useCallback(() => {
+    const selected =
+      countries.find((c) => c.code === selectedCode) ??
+      countries[0];
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-            <div className="mx-4 w-full max-w-3xl rounded-lg bg-white shadow-2xl">
-                {/* Top accent bar */}
-                <div className="h-3 w-full rounded-t-lg bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-400" />
+    if (!selected) return;
 
-                <div className="px-8 pb-8 pt-6">
-                    {/* Search bar (visual only for now) */}
-                    <div className="mb-8">
-                        <div className="relative">
-                            <input
-                                type="text"
-                                className="w-full rounded-full border border-gray-200 bg-gray-100 py-3 pl-10 pr-4 text-sm text-gray-700 placeholder-gray-400 focus:border-yellow-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-yellow-300"
-                                placeholder={t("countryModalSearchPlaceholder")}
-                                disabled
-                            />
-                            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                                🔍
-                            </span>
-                        </div>
-                    </div>
+    const cookieOptions = { maxAge: 60 * 60 * 24 * 365 };
 
-                    {/* Title */}
-                    <div className="mb-8">
-                        <p className="text-center text-lg font-semibold uppercase leading-tight text-gray-900">
-                            {t("countryModalTitle")}
-                        </p>
-                    </div>
+    setCookie(COUNTRY_CODE, selected.code, cookieOptions);
+    setCookie(COUNTRY, selected.name || DEFAULT_COUNTRY, cookieOptions);
+    setCookie("C_id", selected.id, cookieOptions);
 
-                    {/* Country options */}
-                    <div className="mb-10 max-h-[60vh] overflow-y-auto pr-2 flex flex-wrap items-stretch justify-center gap-8">
-                        {countries.map((country) => {
-                            const isSelected = selectedCode === country.code;
+    try {
+      window.localStorage.setItem("C_code", selected.code);
+      window.dispatchEvent(
+        new CustomEvent("countryChanged", { detail: selected })
+      );
+    } catch {}
 
-                            return (
-                                <button
-                                    key={country.id}
-                                    type="button"
-                                    onClick={() => setSelectedCode(country.code)}
-                                    className={`flex w-40 flex-col items-center rounded-md border px-4 py-4 transition ${isSelected
-                                        ? "border-yellow-400 bg-yellow-50 shadow-md"
-                                        : "border-gray-200 bg-white hover:border-yellow-300 hover:bg-gray-50"
-                                        }`}
-                                >
-                                    <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 text-lg font-semibold">
-                                        {country.code}
-                                    </div>
-                                    <span className="text-center text-sm font-semibold text-gray-900">
-                                        {country.name}
-                                    </span>
-                                </button>
-                            );
-                        })}
-                    </div>
+    onCountryChange?.(selected);
+    onClose();
+  }, [countries, selectedCode, onClose, onCountryChange]);
 
-                    {/* Actions */}
-                    <div className="flex items-center justify-center gap-4">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="rounded-md px-5 py-2 text-sm font-semibold text-gray-500 hover:bg-gray-100"
-                        >
-                            {t("countryModalCancel")}
-                        </button>
+  /* ------------------ */
+  /* Memoized Country List */
+  /* ------------------ */
 
-                        <button
-                            type="button"
-                            onClick={handleContinue}
-                            disabled={!selectedCode}
-                            className={`min-w-[160px] rounded-md px-8 py-2 text-sm font-semibold uppercase tracking-wide text-gray-900 ${selectedCode
-                                ? "bg-yellow-400 hover:bg-yellow-500"
-                                : "cursor-not-allowed bg-gray-300 text-gray-500"
-                                }`}
-                        >
-                            {t("countryModalContinue")}
-                        </button>
-                    </div>
-                </div>
+  const countryList = useMemo(
+    () =>
+      countries.map((country) => (
+        <CountryCard
+          key={country.id}
+          country={country}
+          selectedCode={selectedCode}
+          onSelect={handleSelect}
+        />
+      )),
+    [countries, selectedCode, handleSelect]
+  );
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="p-5 sm:max-w-2xl sm:p-6">
+        <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-gray-300 sm:hidden" />
+
+        <DialogHeader className="pt-2 text-center sm:text-left">
+          <DialogTitle>{t("countryModalTitle")}</DialogTitle>
+          <DialogDescription>
+            Select your country to continue
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="mt-6 max-h-[55vh] overflow-y-auto pr-1">
+          {loading ? (
+            <div className="text-center text-sm text-gray-500 py-10">
+              Loading countries...
             </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              {countryList}
+            </div>
+          )}
         </div>
-    );
+
+        <DialogFooter className="mt-6 gap-3 sm:mt-8">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="w-full sm:w-auto"
+          >
+            {t("countryModalCancel")}
+          </Button>
+
+          <Button
+            variant="primary"
+            disabled={!selectedCode}
+            onClick={handleContinue}
+            className="w-full sm:w-auto"
+          >
+            {t("countryModalContinue")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }

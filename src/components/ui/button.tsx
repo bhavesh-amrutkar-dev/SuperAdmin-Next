@@ -3,52 +3,50 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/src/lib/utils";
 
-
-// Updated button variants to match visual styles in image
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-semibold transition-all duration-200 ease-in-out cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        // Primary: Solid blue button
-        default: "bg-blue-600 text-white hover:bg-blue-700",
+        primary:
+          "bg-gradient-to-r from-[#FECB02] to-[#FFD84D] text-black shadow-md hover:from-[#FFD84D] hover:to-[#FECB02] hover:shadow-lg active:scale-[0.98]",
 
-        // Secondary: Outline blue button
-        secondary: "border border-blue-600 text-blue-600 hover:bg-blue-50",
+        dark:
+          "bg-white/10 text-white backdrop-blur-sm border border-white/10 hover:bg-[#FECB02] hover:text-black hover:border-[#FECB02]",
 
-        // Ghost: Text-only button with hover underline
-        ghost: "text-blue-600 hover:underline",
+        outline:
+          "border border-[#FECB02] text-[#FECB02] hover:bg-[#FECB02] hover:text-black",
 
-        // Destructive: Solid red button
-        destructive: "bg-red-500 text-white hover:bg-red-600",
+        ghost:
+          "text-white hover:text-[#FECB02]",
 
-        // Outline destructive: Red border only
+        destructive:
+          "bg-red-600 text-white hover:bg-red-700",
+
         destructiveOutline:
-          "border border-red-500 text-red-500 hover:bg-red-50",
+          "border border-red-600 text-red-600 hover:bg-red-50",
 
-        // Icon (used in combination with default/secondary)
-        outline: "border border-blue-600 text-blue-600 hover:bg-blue-50",
+        logout:
+          "w-full justify-start text-red-500 hover:bg-[#FECB02] hover:text-black",
 
-        // Link: like ghost but underlined
-        link: "text-blue-600 underline hover:text-blue-800",
-        // Ghost: Text-only 
-        onlyText: "text-blue-600",
-
+        dropdown:
+          "w-full justify-start text-gray-800 hover:bg-[#FECB02] hover:text-black",
 
       },
       size: {
-        sm: "h-8 px-3 text-sm",      // Small
-        default: "h-10 px-4 text-sm", // Default
-        lg: "h-12 px-6 text-base",    // Large
-        icon: "h-10 w-10",            // Icon-only
+        sm: "h-8 px-3 text-sm",
+        default: "h-10 px-4",
+        lg: "h-12 px-6 text-base",
+        icon: "h-10 w-10 p-0",
       },
     },
     defaultVariants: {
-      variant: "default",
+      variant: "primary",
       size: "default",
     },
   }
 );
+
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,

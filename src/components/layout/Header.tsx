@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, X, ShoppingCart, User, Globe } from "lucide-react";
+import { Menu, X, ShoppingCart, User, Globe, MapPin, LogOut } from "lucide-react";
 import {
   COUNTRY,
   DEFAULT_COUNTRY,
@@ -14,8 +14,10 @@ import LanguageSwitcher from "../LanguageSwitcher";
 import { getCookie } from "cookies-next";
 import CountrySelectorModal from "./CountrySelectorModal";
 import { logout as logoutUser } from "@/src/lib/utils/logout";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { CartService } from "@/src/lib/services/cart";
+import { Button } from "../ui/button";
+import { useAuth } from "@/src/context/authContext";
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -24,9 +26,13 @@ export default function Header() {
   const [countryModalOpen, setCountryModalOpen] = useState(false);
   const [currentCountry, setCurrentCountry] = useState(DEFAULT_COUNTRY);
   const [cartCount, setCartCount] = useState(0);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
 
   const t = useTranslations();
   const router = useRouter();
+  const { user } = useAuth();
+  const pathname = usePathname();
 
   const navItems = [
     { key: "howItWorks", href: "/#howItWorks" },
@@ -34,6 +40,36 @@ export default function Header() {
     { key: "winners", href: "/winners" },
     { key: "contact", href: "/contact" },
   ];
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(e.target as Node)
+      ) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        menuOpen &&
+        sidebarRef.current &&
+        !sidebarRef.current.contains(e.target as Node)
+      ) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpen]);
 
   const fetchCartCount = async () => {
     try {
@@ -60,7 +96,9 @@ export default function Header() {
       setCartCount(0);
     }
   };
-
+  useEffect(() => {
+    setUserMenuOpen(false);
+  }, [pathname]);
   useEffect(() => {
     setIsLoggedIn(!!getCookie("access_token"));
 
@@ -121,37 +159,49 @@ export default function Header() {
               </Link>
             ))}
 
-            {/* Country */}
-            <button
+            <Button
+              variant="dark"
+              size="sm"
               onClick={() => setCountryModalOpen(true)}
-              className="hidden md:flex items-center gap-1 rounded-md bg-white/10 px-3 py-1 text-xs font-semibold uppercase text-white hover:bg-white/20"
+              className="hidden md:flex uppercase text-xs"
             >
               <Globe size={14} />
               {currentCountry}
-            </button>
+            </Button>
 
-            <LanguageSwitcher />
+            <LanguageSwitcher variant="header" />
+
 
             {!isLoggedIn ? (
-              <Link
-                href="/auth/login"
-                className="btn-primary gap-1 px-3 py-2 rounded-md text-sm font-semibold flex items-center"
-              >
-                <User size={16} /> {t("login")}
-              </Link>
+              <Button asChild size="sm">
+                <Link href="/auth/login">
+                  <User size={16} /> {t("login")}
+                </Link>
+              </Button>
+
             ) : (
-              <div className="relative">
-                <button
+              <div ref={userMenuRef} className="relative">
+                <Button
+                  variant="dark"
                   onClick={() => setUserMenuOpen((p) => !p)}
-                  className="flex items-center gap-2 bg-white/10 hover:bg-white/20 transition px-3 py-2 rounded-full"
+                  className="rounded-full px-3"
                 >
-                  <div className="w-8 h-8 rounded-full bg-[#FECB02] flex items-center justify-center text-black font-semibold text-sm">
-                    B
-                  </div>
-                  <span className="hidden md:block text-sm font-medium text-white">
-                    Account
-                  </span>
-                </button>
+                  {user?.profilePic ? (
+                    <Image
+                      src={user.profilePic}
+                      alt={user.name || "User"}
+                      width={32}
+                      height={32}
+                      className="rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-[#FECB02] flex items-center justify-center text-black font-semibold text-sm">
+                      {user?.name?.charAt(0).toUpperCase() || <User />}
+                    </div>
+                  )}
+                </Button>
+
+
 
                 {userMenuOpen && (
                   <div className="absolute right-0 mt-3 w-56 rounded-xl bg-white shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
@@ -159,7 +209,7 @@ export default function Header() {
                     {/* User Info Section */}
                     <div className="px-4 py-3 bg-gray-50 border-b">
                       <p className="text-sm font-semibold text-gray-800">
-                        Bhavesh
+                        {user?.name || "User"}
                       </p>
                       <p className="text-xs text-gray-500">
                         Welcome back 👋
@@ -167,39 +217,56 @@ export default function Header() {
                     </div>
 
                     {/* Menu Items */}
-                    <div className="py-2">
-                      <Link
-                        href="/profile"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
-                      >
-                        <User size={16} />
-                        {t("manageProfile")}
-                      </Link>
+                    <div className="py-2 px-2 flex flex-col gap-1">
 
-                      <Link
-                        href="/addresses"
+                      <Button
+                        asChild
+                        variant="dropdown"
+                        size="sm"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
                       >
-                        {t("savedAddresses")}
-                      </Link>
+                        <Link href="/profile">
+                          <User size={16} />
+                          {t("manageProfile")}
+                        </Link>
+                      </Button>
+
+                      <Button
+                        asChild
+                        variant="dropdown"
+                        size="sm"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        <Link href="/addresses">
+                          <MapPin size={16} />
+                          {t("savedAddresses")}
+                        </Link>
+                      </Button>
+
                     </div>
+
 
                     {/* Divider */}
                     <div className="border-t" />
 
-                    {/* Logout */}
-                    <button
-                      onClick={async () => {
-                        setUserMenuOpen(false);
-                        await logoutUser();
-                        router.replace("/auth/login");
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition"
-                    >
-                      {t("logout")}
-                    </button>
+                    <div className="px-2 pb-2">
+
+                      <Button
+                        variant="logout"
+                        size="sm"
+                        onClick={async () => {
+                          setUserMenuOpen(false);
+                          await logoutUser();
+                          router.replace("/auth/login");
+                        }}
+                      >
+                        <LogOut size={16} />
+                        {t("logout")}
+                      </Button>
+
+                    </div>
+
+
                   </div>
                 )}
               </div>
@@ -209,17 +276,18 @@ export default function Header() {
 
           {/* CART ICON RIGHT */}
           <div className="flex items-center gap-2">
-            <Link
-              href="/cart"
-              className="relative flex items-center rounded-md btn-primary p-2"
-            >
-              <ShoppingCart size={20} />
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs min-w-[20px] h-5 rounded-full flex items-center justify-center px-1">
-                  {cartCount > 99 ? "99+" : cartCount}
-                </span>
-              )}
-            </Link>
+            <Button asChild size="icon" className="relative">
+              <Link
+                href="/cart"
+              >
+                <ShoppingCart size={20} />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs min-w-[20px] h-5 rounded-full flex items-center justify-center px-1">
+                    {cartCount > 99 ? "99+" : cartCount}
+                  </span>
+                )}
+              </Link>
+            </Button>
           </div>
 
         </div>
@@ -227,74 +295,167 @@ export default function Header() {
 
       {/* MOBILE SIDEBAR */}
       <div
-        className={`fixed inset-0 z-50 lg:hidden transform transition-transform duration-300 ${menuOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed inset-0 z-50 lg:hidden transition-all duration-300 ${menuOpen ? "visible opacity-100" : "invisible opacity-0"
           }`}
       >
-        <div className="absolute inset-0 bg-black/50" onClick={() => setMenuOpen(false)} />
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
-        <aside className="relative z-50 w-64 h-full bg-white shadow-xl p-6 flex flex-col">
-          <button
-            onClick={() => setMenuOpen(false)}
-            className="self-end mb-4 text-gray-700"
-          >
-            <X size={22} />
-          </button>
+        {/* Sidebar */}
+        <aside
+          ref={sidebarRef}
+          className={`absolute left-0 top-0 h-full w-72 bg-white shadow-2xl transform transition-transform duration-300 flex flex-col ${menuOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
+        >
+          {/* HEADER SECTION */}
+          <div className="p-6 border-b">
+            {!isLoggedIn ? (
+              <>
+                <p className="text-lg font-semibold text-gray-900">
+                  Welcome 👋
+                </p>
+                <p className="text-sm text-gray-500 mb-4">
+                  Login or create an account
+                </p>
 
-          <nav className="flex flex-col gap-4">
+                <div className="flex gap-3">
+                  <Button
+                    asChild
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <Link href="/auth/login">
+                      {t("login")}
+                    </Link>
+                  </Button>
+
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <Link href="/auth/register">
+                      {t("signUp")}
+                    </Link>
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center gap-3">
+                {user?.profilePic ? (
+                  <Image
+                    src={user.profilePic}
+                    alt={user.name || "User"}
+                    width={40}
+                    height={40}
+                    className="rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-[#FECB02] flex items-center justify-center text-black font-semibold">
+                    {user?.name?.charAt(0).toUpperCase() || "U"}
+                  </div>
+                )}
+
+                <div>
+                  <p className="font-semibold text-gray-800">
+                    {user?.name || "User"}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Welcome back 👋
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* MENU SECTION */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-2">
+
+            {/* Navigation Links */}
             {navItems.map((item) => (
-              <Link
+              <Button
                 key={item.href}
-                href={item.href}
+                asChild
+                variant="dropdown"
+                size="sm"
+                className="w-full justify-start"
                 onClick={() => setMenuOpen(false)}
-                className="text-gray-800 font-medium"
               >
-                {t(item.key)}
-              </Link>
+                <Link href={item.href}>
+                  {t(item.key)}
+                </Link>
+              </Button>
             ))}
 
-            <button
+            <div className="border-t my-3" />
+
+            {/* Country */}
+            <Button
+              variant="dropdown"
+              size="sm"
               onClick={() => {
                 setCountryModalOpen(true);
                 setMenuOpen(false);
               }}
-              className="flex items-center gap-2 pt-4 text-gray-800"
             >
               <Globe size={16} />
               {currentCountry}
-            </button>
+            </Button>
 
-            {!isLoggedIn ? (
-              <Link
-                href="/auth/login"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 pt-4 text-gray-800"
-              >
-                <User size={16} /> {t("login")}
-              </Link>
-            ) : (
+            {/* Language */}
+            <div className="pt-1">
+              <LanguageSwitcher variant="sidebar" />
+            </div>
+
+            {isLoggedIn && (
               <>
-                <Link
-                  href="/profile"
+                <div className="border-t my-3" />
+
+                <Button
+                  asChild
+                  variant="dropdown"
+                  size="sm"
                   onClick={() => setMenuOpen(false)}
-                  className="pt-4 text-gray-800"
                 >
-                  {t("manageProfile")}
-                </Link>
-                <button
+                  <Link href="/profile">
+                    <User size={16} />
+                    {t("manageProfile")}
+                  </Link>
+                </Button>
+
+                <Button
+                  asChild
+                  variant="dropdown"
+                  size="sm"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <Link href="/addresses">
+                    <MapPin size={16} />
+                    {t("savedAddresses")}
+                  </Link>
+                </Button>
+
+                <Button
+                  variant="logout"
+                  size="sm"
                   onClick={async () => {
                     setMenuOpen(false);
                     await logoutUser();
                     router.replace("/auth/login");
                   }}
-                  className="text-left pt-2 text-red-600"
                 >
+                  <LogOut size={16} />
                   {t("logout")}
-                </button>
+                </Button>
               </>
             )}
-          </nav>
+          </div>
         </aside>
       </div>
+
 
       <CountrySelectorModal
         open={countryModalOpen}
