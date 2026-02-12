@@ -12,5 +12,11 @@ export const HomeService = {
       },
     });
   },
+
+  newsletter: (email: string) => {
+    return pyApiClient.post<>("/newsletter", {
+      email
+    });
+  },
 };
 
