@@ -708,6 +708,45 @@ export default function RafflesDetailPage() {
 
         setApplyingTicket(true);
         try {
+            // Check if item already exists in cart
+            let existingItemId: string | undefined = undefined;
+            let existingQuantity = 0;
+
+            try {
+                const cartResponse = await CartService.getCart();
+                const cartData = (cartResponse as any)?.data?.data || (cartResponse as any)?.data;
+
+                if (cartData && cartData.sellers) {
+                    const productId = lotteryItem.childProductId || lotteryItem.productId || (params.id as string);
+
+                    for (const seller of cartData.sellers) {
+                        if (seller.products) {
+                            for (const product of seller.products) {
+                                const prodId = product.productId || product.centralProductId || product._id;
+                                const prodTicketId = product.ticketId || (product.ticketDetails?.ticketId);
+
+                                // Match by productId and ticketId
+                                if (prodId === productId && prodTicketId === (ticketId || null)) {
+                                    existingItemId = product.addToCartOnId || product._id;
+                                    existingQuantity = typeof product.quantity === 'object' && product.quantity !== null
+                                        ? Number(product.quantity.value) || 0
+                                        : Number(product.quantity) || 0;
+                                    break;
+                                }
+                            }
+                            if (existingItemId) break;
+                        }
+                    }
+                }
+            } catch (cartError) {
+                // If cart fetch fails, proceed with add action
+                console.warn("Could not fetch cart to check for existing items:", cartError);
+            }
+
+            // If item exists, update it; otherwise add new
+            const finalQuantity = existingItemId ? existingQuantity + quantity : quantity;
+            const action = existingItemId ? 2 : 1; // 2 = update, 1 = add
+
             await CartService.addToCart({
                 centralProductId: lotteryItem.childProductId || lotteryItem.productId || (params.id as string),
                 productId: lotteryItem.childProductId || lotteryItem.productId || (params.id as string),
@@ -717,8 +756,8 @@ export default function RafflesDetailPage() {
                 ticketId: ticketId || null,
                 campaignId: lotteryItem.campaignId,
                 countryId: (getCookie("C_id") as string) || "633a6c3dd17f0000ea00102e",
-                newQuantity: quantity,
-                action: 1,
+                newQuantity: finalQuantity,
+                action: action,
                 cartType: 2,
                 offers: {},
                 storeTypeId: 8,
@@ -727,6 +766,7 @@ export default function RafflesDetailPage() {
                     longitude: (getCookie("long") as string) || "0",
                 },
                 storeCategoryId: STORE_CATEGORY_ID,
+                addToCartOnId: existingItemId, // Include addToCartOnId if updating existing item
             });
 
             // Dispatch event to update header cart count

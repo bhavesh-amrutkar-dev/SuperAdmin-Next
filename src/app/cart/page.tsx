@@ -265,7 +265,6 @@ export default function CartPage() {
         unitPrice = oldQuantity > 0 ? subTotal / oldQuantity : 0;
       }
 
-      const oldItemTotal = unitPrice * oldQuantity;
       const newItemTotal = unitPrice;
 
       if (updatedCartData.sellers) {
@@ -621,9 +620,11 @@ export default function CartPage() {
                 </h2>
 
                 <div className="space-y-4 sm:space-y-6">
-                  {cartItems.map((item) => {
-                    console.log("🚀 ~ CartPage ~ item:", item)
-                    const itemId = item.addToCartOnId || item._id || "";
+                  {cartItems.map((item, index) => {
+                    // Create a unique key - index ensures uniqueness within the list
+                    const itemId = item.addToCartOnId || item._id || item.productId || item.centralProductId || '';
+                    // Use index as the primary unique identifier (always unique in array.map)
+                    const uniqueKey = `cart-item-${index}`;
                     const isUpdating = updating === itemId;
                     // Handle quantity - can be number or object with value property
                     const quantity = typeof item.quantity === 'object' && item.quantity !== null
@@ -657,7 +658,7 @@ export default function CartPage() {
                       || unitPrice
 
                     return (
-                      <div key={itemId} className="border-b border-gray-200 pb-4 sm:pb-6 last:border-b-0">
+                      <div key={uniqueKey} className="border-b border-gray-200 pb-4 sm:pb-6 last:border-b-0">
                         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                           {/* Product Image */}
                           <div className="w-full sm:w-24 md:w-32 h-24 sm:h-24 md:h-32 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
@@ -708,11 +709,21 @@ export default function CartPage() {
                               <div className="flex items-center gap-2 sm:gap-3">
                                 <button
                                   type="button"
-                                  onClick={() => updateQuantity(item, quantity - 1)}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    updateQuantity(item, quantity - 1);
+                                  }}
+                                  onTouchStart={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    updateQuantity(item, quantity - 1);
+                                  }}
                                   disabled={isUpdating || quantity <= 1}
-                                  className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                  className="w-10 h-10 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg border-2 border-gray-300 bg-white hover:bg-gray-100 active:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+                                  style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                                 >
-                                  <Minus size={16} className="sm:w-[18px] sm:h-[18px] text-gray-600" />
+                                  <Minus size={18} className="text-gray-600 pointer-events-none" />
                                 </button>
 
                                 <input
@@ -724,16 +735,27 @@ export default function CartPage() {
                                     updateQuantity(item, val);
                                   }}
                                   disabled={isUpdating}
-                                  className="w-16 sm:w-20 h-8 sm:h-10 text-center text-sm sm:text-base font-semibold text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D4AF37] ticket-quantity"
+                                  className="w-16 sm:w-20 h-10 sm:h-10 text-center text-sm sm:text-base font-semibold text-gray-800 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D4AF37] ticket-quantity"
+                                  style={{ touchAction: 'manipulation' }}
                                 />
 
                                 <button
                                   type="button"
-                                  onClick={() => updateQuantity(item, quantity + 1)}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    updateQuantity(item, quantity + 1);
+                                  }}
+                                  onTouchStart={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    updateQuantity(item, quantity + 1);
+                                  }}
                                   disabled={isUpdating}
-                                  className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                  className="w-10 h-10 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg border-2 border-gray-300 bg-white hover:bg-gray-100 active:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+                                  style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                                 >
-                                  <Plus size={16} className="sm:w-[18px] sm:h-[18px] text-gray-600" />
+                                  <Plus size={18} className="text-gray-600 pointer-events-none" />
                                 </button>
                               </div>
                             </div>
