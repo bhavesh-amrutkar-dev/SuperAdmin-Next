@@ -78,6 +78,24 @@ export default function Header() {
     return () => window.removeEventListener("cartUpdated", handleCartUpdate);
   }, []);
 
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (userMenuOpen && !target.closest('.user-menu-container')) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    if (userMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [userMenuOpen]);
+
   return (
     <header className="sticky top-0 z-50 bg-[#2F2F2F]">
 
@@ -152,7 +170,7 @@ export default function Header() {
                 <User size={16} /> {t("login")}
               </Link>
             ) : (
-              <div className="relative">
+              <div className="relative user-menu-container z-50">
                 <button
                   onClick={() => setUserMenuOpen((p) => !p)}
                   className="btn-primary px-3 py-2 rounded-md flex items-center"
@@ -160,28 +178,36 @@ export default function Header() {
                   <User size={18} />
                 </button>
                 {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-44 rounded-md bg-white shadow-lg border">
+                  <div className="absolute right-0 mt-2 w-44 rounded-md bg-white shadow-lg border overflow-hidden z-50">
                     <Link
-                      href="/profile"
-                      className="block px-4 py-2 text-sm hover:bg-gray-100"
+                      href="/orders"
+                      className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 transition-colors"
                       onClick={() => setUserMenuOpen(false)}
                     >
-                      {t("manageProfile")}
+                      {t("orders") || "Orders"}
+                    </Link>
+                    <Link
+                      href="/profile"
+                      className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 transition-colors"
+                      onClick={() => setUserMenuOpen(false)}
+                    >
+                      {t("manageProfile") || "Manage Profile"}
                     </Link>
                     <Link
                       href="/addresses"
-                      className="block px-4 py-2 text-sm hover:bg-gray-100"
+                      className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 transition-colors"
                       onClick={() => setUserMenuOpen(false)}
                     >
-                      {t("savedAddresses")}
+                      {t("savedAddresses") || "Saved Addresses"}
                     </Link>
+                    <div className="border-t border-gray-200"></div>
                     <button
                       onClick={async () => {
                         setUserMenuOpen(false);
                         await logoutUser();
                         router.replace("/auth/login");
                       }}
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition-colors"
                     >
                       {t("logout")}
                     </button>
@@ -195,9 +221,8 @@ export default function Header() {
 
       {/* MOBILE SIDEBAR */}
       <div
-        className={`fixed inset-0 z-50 lg:hidden transform transition-transform duration-300 ${
-          menuOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-0 z-50 lg:hidden transform transition-transform duration-300 ${menuOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         <div className="absolute inset-0 bg-black/50" onClick={() => setMenuOpen(false)} />
 
@@ -243,11 +268,25 @@ export default function Header() {
             ) : (
               <>
                 <Link
+                  href="/orders"
+                  onClick={() => setMenuOpen(false)}
+                  className="pt-4 text-gray-800"
+                >
+                  {t("orders") || "Orders"}
+                </Link>
+                <Link
                   href="/profile"
                   onClick={() => setMenuOpen(false)}
                   className="pt-4 text-gray-800"
                 >
-                  {t("manageProfile")}
+                  {t("manageProfile") || "Manage Profile"}
+                </Link>
+                <Link
+                  href="/addresses"
+                  onClick={() => setMenuOpen(false)}
+                  className="pt-4 text-gray-800"
+                >
+                  {t("savedAddresses") || "Saved Addresses"}
                 </Link>
                 <button
                   onClick={async () => {
@@ -257,7 +296,7 @@ export default function Header() {
                   }}
                   className="text-left pt-2 text-red-600"
                 >
-                  {t("logout")}
+                  {t("logout") || "Logout"}
                 </button>
               </>
             )}

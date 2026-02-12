@@ -225,7 +225,7 @@ export const TicketWalletService = {
             offers: {},
             storeTypeId: 8,
             action: 1,
-            walletTickets: String(quantity), // number of free tickets to use
+            walletTickets: "", // Empty string when ticket price is 0 (free ticket)
             deliveryAddress: getDeliveryAddress(),
             storeCategoryId: STORE_CATEGORY_ID as string,
             ipAddress: ipAddress,

@@ -20,6 +20,35 @@ export type WalletResponse = {
     };
 };
 
+export type BankDetail = {
+    _id?: string;
+    bankName?: string;
+    bankPaymentNumber?: string;
+    bankPaymentURL?: string;
+    accountHolderID?: string;
+    accountHolderName?: string;
+    paymentMethodLogo?: string;
+    acceptedCurrencyCode?: string;
+};
+
+export type BankDetailsResponse = {
+    data?: {
+        data?: {
+            bankDetails?: BankDetail[];
+        };
+    };
+};
+
+export type CurrencyConvertResponse = {
+    data?: {
+        data?: {
+            convertedCurrencySymbol?: string;
+            TotalconvertedValue?: number | string;
+            to_currency?: string;
+        };
+    };
+};
+
 export const PaymentService = {
     /**
      * Get user wallet balance
@@ -37,6 +66,36 @@ export const PaymentService = {
                 lang: language,
             },
         }) as Promise<WalletResponse>;
+    },
+
+    /**
+     * Get bank details for manual payment
+     * API: /country?countryId={cid}
+     * Response structure: { data: { bankDetails: [] } }
+     */
+    getBankDetails: (countryId?: string): Promise<BankDetailsResponse> => {
+        const cid = countryId || (getCookie("C_id") as string) || "";
+        if (!cid) {
+            return Promise.reject(new Error("Country ID not found"));
+        }
+        // Using query string format to match old project: /country?countryId={cid}
+        return apiClient.get(`/country?countryId=${cid}`) as Promise<BankDetailsResponse>;
+    },
+
+    /**
+     * Get currency conversion for bank payment
+     */
+    getCurrencyConvert: (toCurrency: string, amount: number | string): Promise<CurrencyConvertResponse> => {
+        const language = (getCookie("NEXT_LOCALE") as string) || DEFAULT_LANGUAGE;
+        return apiClient.get(`/bankPaymentCurrencyConvert`, {
+            params: {
+                to_currency: toCurrency,
+                amount: amount,
+            },
+            headers: {
+                lan: language,
+            },
+        }) as Promise<CurrencyConvertResponse>;
     },
 };
 

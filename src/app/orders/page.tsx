@@ -391,33 +391,33 @@ export default function OrdersPage() {
                     </p>
                 </div>
 
-                <div className="mx-auto w-full max-w-6xl px-4 md:px-6 py-12">
+                <div className="mx-auto w-full max-w-6xl px-2 sm:px-4 md:px-6 py-6 sm:py-8 md:py-12">
                     {/* Filters */}
-                    <div className="mb-8 space-y-4">
+                    <div className="mb-6 sm:mb-8 space-y-3 sm:space-y-4">
                         {/* Search */}
                         <div className="relative">
-                            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                             <input
                                 type="text"
                                 placeholder={t("searchOrders") || "Search orders..."}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f3c200] focus:border-transparent"
+                                className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f3c200] focus:border-transparent"
                             />
                         </div>
 
                         {/* Status and Time Filters */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                             {/* Status Filter */}
                             <div>
-                                <label className="block text-sm font-semibold text-[#2f2f2f] mb-2">
-                                    <Filter className="w-4 h-4 inline mr-2" />
+                                <label className="block text-xs sm:text-sm font-semibold text-[#2f2f2f] mb-1.5 sm:mb-2">
+                                    <Filter className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 sm:mr-2" />
                                     {t("filterByStatus") || "Filter by Status"}
                                 </label>
                                 <select
                                     value={statusFilter}
                                     onChange={(e) => setStatusFilter(Number(e.target.value))}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f3c200] focus:border-transparent bg-white"
+                                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f3c200] focus:border-transparent bg-white"
                                 >
                                     <option value={0}>{t("allOrders") || "All Orders"}</option>
                                     <option value={ORDER_STATUS.NEW}>{t("new") || "New"}</option>
@@ -434,14 +434,14 @@ export default function OrdersPage() {
 
                             {/* Time Filter */}
                             <div>
-                                <label className="block text-sm font-semibold text-[#2f2f2f] mb-2">
-                                    <Calendar className="w-4 h-4 inline mr-2" />
+                                <label className="block text-xs sm:text-sm font-semibold text-[#2f2f2f] mb-1.5 sm:mb-2">
+                                    <Calendar className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 sm:mr-2" />
                                     {t("filterByTime") || "Filter by Time"}
                                 </label>
                                 <select
                                     value={timeFilter}
                                     onChange={(e) => setTimeFilter(Number(e.target.value))}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f3c200] focus:border-transparent bg-white"
+                                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f3c200] focus:border-transparent bg-white"
                                 >
                                     <option value={0}>{t("allTime") || "All Time"}</option>
                                     <option value={1}>{t("lastMonth") || "Last Month"}</option>
@@ -455,37 +455,37 @@ export default function OrdersPage() {
                     {/* Orders List */}
                     {error ? (
                         <div className="flex items-center justify-center min-h-[40vh]">
-                            <div className="text-lg text-red-600">Error: {error}</div>
+                            <div className="text-sm sm:text-base md:text-lg text-red-600">Error: {error}</div>
                         </div>
                     ) : orders.length === 0 ? (
                         <div className="flex flex-col items-center justify-center min-h-[40vh]">
-                            <ShoppingBag className="w-24 h-24 text-gray-300 mb-4" />
-                            <p className="text-lg text-[#797979]">{t("noOrdersFound") || "No orders found"}</p>
+                            <ShoppingBag className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 text-gray-300 mb-3 sm:mb-4" />
+                            <p className="text-sm sm:text-base md:text-lg text-[#797979]">{t("noOrdersFound") || "No orders found"}</p>
                             <Link
                                 href="/raffles"
-                                className="mt-4 px-6 py-2 bg-[#f3c200] text-[#2f2f2f] rounded-lg font-semibold hover:bg-[#e6b800] transition-colors"
+                                className="mt-3 sm:mt-4 px-4 sm:px-6 py-2 bg-[#f3c200] text-[#2f2f2f] rounded-lg font-semibold hover:bg-[#e6b800] transition-colors text-sm sm:text-base"
                             >
                                 {t("startShopping") || "Start Shopping"}
                             </Link>
                         </div>
                     ) : (
-                        <div className="space-y-6">
+                        <div className="space-y-4 sm:space-y-6">
                             {orders.map((order) => (
                                 <div
                                     key={order.orderId || order.masterOrderId}
                                     className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200"
                                 >
                                     {/* Order Header */}
-                                    <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-                                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                                            <div>
-                                                <div className="flex items-center gap-3 mb-2">
-                                                    <h3 className="text-lg font-bold text-[#2f2f2f]">
+                                    <div className="bg-gray-50 px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-200">
+                                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                                                    <h3 className="text-sm sm:text-base md:text-lg font-bold text-[#2f2f2f] break-words">
                                                         {t("orderId") || "Order ID"}: {order.orderId || order.masterOrderId}
                                                     </h3>
                                                     {order.status && (
                                                         <span
-                                                            className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${getStatusColor(
+                                                            className={`px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-semibold flex items-center gap-1 w-fit ${getStatusColor(
                                                                 order.status.status
                                                             )}`}
                                                         >
@@ -495,18 +495,18 @@ export default function OrdersPage() {
                                                     )}
                                                 </div>
                                                 {(order.createdAt || order.createdTimeStamp) && (
-                                                    <p className="text-sm text-[#797979]">
+                                                    <p className="text-xs sm:text-sm text-[#797979]">
                                                         {t("orderedOn") || "Ordered on"}: {formatDate(order.createdAt || order.createdTimeStamp)}
                                                     </p>
                                                 )}
                                                 {order.storeOrders && order.storeOrders.length > 0 && (
-                                                    <p className="text-sm text-[#797979] mt-1">
+                                                    <p className="text-xs sm:text-sm text-[#797979] mt-1">
                                                         {order.storeOrders.reduce((total, so) => total + (so.products?.length || 0), 0)} {t("products") || "Products"}
                                                     </p>
                                                 )}
                                             </div>
-                                            <div className="text-right">
-                                                <p className="text-2xl font-bold text-[#2f2f2f]">
+                                            <div className="text-left sm:text-right flex items-center justify-between sm:block sm:flex-shrink-0">
+                                                <p className="text-lg sm:text-xl md:text-2xl font-bold text-[#2f2f2f]">
                                                     {formatCurrency(
                                                         getOrderTotal(order),
                                                         order.currencySymbol ||
@@ -521,7 +521,7 @@ export default function OrdersPage() {
                                                 {order.status?.status !== ORDER_STATUS.CANCELLED && (
                                                     <button
                                                         onClick={() => handleReorder(order)}
-                                                        className="mt-2 text-sm text-[#f3c200] hover:text-[#e6b800] font-semibold"
+                                                        className="mt-1 sm:mt-2 text-xs sm:text-sm text-[#f3c200] hover:text-[#e6b800] font-semibold"
                                                     >
                                                         {t("reorder") || "Reorder"}
                                                     </button>
@@ -532,30 +532,30 @@ export default function OrdersPage() {
 
                                     {/* Store Orders */}
                                     {order.storeOrders && order.storeOrders.length > 0 && (
-                                        <div className="p-6">
+                                        <div className="p-3 sm:p-4 md:p-6">
                                             {order.storeOrders.map((storeOrder, storeIndex) => (
                                                 <div
                                                     key={storeIndex}
-                                                    className={storeIndex > 0 ? "mt-6 pt-6 border-t border-gray-200" : ""}
+                                                    className={storeIndex > 0 ? "mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-200" : ""}
                                                 >
                                                     {/* Store Header */}
-                                                    <div className="flex items-center gap-3 mb-4">
+                                                    <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                                                         {storeOrder.storeLogo?.logoImageweb && (
                                                             <Image
                                                                 src={storeOrder.storeLogo.logoImageweb}
                                                                 alt={storeOrder.storeName || storeOrder.storeOrderId || t("store") || "Store"}
                                                                 width={40}
                                                                 height={40}
-                                                                className="rounded-full object-cover"
+                                                                className="rounded-full object-cover w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0"
                                                                 unoptimized
                                                             />
                                                         )}
-                                                        <div>
-                                                            <h4 className="font-semibold text-[#2f2f2f]">
+                                                        <div className="min-w-0 flex-1">
+                                                            <h4 className="font-semibold text-[#2f2f2f] text-sm sm:text-base break-words">
                                                                 {storeOrder.storeName || storeOrder.storeOrderId || t("store") || "Store"}
                                                             </h4>
                                                             {storeOrder.storeOrderId && (
-                                                                <p className="text-sm text-[#797979]">
+                                                                <p className="text-xs sm:text-sm text-[#797979] break-words">
                                                                     {t("storeOrderId") || "Store Order"}:{" "}
                                                                     {storeOrder.storeOrderId}
                                                                 </p>
@@ -565,14 +565,14 @@ export default function OrdersPage() {
 
                                                     {/* Products */}
                                                     {storeOrder.products && storeOrder.products.length > 0 && (
-                                                        <div className="space-y-4">
+                                                        <div className="space-y-3 sm:space-y-4">
                                                             {storeOrder.products.map((product, productIndex) => (
                                                                 <div
                                                                     key={productIndex}
-                                                                    className="flex gap-4 p-4 bg-gray-50 rounded-lg"
+                                                                    className="flex gap-2 sm:gap-3 md:gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg"
                                                                 >
                                                                     {/* Product Image */}
-                                                                    <div className="relative w-20 h-20 flex-shrink-0 overflow-hidden rounded-lg bg-gray-200">
+                                                                    <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 overflow-hidden rounded-lg bg-gray-200">
                                                                         <Image
                                                                             src={getProductImage(product)}
                                                                             alt={product.name || "Product"}
@@ -583,37 +583,40 @@ export default function OrdersPage() {
                                                                     </div>
 
                                                                     {/* Product Details */}
-                                                                    <div className="flex-grow">
-                                                                        <h5 className="font-semibold text-[#2f2f2f] mb-1">
+                                                                    <div className="flex-grow min-w-0">
+                                                                        <h5 className="font-semibold text-[#2f2f2f] mb-1 text-xs sm:text-sm md:text-base break-words">
                                                                             {product.name || product.productId || t("product") || "Product"}
                                                                         </h5>
                                                                         {product.productId && (
-                                                                            <p className="text-xs text-[#797979] mb-1">
+                                                                            <p className="text-[10px] sm:text-xs text-[#797979] mb-1 break-all">
                                                                                 {t("productId") || "Product Id"}: {product.productId}
                                                                             </p>
                                                                         )}
                                                                         {product.campaignId && (
-                                                                            <span className="inline-block px-2 py-1 bg-purple-600 text-white text-xs font-semibold rounded mb-2">
+                                                                            <span className="inline-block px-1.5 sm:px-2 py-0.5 sm:py-1 bg-purple-600 text-white text-[10px] sm:text-xs font-semibold rounded mb-1 sm:mb-2">
                                                                                 {t("entries") || "ENTRIES"}
                                                                             </span>
                                                                         )}
-                                                                        <div className="flex flex-wrap items-center gap-4 text-sm text-[#797979] mt-2">
+                                                                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4 text-xs sm:text-sm text-[#797979] mt-1 sm:mt-2">
                                                                             <span>
                                                                                 {t("quantity") || "Qty"}: {getNumericValue(product.quantity) || 1}
                                                                             </span>
-                                                                            {product.totalPrice !== undefined || product.price !== undefined ? (
+                                                                            {product.price !== undefined && product.price !== null ? (
                                                                                 <span>
-                                                                                    {t("price") || "Price"}: {formatCurrency(
-                                                                                        product.totalPrice || product.price,
-                                                                                        order.currencySymbol || storeOrder.accounting?.currencySymbol
+                                                                                    {t("unitPrice") || "Unit Price"}: {formatCurrency(
+                                                                                        product.price,
+                                                                                        storeOrder.accounting?.currencySymbol ||
+                                                                                        order.currencySymbol ||
+                                                                                        order.accounting?.currencySymbol ||
+                                                                                        "$"
                                                                                     )}
                                                                                 </span>
                                                                             ) : null}
                                                                         </div>
                                                                         {product.status && (
-                                                                            <div className="mt-2">
+                                                                            <div className="mt-1 sm:mt-2">
                                                                                 <span
-                                                                                    className={`px-2 py-1 rounded text-xs font-semibold ${getStatusColor(
+                                                                                    className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-semibold ${getStatusColor(
                                                                                         product.status.status
                                                                                     )}`}
                                                                                 >
@@ -624,8 +627,8 @@ export default function OrdersPage() {
                                                                     </div>
 
                                                                     {/* Product Total */}
-                                                                    <div className="text-right">
-                                                                        <p className="font-bold text-[#2f2f2f]">
+                                                                    <div className="text-right flex-shrink-0">
+                                                                        <p className="font-bold text-[#2f2f2f] text-sm sm:text-base md:text-lg">
                                                                             {formatCurrency(
                                                                                 getProductTotal(product, storeOrder),
                                                                                 storeOrder.accounting?.currencySymbol ||
@@ -642,12 +645,12 @@ export default function OrdersPage() {
 
                                                     {/* Store Total */}
                                                     {storeOrder.accounting && (
-                                                        <div className="mt-4 pt-4 border-t border-gray-200 flex justify-end">
+                                                        <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200 flex justify-end">
                                                             <div className="text-right">
-                                                                <p className="text-sm text-[#797979]">
+                                                                <p className="text-xs sm:text-sm text-[#797979]">
                                                                     {t("storeTotal") || "Store Total"}:
                                                                 </p>
-                                                                <p className="text-xl font-bold text-[#2f2f2f]">
+                                                                <p className="text-lg sm:text-xl font-bold text-[#2f2f2f]">
                                                                     {formatCurrency(
                                                                         getStoreOrderTotal(storeOrder),
                                                                         storeOrder.accounting.currencySymbol ||

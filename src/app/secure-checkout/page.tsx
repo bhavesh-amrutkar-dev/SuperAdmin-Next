@@ -10,10 +10,16 @@ import Header from "@/src/components/layout/Header";
 import Footer from "@/src/components/layout/Footer";
 import { CartService } from "@/src/lib/services/cart";
 import { UserAddressService } from "@/src/lib/services/userAddress";
-import { PaymentService } from "@/src/lib/services/payment";
+import { PaymentService, type BankDetail } from "@/src/lib/services/payment";
 import { OrderService } from "@/src/lib/services/order";
 import { AuthService } from "@/src/lib/services/auth";
 import PlaceToPayLightbox from "@/src/components/checkout/PlaceToPayLightbox";
+import ComingSoonModal from "@/src/components/modals/ComingSoonModal";
+import { Copy, Check, Upload } from "lucide-react";
+import { toast } from "sonner";
+import { DEFAULT_COUNTRY_CODE, COUNTRY_CODE, BASE_URL } from "@/src/lib/config";
+import { getCommonHeaders } from "@/src/lib/api/headers";
+import axios from "axios";
 
 type TaxItem = {
   taxName?: string;
@@ -126,12 +132,25 @@ export default function SecureCheckoutPage() {
   const [cartData, setCartData] = useState<CartData | null>(null);
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<UserAddress | null>(null);
-  const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
-  const [paymentMethod, setPaymentMethod] = useState<string>("creditCard");
+  const [billingSameAsShipping, setBillingSameAsShipping] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [placeToPayUrl, setPlaceToPayUrl] = useState<string | null>(null);
   const [useWalletBalance, setUseWalletBalance] = useState(false);
+  const [showBankDetails, setShowBankDetails] = useState(false);
+  const [bankDetails, setBankDetails] = useState<BankDetail[]>([]);
+  const [selectedBank, setSelectedBank] = useState<BankDetail | null>(null);
+  const [loadingBankDetails, setLoadingBankDetails] = useState(false);
+  const [convertedAmount, setConvertedAmount] = useState<{
+    convertedCurrencySymbol?: string;
+    TotalconvertedValue?: number | string;
+    to_currency?: string;
+  } | null>(null);
+  const [receiptImage, setReceiptImage] = useState<string | null>(null);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [manualPaymentConfirmed, setManualPaymentConfirmed] = useState(false);
+  const [showComingSoonModal, setShowComingSoonModal] = useState(false);
 
   const currency = cartData?.currencySymbol || "$";
   const accounting = cartData?.accounting || {};
@@ -176,8 +195,24 @@ export default function SecureCheckoutPage() {
   }, [addresses]);
 
   const fetchAll = async () => {
-    await Promise.all([fetchCart(), fetchAddresses()]);
+    await Promise.all([fetchCart(), fetchAddresses(), fetchBankDetails()]);
     setLoading(false);
+  };
+
+  const fetchBankDetails = async () => {
+    try {
+      setLoadingBankDetails(true);
+      const response = await PaymentService.getBankDetails();
+      // Response structure: { data: { bankDetails: [] } } after axios interceptor
+      // Old project structure: { data: { data: { bankDetails: [] } } }
+      const bankDetailsData = (response as any)?.data?.bankDetails || (response as any)?.data?.data?.bankDetails || [];
+      setBankDetails(Array.isArray(bankDetailsData) ? bankDetailsData : []);
+    } catch (error) {
+      console.warn("Failed to fetch bank details:", error);
+      setBankDetails([]);
+    } finally {
+      setLoadingBankDetails(false);
+    }
   };
 
   const fetchCart = async () => {
@@ -273,6 +308,24 @@ export default function SecureCheckoutPage() {
       return;
     }
 
+    // Show coming soon modal only for ATH Móvil
+    if (paymentMethod === "athMovil") {
+      setShowComingSoonModal(true);
+      return;
+    }
+
+    // Validate manual payment
+    if (paymentMethod === "manual") {
+      if (!selectedBank) {
+        alert(t("selectBank") || "Please select a bank");
+        return;
+      }
+      if (!receiptFile || !manualPaymentConfirmed) {
+        alert(t("uploadReceipt") || "Please upload proof of payment and confirm");
+        return;
+      }
+    }
+
     // Check if user is authenticated
     const token = getCookie("access_token");
     let uid = getCookie("uid") as string | undefined;
@@ -312,14 +365,11 @@ export default function SecureCheckoutPage() {
       // Get user IP address
       const ipAddress = await getMyIP();
 
-      // Determine online payment method based on selected method
-      let onlinePaymentMethod = 18; // Default: Place to Pay (Credit Card)
-      if (paymentMethod === "athMovil") {
-        onlinePaymentMethod = 10; // ATH Móvil
-      } else if (paymentMethod === "creditCard") {
-        onlinePaymentMethod = 18; // Place to Pay (Credit Card)
+      let onlinePaymentMethod = 18;
+      if (paymentMethod === "creditCard") {
+        onlinePaymentMethod = 18;
       } else if (paymentMethod === "manual") {
-        onlinePaymentMethod = 12; // Manual Payment
+        onlinePaymentMethod = 12;
       }
 
       // Get address ID
@@ -327,6 +377,22 @@ export default function SecureCheckoutPage() {
       const billingAddressId = billingSameAsShipping ? addressId : addressId;
       const latitude = (getCookie("lat") as string) || "0";
       const longitude = (getCookie("long") as string) || "0";
+
+      const orderImages: string[] = [];
+      if (paymentMethod === "manual" && receiptFile) {
+        const reader = new FileReader();
+        const base64Promise = new Promise<string>((resolve, reject) => {
+          reader.onload = () => {
+            const result = reader.result as string;
+            const base64 = result.includes(",") ? result.split(",")[1] : result;
+            resolve(base64);
+          };
+          reader.onerror = reject;
+        });
+        reader.readAsDataURL(receiptFile);
+        const base64Image = await base64Promise;
+        orderImages.push(base64Image);
+      }
 
       // Prepare order payload (matching old project structure)
       const orderPayload = {
@@ -344,7 +410,7 @@ export default function SecureCheckoutPage() {
         orderType: 2,
         extraNote: "",
         tip: 0,
-        orderImages: [],
+        orderImages: orderImages,
         onlinePaymentMethod: onlinePaymentMethod,
         payByRewardWallet: false,
         cardId: "",
@@ -358,22 +424,69 @@ export default function SecureCheckoutPage() {
       const orderData = (response as any)?.data?.data || (response as any)?.data || response;
 
       // Check if order was placed successfully
-      if (orderData?.checkoutProcessUrl) {
+      if (orderData?.orderId) {
         // Store order ID for later use
-        if (orderData.orderId) {
-          if (typeof window !== "undefined") {
-            localStorage.setItem("orderId", orderData.orderId);
-            localStorage.setItem("cartId", cartId);
-            if (orderData.numberOfFreeTickets) {
-              localStorage.setItem("TotalFreeTicket", String(orderData.numberOfFreeTickets));
-            }
+        if (typeof window !== "undefined") {
+          localStorage.setItem("orderId", orderData.orderId);
+          localStorage.setItem("cartId", cartId);
+          if (orderData.numberOfFreeTickets) {
+            localStorage.setItem("TotalFreeTicket", String(orderData.numberOfFreeTickets));
           }
         }
 
-        // Open Place to Pay lightbox
-        setPlaceToPayUrl(orderData.checkoutProcessUrl);
+        // Handle manual payment differently - upload receipt and redirect
+        if (paymentMethod === "manual") {
+          // Upload receipt file if provided
+          if (receiptFile) {
+            try {
+              // Upload receipt file
+              const formData = new FormData();
+              formData.append("image", receiptFile);
+              formData.append("master_order_id", orderData.orderId);
+              const countryCode = (getCookie(COUNTRY_CODE) as string) || DEFAULT_COUNTRY_CODE;
+              formData.append("country_code", countryCode);
+
+              // Upload receipt using BASE_URL (matches old project: process.env.NEXT_PUBLIC_BASE_URL + endpoint)
+              // Get common headers including authentication token
+              const commonHeaders = getCommonHeaders();
+              // Remove Content-Type from commonHeaders and let axios set it automatically for FormData
+              const { "Content-Type": _, ...headersWithoutContentType } = commonHeaders;
+              await axios.post(`${BASE_URL}validate/payment/receipt/`, formData, {
+                headers: {
+                  ...headersWithoutContentType,
+                  // Don't set Content-Type manually - axios will set it with boundary for multipart/form-data
+                },
+              });
+
+              // Redirect to thank-you page after successful upload
+              router.push("/thank-you");
+              return;
+            } catch (uploadError: any) {
+              console.warn("Receipt upload failed, but order was placed:", uploadError);
+              // Even if upload fails, redirect to thank-you since order is placed
+              router.push("/thank-you");
+              return;
+            }
+          } else {
+            // Manual payment without receipt - still redirect to thank-you
+            router.push("/thank-you");
+            return;
+          }
+        }
+
+        // For other payment methods, check for checkout URL
+        if (orderData?.checkoutProcessUrl) {
+          // Open Place to Pay lightbox
+          setPlaceToPayUrl(orderData.checkoutProcessUrl);
+        } else if (paymentMethod !== "manual") {
+          // Only throw error for non-manual payments if no checkout URL
+          throw new Error(orderData?.message || "Failed to get checkout URL");
+        } else {
+          // Manual payment without receipt - still redirect to thank-you
+          router.push("/thank-you");
+        }
       } else {
-        throw new Error(orderData?.message || "Failed to get checkout URL");
+        throw new Error(orderData?.message || "Failed to place order");
       }
     } catch (error: any) {
       // Extract error message from various possible locations
@@ -384,7 +497,7 @@ export default function SecureCheckoutPage() {
         (typeof error === "string" ? error : null) ||
         "Failed to place order. Please try again.";
 
-      console.error("Error placing order:", {
+      console.warn("Error placing order:", {
         message: errorMessage,
         error: error,
         status: error?.status || error?.response?.status,
@@ -412,6 +525,72 @@ export default function SecureCheckoutPage() {
   const handlePlaceToPayClose = () => {
     setPlaceToPayUrl(null);
     setPlacingOrder(false);
+  };
+
+  const handleManualPaymentSelect = () => {
+    setPaymentMethod("manual");
+    setShowBankDetails(true);
+    setSelectedBank(null);
+    setReceiptImage(null);
+    setReceiptFile(null);
+    setManualPaymentConfirmed(false);
+    setConvertedAmount(null);
+  };
+
+  const handlePaymentMethodChange = (method: string) => {
+    setPaymentMethod(method);
+    if (method !== "manual") {
+      setShowBankDetails(false);
+      setSelectedBank(null);
+      setReceiptImage(null);
+      setReceiptFile(null);
+      setManualPaymentConfirmed(false);
+      setConvertedAmount(null);
+    } else {
+      setShowBankDetails(true);
+    }
+  };
+
+  const handleBankSelect = async (bank: BankDetail) => {
+    setSelectedBank(bank);
+    if (bank.acceptedCurrencyCode && grandTotal > 0) {
+      try {
+        const response = await PaymentService.getCurrencyConvert(bank.acceptedCurrencyCode, grandTotal);
+        const data = (response as any)?.data?.data;
+        if (data) {
+          setConvertedAmount(data);
+        }
+      } catch (error) {
+        console.warn("Failed to convert currency:", error);
+      }
+    }
+  };
+
+  const handleReceiptUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.type === "image/jpeg" || file.type === "image/webp" || file.type === "image/png" || file.type === "image/jpg") {
+        const url = URL.createObjectURL(file);
+        setReceiptImage(url);
+        setReceiptFile(file);
+        setManualPaymentConfirmed(false);
+      } else {
+        toast.error("Please upload a valid image file (JPEG, PNG, or WebP)");
+      }
+    }
+  };
+
+  const handleCopyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(t("codeCopyMsg") || "Copied to clipboard!");
+  };
+
+  const handleManualPaymentConfirm = () => {
+    if (!selectedBank || !receiptFile) {
+      toast.error("Please select a bank and upload proof of payment");
+      return;
+    }
+    setManualPaymentConfirmed(true);
   };
 
   const shippingFee = Number((accounting as any).deliveryFee ?? (accounting as any).shippingFee ?? 0);
@@ -461,12 +640,12 @@ export default function SecureCheckoutPage() {
     return (
       <div className="min-h-screen bg-[#ededed]">
         <Header />
-        <div className="container mx-auto px-4 py-12">
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
-            <p className="text-gray-600">{t("cartEmpty") || "Your cart is empty"}</p>
+        <div className="container mx-auto px-2 sm:px-4 py-6 sm:py-12">
+          <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 md:p-8 text-center">
+            <p className="text-sm sm:text-base text-gray-600">{t("cartEmpty") || "Your cart is empty"}</p>
             <button
               onClick={() => router.push("/cart")}
-              className="mt-4 bg-[#D4AF37] hover:bg-[#B8860B] text-white font-semibold py-2 px-6 rounded-lg transition-colors"
+              className="mt-3 sm:mt-4 bg-[#D4AF37] hover:bg-[#B8860B] text-white font-semibold py-2 px-4 sm:px-6 rounded-lg transition-colors text-sm sm:text-base"
             >
               {t("backToCart") || "Back to Cart"}
             </button>
@@ -482,98 +661,98 @@ export default function SecureCheckoutPage() {
       <Header />
 
       {/* Progress Stepper */}
-      <div className="bg-white border-b border-gray-200 py-4">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-center gap-8 max-w-3xl mx-auto">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-white font-semibold text-sm">1</div>
-              <span className="font-semibold text-gray-600 text-sm">{t("bag")}</span>
+      <div className="bg-white border-b border-gray-200 py-3 sm:py-4">
+        <div className="container mx-auto px-2 sm:px-4">
+          <div className="flex items-center justify-center gap-2 sm:gap-4 md:gap-8 max-w-3xl mx-auto">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-white font-semibold text-xs sm:text-sm">1</div>
+              <span className="font-semibold text-gray-600 text-xs sm:text-sm hidden sm:inline">{t("bag")}</span>
             </div>
-            <div className="flex-1 h-0.5 bg-[#D4AF37]"></div>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-white font-semibold text-sm">2</div>
-              <span className="font-semibold text-gray-600 text-sm">{t("shippingDetails")}</span>
+            <div className="flex-1 h-0.5 bg-[#D4AF37] hidden sm:block"></div>
+            <div className="flex items-center gap-1 sm:gap-2">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-white font-semibold text-xs sm:text-sm">2</div>
+              <span className="font-semibold text-gray-600 text-xs sm:text-sm hidden md:inline">{t("shippingDetails")}</span>
             </div>
-            <div className="flex-1 h-0.5 bg-[#D4AF37]"></div>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-white font-semibold text-sm">3</div>
-              <span className="font-semibold text-[#D4AF37] text-sm">{t("secureCheckout")}</span>
+            <div className="flex-1 h-0.5 bg-[#D4AF37] hidden sm:block"></div>
+            <div className="flex items-center gap-1 sm:gap-2">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-white font-semibold text-xs sm:text-sm">3</div>
+              <span className="font-semibold text-[#D4AF37] text-xs sm:text-sm">{t("secureCheckout")}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 pb-32">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 md:py-8 pb-24 sm:pb-28 md:pb-32">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* LEFT COLUMN */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {/* SHIPPING INFORMATION */}
             <div className="bg-white rounded-lg shadow-md">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-sm font-bold text-gray-800 uppercase">{t("shippingInformation")}</h2>
+              <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-200">
+                <h2 className="text-xs sm:text-sm font-bold text-gray-800 uppercase">{t("shippingInformation")}</h2>
               </div>
-              <div className="p-6">
+              <div className="p-3 sm:p-4 md:p-6">
                 {selectedAddress ? (
                   <div>
                     {selectedAddress.name && (
-                      <p className="text-sm text-gray-800 mb-1">
+                      <p className="text-xs sm:text-sm text-gray-800 mb-1 break-words">
                         <span className="font-semibold">{t("name")}:</span> {selectedAddress.name}
                       </p>
                     )}
-                    <p className="text-sm text-gray-800 mb-1">
+                    <p className="text-xs sm:text-sm text-gray-800 mb-1 break-words">
                       <span className="font-semibold">{t("address")}:</span> {formatAddress(selectedAddress)}.
                     </p>
                     {selectedAddress.mobileNumber && (
-                      <p className="text-sm text-gray-800 mb-3">
+                      <p className="text-xs sm:text-sm text-gray-800 mb-3 break-words">
                         <span className="font-semibold">{t("phoneNumber")}:</span>{" "}
                         {selectedAddress.mobileNumberCode && `+${selectedAddress.mobileNumberCode} `}
                         {selectedAddress.mobileNumber}
                       </p>
                     )}
-                    <button onClick={handleEditShipping} className="text-sm text-[#D4AF37] hover:text-[#B8860B] font-medium">
+                    <button onClick={handleEditShipping} className="text-xs sm:text-sm text-[#D4AF37] hover:text-[#B8860B] font-medium">
                       {t("edit")}
                     </button>
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-600">{t("noAddressFound")}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">{t("noAddressFound")}</p>
                 )}
               </div>
             </div>
 
             {/* BILLING INFORMATION */}
             <div className="bg-white rounded-lg shadow-md">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-sm font-bold text-gray-800 uppercase">{t("billingInformation")}</h2>
+              <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-200">
+                <h2 className="text-xs sm:text-sm font-bold text-gray-800 uppercase">{t("billingInformation")}</h2>
               </div>
-              <div className="p-6">
-                <label className="flex items-center gap-2 mb-4 cursor-pointer">
+              <div className="p-3 sm:p-4 md:p-6">
+                <label className="flex items-center gap-2 mb-3 sm:mb-4 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={billingSameAsShipping}
                     onChange={(e) => setBillingSameAsShipping(e.target.checked)}
-                    className="w-4 h-4 text-[#D4AF37] border-gray-300 rounded focus:ring-[#D4AF37]"
+                    className="w-4 h-4 text-[#D4AF37] border-gray-300 rounded focus:ring-[#D4AF37] flex-shrink-0"
                   />
-                  <span className="text-sm text-gray-800">{t("sameAsDeliveryAddress")}</span>
+                  <span className="text-xs sm:text-sm text-gray-800">{t("sameAsDeliveryAddress")}</span>
                 </label>
                 {billingAddress && (
                   <div>
                     {billingAddress.name && (
-                      <p className="text-sm text-gray-800 mb-1">
+                      <p className="text-xs sm:text-sm text-gray-800 mb-1 break-words">
                         <span className="font-semibold">{t("name")}:</span> {billingAddress.name}
                       </p>
                     )}
-                    <p className="text-sm text-gray-800 mb-1">
+                    <p className="text-xs sm:text-sm text-gray-800 mb-1 break-words">
                       <span className="font-semibold">{t("address")}:</span> {formatAddress(billingAddress)}.
                     </p>
                     {billingAddress.mobileNumber && (
-                      <p className="text-sm text-gray-800">
+                      <p className="text-xs sm:text-sm text-gray-800 break-words">
                         <span className="font-semibold">{t("phoneNumber")}:</span>{" "}
                         {billingAddress.mobileNumberCode && `+${billingAddress.mobileNumberCode} `}
                         {billingAddress.mobileNumber}
                       </p>
                     )}
                     {!billingSameAsShipping && (
-                      <button onClick={handleEditBilling} className="mt-3 text-sm text-[#D4AF37] hover:text-[#B8860B] font-medium">
+                      <button onClick={handleEditBilling} className="mt-2 sm:mt-3 text-xs sm:text-sm text-[#D4AF37] hover:text-[#B8860B] font-medium">
                         {t("edit")}
                       </button>
                     )}
@@ -584,29 +763,30 @@ export default function SecureCheckoutPage() {
 
             {/* PAYMENT METHOD */}
             <div className="bg-white rounded-lg shadow-md">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-sm font-bold text-gray-800 uppercase">{t("paymentMethod")}</h2>
+              <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-200">
+                <h2 className="text-xs sm:text-sm font-bold text-gray-800 uppercase">{t("paymentMethod")}</h2>
               </div>
-              <div className="p-6">
+              <div className="p-3 sm:p-4 md:p-6">
                 {/* Payment Options */}
-                <div className="flex flex-wrap gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
+                <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
+                  {/* ATH Móvil button hidden */}
+                  <label className="hidden flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
                       name="paymentMethod"
                       value="athMovil"
                       checked={paymentMethod === "athMovil"}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      onChange={(e) => handlePaymentMethodChange(e.target.value)}
                       disabled={grandTotal <= 0}
                       className="sr-only"
                     />
                     <div
-                      className={`px-4 py-2 border-2 rounded-lg transition-all ${paymentMethod === "athMovil"
+                      className={`px-3 sm:px-4 py-2 border-2 rounded-lg transition-all ${paymentMethod === "athMovil"
                         ? "border-[#D4AF37] border-dashed bg-yellow-50"
                         : "border-gray-300 hover:border-gray-400"
                         } ${(grandTotal <= 0) ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
-                      <span className="text-sm text-gray-800 font-medium">{t("payWithATHMovil")}</span>
+                      <span className="text-xs sm:text-sm text-gray-800 font-medium">{t("payWithATHMovil")}</span>
                     </div>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -615,23 +795,59 @@ export default function SecureCheckoutPage() {
                       name="paymentMethod"
                       value="creditCard"
                       checked={paymentMethod === "creditCard"}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      onChange={(e) => handlePaymentMethodChange(e.target.value)}
                       disabled={grandTotal <= 0}
                       className="sr-only"
                     />
                     <div
-                      className={`px-4 py-2 border-2 rounded-lg transition-all ${paymentMethod === "creditCard"
+                      className={`px-3 sm:px-4 py-2 border-2 rounded-lg transition-all ${paymentMethod === "creditCard"
                         ? "border-[#D4AF37] border-dashed bg-yellow-50"
                         : "border-gray-300 hover:border-gray-400"
                         } ${(grandTotal <= 0) ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-800 font-medium">{t("payWithCreditCard")}</span>
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs text-gray-500 font-semibold">VISA</span>
-                          <span className="text-xs text-gray-500 font-semibold">Mastercard</span>
-                          <span className="text-xs text-gray-500 font-semibold">ATH</span>
-                          <span className="text-xs text-gray-500 font-semibold">AMEX</span>
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
+                        <span className="text-xs sm:text-sm text-gray-800 font-medium">{t("payWithCreditCard")}</span>
+                        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                          <Image
+                            src="/images/Profile_new/visa.svg"
+                            alt="VISA"
+                            width={40}
+                            height={25}
+                            className="h-4 sm:h-5 w-auto object-contain"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                          <Image
+                            src="/images/Profile_new/mastercard.svg"
+                            alt="Mastercard"
+                            width={40}
+                            height={25}
+                            className="h-4 sm:h-5 w-auto object-contain"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                          <Image
+                            src="/images/Profile_new/ath.jpg"
+                            alt="ATH"
+                            width={40}
+                            height={25}
+                            className="h-4 sm:h-5 w-auto object-contain"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                          <Image
+                            src="/images/Profile_new/amex.jpg"
+                            alt="AMEX"
+                            width={40}
+                            height={25}
+                            className="h-4 sm:h-5 w-auto object-contain"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
                         </div>
                       </div>
                     </div>
@@ -642,32 +858,203 @@ export default function SecureCheckoutPage() {
                       name="paymentMethod"
                       value="manual"
                       checked={paymentMethod === "manual"}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      onChange={handleManualPaymentSelect}
                       disabled={grandTotal <= 0}
                       className="sr-only"
                     />
                     <div
-                      className={`px-4 py-2 border-2 rounded-lg transition-all ${paymentMethod === "manual"
+                      className={`px-3 sm:px-4 py-2 border-2 rounded-lg transition-all ${paymentMethod === "manual"
                         ? "border-[#D4AF37] border-dashed bg-yellow-50"
                         : "border-gray-300 hover:border-gray-400"
                         } ${(grandTotal <= 0) ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
-                      <span className="text-sm text-gray-800 font-medium">{t("manualPaymentMethods")}</span>
+                      <span className="text-xs sm:text-sm text-gray-800 font-medium">{t("manualPaymentMethods")}</span>
                     </div>
                   </label>
                 </div>
               </div>
             </div>
+
+            {/* Manual Payment Bank Details Section */}
+            {paymentMethod === "manual" && (
+              <div className="mt-4 bg-white rounded-lg shadow-md p-4 sm:p-6">
+                <h3 className="text-sm sm:text-base font-bold text-gray-800 mb-4">{t("manualPaymentMethods")}</h3>
+
+                {/* Loading State */}
+                {loadingBankDetails && (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-gray-600">{t("loading") || "Loading..."}</p>
+                  </div>
+                )}
+
+                {/* Bank Selection */}
+                {!loadingBankDetails && bankDetails.length > 0 && (
+                  <div className="mb-6">
+                    <p className="text-xs sm:text-sm text-gray-600 mb-3">{t("selectBank") || "Select a bank:"}</p>
+                    <div className="flex flex-wrap gap-3 sm:gap-4">
+                      {bankDetails.map((bank) => (
+                        <div
+                          key={bank._id}
+                          onClick={() => handleBankSelect(bank)}
+                          className={`relative border-2 rounded-lg p-2 cursor-pointer transition-all ${selectedBank?._id === bank._id
+                            ? "border-[#D4AF37] bg-yellow-50"
+                            : "border-gray-300 hover:border-gray-400"
+                            }`}
+                        >
+                          {bank.paymentMethodLogo && (
+                            <img
+                              src={bank.paymentMethodLogo}
+                              alt={bank.bankName || "Bank"}
+                              className="w-16 h-12 object-contain"
+                            />
+                          )}
+                          {selectedBank?._id === bank._id && (
+                            <div className="absolute -top-2 -right-2 bg-[#D4AF37] rounded-full p-1">
+                              <Check className="w-3 h-3 text-gray-800" />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* No Banks Available */}
+                {!loadingBankDetails && bankDetails.length === 0 && (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-gray-600">{t("noBanksAvailable") || "No banks available for manual payment"}</p>
+                  </div>
+                )}
+
+                {/* Bank Details */}
+                {!loadingBankDetails && selectedBank && (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                    <div>
+                      <h4 className="text-sm sm:text-base font-semibold text-gray-700 mb-3">{selectedBank.bankName}</h4>
+
+                      {selectedBank.bankPaymentNumber ? (
+                        <div className="mb-3">
+                          <p className="text-xs text-gray-600 mb-1">{t("accountNumber") || "Account Number"}:</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm sm:text-base font-semibold text-gray-800">{selectedBank.bankPaymentNumber}</p>
+                            <button
+                              onClick={() => handleCopyToClipboard(selectedBank.bankPaymentNumber || "")}
+                              className="p-1 hover:bg-gray-100 rounded transition-colors"
+                              title={t("copy") || "Copy"}
+                            >
+                              <Copy className="w-4 h-4 text-gray-600" />
+                            </button>
+                          </div>
+                        </div>
+                      ) : selectedBank.bankPaymentURL ? (
+                        <div className="mb-3">
+                          <p className="text-xs text-gray-600 mb-1">{t("paymentURL") || "Payment URL"}:</p>
+                          <a
+                            href={selectedBank.bankPaymentURL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm sm:text-base text-[#D4AF37] hover:underline break-words"
+                          >
+                            {selectedBank.bankPaymentURL}
+                          </a>
+                        </div>
+                      ) : null}
+
+                      {selectedBank.accountHolderID && (
+                        <div className="mb-3">
+                          <p className="text-xs text-gray-600 mb-1">{t("ID") || "ID"}:</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm sm:text-base font-semibold text-gray-800">{selectedBank.accountHolderID}</p>
+                            <button
+                              onClick={() => handleCopyToClipboard(selectedBank.accountHolderID || "")}
+                              className="p-1 hover:bg-gray-100 rounded transition-colors"
+                              title={t("copy") || "Copy"}
+                            >
+                              <Copy className="w-4 h-4 text-gray-600" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedBank.accountHolderName && (
+                        <div className="mb-3">
+                          <p className="text-xs text-gray-600 mb-1">{t("Holder") || "Account Holder"}:</p>
+                          <p className="text-sm sm:text-base font-semibold text-gray-800">{selectedBank.accountHolderName}</p>
+                        </div>
+                      )}
+
+                      {convertedAmount && (
+                        <div className="mt-4">
+                          <p className="text-xs text-gray-600 mb-1">{t("Total") || "Total"}:</p>
+                          <p className="text-base sm:text-lg font-bold text-[#D4AF37] bg-yellow-50 px-3 py-1 rounded inline-block">
+                            {convertedAmount.convertedCurrencySymbol}
+                            {Number(convertedAmount.TotalconvertedValue || 0).toFixed(2)} {convertedAmount.to_currency}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Receipt Upload */}
+                    <div>
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-800 mb-2">
+                        {t("ProofOfPayment") || "Proof of Payment"}
+                      </label>
+                      <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6 text-center">
+                        <input
+                          type="file"
+                          id="receiptUpload"
+                          accept="image/jpeg,image/png,image/webp,image/jpg"
+                          onChange={handleReceiptUpload}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                        {!receiptImage ? (
+                          <div className="flex flex-col items-center gap-2">
+                            <Upload className="w-8 h-8 text-gray-400" />
+                            <p className="text-xs sm:text-sm text-gray-600">{t("PHOTOSCREENSHOT") || "Upload Photo/Screenshot"}</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <img
+                              src={receiptImage}
+                              alt="Receipt"
+                              className="max-w-full max-h-64 mx-auto rounded object-contain"
+                            />
+                            <button
+                              onClick={() => {
+                                setReceiptImage(null);
+                                setReceiptFile(null);
+                                setManualPaymentConfirmed(false);
+                              }}
+                              className="text-xs text-red-600 hover:underline"
+                            >
+                              {t("remove") || "Remove"}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      {receiptFile && !manualPaymentConfirmed && (
+                        <button
+                          onClick={handleManualPaymentConfirm}
+                          className="mt-4 w-full px-4 py-2 bg-[#D4AF37] hover:bg-[#B8860B] text-gray-800 font-semibold rounded transition-colors"
+                        >
+                          {t("confirm") || "Confirm"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* RIGHT COLUMN */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md sticky top-4">
+            <div className="bg-white rounded-lg shadow-md lg:sticky lg:top-4">
               {/* ORDER DETAILS */}
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-sm font-bold text-gray-800 uppercase">{t("orderDetails")}</h2>
+              <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-200">
+                <h2 className="text-xs sm:text-sm font-bold text-gray-800 uppercase">{t("orderDetails")}</h2>
               </div>
-              <div className="p-6 space-y-4">
+              <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
                 {cartItems.map((item, idx) => {
                   const qty = typeof item.quantity === "object" ? item.quantity?.value || 1 : item.quantity || 1;
                   // Use accounting.finalUnitPrice or accounting.subTotal if available, otherwise calculate from unit price
@@ -687,12 +1074,12 @@ export default function SecureCheckoutPage() {
                   const sellerName = item.sellerName || item.storeName || "Unknown";
 
                   return (
-                    <div key={idx} className="flex gap-4 pb-4 border-b border-gray-100 last:border-0">
+                    <div key={idx} className="flex gap-2 sm:gap-3 md:gap-4 pb-3 sm:pb-4 border-b border-gray-100 last:border-0">
                       <div className="flex-shrink-0">
-                        <Image src={getProductImage(item)} alt={item.name || item.productName || "Product"} width={80} height={80} className="rounded object-cover" />
+                        <Image src={getProductImage(item)} alt={item.name || item.productName || "Product"} width={80} height={80} className="rounded object-cover w-16 h-16 sm:w-20 sm:h-20 md:w-20 md:h-20" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-800 mb-1 line-clamp-2">{item.name || item.productName || "Product"}</p>
+                        <p className="text-xs sm:text-sm font-semibold text-gray-800 mb-1 line-clamp-2">{item.name || item.productName || "Product"}</p>
                         <p className="text-xs text-gray-600 mb-1">
                           {t("soldBy")}: <span className="text-[#D4AF37]">{sellerName}</span>
                         </p>
@@ -705,7 +1092,7 @@ export default function SecureCheckoutPage() {
                           <span className="text-xs text-gray-600">
                             {qty} x {currency} {formatCurrency(unitPrice)}
                           </span>
-                          <span className="text-sm font-semibold text-gray-800">{currency} {formatCurrency(itemTotal)}</span>
+                          <span className="text-xs sm:text-sm font-semibold text-gray-800">{currency} {formatCurrency(itemTotal)}</span>
                         </div>
                       </div>
                     </div>
@@ -714,9 +1101,9 @@ export default function SecureCheckoutPage() {
               </div>
 
               {/* PAYMENT INFORMATION */}
-              <div className="px-6 py-4 border-t border-gray-200">
-                <h2 className="text-sm font-bold text-gray-800 uppercase mb-4">{t("paymentInformation")}</h2>
-                <div className="space-y-2 text-sm">
+              <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-t border-gray-200">
+                <h2 className="text-xs sm:text-sm font-bold text-gray-800 uppercase mb-3 sm:mb-4">{t("paymentInformation")}</h2>
+                <div className="space-y-2 text-xs sm:text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">{t("bagTotal")}:</span>
                     <span className="text-gray-800">{currency} {formatCurrency(bagTotal)}</span>
@@ -755,26 +1142,36 @@ export default function SecureCheckoutPage() {
 
       {/* Bottom Bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between max-w-6xl mx-auto">
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 max-w-6xl mx-auto">
+            <div className="flex items-center gap-2 flex-1">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <p className="text-xs text-gray-600">{t("taxInfoMessage")}</p>
+              <p className="text-[10px] sm:text-xs text-gray-600">{t("taxInfoMessage")}</p>
             </div>
-            <div className="flex items-center gap-6">
+            <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 sm:gap-6">
               <div className="text-right">
-                <p className="text-xs text-gray-500">{t("totalAmount")}</p>
-                <p className="text-lg font-bold text-gray-800">{currency} {formatCurrency(grandTotal)}</p>
+                <p className="text-[10px] sm:text-xs text-gray-500">{t("totalAmount")}</p>
+                <p className="text-base sm:text-lg font-bold text-gray-800">{currency} {formatCurrency(grandTotal)}</p>
               </div>
-              <button
-                onClick={handlePlaceOrder}
-                disabled={!selectedAddress || placingOrder}
-                className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-8 rounded-lg transition-colors"
-              >
-                {placingOrder ? t("placingOrder") || "Placing Order..." : t("payWithPlaceToPay") || "PAY WITH PLACE TO PAY"}
-              </button>
+              {paymentMethod !== "" && (
+                <button
+                  onClick={handlePlaceOrder}
+                  disabled={!selectedAddress || placingOrder}
+                  className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-2.5 sm:py-3 px-4 sm:px-6 md:px-8 rounded-lg transition-colors text-xs sm:text-sm md:text-base whitespace-nowrap w-full sm:w-auto"
+                >
+                  {placingOrder
+                    ? t("placingOrder") || "Placing Order..."
+                    : paymentMethod === "manual"
+                      ? t("placeOrder") || "PLACE ORDER"
+                      : paymentMethod === "athMovil"
+                        ? t("payWithATHMovil") || "PAY WITH ATH MÓVIL"
+                        : paymentMethod === "creditCard"
+                          ? t("payWithPlaceToPay") || "PAY WITH PLACE TO PAY"
+                          : t("pay") || "PAY"}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -789,6 +1186,13 @@ export default function SecureCheckoutPage() {
           onClose={handlePlaceToPayClose}
         />
       )}
+
+      {/* Coming Soon Modal */}
+      <ComingSoonModal
+        isOpen={showComingSoonModal}
+        onClose={() => setShowComingSoonModal(false)}
+        paymentMethod={paymentMethod}
+      />
 
       <Footer />
     </div>

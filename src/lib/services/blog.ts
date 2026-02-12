@@ -24,7 +24,8 @@ const getBlogToken = async (): Promise<string> => {
         return token;
     } catch (error) {
         // eslint-disable-next-line no-console
-        console.error("Error fetching blog token:", error);
+        // console.error("Error fetching blog token:", error);
+        console.warn("Error fetching blog token:", error);
         return "";
     }
 };
