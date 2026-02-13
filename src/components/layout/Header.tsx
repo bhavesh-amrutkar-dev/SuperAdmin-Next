@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, X, ShoppingCart, User, Globe, MapPin, LogOut } from "lucide-react";
+import { Menu, X, ShoppingCart, User, Globe, MapPin, LogOut, Package } from "lucide-react";
 import {
   COUNTRY,
   DEFAULT_COUNTRY,
@@ -289,6 +289,18 @@ export default function Header() {
                         <Link href="/addresses">
                           <MapPin size={16} />
                           {t("savedAddresses")}
+                        </Link>
+                      </Button>
+
+                      <Button
+                        asChild
+                        variant="dropdown"
+                        size="sm"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        <Link href="/orders">
+                          <Package size={16} />
+                          {t("myOrders")}
                         </Link>
                       </Button>
 
