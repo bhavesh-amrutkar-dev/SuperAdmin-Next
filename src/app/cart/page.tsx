@@ -12,6 +12,7 @@ import LoginModal from "@/src/components/modals/LoginModal";
 import { CartService } from "@/src/lib/services/cart";
 import { getCookie } from "cookies-next";
 import { Button } from "../../components/ui/button";
+import Loader from "@/src/components/loader";
 
 interface CartItem {
   _id?: string;
@@ -651,11 +652,14 @@ export default function CartPage() {
       <div className="min-h-screen bg-[#ededed]">
         <Header />
         <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
+          {/* <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D4AF37] mx-auto"></div>
-            <p className="mt-4 text-gray-600">{t("loadingCart")}</p>
-          </div>
+            <p className="mt-4 text-gray-600"> {t("loadingCart")}</p>
+          </div> */}
+          <Loader/>
         </div>
+        
+         
         <Footer />
       </div>
     );

@@ -13,6 +13,7 @@ import Footer from "@/src/components/layout/Footer";
 import { CartService } from "@/src/lib/services/cart";
 import { UserAddressService } from "@/src/lib/services/userAddress";
 import { Button } from "@/src/components/ui/button";
+import Loader from "@/src/components/loader";
 
 type TaxItem = {
   taxName?: string;
@@ -264,10 +265,11 @@ export default function ShippingAddressPage() {
       <div className="min-h-screen bg-[#ededed]">
         <Header />
         <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
+          {/* <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D4AF37] mx-auto"></div>
             <p className="mt-4 text-gray-600">{t("loading") || "Loading..."}</p>
-          </div>
+          </div> */}
+          <Loader/>
         </div>
         <Footer />
       </div>

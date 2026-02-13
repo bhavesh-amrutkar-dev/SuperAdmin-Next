@@ -28,6 +28,7 @@ import {
 } from "@/src/components/ui/dialog";
 import { Button } from "@/src/components/ui/button";
 import Loader from "../loader";
+import ReactCountryFlag from "react-country-flag";
 
 type CountryOption = {
   id: string;
@@ -71,22 +72,30 @@ const CountryCard = memo(function CountryCard({
         group flex flex-col items-center rounded-xl border
         px-4 py-4 transition-all duration-150
         ${isSelected
-          ? "border-[#FECB02] ring-2 ring-[#FECB02]/40 shadow-sm hover:cursor-pointer"
+          ? "border-[#FECB02] ring-2 ring-[#FECB02]/40 shadow-sm"
           : "border-gray-200 hover:border-[#FECB02]/60 hover:shadow-sm hover:cursor-pointer"
         }
       `}
     >
+      {/* Flag Circle */}
       <div
         className={`
-          mb-2 flex h-12 w-12 items-center justify-center
-          rounded-full text-xs font-semibold transition
+          mb-3 flex h-14 w-14 items-center justify-center
+          rounded-full transition
           ${isSelected
-            ? "bg-[#FECB02]/20 text-black"
-            : "bg-gray-100 text-gray-600 group-hover:bg-[#FECB02]/10"
+            ? "bg-[#FECB02]/20"
+            : "bg-gray-100 group-hover:bg-[#FECB02]/10"
           }
         `}
       >
-        {country.code}
+        <ReactCountryFlag
+          countryCode={country.code}
+          svg
+          style={{
+            width: "2.2em",
+            height: "2.2em",
+          }}
+        />
       </div>
 
       <span className="text-center text-sm font-medium text-gray-800">

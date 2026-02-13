@@ -9,6 +9,7 @@ import Header from "@/src/components/layout/Header";
 import Footer from "@/src/components/layout/Footer";
 import PreFooterIconModule from "@/src/components/layout/PreFooterIconModule";
 import { RaffleService } from "@/src/lib/services/raffles";
+import Loader from "@/src/components/loader";
 
 type LegacyRaffleDetail = {
     productName?: string;
@@ -60,10 +61,12 @@ export default function TermsPage() {
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <div className="text-center">
+                {/* <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D4AF37] mx-auto"></div>
                     <p className="mt-4 text-gray-600">{t("loading") || "Loading..."}</p>
-                </div>
+                </div> */}
+
+                <Loader/>
             </div>
         );
     }

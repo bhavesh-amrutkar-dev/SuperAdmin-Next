@@ -12,6 +12,7 @@ import PreFooterIconModule from "@/src/components/layout/PreFooterIconModule";
 import { OrderService, type Order, type StoreOrder, type OrderProduct } from "@/src/lib/services/order";
 import { PRODUCT_CART } from "@/src/lib/config";
 import { Button } from "@/src/components/ui/button";
+import Loader from "@/src/components/loader";
 
 // Order status codes
 const ORDER_STATUS = {
@@ -328,7 +329,8 @@ export default function OrderDetailPage() {
             <main>
                 <Header />
                 <div className="flex items-center justify-center min-h-[60vh]">
-                    <div className="text-lg text-[#797979]">{t("loading") || "Loading..."}</div>
+                    {/* <div className="text-lg text-[#797979]">{t("loading") || "Loading..."}</div> */}
+                    <Loader />
                 </div>
                 <PreFooterIconModule />
                 <Footer />

@@ -266,22 +266,26 @@ export default function Header() {
               </Button>
 
             ) : (
-              <div ref={userMenuRef} className="relative user-menu-container">
+              <div
+                ref={userMenuRef}
+                className="relative user-menu-container"
+              >
                 <Button
                   variant="dark"
                   onClick={() => setUserMenuOpen((p) => !p)}
-                  className="rounded-full px-3"
+                  className="rounded-full p-0 w-10 h-10 overflow-hidden"
                 >
                   {displayUser?.profilePic ? (
-                    <Image
-                      src={displayUser.profilePic}
-                      alt={displayUser.name || "User"}
-                      width={32}
-                      height={32}
-                      className="rounded-full object-cover"
-                    />
+                    <div className="w-full h-full rounded-full overflow-hidden">
+                      <Image
+                        src={displayUser.profilePic}
+                        alt={displayUser.name || "User"}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-[#FECB02] flex items-center justify-center text-black font-semibold text-sm">
+                    <div className="w-full h-full rounded-full bg-[#FECB02] flex items-center justify-center text-black font-semibold text-sm">
                       {displayUser?.name?.charAt(0).toUpperCase() || <User />}
                     </div>
                   )}
@@ -405,7 +409,7 @@ export default function Header() {
             {!isLoggedIn && !displayUser ? (
               <>
                 <p className="text-lg font-semibold text-gray-900">
-                 {t("welcome")}
+                  {t("welcome")}
 
                 </p>
                 <p className="text-sm text-gray-500 mb-4">

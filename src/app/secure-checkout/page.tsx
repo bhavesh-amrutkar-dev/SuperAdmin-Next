@@ -21,6 +21,7 @@ import { DEFAULT_COUNTRY_CODE, COUNTRY_CODE, BASE_URL } from "@/src/lib/config";
 import { getCommonHeaders } from "@/src/lib/api/headers";
 import axios from "axios";
 import { Button } from "../../components/ui/button";
+import Loader from "@/src/components/loader";
 
 type TaxItem = {
   taxName?: string;
@@ -698,10 +699,12 @@ export default function SecureCheckoutPage() {
       <div className="min-h-screen bg-[#ededed]">
         <Header />
         <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
+          {/* <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D4AF37] mx-auto"></div>
             <p className="mt-4 text-gray-600">{t("loading") || "Loading..."}</p>
-          </div>
+          </div> */}
+
+          <Loader/>
         </div>
         <Footer />
       </div>

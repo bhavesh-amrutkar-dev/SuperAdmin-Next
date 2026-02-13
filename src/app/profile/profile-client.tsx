@@ -6,6 +6,8 @@ import { CheckCircle2, XCircle, Mail, Phone, MapPin, Calendar, User, Shield, Wal
 import Header from "@/src/components/layout/Header";
 import Footer from "@/src/components/layout/Footer";
 import { useTranslations } from "next-intl";
+import Avatar from "@/src/components/ui/avatar";
+import Loader from "@/src/components/loader";
 
 const InfoItem = ({ label, value, icon }: { label: string; value?: any; icon?: React.ReactNode }) => (
   <div className="group relative p-4 rounded-xl border border-gray-200 bg-gradient-to-br from-white to-gray-50/50 hover:border-[#D4AF37]/30 hover:shadow-md transition-all duration-200">
@@ -43,10 +45,11 @@ export default function ProfileClient() {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <Header />
         <div className="flex justify-center items-center min-h-[60vh]">
-          <div className="text-center">
+          {/* <div className="text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#D4AF37] border-t-transparent mx-auto"></div>
             <p className="mt-6 text-gray-600 text-lg font-medium">Loading profile…</p>
-          </div>
+          </div> */}
+          <Loader />
         </div>
         <Footer />
       </div>
@@ -82,20 +85,14 @@ export default function ProfileClient() {
             {/* Profile Picture */}
             <div className="relative flex-shrink-0">
               <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden shadow-lg ring-2 ring-white ring-offset-2 ring-offset-gray-50 bg-gradient-to-br from-[#D4AF37] to-[#B8941F]">
-                <Image
-                  src={user.profilePic || "/images/icons/profile_placeholder.svg"}
-                  alt="Profile"
-                  width={96}
-                  height={96}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    // Fallback to placeholder if image fails to load
-                    if (!target.src.includes('profile_placeholder')) {
-                      target.src = "/images/icons/profile_placeholder.svg";
-                    }
-                  }}
+                <Avatar
+                  src={user.profilePic}
+                  firstName={user.firstName}
+                  lastName={user.lastName}
+                  size={96}
+                  className="shadow-lg ring-2 ring-white ring-offset-2 ring-offset-gray-50"
                 />
+
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
               </div>
             </div>

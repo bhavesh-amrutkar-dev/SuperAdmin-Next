@@ -13,6 +13,7 @@ import { TicketWalletService } from "@/src/lib/services/ticketWallet";
 import { UserAddressService } from "@/src/lib/services/userAddress";
 import { PRODUCT_CART } from "@/src/lib/config";
 import { getCookie } from "cookies-next";
+import Loader from "@/src/components/loader";
 
 type LegacyRaffleDetail = {
     productName?: string;
@@ -176,10 +177,11 @@ export default function FreeTicketConfirmationPage() {
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <div className="text-center">
+                {/* <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D4AF37] mx-auto"></div>
                     <p className="mt-4 text-gray-600">{t("loading") || "Loading..."}</p>
-                </div>
+                </div> */}
+                <Loader/>
             </div>
         );
     }
