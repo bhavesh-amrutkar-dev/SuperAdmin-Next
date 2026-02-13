@@ -27,6 +27,7 @@ import {
   DialogFooter,
 } from "@/src/components/ui/dialog";
 import { Button } from "@/src/components/ui/button";
+import Loader from "../loader";
 
 type CountryOption = {
   id: string;
@@ -69,10 +70,9 @@ const CountryCard = memo(function CountryCard({
       className={`
         group flex flex-col items-center rounded-xl border
         px-4 py-4 transition-all duration-150
-        ${
-          isSelected
-            ? "border-[#FECB02] ring-2 ring-[#FECB02]/40 shadow-sm"
-            : "border-gray-200 hover:border-[#FECB02]/60 hover:shadow-sm"
+        ${isSelected
+          ? "border-[#FECB02] ring-2 ring-[#FECB02]/40 shadow-sm hover:cursor-pointer"
+          : "border-gray-200 hover:border-[#FECB02]/60 hover:shadow-sm hover:cursor-pointer"
         }
       `}
     >
@@ -80,10 +80,9 @@ const CountryCard = memo(function CountryCard({
         className={`
           mb-2 flex h-12 w-12 items-center justify-center
           rounded-full text-xs font-semibold transition
-          ${
-            isSelected
-              ? "bg-[#FECB02]/20 text-black"
-              : "bg-gray-100 text-gray-600 group-hover:bg-[#FECB02]/10"
+          ${isSelected
+            ? "bg-[#FECB02]/20 text-black"
+            : "bg-gray-100 text-gray-600 group-hover:bg-[#FECB02]/10"
           }
         `}
       >
@@ -182,7 +181,7 @@ export default function CountrySelectorModal({
       window.dispatchEvent(
         new CustomEvent("countryChanged", { detail: selected })
       );
-    } catch {}
+    } catch { }
 
     onCountryChange?.(selected);
     onClose();
@@ -206,21 +205,25 @@ export default function CountrySelectorModal({
   );
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="p-5 sm:max-w-2xl sm:p-6">
+    <Dialog open={open}>
+      <DialogContent
+        showCloseButton={false}
+        disableOutsideClose
+        disableEscapeClose
+        className="p-5 sm:max-w-2xl sm:p-6">
         <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-gray-300 sm:hidden" />
 
         <DialogHeader className="pt-2 text-center sm:text-left">
           <DialogTitle>{t("countryModalTitle")}</DialogTitle>
           <DialogDescription>
-            Select your country to continue
+            {t("contrySelectorDesc")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="mt-6 max-h-[55vh] overflow-y-auto pr-1">
           {loading ? (
             <div className="text-center text-sm text-gray-500 py-10">
-              Loading countries...
+              <Loader />
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -230,13 +233,13 @@ export default function CountrySelectorModal({
         </div>
 
         <DialogFooter className="mt-6 gap-3 sm:mt-8">
-          <Button
+          {/* <Button
             variant="outline"
             onClick={onClose}
             className="w-full sm:w-auto"
           >
             {t("countryModalCancel")}
-          </Button>
+          </Button> */}
 
           <Button
             variant="primary"

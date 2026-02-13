@@ -395,5 +395,6 @@
     "confirm": "Confirm",
     "placeOrder": "PLACE ORDER",
     "noBanksAvailable": "No banks available for manual payment",
-    "ID": "ID"
+    "ID": "ID",
+    "contrySelectorDesc": "Select your country to continue"
 }

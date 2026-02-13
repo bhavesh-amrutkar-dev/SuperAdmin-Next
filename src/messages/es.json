@@ -387,5 +387,6 @@
     "confirm": "Confirmar",
     "placeOrder": "REALIZAR PEDIDO",
     "noBanksAvailable": "No hay bancos disponibles para pago manual",
-    "ID": "ID"
+    "ID": "ID",
+    "contrySelectorDesc": "Seleccione su país para continuar"
 }

@@ -1,112 +1,156 @@
-"use client";
-
 import dynamic from "next/dynamic";
-import { RaffleSection } from "@/src/models/api/response/home";
-import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { RaffleSection } from "@/src/models/api/response/home";
 import Skeleton from "../ui/skeleton";
 
-// Lazy load RaffleCard
 const RaffleCard = dynamic(() => import("./RaffleCard"), {
-    ssr: false,
+  loading: () => (
+    <div className="w-full aspect-3/4 rounded-2xl">
+      <Skeleton className="w-full h-full rounded-2xl" />
+    </div>
+  ),
 });
 
-export default function RaffleSectionLayout({ section }: { section: RaffleSection }) {
-    const t = useTranslations();
+function slugify(name: string) {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
 
-    const normalizedTitle = section.title?.toLowerCase() || "";
-    const isMerchandiseSection = normalizedTitle.includes("merchandise");
-    const isSaleSection = normalizedTitle.includes("sale");
+export default function RaffleSectionLayout({
+  section,
+  viewMoreLabel,
+}: {
+  section: RaffleSection;
+  viewMoreLabel: string;
+}) {
+  const hasMore = section.items?.length > 5;
+  const itemsToShow = hasMore
+    ? section.items.slice(0, 5)
+    : section.items ?? [];
 
-    const viewMoreHref = isMerchandiseSection
-        ? "/merchandise"
-        : isSaleSection
-            ? "/sale"
-            : "/lotteries";
+  const isLoading = !section.items?.length;
 
-    const hasMore = section.items.length > 2;
-    const itemsToShow = hasMore ? section.items.slice(0, 5) : section.items;
-    const isLoading = !section.items || section.items.length === 0;
+  return (
+    <section className="w-full py-10 md:py-14 xl:py-20">
+      <div className="mx-auto w-full max-w-screen-2xl px-4 md:px-6">
+        {/* Header */}
+        <div className="mb-8 md:mb-12 text-center">
+          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold uppercase tracking-wide leading-tight text-gray-900">
+            {section.title}
+          </h2>
 
-    return (
-        <section className="w-full pt-10 pb-10 lg:pb-15 xl:pb-20">
-            <div className="mx-auto w-full max-w-412 px-4 md:px-6">
-                {/* Header */}
-                <div className="mb-10 md:mb-14 text-center">
-                    <h2 className="pt-2 pb-2 text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold uppercase tracking-[1px] leading-tight text-gray-900">
-                        {section.title}
-                    </h2>
-                    {section.description && (
-                        <div
-                            className="mt-2 text-sm sm:text-base md:text-lg text-gray-600 leading-relaxed font-medium"
-                            dangerouslySetInnerHTML={{ __html: section.description }}
-                        />
-                    )}
-                </div>
+          {section.description && (
+            <div
+              className="mt-3 text-sm sm:text-base md:text-lg text-gray-600 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: section.description }}
+            />
+          )}
+        </div>
 
-                {/* Card List */}
-                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 justify-center">
-                    {isLoading
-                        ? Array.from({ length: 5 }).map((_, i) => (
-                            <Skeleton key={i} className="w-full h-60 rounded-2xl" />
-                        ))
-                        : itemsToShow.map((item) => {
-                            if (!item.id) return null;
+        {/* Cards */}
+        <div className="
+          grid
+          grid-cols-1
+          sm:grid-cols-2
+          md:grid-cols-3
+          lg:grid-cols-4
+          xl:grid-cols-5
+          gap-3
+          sm:gap-4
+          md:gap-6
+        ">
+          {isLoading
+            ? Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton
+                  key={i}
+                  className="w-full aspect-3/4 rounded-2xl"
+                />
+              ))
+            : itemsToShow.map((item) => {
+                if (!item?.id) return null;
 
-                            const slugifyName = (name: string) =>
-                                name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+                const slug = item.name
+                  ? slugify(item.name)
+                  : item.id;
 
-                            const slug = item.name ? slugifyName(item.name) : item.id;
-                            const campaignId = (item as any).campaignId || item.id;
-                            const childProductId = (item as any).childProductId || "";
+                const campaignId =
+                  (item as any).campaignId || item.id;
 
-                            const href = `/raffles/${slug}?pid=${campaignId}${childProductId ? `&cpid=${childProductId}` : ""
-                                }`;
+                const childProductId =
+                  (item as any).childProductId || "";
 
-                            return (
-                                <Link key={item.id} href={href} className="block w-full">
-                                    <div className="transform transition duration-300 hover:scale-105 hover:shadow-lg rounded-2xl overflow-hidden">
-                                        <RaffleCard item={item} cellType={section.cellType} />
-                                    </div>
-                                </Link>
-                            );
-                        })}
-                </div>
+                const href = `/raffles/${slug}?pid=${campaignId}${
+                  childProductId
+                    ? `&cpid=${childProductId}`
+                    : ""
+                }`;
 
-                {/* View More */}
-                {hasMore && (
-                    <div className="mt-10 text-center">
-                        <Link
-                            href={"/raffles"}
-                            className="
-        inline-flex items-center justify-center
-        px-8 py-3
-        bg-linear-to-r from-yellow-400 to-yellow-500
-        text-black font-bold text-base sm:text-lg
-        rounded-3xl
-        shadow-md
-        transition-all duration-300
-        hover:shadow-xl hover:scale-105
-        active:scale-95
-        focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2
-      "
-                        >
-                            {t("viewMore")}
-                            {/* Optional arrow icon */}
-                            <svg
-                                className="ml-2 w-4 h-4 sm:w-5 sm:h-5 text-black"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth={2}
-                                viewBox="0 0 24 24"
-                            >
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                            </svg>
-                        </Link>
+                return (
+                  <Link
+                    key={item.id}
+                    href={href}
+                    className="block"
+                    prefetch={false}
+                  >
+                    <div
+                      className="
+                        rounded-2xl
+                        overflow-hidden
+                        transition-transform
+                        duration-200
+                        md:hover:scale-[1.03]
+                        md:hover:shadow-lg
+                      "
+                    >
+                      <RaffleCard
+                        item={item}
+                        cellType={section.cellType}
+                      />
                     </div>
-                )}
+                  </Link>
+                );
+              })}
+        </div>
 
-            </div>
-        </section>
-    );
+        {/* View More */}
+        {hasMore && (
+          <div className="mt-10 text-center">
+            <Link
+              href="/raffles"
+              className="
+                inline-flex items-center justify-center
+                px-6 sm:px-8 py-3
+                bg-gradient-to-r from-yellow-400 to-yellow-500
+                text-black font-semibold text-sm sm:text-base
+                rounded-full
+                shadow-md
+                transition-all duration-200
+                md:hover:shadow-xl md:hover:scale-105
+                active:scale-95
+                focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2
+              "
+            >
+              {viewMoreLabel}
+              <svg
+                className="ml-2 w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </Link>
+          </div>
+        )}
+      </div>
+    </section>
+  );
 }

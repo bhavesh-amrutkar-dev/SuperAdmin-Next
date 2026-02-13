@@ -82,6 +82,7 @@ type LegacyRaffleDetail = {
 import CountdownTimer from "@/src/components/CountdownTimer";
 import { createProductDeepLink } from "@/src/lib/services/deeplink";
 import { toast } from "sonner";
+import { stripHtml } from "@/src/lib/utils/HtmltoText";
 
 
 export default function RafflesDetailPage() {
@@ -964,7 +965,12 @@ export default function RafflesDetailPage() {
                 // Mobile native share (Safari iOS works on HTTPS + user gesture)
                 await navigator.share({
                     title: displayName,
-                    text: lotteryItem.description || lotteryItem.detailDesc || "Check this out on Donrifa!",
+                    text: stripHtml(
+                        lotteryItem.description ||
+                        lotteryItem.detailDesc ||
+                        "Check this out on Donrifa!"
+                    ),
+
                     url: url.toString(),
                 });
             } else {

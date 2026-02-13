@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { getCookie } from "cookies-next";
 
@@ -135,7 +135,7 @@ export default function HomePageClient() {
         : [];
 
       const raffleItems: RaffleItem[] = items
-        .slice(0, 5)
+        // .slice(0, 5)
         .map((raffle) => {
           const campaignId =
             raffle.campaignId ||
@@ -202,6 +202,7 @@ export default function HomePageClient() {
   if (loading) {
     return <FullScreenLoader />;
   }
+  
 
   return (
     <>
@@ -215,7 +216,11 @@ export default function HomePageClient() {
           {t("loading") ?? "Loading..."}
         </section>
       ) : raffleSection ? (
-        <RaffleSectionLayout section={raffleSection} />
+        <RaffleSectionLayout
+          section={raffleSection}
+          viewMoreLabel={t("viewMore") ?? "View More"}
+        />
+
       ) : null}
 
       <HowItWorksSection />
