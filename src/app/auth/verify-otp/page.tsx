@@ -7,6 +7,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { Button } from "@/src/components/ui/button";
 
 export default function VerifyOtpPage() {
   const t = useTranslations();
@@ -20,11 +21,9 @@ export default function VerifyOtpPage() {
 
   const expiry = Number(searchParams.get("expiry") || 180);
   const [timer, setTimer] = useState(expiry);
-
   const [otp, setOtp] = useState<string[]>(Array(4).fill(""));
   const [loading, setLoading] = useState(false);
 
-  /** Extract countryCode & mobile from value */
   const { countryCode, mobile } = useMemo(() => {
     if (!value) return { countryCode: "", mobile: "" };
     const match = value.match(/^(\+\d+)(\d+)$/);
@@ -34,17 +33,14 @@ export default function VerifyOtpPage() {
     };
   }, [value]);
 
-  /** Countdown */
   useEffect(() => {
     if (timer <= 0) return;
     const tId = setTimeout(() => setTimer((s) => s - 1), 1000);
     return () => clearTimeout(tId);
   }, [timer]);
 
-  /** OTP Input */
   const handleChange = (val: string, index: number) => {
     if (!/^\d?$/.test(val)) return;
-
     const next = [...otp];
     next[index] = val;
     setOtp(next);
@@ -54,7 +50,6 @@ export default function VerifyOtpPage() {
     }
   };
 
-  /** Verify OTP */
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -77,9 +72,7 @@ export default function VerifyOtpPage() {
         verifyType: 2,
       });
 
-      if (!res?.data) {
-        throw new Error(t("otpAuthFailed"));
-      }
+      if (!res?.data) throw new Error(t("otpAuthFailed"));
 
       if (flow === "signup") {
         const payload = sessionStorage.getItem("signup_payload");
@@ -106,7 +99,6 @@ export default function VerifyOtpPage() {
     }
   };
 
-  /** Resend OTP */
   const resendOtp = async () => {
     if (!mobile || !countryCode) return;
 
@@ -116,9 +108,7 @@ export default function VerifyOtpPage() {
         countryCode,
       });
 
-      if (!res?.data) {
-        throw new Error("Failed to resend OTP");
-      }
+      if (!res?.data) throw new Error("Failed to resend OTP");
 
       const { otpId, otpExpiryTime } = res.data;
 
@@ -136,24 +126,29 @@ export default function VerifyOtpPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-yellow-50 via-white to-gray-100 px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-[0_20px_40px_-15px_rgba(0,0,0,0.2)] p-8">
+    <div className="flex items-center justify-center px-4 py-8">
+
+      {/* Container */}
+      <div className="w-full max-w-md bg-background rounded-2xl  shadow-xl p-6 sm:p-8">
+
         {/* Header */}
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold mb-1">
+        <div className="text-center space-y-2">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
             {t("verifyOtpTitle")}
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             {t("verifyOtpSubtitle", { method })}
           </p>
-          <p className="mt-1 text-sm font-medium text-gray-800 break-all">
+          <p className="text-sm font-medium break-all text-foreground">
             {value}
           </p>
         </div>
 
-        {/* OTP Input */}
-        <form onSubmit={onSubmit} className="space-y-6">
-          <div className="flex justify-center gap-3">
+        {/* OTP Form */}
+        <form onSubmit={onSubmit} className="mt-8 space-y-6">
+
+          {/* OTP Inputs */}
+          <div className="flex justify-center gap-3 sm:gap-4">
             {otp.map((digit, i) => (
               <input
                 key={i}
@@ -163,39 +158,49 @@ export default function VerifyOtpPage() {
                 maxLength={1}
                 value={digit}
                 onChange={(e) => handleChange(e.target.value, i)}
-                className="h-12 w-12 rounded-lg border border-gray-300 text-center text-lg font-semibold
-                  focus:outline-none focus:border-[#f3c200] focus:ring-2 focus:ring-yellow-200"
+                className="
+                h-12 w-12 sm:h-14 sm:w-14
+                rounded-xl border border-border
+                bg-muted/30
+                text-center text-lg font-semibold
+                transition-all duration-200
+                focus:outline-none 
+                focus:ring-2 focus:ring-primary/40 
+                focus:border-primary
+              "
               />
             ))}
           </div>
 
-          <button
+          {/* Submit Button */}
+          <Button
             type="submit"
+            className="w-full h-12 text-base font-semibold rounded-xl"
             disabled={loading || otp.some((d) => !d)}
-            className="w-full rounded-lg bg-[#f3c200] py-3 font-semibold text-black
-              hover:bg-yellow-400 transition disabled:opacity-50"
           >
             {loading ? t("verifying") : t("verifyContinue")}
-          </button>
+          </Button>
         </form>
 
         {/* Footer */}
-        <div className="mt-6 text-center text-sm text-gray-500">
+        <div className="mt-6 text-center text-sm text-muted-foreground">
           {t("didntReceiveCode")}{" "}
           {timer > 0 ? (
-            <span className="font-medium text-gray-700">
+            <span className="font-medium text-foreground">
               {t("resendIn", { time: timer })}
             </span>
           ) : (
             <button
               onClick={resendOtp}
-              className="font-semibold text-[#f3c200] hover:underline"
+              className="font-semibold text-primary hover:underline transition"
             >
               {t("resendOtp")}
             </button>
           )}
         </div>
+
       </div>
     </div>
   );
+
 }

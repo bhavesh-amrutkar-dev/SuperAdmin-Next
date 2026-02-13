@@ -47,13 +47,14 @@ export default function AddressPage() {
     const [countries, setCountries] = useState<CountryCurrency[]>([]);
     const [countriesLoading, setCountriesLoading] = useState(false);
     const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+    const [loadingLocation, setLoadingLocation] = useState(false);
 
     const requestLocation = async () => {
         if (!("geolocation" in navigator)) {
             toast.error("Geolocation not supported by your browser");
             return;
         }
-
+        setLoadingLocation(true);
         navigator.geolocation.getCurrentPosition(
             async (pos) => {
                 const { latitude, longitude } = pos.coords;
@@ -89,13 +90,17 @@ export default function AddressPage() {
                         setValue("country", country, { shouldValidate: true });
                     }
 
-                    toast.success("Location auto-filled successfully");
+                    toast.success("Location detected successfully");
                 } catch (error) {
                     toast.error("Failed to fetch address details");
                 }
+                finally {
+                    setLoadingLocation(false);
+                }
             },
-            (error) => {
-                toast.error(error.message || "Failed to get location");
+            () => {
+                toast.error("Unable to retrieve your location");
+                setLoadingLocation(false);
             },
             {
                 enableHighAccuracy: true,
@@ -104,11 +109,22 @@ export default function AddressPage() {
             }
         );
     };
+    const askLocationPermission = () => {
+        if (!("geolocation" in navigator)) return;
 
-
+        navigator.geolocation.getCurrentPosition(
+            () => {
+                // Permission granted — do nothing
+            },
+            () => {
+                // Permission denied — do nothing
+            }
+        );
+    };
     useEffect(() => {
-        requestLocation();
+        askLocationPermission();
     }, []);
+
 
     const {
         register,
@@ -264,14 +280,17 @@ export default function AddressPage() {
 
                                     <ErrorMessage message={errors.addLine1?.message} />
 
+
                                     <Button
                                         type="button"
                                         variant="outline"
                                         size="sm"
                                         onClick={requestLocation}
+                                        disabled={loadingLocation}
                                     >
-                                        {t("useCurrentLocation")}
+                                        {loadingLocation ? t("detecting") :  t("useCurrentLocation")}
                                     </Button>
+
                                 </div>
 
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

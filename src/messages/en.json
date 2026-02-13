@@ -415,5 +415,21 @@
     "useCurrentLocation": "Use my current location",
     "cityPlaceholder": "Enter your city",
     "statePlaceholder": "Enter your state",
-    "pincodePlaceholder": "Enter your postal code"
+    "pincodePlaceholder": "Enter your postal code",
+    "manageDeliveryAddresses": "Manage your delivery addresses",
+    "setDefault": "Set Default",
+    "delete": "Delete",
+    "deleteAddressConfirm": "Delete this address?",
+    "addressDeleted": "Address deleted",
+    "deleteFailed": "Delete failed",
+    "defaultAddressUpdated": "Default address updated",
+    "defaultUpdateFailed": "Failed to update default",
+    "loadAddressesFailed": "Failed to load addresses",
+    "detecting": "Detecting...",
+    "deleteAddress": "Delete Address",
+    "pleaseWait": "Please wait...",
+    "welcome": "Welcome 👋",
+    "welcomeBackShort": "Welcome back 👋",
+    "loginOrCreateAccount": "Login or create an account",
+    "user": "User"
 }

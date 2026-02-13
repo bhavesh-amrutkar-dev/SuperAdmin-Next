@@ -415,5 +415,21 @@
     "useCurrentLocation": "Usar mi ubicación actual",
     "cityPlaceholder": "Ingresa tu ciudad",
     "statePlaceholder": "Ingresa tu estado",
-    "pincodePlaceholder": "Ingresa tu código postal"
+    "pincodePlaceholder": "Ingresa tu código postal",
+    "manageDeliveryAddresses": "Administra tus direcciones de entrega",
+    "setDefault": "Establecer como predeterminada",
+    "delete": "Eliminar",
+    "deleteAddressConfirm": "¿Eliminar esta dirección?",
+    "addressDeleted": "Dirección eliminada",
+    "deleteFailed": "Error al eliminar",
+    "defaultAddressUpdated": "Dirección predeterminada actualizada",
+    "defaultUpdateFailed": "No se pudo actualizar la dirección predeterminada",
+    "loadAddressesFailed": "No se pudieron cargar las direcciones",
+    "detecting": "Detectora...",
+    "deleteAddress": "Eliminar dirección",
+    "pleaseWait": "Por favor espera...",
+    "welcome": "Bienvenido 👋",
+    "welcomeBackShort": "Bienvenido de nuevo 👋",
+    "loginOrCreateAccount": "Inicia sesión o crea una cuenta",
+    "user": "Usuario"
 }

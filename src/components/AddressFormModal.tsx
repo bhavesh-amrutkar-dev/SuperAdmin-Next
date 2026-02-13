@@ -28,15 +28,20 @@ export default function AddressFormModal({
         toast.success("Address created");
       }
 
-      onSuccess();
-      onClose();
+      onSuccess?.();
+      onClose?.();
     } catch (err: any) {
       toast.error(err?.message || "Save failed");
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) onClose?.();
+      }}
+    >
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
         <DialogHeader>
           <DialogTitle>

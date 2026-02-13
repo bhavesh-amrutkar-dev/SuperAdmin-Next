@@ -31,7 +31,7 @@ export default function Header() {
 
   const t = useTranslations();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const pathname = usePathname();
   const [cookieUser, setCookieUser] = useState<{ name?: string; profilePic?: string } | null>(null);
 
@@ -149,6 +149,23 @@ export default function Header() {
     };
   }, [pathname, user]); // React to user context changes
 
+  const handleLogout = async () => {
+    // Close all menus immediately
+    setUserMenuOpen(false);
+    setMenuOpen(false);
+
+    // Reset local UI state immediately
+    setIsLoggedIn(false);
+    setCookieUser(null);
+    setUser(null);
+
+    // Call logout utility (clears cookies)
+    await logoutUser();
+
+    // Redirect
+    router.replace("/auth/login");
+  };
+
   // Close user menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -258,10 +275,10 @@ export default function Header() {
                     {/* User Info Section */}
                     <div className="px-4 py-3 bg-gray-50 border-b">
                       <p className="text-sm font-semibold text-gray-800">
-                        {displayUser?.name || "User"}
+                        {displayUser?.name || t("user")}
                       </p>
                       <p className="text-xs text-gray-500">
-                        Welcome back 👋
+                        {t("welcomeBackShort")}
                       </p>
                     </div>
 
@@ -315,11 +332,8 @@ export default function Header() {
                       <Button
                         variant="logout"
                         size="sm"
-                        onClick={async () => {
-                          setUserMenuOpen(false);
-                          await logoutUser();
-                          router.replace("/auth/login");
-                        }}
+                        onClick={handleLogout}
+
                       >
                         <LogOut size={16} />
                         {t("logout")}
@@ -373,10 +387,11 @@ export default function Header() {
             {!isLoggedIn && !displayUser ? (
               <>
                 <p className="text-lg font-semibold text-gray-900">
-                  Welcome 👋
+                 {t("welcome")}
+
                 </p>
                 <p className="text-sm text-gray-500 mb-4">
-                  Login or create an account
+                  {t("loginOrCreateAccount")}
                 </p>
 
                 <div className="flex gap-3">
@@ -425,7 +440,7 @@ export default function Header() {
                     {displayUser?.name || "User"}
                   </p>
                   <p className="text-xs text-gray-500">
-                    Welcome back 👋
+                    {t("welcomeBackShort")}
                   </p>
                 </div>
               </div>
@@ -515,11 +530,7 @@ export default function Header() {
                 <Button
                   variant="logout"
                   size="sm"
-                  onClick={async () => {
-                    setMenuOpen(false);
-                    await logoutUser();
-                    router.replace("/auth/login");
-                  }}
+                  onClick={handleLogout}
                 >
                   <LogOut size={16} />
                   {t("logout")}
