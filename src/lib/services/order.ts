@@ -172,5 +172,13 @@ export const OrderService = {
     }) => {
         return apiClient.post("/order", data);
     },
+
+    orderStatusUpdate: (data: {
+        orderId?: string;
+        statusId?: number;
+        cartId?: string | null;
+    }) => {
+        return apiClient.post("/order/statusUpdate", data);
+    },
 };
 

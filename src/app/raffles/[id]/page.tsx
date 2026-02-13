@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import Image from "next/image";
@@ -104,6 +104,7 @@ export default function RafflesDetailPage() {
     const [selectedTicket, setSelectedTicket] = useState<string | null>(null);
     const [ticketQuantity, setTicketQuantity] = useState<number>(0);
     const [applyingTicket, setApplyingTicket] = useState(false);
+    const [continuing, setContinuing] = useState(false);
     const [showApplyConfirmationModal, setShowApplyConfirmationModal] = useState(false);
     const [userTicketBalance, setUserTicketBalance] = useState<number>(0);
     const [loadingTicketBalance, setLoadingTicketBalance] = useState(false);
@@ -143,6 +144,16 @@ export default function RafflesDetailPage() {
     const [allRaffles, setAllRaffles] = useState<Array<LegacyRaffleDetail & { _id?: string }>>([]);
     const [displayedRafflesCount, setDisplayedRafflesCount] = useState(5);
     const [loadingRaffles, setLoadingRaffles] = useState(false);
+
+    // Refs to prevent duplicate API calls
+    const fetchingRaffleRef = useRef(false);
+    const lastFetchedPidRef = useRef<string | null>(null);
+    const fetchingTicketBalanceRef = useRef(false);
+    const fetchingAddressesRef = useRef(false);
+    const fetchingAllRafflesRef = useRef(false);
+    const lastFetchedLotteryIdRef = useRef<string | null>(null);
+    const hasRestoredFromCartRef = useRef(false);
+    const restoringFromCartRef = useRef(false);
 
     const toggleSection = (section: keyof typeof openSections) => {
         setOpenSections((prev) => ({
@@ -231,6 +242,13 @@ export default function RafflesDetailPage() {
             return;
         }
 
+        // Prevent duplicate calls for the same pid
+        if (fetchingRaffleRef.current || lastFetchedPidRef.current === lotteryId) {
+            return;
+        }
+
+        fetchingRaffleRef.current = true;
+        lastFetchedPidRef.current = lotteryId;
         setLoading(true);
 
         RaffleService.getRaffleDetails(lotteryId)
@@ -283,8 +301,9 @@ export default function RafflesDetailPage() {
             })
             .finally(() => {
                 setLoading(false);
+                fetchingRaffleRef.current = false;
             });
-    }, [params.id, pid, locale]);
+    }, [params.id, pid]); // Removed locale dependency as it shouldn't trigger refetch
 
     useEffect(() => {
         const handleScroll = () => setShowScrollTop(window.scrollY > 400);
@@ -461,6 +480,9 @@ export default function RafflesDetailPage() {
     // Fetch user's ticket balance
     useEffect(() => {
         const fetchTicketBalance = async () => {
+            // Prevent duplicate calls
+            if (fetchingTicketBalanceRef.current) return;
+
             // Check if user is authenticated before making API call
             const token = getCookie("access_token");
             if (!token) {
@@ -469,6 +491,7 @@ export default function RafflesDetailPage() {
                 return;
             }
 
+            fetchingTicketBalanceRef.current = true;
             setLoadingTicketBalance(true);
             try {
                 const response = await TicketWalletService.getTicketBalance();
@@ -501,6 +524,7 @@ export default function RafflesDetailPage() {
                 setUserTicketBalance(0);
             } finally {
                 setLoadingTicketBalance(false);
+                fetchingTicketBalanceRef.current = false;
             }
         };
 
@@ -510,6 +534,10 @@ export default function RafflesDetailPage() {
     // Fetch user addresses (/address API) on detail page load and store default address id
     useEffect(() => {
         const fetchAddresses = async () => {
+            // Prevent duplicate calls
+            if (fetchingAddressesRef.current) return;
+
+            fetchingAddressesRef.current = true;
             try {
                 const response = await UserAddressService.getAddresses();
                 const addresses = response?.data || [];
@@ -520,6 +548,8 @@ export default function RafflesDetailPage() {
             } catch (err) {
                 // eslint-disable-next-line no-console
                 console.warn("Error fetching addresses (non-blocking):", err);
+            } finally {
+                fetchingAddressesRef.current = false;
             }
         };
 
@@ -529,12 +559,22 @@ export default function RafflesDetailPage() {
     // Fetch all raffles for display
     useEffect(() => {
         const fetchAllRaffles = async () => {
+            if (!lotteryItem) return;
+
+            const currentId = lotteryItem?.campaignId || lotteryItem?.childProductId || lotteryItem?.productId || (typeof params.id === 'string' ? params.id : null);
+
+            // Prevent duplicate calls for the same lottery item
+            if (fetchingAllRafflesRef.current || lastFetchedLotteryIdRef.current === currentId) {
+                return;
+            }
+
+            fetchingAllRafflesRef.current = true;
+            lastFetchedLotteryIdRef.current = currentId;
             setLoadingRaffles(true);
             try {
                 const payload = await RaffleService.getAllRaffles();
                 const items = (payload as any)?.data ?? [];
                 // Filter out the current raffle from the list
-                const currentId = lotteryItem?.campaignId || lotteryItem?.childProductId || lotteryItem?.productId || params.id;
                 const filteredItems = items.filter((item: any) => {
                     const itemId = item.campaignId || item.childProductId || item.productId || item._id;
                     return itemId !== currentId;
@@ -554,12 +594,11 @@ export default function RafflesDetailPage() {
                 setAllRaffles([]);
             } finally {
                 setLoadingRaffles(false);
+                fetchingAllRafflesRef.current = false;
             }
         };
 
-        if (lotteryItem) {
-            fetchAllRaffles();
-        }
+        fetchAllRaffles();
     }, [lotteryItem, params.id]);
 
     // Set default ticket on mount - MUST be before early returns
@@ -570,7 +609,13 @@ export default function RafflesDetailPage() {
     }, [lotteryItem, selectedTicket]);
 
     // Reset quantity and hide quantity selector when ticket selection changes
+    // Skip this if we're restoring from cart
     useEffect(() => {
+        if (restoringFromCartRef.current) {
+            restoringFromCartRef.current = false;
+            return; // Skip reset when restoring from cart
+        }
+
         setShowQuantitySelector(false); // Hide quantity selector when ticket changes
         if (selectedTicket) {
             const ticketsSource: any[] =
@@ -589,6 +634,99 @@ export default function RafflesDetailPage() {
             });
         }
     }, [selectedTicket, lotteryItem]);
+
+    // Restore quantity from cart when returning to page
+    useEffect(() => {
+        const restoreFromCart = async () => {
+            if (!lotteryItem || !lotteryItem.tickets || lotteryItem.tickets.length === 0) return;
+
+            try {
+                restoringFromCartRef.current = true; // Mark that we're restoring from cart
+
+                const cartResponse = await CartService.getCart();
+                const cartData = (cartResponse as any)?.data?.data || (cartResponse as any)?.data;
+                const productId = lotteryItem.childProductId || lotteryItem.productId || (params.id as string);
+
+                if (cartData && cartData.sellers) {
+                    for (const seller of cartData.sellers) {
+                        if (seller.products) {
+                            for (const product of seller.products) {
+                                const prodId = product.productId || product.centralProductId || product._id;
+                                const prodTicketId = product.ticketId || (product.ticketDetails?.ticketId);
+
+                                // Match by productId
+                                if (prodId === productId) {
+                                    // Get quantity from cart
+                                    const cartQuantity = typeof product.quantity === 'object' && product.quantity !== null
+                                        ? Number(product.quantity.value) || 0
+                                        : Number(product.quantity) || 0;
+
+                                    if (cartQuantity > 0) {
+                                        // Restore ticket selection if ticketId matches
+                                        if (prodTicketId) {
+                                            // Check if this ticketId exists in available tickets
+                                            const ticketsSource: any[] =
+                                                lotteryItem.tickets ||
+                                                (lotteryItem as any)?.ticketPackages ||
+                                                (lotteryItem as any)?.ticketOptions ||
+                                                (lotteryItem as any)?.entryOptions ||
+                                                [];
+
+                                            const ticketExists = ticketsSource.some((ticket: any) => {
+                                                const ticketId = ticket.ticketId || ticket.id || ticket._id;
+                                                return ticketId === prodTicketId;
+                                            });
+
+                                            if (ticketExists) {
+                                                // Set ticket first, then quantity
+                                                setSelectedTicket(prodTicketId);
+                                                // Use setTimeout to ensure ticket is set before quantity
+                                                setTimeout(() => {
+                                                    setSelectedQuantity(cartQuantity);
+                                                    setShowQuantitySelector(true);
+                                                    restoringFromCartRef.current = false;
+                                                }, 100);
+                                            } else {
+                                                // Ticket doesn't exist, but restore quantity anyway
+                                                setSelectedQuantity(cartQuantity);
+                                                setShowQuantitySelector(true);
+                                                restoringFromCartRef.current = false;
+                                            }
+                                        } else {
+                                            // No ticketId in cart, restore quantity anyway
+                                            setSelectedQuantity(cartQuantity);
+                                            setShowQuantitySelector(true);
+                                            restoringFromCartRef.current = false;
+                                        }
+                                        return; // Exit early once found
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // If no cart item found, reset the flag
+                restoringFromCartRef.current = false;
+            } catch (error) {
+                // Silently fail - cart might not be available
+                console.warn("Could not restore quantity from cart:", error);
+                restoringFromCartRef.current = false;
+            }
+        };
+
+        // Only restore if we have lotteryItem and tickets, and haven't already restored for this product
+        const productId = lotteryItem?.childProductId || lotteryItem?.productId || (params.id as string);
+        if (lotteryItem && lotteryItem.tickets && lotteryItem.tickets.length > 0 && !hasRestoredFromCartRef.current) {
+            hasRestoredFromCartRef.current = true;
+            restoreFromCart();
+        }
+
+        // Reset restore flag when product changes
+        return () => {
+            hasRestoredFromCartRef.current = false;
+        };
+    }, [lotteryItem, params.id]);
 
 
     if (loading) {
@@ -638,9 +776,11 @@ export default function RafflesDetailPage() {
 
     // Helper function to calculate progress percentage
     // Based on old code: CountPercentage(ProductData?.goalValue, ProductData?.ticketGoalAmount)
+    // Progress = (current amount / target amount) * 100
+    // ticketGoalAmount = current amount sold, goalValue = target amount
     const calculateProgress = (goalValue: number | undefined, ticketGoalAmount: number | undefined): number => {
-        if (!goalValue || !ticketGoalAmount || ticketGoalAmount === 0) return 0;
-        const percentage = (goalValue / ticketGoalAmount) * 100;
+        if (!goalValue || !ticketGoalAmount || goalValue === 0) return 0;
+        const percentage = (ticketGoalAmount / goalValue) * 100;
         return Math.min(100, Math.max(0, Math.round(percentage)));
     };
 
@@ -706,7 +846,7 @@ export default function RafflesDetailPage() {
     };
 
     // Handle add to cart
-    const handleAddToCart = async (ticketId: string, quantity: number, redirectToCart: boolean = true) => {
+    const handleAddToCart = async (ticketId: string, quantity: number, redirectToCart: boolean = true, setExactQuantity: boolean = false) => {
         if (!lotteryItem || applyingTicket || quantity <= 0) return;
 
         setApplyingTicket(true);
@@ -746,8 +886,9 @@ export default function RafflesDetailPage() {
                 console.warn("Could not fetch cart to check for existing items:", cartError);
             }
 
-            // If item exists, update it; otherwise add new
-            const finalQuantity = existingItemId ? existingQuantity + quantity : quantity;
+            // If setExactQuantity is true (for quantity updates), set exact quantity
+            // Otherwise, add to existing quantity (for initial add)
+            const finalQuantity = existingItemId && setExactQuantity ? quantity : (existingItemId ? existingQuantity + quantity : quantity);
             const action = existingItemId ? 2 : 1; // 2 = update, 1 = add
 
             await CartService.addToCart({
@@ -1327,7 +1468,7 @@ export default function RafflesDetailPage() {
                                     {freeTicketError}
                                 </p>
                             )}
-                            <div className="flex gap-3 overflow-x-auto pb-2 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-track]:bg-gray-100">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {(() => {
                                     // Check multiple possible ticket field names
                                     const tickets =
@@ -1352,16 +1493,16 @@ export default function RafflesDetailPage() {
                                                         <button
                                                             key={ticketId}
                                                             onClick={() => setSelectedTicket(ticketId)}
-                                                            className={`shrink-0 min-w-[220px] p-3 rounded-lg border-2 transition-all ${selectedTicket === ticketId
-                                                                ? "border-[#D4AF37] bg-[#FFF8E7]"
-                                                                : "border-gray-200 hover:border-[#D4AF37]"
+                                                            className={`p-4 sm:p-3 rounded-lg border-2 transition-all w-full ${selectedTicket === ticketId
+                                                                ? "border-[#D4AF37] bg-[#FFF8E7] shadow-md"
+                                                                : "border-gray-200 hover:border-[#D4AF37] bg-white"
                                                                 }`}
                                                         >
-                                                            <div className="flex justify-between items-center">
-                                                                <span className="text-sm font-medium text-[#797979]">
+                                                            <div className="flex flex-row justify-between items-center gap-2">
+                                                                <span className="text-base sm:text-sm font-semibold text-[#797979]">
                                                                     {displayCurrency} {ticketPrice?.toFixed(2) || "0.00"}
                                                                 </span>
-                                                                <span className="text-xs text-[#797979]">
+                                                                <span className="text-xs sm:text-xs text-[#797979] whitespace-nowrap">
                                                                     ({numberOfTickets || 0} {t("tickets") || "Tickets"})
                                                                 </span>
                                                             </div>
@@ -1372,7 +1513,7 @@ export default function RafflesDetailPage() {
                                         );
                                     } else {
                                         return (
-                                            <div className="text-sm text-[#797979] text-center py-4 w-full">
+                                            <div className="text-sm text-[#797979] text-center py-4 col-span-1 sm:col-span-2 lg:col-span-3">
                                                 {t("noTicketsAvailable") || "No tickets available"}
                                             </div>
                                         );
@@ -1498,8 +1639,8 @@ export default function RafflesDetailPage() {
                                                     // Decrease quantity
                                                     const newQty = currentQty - 1;
                                                     setSelectedQuantity(newQty);
-                                                    // Update cart with new quantity
-                                                    await handleAddToCart(selectedTicket, newQty, false);
+                                                    // Update cart with new quantity (set exact quantity)
+                                                    await handleAddToCart(selectedTicket, newQty, false, true);
                                                 } else if (currentQty === 1) {
                                                     // Remove from cart when quantity is 1
                                                     await handleRemoveFromCart(selectedTicket);
@@ -1520,8 +1661,8 @@ export default function RafflesDetailPage() {
                                             const val = Math.max(1, parseInt(e.target.value) || 1);
                                             if (val !== selectedQuantity && !applyingTicket && selectedTicket) {
                                                 setSelectedQuantity(val);
-                                                // Update cart with new quantity when user finishes editing
-                                                await handleAddToCart(selectedTicket, val, false);
+                                                // Update cart with new quantity when user finishes editing (set exact quantity)
+                                                await handleAddToCart(selectedTicket, val, false, true);
                                             }
                                         }}
                                         onChange={(e) => {
@@ -1537,9 +1678,9 @@ export default function RafflesDetailPage() {
                                             const currentQty = Number(selectedQuantity) || 1;
                                             const newQty = currentQty + 1;
                                             setSelectedQuantity(newQty);
-                                            // Update cart with new quantity
+                                            // Update cart with new quantity (set exact quantity)
                                             if (!applyingTicket && selectedTicket) {
-                                                await handleAddToCart(selectedTicket, newQty, false);
+                                                await handleAddToCart(selectedTicket, newQty, false, true);
                                             }
                                         }}
                                         disabled={applyingTicket}
@@ -1551,14 +1692,32 @@ export default function RafflesDetailPage() {
 
                                 {/* Continue Button */}
                                 <Button
-                                    className="flex-1 bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg uppercase text-sm md:text-base"
-                                    onClick={() => {
-                                        // Just redirect to cart page (cart is already updated via quantity selector)
-                                        router.push("/cart");
+                                    className="flex-1 bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg uppercase text-sm md:text-base flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    onClick={async () => {
+                                        if (continuing || applyingTicket || !selectedTicket) return;
+                                        setContinuing(true);
+                                        try {
+                                            // Ensure cart is updated with current quantity before redirecting (set exact quantity)
+                                            await handleAddToCart(selectedTicket, selectedQuantity, false, true);
+                                            // Small delay to ensure cart update completes
+                                            await new Promise(resolve => setTimeout(resolve, 100));
+                                        } catch (error) {
+                                            console.warn("Error updating cart before redirect:", error);
+                                        } finally {
+                                            // Redirect to cart page
+                                            router.push("/cart");
+                                        }
                                     }}
-                                    disabled={applyingTicket}
+                                    disabled={applyingTicket || continuing}
                                 >
-                                    {t("continue") || "CONTINUE"}
+                                    {(applyingTicket || continuing) ? (
+                                        <>
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                            <span>{t("loading") || "Loading..."}</span>
+                                        </>
+                                    ) : (
+                                        <span>{t("continue") || "CONTINUE"}</span>
+                                    )}
                                 </Button>
                             </div>
                         ) : (

@@ -42,8 +42,13 @@ function PlaceToPayLightbox({ url, onSuccess, onError, onClose }: PlaceToPayLigh
                     if (onSuccessRef.current) {
                         onSuccessRef.current();
                     }
-                } else if (data.status?.status === "REJECTED" || data.status === "REJECTED" || data.status?.status === "PENDING" || data.status === "PENDING") {
-                    // Payment pending or rejected
+                } else if (data.status?.status === "REJECTED" || data.status === "REJECTED") {
+                    // Payment rejected - call error handler
+                    if (onErrorRef.current) {
+                        onErrorRef.current();
+                    }
+                } else if (data.status?.status === "PENDING" || data.status === "PENDING") {
+                    // Payment pending - call close handler (user may close without completing)
                     if (onCloseRef.current) {
                         onCloseRef.current();
                     }
@@ -82,31 +87,6 @@ function PlaceToPayLightbox({ url, onSuccess, onError, onClose }: PlaceToPayLigh
             onClick={handleBackdropClick}
         >
             <div className="relative w-full h-full max-w-5xl max-h-[90vh] m-4 bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col">
-                {/* Modal Header */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
-                    <h2 className="text-lg font-semibold text-gray-800">
-                        Complete Your Payment
-                    </h2>
-                    <button
-                        onClick={handleClose}
-                        className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-full transition-colors"
-                        aria-label="Close"
-                    >
-                        <svg
-                            className="w-6 h-6"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M6 18L18 6M6 6l12 12"
-                            />
-                        </svg>
-                    </button>
-                </div>
 
                 {/* Iframe Container */}
                 <div className="flex-1 overflow-hidden">

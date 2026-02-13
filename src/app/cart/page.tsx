@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { Minus, Plus, Info, Trash2 } from "lucide-react";
+import { Minus, Plus, Info, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import Header from "@/src/components/layout/Header";
 import Footer from "@/src/components/layout/Footer";
@@ -81,16 +81,16 @@ interface CartData {
   }>;
   accounting?: {
     bagTotal?: number | string;
-    unitPrice?: number | string; // Bag Total in old project
+    unitPrice?: number | string;
     subTotal?: number | string;
-    taxableAmount?: number | string; // Sub Total in old project
-    tax?: number | string | TaxItem[]; // Can be number or array of tax objects
+    taxableAmount?: number | string;
+    tax?: number | string | TaxItem[];
     taxAmount?: number | string;
     shippingFee?: number | string;
-    deliveryFee?: number | string; // Shipping Fee in old project
+    deliveryFee?: number | string;
     finalTotal?: number | string;
-    offerDiscount?: number | string; // Bag Discount
-    serviceFeeTotal?: number | string; // Service Fee
+    offerDiscount?: number | string;
+    serviceFeeTotal?: number | string;
   };
 }
 
@@ -98,11 +98,13 @@ export default function CartPage() {
   const [cartData, setCartData] = useState<CartData | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [itemToRemove, setItemToRemove] = useState<CartItem | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const t = useTranslations();
   const router = useRouter();
+  const fetchingCartRef = useRef(false);
 
   useEffect(() => {
     fetchCart();
@@ -141,6 +143,12 @@ export default function CartPage() {
   }, [showConfirmModal]);
 
   const fetchCart = async (showLoading: boolean = true) => {
+    // Prevent duplicate calls
+    if (fetchingCartRef.current) {
+      return;
+    }
+
+    fetchingCartRef.current = true;
     try {
       if (showLoading) {
         setLoading(true);
@@ -230,6 +238,7 @@ export default function CartPage() {
       if (showLoading) {
         setLoading(false);
       }
+      fetchingCartRef.current = false;
     }
   };
 
@@ -598,13 +607,23 @@ export default function CartPage() {
   };
 
   // Handle checkout - check authentication first
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
+    if (checkoutLoading || updating) return; // Prevent multiple clicks during API calls
+
     if (!isAuthenticated()) {
       // Show login modal if not authenticated
       setShowLoginModal(true);
     } else {
       // User is authenticated, proceed to checkout
-      router.push("/shipping-address");
+      setCheckoutLoading(true);
+      try {
+        // Refresh cart before checkout to ensure latest data
+        await fetchCart(false);
+        router.push("/shipping-address");
+      } catch (error) {
+        console.error("Error during checkout:", error);
+        setCheckoutLoading(false);
+      }
     }
   };
 
@@ -614,7 +633,6 @@ export default function CartPage() {
     setTimeout(async () => {
       // Refresh cart to get authenticated user's cart (API should merge guest cart)
       await fetchCart();
-      // Dispatch event to update header cart count
       window.dispatchEvent(new Event('cartUpdated'));
       // Proceed to checkout
       router.push("/shipping-address");
@@ -683,8 +701,7 @@ export default function CartPage() {
             <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">{t("cartEmptyMessage")}</p>
             <Button
               onClick={() => router.push("/raffles")}
-              variant="primary"
-              size="lg"
+              className="bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg uppercase text-sm md:text-default gap-2"
             >
               {t("browseRaffles")}
             </Button>
@@ -949,11 +966,17 @@ export default function CartPage() {
 
                 <Button
                   onClick={handleCheckout}
-                  variant="primary"
-                  size="default"
-                  className="w-full mt-4 sm:mt-6"
+                  className="w-full mt-4 sm:mt-6 bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg text-sm md:text-default flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={checkoutLoading || updating !== null || loading}
                 >
-                  {t("proceedToCheckout")}
+                  {(checkoutLoading || updating !== null || loading) ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>{t("loading") || "Loading..."}</span>
+                    </>
+                  ) : (
+                    <span>{t("proceedToCheckout")}</span>
+                  )}
                 </Button>
               </div>
             </div>
@@ -978,11 +1001,17 @@ export default function CartPage() {
               </div>
               <Button
                 onClick={handleCheckout}
-                variant="primary"
-                size="default"
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg text-sm md:text-default flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={checkoutLoading || updating !== null || loading}
               >
-                {t("checkout")}
+                {(checkoutLoading || updating !== null || loading) ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>{t("loading") || "Loading..."}</span>
+                  </>
+                ) : (
+                  <span>{t("checkout")}</span>
+                )}
               </Button>
             </div>
           </div>

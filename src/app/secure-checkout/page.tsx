@@ -133,7 +133,7 @@ export default function SecureCheckoutPage() {
   const [cartData, setCartData] = useState<CartData | null>(null);
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<UserAddress | null>(null);
-  const [billingSameAsShipping, setBillingSameAsShipping] = useState(false);
+  const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
@@ -357,8 +357,23 @@ export default function SecureCheckoutPage() {
     setPlacingOrder(true);
 
     try {
-      // Get cart ID from cartData
-      const cartId = (cartData as any)?._id || (cartData as any)?.cartId;
+      // Refresh cart before placing order to ensure we have the latest cartId
+      const freshCartResponse = await CartService.getCart();
+      const freshCartData = (freshCartResponse as any)?.data?.data || (freshCartResponse as any)?.data || freshCartResponse;
+
+      // Check if cart is empty or not found
+      if (!freshCartData || freshCartData.message === "Data not found" || !freshCartData.sellers || freshCartData.sellers.length === 0) {
+        alert(t("cartEmpty") || "Your cart is empty. Please add items to your cart before placing an order.");
+        setPlacingOrder(false);
+        router.push("/cart");
+        return;
+      }
+
+      // Update cartData state with fresh data
+      setCartData(freshCartData as CartData);
+
+      // Get cart ID from fresh cart data
+      const cartId = (freshCartData as any)?._id || (freshCartData as any)?.cartId;
       if (!cartId) {
         throw new Error("Cart ID not found");
       }
@@ -423,6 +438,14 @@ export default function SecureCheckoutPage() {
       // Call order API
       const response = await OrderService.placeOrder(orderPayload);
       const orderData = (response as any)?.data?.data || (response as any)?.data || response;
+
+      // Check if order API returned an error
+      if (orderData?.message && orderData.message.toLowerCase().includes("cart not found")) {
+        alert(t("cartNotFound") || "Cart not found. Your cart may have expired. Please add items to your cart again.");
+        setPlacingOrder(false);
+        router.push("/cart");
+        return;
+      }
 
       // Check if order was placed successfully
       if (orderData?.orderId) {
@@ -505,27 +528,75 @@ export default function SecureCheckoutPage() {
         data: error?.response?.data || error?.data,
       });
 
-      // Show error message to user
-      alert(errorMessage);
+      // Handle specific error cases
+      const errorMsgLower = errorMessage.toLowerCase();
+      if (errorMsgLower.includes("cart not found") || errorMsgLower.includes("cart not found")) {
+        alert(t("cartNotFound") || "Cart not found. Your cart may have expired. Please add items to your cart again.");
+        router.push("/cart");
+      } else if (errorMsgLower.includes("cart id not found") || errorMsgLower.includes("cart is empty")) {
+        alert(t("cartEmpty") || "Your cart is empty. Please add items to your cart before placing an order.");
+        router.push("/cart");
+      } else {
+        // Show error message to user
+        alert(errorMessage);
+      }
+
       setPlacingOrder(false);
     }
   };
 
-  const handlePlaceToPaySuccess = () => {
+  const handlePlaceToPaySuccess = async () => {
     setPlaceToPayUrl(null);
     setPlacingOrder(false);
+
+    // Update order status to approved (statusId = 2) when Place to Pay payment is successful
+    if (typeof window !== "undefined") {
+      const orderId = localStorage.getItem("orderId");
+      const cartId = localStorage.getItem("cartId");
+
+      if (orderId) {
+        try {
+          await OrderService.orderStatusUpdate({
+            orderId: orderId,
+            statusId: 2, // Approved
+            cartId: cartId || null,
+          });
+        } catch (error) {
+          console.error("Failed to update order status:", error);
+          // Continue with redirect even if status update fails
+        }
+      }
+    }
+
+    // Redirect to thank-you page with payment parameter
+    router.push("/thank-you?payment=placetopay");
+  };
+
+  const handlePlaceToPayError = async () => {
+    setPlaceToPayUrl(null);
+    setPlacingOrder(false);
+
+    // Call cart API when payment is not completed
+    try {
+      await fetchCart();
+    } catch (error) {
+      console.error("Error fetching cart after payment error:", error);
+    }
+  };
+
+  const handlePlaceToPayClose = async () => {
+    setPlaceToPayUrl(null);
+    setPlacingOrder(false);
+
+    // Call cart API when payment modal is closed
+    try {
+      await fetchCart();
+    } catch (error) {
+      console.error("Error fetching cart after closing payment modal:", error);
+    }
+
+    // Redirect to thank you page when X button is clicked
     router.push("/thank-you");
-  };
-
-  const handlePlaceToPayError = () => {
-    setPlaceToPayUrl(null);
-    setPlacingOrder(false);
-    // Optionally show error message
-  };
-
-  const handlePlaceToPayClose = () => {
-    setPlaceToPayUrl(null);
-    setPlacingOrder(false);
   };
 
   const handleManualPaymentSelect = () => {
@@ -800,10 +871,10 @@ export default function SecureCheckoutPage() {
                       checked={paymentMethod === "creditCard"}
                       onChange={(e) => handlePaymentMethodChange(e.target.value)}
                       disabled={grandTotal <= 0}
-                      className="sr-only"
+                      className="w-4 h-4 sm:w-5 sm:h-5 text-[#D4AF37] border-gray-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                     />
                     <div
-                      className={`px-3 sm:px-4 py-2 border-2 rounded-lg transition-all ${paymentMethod === "creditCard"
+                      className={`px-3 sm:px-4 py-2 border-2 rounded-lg transition-all flex-1 ${paymentMethod === "creditCard"
                         ? "border-[#D4AF37] border-dashed bg-yellow-50"
                         : "border-gray-300 hover:border-gray-400"
                         } ${(grandTotal <= 0) ? "opacity-50 cursor-not-allowed" : ""}`}
@@ -863,10 +934,10 @@ export default function SecureCheckoutPage() {
                       checked={paymentMethod === "manual"}
                       onChange={handleManualPaymentSelect}
                       disabled={grandTotal <= 0}
-                      className="sr-only"
+                      className="w-4 h-4 sm:w-5 sm:h-5 text-[#D4AF37] border-gray-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                     />
                     <div
-                      className={`px-3 sm:px-4 py-2 border-2 rounded-lg transition-all ${paymentMethod === "manual"
+                      className={`px-3 sm:px-4 py-2 border-2 rounded-lg transition-all flex-1 ${paymentMethod === "manual"
                         ? "border-[#D4AF37] border-dashed bg-yellow-50"
                         : "border-gray-300 hover:border-gray-400"
                         } ${(grandTotal <= 0) ? "opacity-50 cursor-not-allowed" : ""}`}
@@ -1037,10 +1108,8 @@ export default function SecureCheckoutPage() {
                       </div>
                       {receiptFile && !manualPaymentConfirmed && (
                         <Button
-                          variant="primary"
-                          size="default"
                           onClick={handleManualPaymentConfirm}
-                          className="mt-4 w-full px-4 py-2 text-gray-800 font-semibold rounded transition-colors"
+                          className="mt-4 w-full bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg uppercase text-sm md:text-default flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {t("confirm") || "Confirm"}
                         </Button>
@@ -1163,10 +1232,8 @@ export default function SecureCheckoutPage() {
               {paymentMethod !== "" && (
                 <Button
                   onClick={handlePlaceOrder}
-                  variant="primary"
-                  size="default"
                   disabled={!selectedAddress || placingOrder}
-                  className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-2.5 sm:py-3 px-4 sm:px-6 md:px-8 rounded-lg transition-colors text-xs sm:text-sm md:text-default whitespace-nowrap w-full sm:w-auto"
+                  className="w-full sm:w-auto bg-[#D4AF37] hover:bg-[#B8860B] text-white py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg text-sm md:text-default flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {placingOrder
                     ? t("placingOrder") || "Placing Order..."
