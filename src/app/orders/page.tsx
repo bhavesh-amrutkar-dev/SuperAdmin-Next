@@ -690,9 +690,7 @@ export default function OrdersPage() {
                                     <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 text-right">
                                         <Button
                                             asChild
-                                            variant="primary"
-                                            size="default"
-                                            className="w-full sm:w-auto"
+                                            className="w-auto bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg text-sm md:text-default gap-2"
                                         >
                                             <Link href={`/orders/${order.orderId || order.masterOrderId}`}>
                                                 <Info size={18} />

@@ -42,8 +42,13 @@ function PlaceToPayLightbox({ url, onSuccess, onError, onClose }: PlaceToPayLigh
                     if (onSuccessRef.current) {
                         onSuccessRef.current();
                     }
-                } else if (data.status?.status === "REJECTED" || data.status === "REJECTED" || data.status?.status === "PENDING" || data.status === "PENDING") {
-                    // Payment pending or rejected
+                } else if (data.status?.status === "REJECTED" || data.status === "REJECTED") {
+                    // Payment rejected - call error handler
+                    if (onErrorRef.current) {
+                        onErrorRef.current();
+                    }
+                } else if (data.status?.status === "PENDING" || data.status === "PENDING") {
+                    // Payment pending - call close handler (user may close without completing)
                     if (onCloseRef.current) {
                         onCloseRef.current();
                     }

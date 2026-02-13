@@ -357,8 +357,23 @@ export default function SecureCheckoutPage() {
     setPlacingOrder(true);
 
     try {
-      // Get cart ID from cartData
-      const cartId = (cartData as any)?._id || (cartData as any)?.cartId;
+      // Refresh cart before placing order to ensure we have the latest cartId
+      const freshCartResponse = await CartService.getCart();
+      const freshCartData = (freshCartResponse as any)?.data?.data || (freshCartResponse as any)?.data || freshCartResponse;
+
+      // Check if cart is empty or not found
+      if (!freshCartData || freshCartData.message === "Data not found" || !freshCartData.sellers || freshCartData.sellers.length === 0) {
+        alert(t("cartEmpty") || "Your cart is empty. Please add items to your cart before placing an order.");
+        setPlacingOrder(false);
+        router.push("/cart");
+        return;
+      }
+
+      // Update cartData state with fresh data
+      setCartData(freshCartData as CartData);
+
+      // Get cart ID from fresh cart data
+      const cartId = (freshCartData as any)?._id || (freshCartData as any)?.cartId;
       if (!cartId) {
         throw new Error("Cart ID not found");
       }
@@ -423,6 +438,14 @@ export default function SecureCheckoutPage() {
       // Call order API
       const response = await OrderService.placeOrder(orderPayload);
       const orderData = (response as any)?.data?.data || (response as any)?.data || response;
+
+      // Check if order API returned an error
+      if (orderData?.message && orderData.message.toLowerCase().includes("cart not found")) {
+        alert(t("cartNotFound") || "Cart not found. Your cart may have expired. Please add items to your cart again.");
+        setPlacingOrder(false);
+        router.push("/cart");
+        return;
+      }
 
       // Check if order was placed successfully
       if (orderData?.orderId) {
@@ -505,8 +528,19 @@ export default function SecureCheckoutPage() {
         data: error?.response?.data || error?.data,
       });
 
-      // Show error message to user
-      alert(errorMessage);
+      // Handle specific error cases
+      const errorMsgLower = errorMessage.toLowerCase();
+      if (errorMsgLower.includes("cart not found") || errorMsgLower.includes("cart not found")) {
+        alert(t("cartNotFound") || "Cart not found. Your cart may have expired. Please add items to your cart again.");
+        router.push("/cart");
+      } else if (errorMsgLower.includes("cart id not found") || errorMsgLower.includes("cart is empty")) {
+        alert(t("cartEmpty") || "Your cart is empty. Please add items to your cart before placing an order.");
+        router.push("/cart");
+      } else {
+        // Show error message to user
+        alert(errorMessage);
+      }
+
       setPlacingOrder(false);
     }
   };
@@ -538,15 +572,31 @@ export default function SecureCheckoutPage() {
     router.push("/thank-you?payment=placetopay");
   };
 
-  const handlePlaceToPayError = () => {
+  const handlePlaceToPayError = async () => {
     setPlaceToPayUrl(null);
     setPlacingOrder(false);
-    // Optionally show error message
+
+    // Call cart API when payment is not completed
+    try {
+      await fetchCart();
+    } catch (error) {
+      console.error("Error fetching cart after payment error:", error);
+    }
   };
 
-  const handlePlaceToPayClose = () => {
+  const handlePlaceToPayClose = async () => {
     setPlaceToPayUrl(null);
     setPlacingOrder(false);
+
+    // Call cart API when payment modal is closed
+    try {
+      await fetchCart();
+    } catch (error) {
+      console.error("Error fetching cart after closing payment modal:", error);
+    }
+
+    // Redirect to thank you page when X button is clicked
+    router.push("/thank-you");
   };
 
   const handleManualPaymentSelect = () => {

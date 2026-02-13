@@ -701,8 +701,7 @@ export default function CartPage() {
             <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">{t("cartEmptyMessage")}</p>
             <Button
               onClick={() => router.push("/raffles")}
-              variant="primary"
-              size="lg"
+              className="bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg uppercase text-sm md:text-default gap-2"
             >
               {t("browseRaffles")}
             </Button>
@@ -967,7 +966,7 @@ export default function CartPage() {
 
                 <Button
                   onClick={handleCheckout}
-                  className="w-full mt-4 sm:mt-6 bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg uppercase text-sm md:text-base flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full mt-4 sm:mt-6 bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg text-sm md:text-default flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={checkoutLoading || updating !== null || loading}
                 >
                   {(checkoutLoading || updating !== null || loading) ? (
@@ -1002,7 +1001,7 @@ export default function CartPage() {
               </div>
               <Button
                 onClick={handleCheckout}
-                className="w-full sm:w-auto bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg uppercase text-sm md:text-base flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg text-sm md:text-default flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={checkoutLoading || updating !== null || loading}
               >
                 {(checkoutLoading || updating !== null || loading) ? (
