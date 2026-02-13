@@ -33,9 +33,11 @@ const slugifyName = (name: string) =>
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "");
 
-const getProgressPercentage = (total?: number, goal?: number): number => {
-    if (!total || !goal || total <= 0) return 0;
-    const percentage = (goal / total) * 100;
+// Calculate progress percentage: (current amount / target amount) * 100
+// goalValue = target amount, ticketGoalAmount = current amount sold
+const getProgressPercentage = (goalValue?: number, ticketGoalAmount?: number): number => {
+    if (!goalValue || !ticketGoalAmount || goalValue <= 0) return 0;
+    const percentage = (ticketGoalAmount / goalValue) * 100;
     if (percentage > 100) return 100;
     return Math.round(percentage);
 };

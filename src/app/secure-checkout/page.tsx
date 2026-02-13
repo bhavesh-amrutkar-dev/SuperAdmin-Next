@@ -133,7 +133,7 @@ export default function SecureCheckoutPage() {
   const [cartData, setCartData] = useState<CartData | null>(null);
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<UserAddress | null>(null);
-  const [billingSameAsShipping, setBillingSameAsShipping] = useState(false);
+  const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
@@ -871,10 +871,10 @@ export default function SecureCheckoutPage() {
                       checked={paymentMethod === "creditCard"}
                       onChange={(e) => handlePaymentMethodChange(e.target.value)}
                       disabled={grandTotal <= 0}
-                      className="sr-only"
+                      className="w-4 h-4 sm:w-5 sm:h-5 text-[#D4AF37] border-gray-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                     />
                     <div
-                      className={`px-3 sm:px-4 py-2 border-2 rounded-lg transition-all ${paymentMethod === "creditCard"
+                      className={`px-3 sm:px-4 py-2 border-2 rounded-lg transition-all flex-1 ${paymentMethod === "creditCard"
                         ? "border-[#D4AF37] border-dashed bg-yellow-50"
                         : "border-gray-300 hover:border-gray-400"
                         } ${(grandTotal <= 0) ? "opacity-50 cursor-not-allowed" : ""}`}
@@ -934,10 +934,10 @@ export default function SecureCheckoutPage() {
                       checked={paymentMethod === "manual"}
                       onChange={handleManualPaymentSelect}
                       disabled={grandTotal <= 0}
-                      className="sr-only"
+                      className="w-4 h-4 sm:w-5 sm:h-5 text-[#D4AF37] border-gray-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                     />
                     <div
-                      className={`px-3 sm:px-4 py-2 border-2 rounded-lg transition-all ${paymentMethod === "manual"
+                      className={`px-3 sm:px-4 py-2 border-2 rounded-lg transition-all flex-1 ${paymentMethod === "manual"
                         ? "border-[#D4AF37] border-dashed bg-yellow-50"
                         : "border-gray-300 hover:border-gray-400"
                         } ${(grandTotal <= 0) ? "opacity-50 cursor-not-allowed" : ""}`}

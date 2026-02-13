@@ -7,6 +7,7 @@ import Header from "@/src/components/layout/Header";
 import Footer from "@/src/components/layout/Footer";
 import PreFooterIconModule from "@/src/components/layout/PreFooterIconModule";
 import { contactUsBanner, Contate_girl } from "@/src/lib/config";
+import { Mail, Phone, MapPin } from "lucide-react";
 
 // Contact page component
 
@@ -53,70 +54,93 @@ export default function ContactPage() {
         <main>
             <Header />
 
-            <div className="w-full bg-white">
-                <div className="mx-auto w-full max-w-7xl px-4 md:px-6 py-8 md:py-12">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Left Column - Banner & Image */}
-                        <div className="space-y-6">
-                            {/* Yellow Banner */}
-                            <div className="bg-[#f3c200] px-6 py-4 rounded-lg">
-                                <h1 className="text-2xl md:text-3xl font-bold uppercase text-[#2f2f2f] tracking-wide">
-                                    {t("contactUs") || "CONTACT US"}
-                                </h1>
-                            </div>
+            <div className="w-full bg-gradient-to-b from-gray-50 to-white min-h-screen">
+                <div className="mx-auto w-full max-w-7xl px-4 md:px-6 py-8 md:py-16">
+                    {/* Page Header */}
+                    <div className="text-center mb-12">
+                        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+                            {t("contactUs") || "CONTACT US"}
+                        </h1>
+                        <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+                            {t("contactUsDescription") || "Get in touch with us. We're here to help!"}
+                        </p>
+                    </div>
 
-                            {/* Contact Image */}
-                            <div className="relative w-full aspect-[3/4] overflow-hidden rounded-lg bg-gray-100">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+                        {/* Left Column - Image */}
+                        <div className="flex items-center justify-center">
+                            <div className="relative w-full max-w-sm aspect-[3/4] overflow-hidden rounded-2xl bg-gradient-to-br from-[#D4AF37]/10 to-gray-100 shadow-xl">
                                 <Image
                                     src={Contate_girl || contactUsBanner || "/images/contactUs/contactUsBanner.png"}
                                     alt="Contact Us"
                                     fill
-                                    className="object-cover"
+                                    className="object-cover rounded-2xl"
                                     unoptimized
                                 />
                             </div>
                         </div>
 
-                        {/* Middle Column - Company Information */}
+                        {/* Right Column - Company Information */}
                         <div className="space-y-6">
-                            <h2 className="text-xl md:text-2xl font-bold text-[#2f2f2f] uppercase mb-4">
-                                {t("companyInformation") || "COMPANY INFORMATION"} :
-                            </h2>
-                            <div className="space-y-4 text-[#797979]">
-                                <div>
-                                    <p className="leading-relaxed">
-                                        1413 PR-25 4to piso, Puerto Rico
-                                    </p>
-                                    <p className="leading-relaxed">25,DON RIFA LLC</p>
-                                    <p className="leading-relaxed">San Juan San Juan, 00918</p>
-                                </div>
-                                <div>
-                                    <p className="font-semibold text-[#2f2f2f] mb-1">
-                                        {t("email")} -
-                                    </p>
-                                    <a
-                                        href="mailto:service@donrifa.com"
-                                        className="text-[#797979] hover:text-[#f3c200] transition-colors"
-                                    >
-                                        service@donrifa.com
-                                    </a>
-                                </div>
-                                <div>
-                                    <p className="font-semibold text-[#2f2f2f] mb-1">
-                                        {t("phoneNumber") || "Phone Number"}.
-                                    </p>
-                                    <a
-                                        href="tel:434497151"
-                                        className="text-[#797979] hover:text-[#f3c200] transition-colors"
-                                    >
-                                        434497151
-                                    </a>
+                            <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 border border-gray-100">
+                                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+                                    <div className="w-1 h-8 bg-[#D4AF37] rounded-full"></div>
+                                    {t("companyInformation") || "COMPANY INFORMATION"}
+                                </h2>
+
+                                <div className="space-y-6">
+                                    {/* Address */}
+                                    <div className="flex items-start gap-4 group">
+                                        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[#D4AF37]/10 flex items-center justify-center group-hover:bg-[#D4AF37] transition-colors">
+                                            <MapPin className="w-6 h-6 text-[#D4AF37] group-hover:text-white transition-colors" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <h3 className="font-semibold text-gray-900 mb-2">{t("address") || "Address"}</h3>
+                                            <p className="text-gray-600 leading-relaxed">
+                                                1413 PR-25 4to piso, Puerto Rico<br />
+                                                25, DON RIFA LLC<br />
+                                                San Juan San Juan, 00918
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Email */}
+                                    <div className="flex items-start gap-4 group">
+                                        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[#D4AF37]/10 flex items-center justify-center group-hover:bg-[#D4AF37] transition-colors">
+                                            <Mail className="w-6 h-6 text-[#D4AF37] group-hover:text-white transition-colors" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <h3 className="font-semibold text-gray-900 mb-2">{t("email")}</h3>
+                                            <a
+                                                href="mailto:service@donrifa.com"
+                                                className="text-[#D4AF37] hover:text-[#B8860B] transition-colors font-medium break-all"
+                                            >
+                                                service@donrifa.com
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    {/* Phone */}
+                                    <div className="flex items-start gap-4 group">
+                                        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[#D4AF37]/10 flex items-center justify-center group-hover:bg-[#D4AF37] transition-colors">
+                                            <Phone className="w-6 h-6 text-[#D4AF37] group-hover:text-white transition-colors" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <h3 className="font-semibold text-gray-900 mb-2">{t("phoneNumber") || "Phone Number"}</h3>
+                                            <a
+                                                href="tel:434497151"
+                                                className="text-[#D4AF37] hover:text-[#B8860B] transition-colors font-medium"
+                                            >
+                                                434497151
+                                            </a>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Right Column - Contact Form */}
-                        <div className="space-y-6">
+                        {/* Right Column - Contact Form - Hidden */}
+                        <div className="space-y-6 hidden">
                             <h2 className="text-xl md:text-2xl font-bold text-[#2f2f2f] uppercase mb-4">
                                 {t("sendMessage") || "SEND MESSAGE"}
                             </h2>
