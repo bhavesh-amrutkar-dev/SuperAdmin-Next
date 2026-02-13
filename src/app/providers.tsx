@@ -3,6 +3,7 @@
 
 import { AuthProvider } from "@/src/context/authContext";
 import { Toaster } from "sonner";
+import CountryGuard from "./CountryGaurd";
 
 export default function ClientProviders({
   children,
@@ -11,8 +12,10 @@ export default function ClientProviders({
 }) {
   return (
     <AuthProvider>
-      <Toaster position="top-center" richColors closeButton />
-      {children}
+      <CountryGuard>
+        <Toaster position="top-center" richColors closeButton />
+        {children}
+      </CountryGuard>
     </AuthProvider>
   );
 }

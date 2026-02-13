@@ -13,11 +13,12 @@ import { mapAuthSession } from "@/src/lib/mappers/auth";
 import { persistAuthSession } from "@/src/lib/session/auth";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
+import { useAuth } from "@/src/context/authContext";
 
 export default function LoginPage() {
     const t = useTranslations();
     const router = useRouter();
-
+    const { setUser } = useAuth();
     const {
         register,
         handleSubmit,
@@ -33,7 +34,7 @@ export default function LoginPage() {
                 const session = mapAuthSession(res.data);
 
                 persistAuthSession(session);
-                // setUser(session); // context
+                setUser(session); // context
                 router.replace("/");
             }
 

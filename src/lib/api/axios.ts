@@ -32,26 +32,34 @@ apiClient.interceptors.response.use(
   (response) => response.data,
   async (error) => {
     const status = error?.response?.status;
+    const originalRequest = error.config;
 
-    // if (status === 401 && typeof window !== "undefined") {
-    //   // clear cookies instead of localStorage
-    //   document.cookie =
-    //     "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    //   document.cookie =
-    //     "refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    if (status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
 
-    //   // soft redirect
-    //   window.location.replace("/");
-    // }
+      try {
+        // clear old tokens
+        document.cookie = "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie = "refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+
+        // re-init guest
+        await import("../bootstrap/initGuest").then(m => m.initGuest());
+
+        return apiClient(originalRequest); // retry request
+      } catch {
+        window.location.replace("/");
+      }
+    }
 
     return Promise.reject({
       status,
       message:
         error?.response?.data?.message ||
-        "Something went wrong. Please try again.",
+        "Something went wrong.",
     });
   }
 );
+
 
 export const pyApiClient = axios.create({
   baseURL: API_PY_URL,
