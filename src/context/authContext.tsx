@@ -27,12 +27,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // 🔥 Hydrate user from cookies if token exists
         const token = getCookie("access_token");
         const uid = getCookie("uid");
+        const userName = getCookie("user_name");
+        const profilePic = getCookie("profile_pic");
 
         if (token && uid) {
           setUser((prev) =>
             prev ?? {
               userId: uid as string,
               accessToken: token as string,
+              name: userName as string | undefined,
+              profilePic: (profilePic as string | undefined) || undefined,
             } as AuthSession
           );
         }

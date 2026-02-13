@@ -33,6 +33,23 @@ export default function Header() {
   const router = useRouter();
   const { user } = useAuth();
   const pathname = usePathname();
+  const [cookieUser, setCookieUser] = useState<{ name?: string; profilePic?: string } | null>(null);
+
+  // Get user data from cookies on client side only (prevents hydration mismatch)
+  useEffect(() => {
+    const getUserFromCookies = () => {
+      const token = getCookie("access_token");
+      if (!token) return null;
+      return {
+        name: (getCookie("user_name") as string) || undefined,
+        profilePic: (getCookie("profile_pic") as string) || undefined,
+      };
+    };
+    setCookieUser(getUserFromCookies());
+  }, [user]); // Re-check cookies when user context changes
+
+  // Use user from context, or fallback to cookies (only on client)
+  const displayUser = user || cookieUser;
 
   const navItems = [
     { key: "howItWorks", href: "/#howItWorks" },
@@ -59,8 +76,8 @@ export default function Header() {
 
 
   useEffect(() => {
-  console.log("user", user);
-  
+    console.log("user", user);
+
   }, []);
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -105,8 +122,16 @@ export default function Header() {
   useEffect(() => {
     setUserMenuOpen(false);
   }, [pathname]);
+  // Check authentication status - reactive to changes in user context and cookies
+  // Only run on client side to prevent hydration mismatch
   useEffect(() => {
-    setIsLoggedIn(!!getCookie("access_token"));
+    const checkAuth = () => {
+      const token = getCookie("access_token");
+      setIsLoggedIn(!!token || !!user);
+    };
+
+    // Check on mount and when pathname/user changes
+    checkAuth();
 
     const country =
       (getCookie(COUNTRY) as string | undefined) || DEFAULT_COUNTRY;
@@ -119,8 +144,10 @@ export default function Header() {
     const handleCartUpdate = () => fetchCartCount();
     window.addEventListener("cartUpdated", handleCartUpdate);
 
-    return () => window.removeEventListener("cartUpdated", handleCartUpdate);
-  }, []);
+    return () => {
+      window.removeEventListener("cartUpdated", handleCartUpdate);
+    };
+  }, [pathname, user]); // React to user context changes
 
   // Close user menu when clicking outside
   useEffect(() => {
@@ -196,7 +223,7 @@ export default function Header() {
             <LanguageSwitcher variant="header" />
 
 
-            {!isLoggedIn ? (
+            {!isLoggedIn && !displayUser ? (
               <Button asChild size="sm">
                 <Link href="/auth/login">
                   <User size={16} /> {t("login")}
@@ -204,28 +231,26 @@ export default function Header() {
               </Button>
 
             ) : (
-              <div ref={userMenuRef} className="relative">
+              <div ref={userMenuRef} className="relative user-menu-container">
                 <Button
                   variant="dark"
                   onClick={() => setUserMenuOpen((p) => !p)}
                   className="rounded-full px-3"
                 >
-                  {user?.profilePic ? (
+                  {displayUser?.profilePic ? (
                     <Image
-                      src={user.profilePic}
-                      alt={user.name || "User"}
+                      src={displayUser.profilePic}
+                      alt={displayUser.name || "User"}
                       width={32}
                       height={32}
                       className="rounded-full object-cover"
                     />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-[#FECB02] flex items-center justify-center text-black font-semibold text-sm">
-                      {user?.name?.charAt(0).toUpperCase() || <User />}
+                      {displayUser?.name?.charAt(0).toUpperCase() || <User />}
                     </div>
                   )}
                 </Button>
-
-
 
                 {userMenuOpen && (
                   <div className="absolute right-0 mt-3 w-56 rounded-xl bg-white shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
@@ -233,7 +258,7 @@ export default function Header() {
                     {/* User Info Section */}
                     <div className="px-4 py-3 bg-gray-50 border-b">
                       <p className="text-sm font-semibold text-gray-800">
-                        {user?.name || "User"}
+                        {displayUser?.name || "User"}
                       </p>
                       <p className="text-xs text-gray-500">
                         Welcome back 👋
@@ -333,7 +358,7 @@ export default function Header() {
         >
           {/* HEADER SECTION */}
           <div className="p-6 border-b">
-            {!isLoggedIn ? (
+            {!isLoggedIn && !displayUser ? (
               <>
                 <p className="text-lg font-semibold text-gray-900">
                   Welcome 👋
@@ -369,23 +394,23 @@ export default function Header() {
               </>
             ) : (
               <div className="flex items-center gap-3">
-                {user?.profilePic ? (
+                {displayUser?.profilePic ? (
                   <Image
-                    src={user.profilePic}
-                    alt={user.name || "User"}
+                    src={displayUser.profilePic}
+                    alt={displayUser.name || "User"}
                     width={40}
                     height={40}
                     className="rounded-full object-cover"
                   />
                 ) : (
                   <div className="w-10 h-10 rounded-full bg-[#FECB02] flex items-center justify-center text-black font-semibold">
-                    {user?.name?.charAt(0).toUpperCase() || "U"}
+                    {displayUser?.name?.charAt(0).toUpperCase() || "U"}
                   </div>
                 )}
 
                 <div>
                   <p className="font-semibold text-gray-800">
-                    {user?.name || "User"}
+                    {displayUser?.name || "User"}
                   </p>
                   <p className="text-xs text-gray-500">
                     Welcome back 👋

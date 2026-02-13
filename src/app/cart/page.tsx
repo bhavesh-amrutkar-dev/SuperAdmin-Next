@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { Minus, Plus, Info } from "lucide-react";
+import { Minus, Plus, Info, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import Header from "@/src/components/layout/Header";
 import Footer from "@/src/components/layout/Footer";
 import LoginModal from "@/src/components/modals/LoginModal";
 import { CartService } from "@/src/lib/services/cart";
 import { getCookie } from "cookies-next";
+import { Button } from "../../components/ui/button";
 
 interface CartItem {
   _id?: string;
@@ -402,8 +403,79 @@ export default function CartPage() {
   const handleConfirmRemove = async () => {
     if (!itemToRemove) return;
 
-    setUpdating(itemToRemove.addToCartOnId || itemToRemove._id || "");
+    const itemId = itemToRemove.addToCartOnId || itemToRemove._id || "";
+    setUpdating(itemId);
     setShowConfirmModal(false);
+
+    // Optimistically remove item from UI immediately (no page refresh)
+    if (cartData) {
+      const updatedCartData = { ...cartData };
+
+      if (updatedCartData.sellers) {
+        updatedCartData.sellers = updatedCartData.sellers.map((seller) => {
+          if (seller.products) {
+            return {
+              ...seller,
+              products: seller.products.filter((product) => {
+                const productId = product.addToCartOnId || product._id;
+                return productId !== itemId;
+              }),
+            };
+          }
+          return seller;
+        }).filter((seller) => seller.products && seller.products.length > 0); // Remove empty sellers
+      }
+
+      // Recalculate totals after removal
+      if (updatedCartData.accounting) {
+        let newBagTotal = 0;
+        if (updatedCartData.sellers) {
+          updatedCartData.sellers.forEach((seller) => {
+            if (seller.products) {
+              seller.products.forEach((product) => {
+                const productQty = typeof product.quantity === 'object' && product.quantity !== null
+                  ? Number(product.quantity.value) || 1
+                  : Number(product.quantity) || 1;
+
+                let productTotal = 0;
+                if (product.accounting?.subTotal !== undefined && product.accounting?.subTotal !== null) {
+                  productTotal = Number(product.accounting.subTotal) || 0;
+                } else {
+                  const productUnitPrice = Number(product.accounting?.finalUnitPrice) ||
+                    Number(product.accounting?.unitPrice) ||
+                    Number(product.price) ||
+                    Number(product.unitPrice) ||
+                    Number(product.ticketPrice) || 0;
+
+                  if (productUnitPrice > 0) {
+                    productTotal = productUnitPrice * productQty;
+                  } else if (product.accounting?.subTotal) {
+                    productTotal = Number(product.accounting.subTotal) || 0;
+                  }
+                }
+
+                newBagTotal += productTotal;
+              });
+            }
+          });
+        }
+
+        const tax = updatedCartData.accounting.tax;
+        const taxAmount = Array.isArray(tax)
+          ? tax.reduce((sum, t) => sum + Number(t.totalValue || 0), 0)
+          : Number(tax || 0);
+        const shippingFee = Number(updatedCartData.accounting.shippingFee || updatedCartData.accounting.deliveryFee || 0);
+
+        updatedCartData.accounting = {
+          ...updatedCartData.accounting,
+          bagTotal: newBagTotal,
+          subTotal: newBagTotal,
+          finalTotal: newBagTotal + taxAmount + shippingFee,
+        };
+      }
+
+      setCartData(updatedCartData);
+    }
 
     try {
       const payload = {
@@ -426,13 +498,19 @@ export default function CartPage() {
       };
 
       await CartService.addToCart(payload);
-      await fetchCart(); // Refresh cart after deletion
+
+      // Silently refresh cart in background to sync with server (without showing loading)
+      fetchCart(false).catch(() => {
+        // If refresh fails, silently continue - optimistic update is already shown
+      });
 
       // Dispatch event to update header cart count
       window.dispatchEvent(new Event('cartUpdated'));
 
       toast.success(t("itemRemoved") || "Item removed from cart");
     } catch (error: any) {
+      // Revert optimistic update on error by refreshing cart
+      fetchCart();
       console.warn("Error removing item from cart:", error);
       toast.error(error?.response?.data?.message || error?.message || t("removeFailed") || "Failed to remove item");
     } finally {
@@ -603,12 +681,13 @@ export default function CartPage() {
           <div className="bg-white rounded-lg shadow-md p-6 sm:p-8 md:p-12 text-center">
             <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">{t("cartEmpty")}</h2>
             <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">{t("cartEmptyMessage")}</p>
-            <button
+            <Button
               onClick={() => router.push("/raffles")}
-              className="bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-2.5 sm:py-3 px-6 sm:px-8 rounded-lg transition-colors text-sm sm:text-base"
+              variant="primary"
+              size="lg"
             >
               {t("browseRaffles")}
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -707,7 +786,7 @@ export default function CartPage() {
 
                               {/* Quantity Selector */}
                               <div className="flex items-center gap-2 sm:gap-3">
-                                <button
+                                <Button
                                   type="button"
                                   onClick={(e) => {
                                     e.preventDefault();
@@ -724,7 +803,7 @@ export default function CartPage() {
                                   style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                                 >
                                   <Minus size={18} className="text-gray-600 pointer-events-none" />
-                                </button>
+                                </Button>
 
                                 <input
                                   type="number"
@@ -739,7 +818,7 @@ export default function CartPage() {
                                   style={{ touchAction: 'manipulation' }}
                                 />
 
-                                <button
+                                <Button
                                   type="button"
                                   onClick={(e) => {
                                     e.preventDefault();
@@ -756,7 +835,7 @@ export default function CartPage() {
                                   style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                                 >
                                   <Plus size={18} className="text-gray-600 pointer-events-none" />
-                                </button>
+                                </Button>
                               </div>
                             </div>
 
@@ -765,9 +844,10 @@ export default function CartPage() {
                               <button
                                 onClick={() => handleRemoveClick(item)}
                                 disabled={isUpdating}
-                                className="text-xs sm:text-sm text-red-600 hover:text-red-800 disabled:opacity-50 order-2 sm:order-1"
+                                className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed order-2 sm:order-1"
+                                aria-label={t("remove") || "Remove item"}
                               >
-                                {t("remove")}
+                                <Trash2 size={18} />
                               </button>
                               <p className="text-base sm:text-lg font-bold text-gray-800 order-1 sm:order-2 sm:mt-auto">
                                 {currency} {formatCurrency(itemTotal)}
@@ -867,12 +947,14 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                <button
+                <Button
                   onClick={handleCheckout}
-                  className="w-full bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-3 sm:py-4 px-4 sm:px-6 rounded-lg transition-colors shadow-lg mt-4 sm:mt-6 text-sm sm:text-base"
+                  variant="primary"
+                  size="default"
+                  className="w-full mt-4 sm:mt-6"
                 >
                   {t("proceedToCheckout")}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -894,12 +976,14 @@ export default function CartPage() {
                 <Info size={14} className="sm:w-4 sm:h-4" />
                 <span>{t("taxDutiesNotice")}</span>
               </div>
-              <button
+              <Button
                 onClick={handleCheckout}
-                className="bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-2.5 sm:py-3 px-4 sm:px-8 rounded-lg transition-colors shadow-lg text-sm sm:text-base w-full sm:w-auto"
+                variant="primary"
+                size="default"
+                className="w-full sm:w-auto"
               >
                 {t("checkout")}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -913,14 +997,14 @@ export default function CartPage() {
       {showConfirmModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
           <div className="bg-white rounded-lg p-4 sm:p-6 md:p-8 max-w-md w-full mx-4 relative shadow-xl">
-            <button
+            <Button
               onClick={handleCancelRemove}
               className="absolute top-2 right-2 sm:top-4 sm:right-4 text-gray-500 hover:text-gray-700"
             >
               <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
-            </button>
+            </Button>
             <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 pr-6">
               {t("confirmRemove")}
             </h3>
@@ -928,18 +1012,22 @@ export default function CartPage() {
               {t("confirmRemoveMessage")}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-              <button
+              <Button
                 onClick={handleCancelRemove}
-                className="flex-1 px-4 py-2.5 sm:py-2 border-2 border-[#D4AF37] text-[#D4AF37] font-semibold rounded-full hover:bg-[#D4AF37] hover:text-white transition-colors text-sm sm:text-base"
+                variant="outline"
+                size="default"
+                className="flex-1"
               >
                 {t("cancel")}
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleConfirmRemove}
-                className="flex-1 px-4 py-2.5 sm:py-2 bg-[#D4AF37] text-white font-semibold rounded-full hover:bg-[#B8860B] transition-colors text-sm sm:text-base"
+                variant="primary"
+                size="default"
+                className="flex-1"
               >
                 {t("continue")}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

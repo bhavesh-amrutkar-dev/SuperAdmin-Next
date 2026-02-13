@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import Image from "next/image";
-import { ArrowLeft, Search, ChevronDown, ChevronUp, X, Minus, Plus, Share2 } from "lucide-react";
+import { ArrowLeft, Search, ChevronDown, ChevronUp, X, Minus, Plus, Share2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Header from "@/src/components/layout/Header";
 import Footer from "@/src/components/layout/Footer";
@@ -83,6 +83,7 @@ import CountdownTimer from "@/src/components/CountdownTimer";
 import { createProductDeepLink } from "@/src/lib/services/deeplink";
 import { toast } from "sonner";
 import { stripHtml } from "@/src/lib/utils/HtmltoText";
+import { Button } from "../../../components/ui/button";
 
 
 export default function RafflesDetailPage() {
@@ -137,6 +138,7 @@ export default function RafflesDetailPage() {
         id: string;
         quantity: number;
     } | null>(null);
+    const [participating, setParticipating] = useState(false);
     const maxQuestionLength = 1000;
     const [allRaffles, setAllRaffles] = useState<Array<LegacyRaffleDetail & { _id?: string }>>([]);
     const [displayedRafflesCount, setDisplayedRafflesCount] = useState(5);
@@ -276,7 +278,7 @@ export default function RafflesDetailPage() {
                                 ? String(err.message)
                                 : "Unknown error occurred";
                 // eslint-disable-next-line no-console
-                console.error("Raffle detail error:", errorMessage);
+                console.warn("Raffle detail error:", errorMessage);
                 setNotFound(true);
             })
             .finally(() => {
@@ -607,22 +609,22 @@ export default function RafflesDetailPage() {
             <main>
                 <Header />
                 <div className="container mx-auto px-4 py-12">
-                    <button
+                    <Button
                         onClick={() => router.back()}
                         className="flex items-center gap-2 text-[#797979] hover:text-[#5a5a5a] mb-6"
                     >
                         <ArrowLeft size={20} />
                         <span>{t("goBack")}</span>
-                    </button>
+                    </Button>
                     <div className="flex items-center justify-center min-h-[40vh]">
                         <div className="text-center">
                             <p className="text-lg text-[#797979] mb-4">{t("raffleNotFound")}</p>
-                            <button
+                            <Button
                                 onClick={() => router.push("/raffles")}
                                 className="px-6 py-2 text-sm font-medium text-white bg-[#797979] hover:bg-[#5a5a5a] rounded-md transition-colors"
                             >
                                 {t("viewAllRaffles")}
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -807,13 +809,114 @@ export default function RafflesDetailPage() {
         }
     };
 
+    // Handle remove from cart
+    const handleRemoveFromCart = async (ticketId: string) => {
+        if (!lotteryItem || applyingTicket) return;
+
+        setApplyingTicket(true);
+        try {
+            // Get the cart item's addToCartOnId
+            let existingItemId: string | undefined = undefined;
+
+            try {
+                const cartResponse = await CartService.getCart();
+                const cartData = (cartResponse as any)?.data?.data || (cartResponse as any)?.data;
+
+                if (cartData && cartData.sellers) {
+                    const productId = lotteryItem.childProductId || lotteryItem.productId || (params.id as string);
+
+                    for (const seller of cartData.sellers) {
+                        if (seller.products) {
+                            for (const product of seller.products) {
+                                const prodId = product.productId || product.centralProductId || product._id;
+                                const prodTicketId = product.ticketId || (product.ticketDetails?.ticketId);
+
+                                // Match by productId and ticketId
+                                if (prodId === productId && prodTicketId === (ticketId || null)) {
+                                    existingItemId = product.addToCartOnId || product._id;
+                                    break;
+                                }
+                            }
+                            if (existingItemId) break;
+                        }
+                    }
+                }
+            } catch (cartError) {
+                console.warn("Could not fetch cart to find item to remove:", cartError);
+                setApplyingTicket(false);
+                return;
+            }
+
+            if (!existingItemId) {
+                // Item not found in cart, just hide the quantity selector
+                setShowQuantitySelector(false);
+                setApplyingTicket(false);
+                return;
+            }
+
+            // Remove from cart using action: 3
+            await CartService.addToCart({
+                centralProductId: lotteryItem.childProductId || lotteryItem.productId || (params.id as string),
+                productId: lotteryItem.childProductId || lotteryItem.productId || (params.id as string),
+                unitId: lotteryItem.unitId || "",
+                userType: 1,
+                storeId: lotteryItem.storeId || "",
+                ticketId: ticketId || null,
+                campaignId: lotteryItem.campaignId,
+                countryId: (getCookie("C_id") as string) || "633a6c3dd17f0000ea00102e",
+                newQuantity: 0,
+                action: 3, // 3 = delete
+                cartType: 2,
+                typeOfCart: 1,
+                storeTypeId: 1,
+                offers: {},
+                storeCategoryId: STORE_CATEGORY_ID,
+                addToCartOnId: existingItemId,
+                cartStatus: "removedcart",
+                deliveryAddress: {
+                    latitude: (getCookie("lat") as string) || "0",
+                    longitude: (getCookie("long") as string) || "0",
+                },
+            });
+
+            // Dispatch event to update header cart count
+            window.dispatchEvent(new Event('cartUpdated'));
+
+            // Hide quantity selector after removal
+            setShowQuantitySelector(false);
+            setSelectedQuantity(1);
+        } catch (err) {
+            const errorMessage =
+                err instanceof Error
+                    ? err.message
+                    : typeof err === "string"
+                        ? err
+                        : err && typeof err === "object" && "message" in err
+                            ? String((err as any).message)
+                            : "Failed to remove from cart";
+            console.warn("Remove from cart failed:", errorMessage);
+        } finally {
+            setApplyingTicket(false);
+        }
+    };
+
     // Handle participate button click - add to cart without redirect, show quantity selector
     const handleParticipateClick = async (ticketId: string, quantity: number) => {
-        // Add to cart for both authenticated and guest users
-        // Guest users will have items added to their guest cart
-        await handleAddToCart(ticketId, quantity, false);
-        setSelectedQuantity(quantity);
-        setShowQuantitySelector(true);
+        if (participating || applyingTicket) return; // Prevent multiple clicks
+
+        setParticipating(true);
+        try {
+            // Add to cart for both authenticated and guest users
+            // Guest users will have items added to their guest cart
+            await handleAddToCart(ticketId, quantity, false);
+            setSelectedQuantity(quantity);
+            setShowQuantitySelector(true);
+        } catch (error) {
+            // Error is already handled in handleAddToCart
+            console.error("Error in handleParticipateClick:", error);
+        } finally {
+            setParticipating(false);
+        }
     };
 
     // Get timeline data
@@ -1011,14 +1114,14 @@ export default function RafflesDetailPage() {
                             )}
                         </div>
 
-                        <button
+                        <Button
                             onClick={handleShare}
                             disabled={sharing}
                             className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-[#2f2f2f] border border-gray-200 rounded-lg hover:bg-gray-100 cursor-pointer transition"
                         >
                             <Share2 size={18} />
                             {sharing ? "Sharing..." : "Share"}
-                        </button>
+                        </Button>
                     </div>
 
                 </div>
@@ -1297,7 +1400,7 @@ export default function RafflesDetailPage() {
                                         </div>
                                     </div>
                                     <div className="flex md:hidden items-center gap-2">
-                                        <button
+                                        <Button
                                             type="button"
                                             onClick={() => {
                                                 if (ticketQuantity > 0) {
@@ -1308,7 +1411,7 @@ export default function RafflesDetailPage() {
                                             className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-700 hover:bg-gray-600 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                                         >
                                             <Minus size={20} />
-                                        </button>
+                                        </Button>
                                         <input
                                             id="ticketQuantityMobile"
                                             type="number"
@@ -1363,7 +1466,7 @@ export default function RafflesDetailPage() {
                                         </p>
                                     </div>
                                     {ticketQuantity > 0 && (
-                                        <button
+                                        <Button
                                             onClick={() => {
                                                 if (ticketQuantity <= 0 || ticketQuantity > userTickets || !lotteryItem) {
                                                     return;
@@ -1374,7 +1477,7 @@ export default function RafflesDetailPage() {
                                             className="px-8 py-2 bg-[#D4AF37] hover:bg-[#B8860B] disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-bold rounded transition-colors uppercase whitespace-nowrap"
                                         >
                                             {t("apply") || "APPLY"}
-                                        </button>
+                                        </Button>
                                     )}
                                 </div>
                             </div>
@@ -1386,22 +1489,28 @@ export default function RafflesDetailPage() {
                             <div className="flex items-center gap-2 md:gap-4">
                                 {/* Quantity Selector */}
                                 <div className="flex items-center gap-2">
-                                    <button
+                                    <Button
                                         type="button"
                                         onClick={async () => {
                                             const currentQty = Number(selectedQuantity) || 1;
-                                            if (currentQty > 1 && !applyingTicket && selectedTicket) {
-                                                const newQty = currentQty - 1;
-                                                setSelectedQuantity(newQty);
-                                                // Update cart with new quantity
-                                                await handleAddToCart(selectedTicket, newQty, false);
+                                            if (!applyingTicket && selectedTicket) {
+                                                if (currentQty > 1) {
+                                                    // Decrease quantity
+                                                    const newQty = currentQty - 1;
+                                                    setSelectedQuantity(newQty);
+                                                    // Update cart with new quantity
+                                                    await handleAddToCart(selectedTicket, newQty, false);
+                                                } else if (currentQty === 1) {
+                                                    // Remove from cart when quantity is 1
+                                                    await handleRemoveFromCart(selectedTicket);
+                                                }
                                             }
                                         }}
-                                        disabled={Number(selectedQuantity) <= 1 || applyingTicket}
+                                        disabled={applyingTicket}
                                         className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-gray-100 hover:bg-[#D4AF37] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-100 disabled:hover:text-[#797979] transition-all duration-200"
                                     >
                                         <Minus size={20} className="text-[#797979]" />
-                                    </button>
+                                    </Button>
 
                                     <input
                                         type="number"
@@ -1422,7 +1531,7 @@ export default function RafflesDetailPage() {
                                         className="w-16 md:w-20 h-10 md:h-12 text-center text-lg md:text-xl font-bold text-[#797979] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:ring-opacity-50 ticket-quantity bg-gray-50"
                                     />
 
-                                    <button
+                                    <Button
                                         type="button"
                                         onClick={async () => {
                                             const currentQty = Number(selectedQuantity) || 1;
@@ -1437,11 +1546,11 @@ export default function RafflesDetailPage() {
                                         className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-gray-100 hover:bg-[#D4AF37] hover:text-white transition-all duration-200"
                                     >
                                         <Plus size={20} className="text-[#797979]" />
-                                    </button>
+                                    </Button>
                                 </div>
 
                                 {/* Continue Button */}
-                                <button
+                                <Button
                                     className="flex-1 bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg uppercase text-sm md:text-base"
                                     onClick={() => {
                                         // Just redirect to cart page (cart is already updated via quantity selector)
@@ -1450,14 +1559,14 @@ export default function RafflesDetailPage() {
                                     disabled={applyingTicket}
                                 >
                                     {t("continue") || "CONTINUE"}
-                                </button>
+                                </Button>
                             </div>
                         ) : (
                             // Show PARTICIPATE button
-                            <button
-                                className="w-full bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-4 rounded-lg transition-colors shadow-lg"
+                            <Button
+                                className="w-full bg-[#D4AF37] hover:bg-[#B8860B] disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 rounded-lg transition-colors shadow-lg flex items-center justify-center gap-2 text-sm md:text-default"
                                 onClick={() => {
-                                    if (!lotteryItem || !selectedTicket) return;
+                                    if (!lotteryItem || !selectedTicket || participating || applyingTicket) return;
 
                                     const ticketsSource: any[] =
                                         lotteryItem.tickets ||
@@ -1498,10 +1607,17 @@ export default function RafflesDetailPage() {
                                         return;
                                     }
                                 }}
-                                disabled={applyingTicket || !selectedTicket}
+                                disabled={participating || applyingTicket || !selectedTicket}
                             >
-                                {t("participate") || "PARTICIPATE"}
-                            </button>
+                                {participating || applyingTicket ? (
+                                    <>
+                                        <Loader2 size={20} className="animate-spin" />
+                                        <span>{t("processing") || "Processing..."}</span>
+                                    </>
+                                ) : (
+                                    <span>{t("participate") || "PARTICIPATE"}</span>
+                                )}
+                            </Button>
                         )}
                     </div>
                 </div>

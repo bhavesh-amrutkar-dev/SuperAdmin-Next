@@ -43,10 +43,10 @@ export default function ThankYouPage() {
                     </div>
 
                     {/* Main Message */}
-                    <h1 className="text-3xl md:text-4xl font-bold text-[#2F2F2F] mb-4">
+                    <h1 className="text-2xl md:text-4xl font-bold text-[#2F2F2F] mb-4">
                         {t("thankYouTitle")}
                     </h1>
-                    <p className="text-lg text-[#797979] mb-2">
+                    <p className="text-md text-[#797979] mb-2">
                         {t("thankYouMessage")}
                     </p>
                     <p className="text-sm text-[#999] mb-8">
@@ -57,14 +57,14 @@ export default function ThankYouPage() {
                     <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                         <Link
                             href="/orders"
-                            className="inline-flex items-center gap-2 bg-[#FECB02] text-[#2F2F2F] px-8 py-3 rounded-md font-semibold uppercase tracking-wide hover:bg-[#FECB02]/90 transition-colors"
+                            className="inline-flex items-center gap-2 bg-[#FECB02] text-[#2F2F2F] px-8 py-3 rounded-md font-semibold uppercase tracking-wide hover:bg-[#FECB02]/90 transition-colors text-sm sm:text-default"
                         >
                             <Package className="w-5 h-5" />
                             {t("viewOrders")}
                         </Link>
                         <Link
                             href="/"
-                            className="inline-flex items-center gap-2 bg-white border-2 border-[#2F2F2F] text-[#2F2F2F] px-8 py-3 rounded-md font-semibold uppercase tracking-wide hover:bg-[#2F2F2F] hover:text-white transition-colors"
+                            className="inline-flex items-center gap-2 bg-white border-2 border-[#2F2F2F] text-[#2F2F2F] px-8 py-3 rounded-md font-semibold uppercase tracking-wide hover:bg-[#2F2F2F] hover:text-white transition-colors text-sm sm:text-default"
                         >
                             <Home className="w-5 h-5" />
                             {t("continueToHomepage")}

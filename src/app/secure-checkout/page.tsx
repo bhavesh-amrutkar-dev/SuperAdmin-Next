@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { DEFAULT_COUNTRY_CODE, COUNTRY_CODE, BASE_URL } from "@/src/lib/config";
 import { getCommonHeaders } from "@/src/lib/api/headers";
 import axios from "axios";
+import { Button } from "../../components/ui/button";
 
 type TaxItem = {
   taxName?: string;
@@ -643,12 +644,14 @@ export default function SecureCheckoutPage() {
         <div className="container mx-auto px-2 sm:px-4 py-6 sm:py-12">
           <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 md:p-8 text-center">
             <p className="text-sm sm:text-base text-gray-600">{t("cartEmpty") || "Your cart is empty"}</p>
-            <button
+            <Button
               onClick={() => router.push("/cart")}
-              className="mt-3 sm:mt-4 bg-[#D4AF37] hover:bg-[#B8860B] text-white font-semibold py-2 px-4 sm:px-6 rounded-lg transition-colors text-sm sm:text-base"
+              variant="primary"
+              size="default"
+              className="mt-3 sm:mt-4 text-white font-semibold py-2 px-4 sm:px-6 rounded-lg transition-colors text-sm sm:text-base"
             >
               {t("backToCart") || "Back to Cart"}
-            </button>
+            </Button>
           </div>
         </div>
         <Footer />
@@ -709,7 +712,7 @@ export default function SecureCheckoutPage() {
                         {selectedAddress.mobileNumber}
                       </p>
                     )}
-                    <button onClick={handleEditShipping} className="text-xs sm:text-sm text-[#D4AF37] hover:text-[#B8860B] font-medium">
+                    <button onClick={handleEditShipping} className="text-xs sm:text-sm text-[#D4AF37] hover:text-[#B8860B] font-medium cursor-pointer">
                       {t("edit")}
                     </button>
                   </div>
@@ -752,7 +755,7 @@ export default function SecureCheckoutPage() {
                       </p>
                     )}
                     {!billingSameAsShipping && (
-                      <button onClick={handleEditBilling} className="mt-2 sm:mt-3 text-xs sm:text-sm text-[#D4AF37] hover:text-[#B8860B] font-medium">
+                      <button onClick={handleEditBilling} className="mt-2 sm:mt-3 text-xs sm:text-sm text-[#D4AF37] hover:text-[#B8860B] font-medium cursor-pointer">
                         {t("edit")}
                       </button>
                     )}
@@ -1033,12 +1036,14 @@ export default function SecureCheckoutPage() {
                         )}
                       </div>
                       {receiptFile && !manualPaymentConfirmed && (
-                        <button
+                        <Button
+                          variant="primary"
+                          size="default"
                           onClick={handleManualPaymentConfirm}
-                          className="mt-4 w-full px-4 py-2 bg-[#D4AF37] hover:bg-[#B8860B] text-gray-800 font-semibold rounded transition-colors"
+                          className="mt-4 w-full px-4 py-2 text-gray-800 font-semibold rounded transition-colors"
                         >
                           {t("confirm") || "Confirm"}
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -1156,10 +1161,12 @@ export default function SecureCheckoutPage() {
                 <p className="text-base sm:text-lg font-bold text-gray-800">{currency} {formatCurrency(grandTotal)}</p>
               </div>
               {paymentMethod !== "" && (
-                <button
+                <Button
                   onClick={handlePlaceOrder}
+                  variant="primary"
+                  size="default"
                   disabled={!selectedAddress || placingOrder}
-                  className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-2.5 sm:py-3 px-4 sm:px-6 md:px-8 rounded-lg transition-colors text-xs sm:text-sm md:text-base whitespace-nowrap w-full sm:w-auto"
+                  className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-2.5 sm:py-3 px-4 sm:px-6 md:px-8 rounded-lg transition-colors text-xs sm:text-sm md:text-default whitespace-nowrap w-full sm:w-auto"
                 >
                   {placingOrder
                     ? t("placingOrder") || "Placing Order..."
@@ -1170,7 +1177,7 @@ export default function SecureCheckoutPage() {
                         : paymentMethod === "creditCard"
                           ? t("payWithPlaceToPay") || "PAY WITH PLACE TO PAY"
                           : t("pay") || "PAY"}
-                </button>
+                </Button>
               )}
             </div>
           </div>

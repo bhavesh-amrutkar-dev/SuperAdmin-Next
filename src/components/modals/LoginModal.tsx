@@ -12,6 +12,7 @@ import { AuthService } from "@/src/lib/services/auth";
 import { IEmailLoginRM } from "@/src/models/api/request/auth";
 import { mapAuthSession } from "@/src/lib/mappers/auth";
 import { persistAuthSession } from "@/src/lib/session/auth";
+import { useAuth } from "@/src/context/authContext";
 
 interface LoginModalProps {
     isOpen: boolean;
@@ -21,6 +22,7 @@ interface LoginModalProps {
 
 export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps) {
     const t = useTranslations();
+    const { setUser } = useAuth();
 
     const {
         register,
@@ -71,6 +73,9 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
             if (res) {
                 const session = mapAuthSession(res.data);
                 persistAuthSession(session);
+
+                // Update auth context - Header will automatically react to this change
+                setUser(session);
 
                 toast.success(t("loginSuccess") || "Login successful");
                 onClose();

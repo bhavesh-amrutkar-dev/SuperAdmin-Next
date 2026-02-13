@@ -263,9 +263,11 @@ export default function FreeTicketConfirmationModal({
                                     You&apos;re about to use <span className="font-bold">Free tickets</span> to purchase{" "}
                                     <span className="font-bold">{displayName}</span>.
                                 </p>
-                                <p className="text-xs sm:text-sm text-[#797979] mb-4 sm:mb-6">
-                                    Press Yes to complete the selection or No to cancel.
-                                </p>
+                                {!error && (
+                                    <p className="text-xs sm:text-sm text-[#797979] mb-4 sm:mb-6">
+                                        Press Yes to complete the selection or No to cancel.
+                                    </p>
+                                )}
 
                                 {/* Error Message */}
                                 {error && (
@@ -274,22 +276,35 @@ export default function FreeTicketConfirmationModal({
                                     </div>
                                 )}
 
-                                <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-                                    <button
-                                        className="min-w-[100px] px-4 sm:px-6 py-2.5 sm:py-2 rounded-md bg-[#D4AF37] hover:bg-[#B8860B] text-white font-semibold uppercase text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                        onClick={handleConfirm}
-                                        disabled={applyingTicket}
-                                    >
-                                        {applyingTicket ? (t("processing") || "Processing...") : (t("yes") || "Yes")}
-                                    </button>
-                                    <button
-                                        className="min-w-[100px] px-4 sm:px-6 py-2.5 sm:py-2 rounded-md border border-gray-300 text-xs sm:text-sm font-semibold uppercase text-[#2f2f2f] hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                        onClick={handleCancel}
-                                        disabled={applyingTicket}
-                                    >
-                                        {t("no") || "No"}
-                                    </button>
-                                </div>
+                                {/* Show only Cancel button when there's an error, otherwise show YES and NO buttons */}
+                                {error ? (
+                                    <div className="flex justify-center">
+                                        <button
+                                            className="min-w-[100px] px-4 sm:px-6 py-2.5 sm:py-2 rounded-md border border-gray-300 text-xs sm:text-sm font-semibold uppercase text-[#2f2f2f] hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                            onClick={handleCancel}
+                                            disabled={applyingTicket}
+                                        >
+                                            {t("cancel") || "Cancel"}
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+                                        <button
+                                            className="min-w-[100px] px-4 sm:px-6 py-2.5 sm:py-2 rounded-md bg-[#D4AF37] hover:bg-[#B8860B] text-white font-semibold uppercase text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                            onClick={handleConfirm}
+                                            disabled={applyingTicket}
+                                        >
+                                            {applyingTicket ? (t("processing") || "Processing...") : (t("yes") || "Yes")}
+                                        </button>
+                                        <button
+                                            className="min-w-[100px] px-4 sm:px-6 py-2.5 sm:py-2 rounded-md border border-gray-300 text-xs sm:text-sm font-semibold uppercase text-[#2f2f2f] hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                            onClick={handleCancel}
+                                            disabled={applyingTicket}
+                                        >
+                                            {t("no") || "No"}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

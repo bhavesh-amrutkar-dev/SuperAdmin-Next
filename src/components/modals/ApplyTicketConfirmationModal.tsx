@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { X } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Button } from "../ui/button";
 
 interface ApplyTicketConfirmationModalProps {
     isOpen: boolean;
@@ -105,20 +106,24 @@ export default function ApplyTicketConfirmationModal({
 
                     {/* Action Buttons */}
                     <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-                        <button
+                        <Button
+                            variant="outline"
+                            size="default"
                             onClick={onClose}
                             disabled={isApplying}
-                            className="px-6 sm:px-8 py-2.5 sm:py-3 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-800 font-semibold rounded-lg transition-colors text-sm sm:text-base"
+                            className="px-6 sm:px-8 py-2.5 sm:py-3 text-gray-800 font-semibold rounded-lg transition-colors text-sm sm:text-base"
                         >
                             {t("cancel") || "CANCEL"}
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                            variant="primary"
+                            size="default"
                             onClick={onConfirm}
                             disabled={isApplying}
                             className="px-6 sm:px-8 py-2.5 sm:py-3 bg-[#D4AF37] hover:bg-[#B8860B] disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors text-sm sm:text-base"
                         >
                             {isApplying ? (t("applying") || "APPLYING...") : (t("apply") || "APPLY")}
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>
