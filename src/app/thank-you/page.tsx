@@ -38,9 +38,9 @@ export default function ThankYouPage() {
         };
 
         try {
-            const res = await OrderService.orderStatusUpdate(orderStatusPayload);
-            const { data } = res as any;
-            console.log("Order status updated:", data);
+            // const res = await OrderService.orderStatusUpdate(orderStatusPayload);
+            // const { data } = res as any;
+            // console.log("Order status updated:", data);
 
             if (!updateTicketWalletFlag) {
                 localStorage.removeItem("orderId");
