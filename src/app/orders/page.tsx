@@ -4,12 +4,13 @@ import { useEffect, useState, useCallback } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
-import { Package, Search, Calendar, CheckCircle2, XCircle, Clock, Truck, ShoppingBag } from "lucide-react";
+import { Package, Search, Calendar, CheckCircle2, XCircle, Clock, Truck, ShoppingBag, Info } from "lucide-react";
 import Header from "@/src/components/layout/Header";
 import Footer from "@/src/components/layout/Footer";
 import PreFooterIconModule from "@/src/components/layout/PreFooterIconModule";
 import { OrderService, type Order, type StoreOrder, type OrderProduct } from "@/src/lib/services/order";
 import { PRODUCT_CART } from "@/src/lib/config";
+import { Button } from "@/src/components/ui/button";
 
 // Order status codes
 const ORDER_STATUS = {
@@ -481,16 +482,6 @@ export default function OrdersPage() {
         return `${symbol}${numericAmount.toFixed(2)}`;
     };
 
-    const handleReorder = async (order: Order) => {
-        try {
-            await OrderService.reorder({ orderId: order.masterOrderId || order.orderId });
-            alert(t("reorderSuccess") || "Items added to cart successfully!");
-        } catch (err) {
-            // eslint-disable-next-line no-console
-            console.error("Error reordering:", err);
-            alert(t("reorderError") || "Failed to add items to cart");
-        }
-    };
 
     if (loading && orders.length === 0) {
         return (
@@ -563,12 +554,16 @@ export default function OrdersPage() {
                         <div className="flex flex-col items-center justify-center min-h-[40vh]">
                             <ShoppingBag className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 text-gray-300 mb-3 sm:mb-4" />
                             <p className="text-sm sm:text-base md:text-lg text-[#797979]">{t("noOrdersFound") || "No orders found"}</p>
-                            <Link
-                                href="/raffles"
-                                className="mt-3 sm:mt-4 px-4 sm:px-6 py-2 bg-[#f3c200] text-[#2f2f2f] rounded-lg font-semibold hover:bg-[#e6b800] transition-colors text-sm sm:text-base"
+                            <Button
+                                asChild
+                                variant="primary"
+                                size="default"
+                                className="mt-3 sm:mt-4"
                             >
-                                {t("startShopping") || "Start Shopping"}
-                            </Link>
+                                <Link href="/raffles">
+                                    {t("startShopping") || "Start Shopping"}
+                                </Link>
+                            </Button>
                         </div>
                     ) : (
                         <div className="space-y-6">
@@ -600,7 +595,7 @@ export default function OrdersPage() {
                                                 </p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-2xl font-bold text-gray-900 mb-1">
+                                                <p className="text-2xl font-bold text-gray-900">
                                                     {formatCurrency(
                                                         getOrderTotal(order),
                                                         order.currencySymbol ||
@@ -609,14 +604,6 @@ export default function OrdersPage() {
                                                         "$"
                                                     )}
                                                 </p>
-                                                {order.status?.status !== ORDER_STATUS.CANCELLED && (
-                                                    <button
-                                                        onClick={() => handleReorder(order)}
-                                                        className="text-sm text-[#D4AF37] hover:text-[#B8860B] font-medium"
-                                                    >
-                                                        {t("reorder") || "Reorder"}
-                                                    </button>
-                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -699,23 +686,20 @@ export default function OrdersPage() {
                                         </div>
                                     )}
 
-                                    {/* Order Actions */}
-                                    {/* <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-wrap gap-3">
-                                        <Link
-                                            href={`/orders/${order.orderId || order.masterOrderId}`}
-                                            className="px-4 py-2 bg-[#2f2f2f] text-white rounded-lg font-semibold hover:bg-[#f3c200] hover:text-[#2f2f2f] transition-colors"
+                                    {/* More Details Button - Bottom */}
+                                    <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 text-right">
+                                        <Button
+                                            asChild
+                                            variant="primary"
+                                            size="default"
+                                            className="w-full sm:w-auto"
                                         >
-                                            {t("viewDetails") || "View Details"}
-                                        </Link>
-                                        {order.status?.status === ORDER_STATUS.COMPLETED && (
-                                            <button
-                                                onClick={() => handleReorder(order)}
-                                                className="px-4 py-2 border-2 border-[#2f2f2f] text-[#2f2f2f] rounded-lg font-semibold hover:bg-[#2f2f2f] hover:text-white transition-colors"
-                                            >
-                                                {t("reorder") || "Reorder"}
-                                            </button>
-                                        )}
-                                    </div> */}
+                                            <Link href={`/orders/${order.orderId || order.masterOrderId}`}>
+                                                <Info size={18} />
+                                                {t("moreDetails") || "More Details"}
+                                            </Link>
+                                        </Button>
+                                    </div>
                                 </div>
                             ))}
                         </div>

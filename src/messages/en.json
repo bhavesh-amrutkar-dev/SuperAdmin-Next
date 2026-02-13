@@ -395,5 +395,20 @@
     "confirm": "Confirm",
     "placeOrder": "PLACE ORDER",
     "noBanksAvailable": "No banks available for manual payment",
-    "ID": "ID"
+    "ID": "ID",
+    "moreDetails": "More Details",
+    "qty": "Qty",
+    "viewAllOrders": "View All Orders",
+    "orderNotFound": "Order not found",
+    "orderItems": "Order Items",
+    "card": "Card",
+    "cash": "Cash",
+    "wallet": "Wallet",
+    "rewardWallet": "Reward Wallet",
+    "storeOrderTotal": "Store Order Total",
+    "serverError": "Server Error",
+    "serverErrorMessage": "We're experiencing technical difficulties. Please try again in a moment.",
+    "orderNotFoundMessage": "The order you're looking for could not be found.",
+    "tryAgain": "Try Again",
+    "retrying": "Retrying..."
 }

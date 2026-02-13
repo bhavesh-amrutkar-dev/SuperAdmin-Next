@@ -11,6 +11,7 @@ import Header from "@/src/components/layout/Header";
 import Footer from "@/src/components/layout/Footer";
 import { CartService } from "@/src/lib/services/cart";
 import { UserAddressService } from "@/src/lib/services/userAddress";
+import { Button } from "@/src/components/ui/button";
 
 type TaxItem = {
   taxName?: string;
@@ -266,12 +267,14 @@ export default function ShippingAddressPage() {
             <div className="bg-white rounded-lg shadow-md">
               <div className="flex items-center justify-between px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-200">
                 <h2 className="text-xs sm:text-sm font-bold text-gray-800 uppercase">{t("addressTitle") || "Address"}</h2>
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => router.push("/profile?tab=addresses")}
-                  className="text-xs sm:text-sm font-semibold text-[#D4AF37] hover:text-[#B8860B] whitespace-nowrap"
+                  className="text-[#D4AF37] hover:text-[#B8860B] whitespace-nowrap"
                 >
                   + {t("addAddress").toUpperCase?.() ? t("addAddress").toUpperCase() : t("addAddress")}
-                </button>
+                </Button>
               </div>
 
               <div className="p-3 sm:p-4 md:p-6">
@@ -282,12 +285,14 @@ export default function ShippingAddressPage() {
                 ) : addresses.length === 0 ? (
                   <div className="text-center py-6 sm:py-10">
                     <p className="text-sm sm:text-base text-gray-600">{t("noAddressFound")}</p>
-                    <button
+                    <Button
+                      variant="primary"
+                      size="default"
                       onClick={() => router.push("/profile?tab=addresses")}
-                      className="mt-3 sm:mt-4 bg-[#D4AF37] hover:bg-[#B8860B] text-white font-semibold py-2 px-4 sm:px-6 rounded-lg transition-colors text-sm sm:text-base"
+                      className="mt-3 sm:mt-4"
                     >
                       + {t("addAddress")}
-                    </button>
+                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-3 sm:space-y-4">
@@ -490,13 +495,15 @@ export default function ShippingAddressPage() {
                 {currency} {formatCurrency((accounting as any).finalTotal)}
               </p>
             </div>
-            <button
+            <Button
               onClick={handleContinue}
               disabled={!selectedAddressId || cartItems.length === 0}
-              className="bg-[#D4AF37] hover:bg-[#B8860B] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-2.5 sm:py-3 px-6 sm:px-10 rounded-lg transition-colors text-sm sm:text-base w-full sm:w-auto"
+              variant="primary"
+              size="default"
+              className="w-full sm:w-auto"
             >
               {t("continue")}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
