@@ -27,6 +27,6 @@ export async function logout() {
     // Reinitialize guest session
     await initGuest();
   } catch (error) {
-    console.error("Logout error:", error);
+    console.warn("Logout error:", error);
   }
 }

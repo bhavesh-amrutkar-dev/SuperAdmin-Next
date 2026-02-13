@@ -15,7 +15,7 @@ export function useProfile() {
         setUser(res?.data);
       })
       .catch(() => {
-        console.error("Failed to load profile");
+        console.warn("Failed to load profile");
         setUser(null);
       })
       .finally(() => setLoading(false));

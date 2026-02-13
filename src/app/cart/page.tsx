@@ -622,7 +622,7 @@ export default function CartPage() {
         await fetchCart(false);
         router.push("/shipping-address");
       } catch (error) {
-        console.error("Error during checkout:", error);
+        console.warn("Error during checkout:", error);
         setCheckoutLoading(false);
       }
     }

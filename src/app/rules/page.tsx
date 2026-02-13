@@ -34,7 +34,7 @@ export default function RulesPage() {
                                 : "Failed to load rules data";
                     setError(errorMessage);
                     // eslint-disable-next-line no-console
-                    console.error("Error fetching rules:", errorMessage);
+                    console.warn("Error fetching rules:", errorMessage);
                 } catch {
                     setError("Unknown error occurred");
                 }

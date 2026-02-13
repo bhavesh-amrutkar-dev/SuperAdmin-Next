@@ -26,7 +26,7 @@ export const PdfViewer = ({ url }: { url: string }) => {
         const arrayBuffer = await blob.arrayBuffer(); // <-- keep as ArrayBuffer
         setPdfData(arrayBuffer); // <-- pass ArrayBuffer directly
       } catch (err) {
-        console.error('PDF fetch error:', err);
+        console.warn('PDF fetch error:', err);
       }
     };
 
@@ -53,7 +53,7 @@ export const PdfViewer = ({ url }: { url: string }) => {
         <Document
           file={pdfData} // <-- now correctly ArrayBuffer
           onLoadSuccess={onDocumentLoadSuccess}
-          onLoadError={(err) => console.error('PDF failed to load:', err)}
+          onLoadError={(err) => console.warn('PDF failed to load:', err)}
         >
           {Array.from({ length: numPages }, (_, index) => (
             <Page key={index} pageNumber={index + 1} width={width} />

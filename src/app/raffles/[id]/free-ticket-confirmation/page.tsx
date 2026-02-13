@@ -106,7 +106,7 @@ export default function FreeTicketConfirmationPage() {
                     console.warn("Failed to fetch default address:", addressError);
                 }
             } catch (error) {
-                console.error("Failed to fetch data:", error);
+                console.warn("Failed to fetch data:", error);
                 setNotFound(true);
             } finally {
                 setLoading(false);

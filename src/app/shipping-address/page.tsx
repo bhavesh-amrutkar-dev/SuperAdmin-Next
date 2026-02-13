@@ -186,7 +186,7 @@ export default function ShippingAddressPage() {
         return;
       }
       // eslint-disable-next-line no-console
-      console.error("Error fetching cart:", err);
+      console.warn("Error fetching cart:", err);
       setCartData(null);
     } finally {
       fetchingCartRef.current = false;
@@ -213,7 +213,7 @@ export default function ShippingAddressPage() {
       }
     } catch (err: any) {
       // eslint-disable-next-line no-console
-      console.error("Error fetching addresses:", err);
+      console.warn("Error fetching addresses:", err);
       setAddresses([]);
       setSelectedAddressId("");
     } finally {
@@ -250,7 +250,7 @@ export default function ShippingAddressPage() {
       }
       router.push("/secure-checkout");
     } catch (error) {
-      console.error("Error during continue:", error);
+      console.warn("Error during continue:", error);
       setContinuing(false);
     }
   };

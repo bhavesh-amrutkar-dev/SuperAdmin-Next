@@ -46,7 +46,7 @@ export default function ThankYouPage() {
                 localStorage.removeItem("orderId");
             }
         } catch (err) {
-            console.error("Order status update failed:", err);
+            console.warn("Order status update failed:", err);
         }
     };
 

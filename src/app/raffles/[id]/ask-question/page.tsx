@@ -51,7 +51,7 @@ export default function AskQuestionPage() {
                     setNotFound(true);
                 }
             } catch (error) {
-                console.error("Failed to fetch raffle data:", error);
+                console.warn("Failed to fetch raffle data:", error);
                 setNotFound(true);
             } finally {
                 setLoading(false);

@@ -36,7 +36,7 @@ export default function AboutUsPage() {
                                 : "Failed to load about us data";
                     setError(errorMessage);
                     // eslint-disable-next-line no-console
-                    console.error("Error fetching about us:", errorMessage);
+                    console.warn("Error fetching about us:", errorMessage);
                 } catch {
                     setError("Unknown error occurred");
                 }

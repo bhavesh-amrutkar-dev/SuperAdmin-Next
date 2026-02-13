@@ -176,7 +176,7 @@ export default function OrdersPage() {
                                 : "Failed to load orders";
                     setError(errorMessage);
                     // eslint-disable-next-line no-console
-                    console.error("Error fetching orders:", errorMessage);
+                    console.warn("Error fetching orders:", errorMessage);
                 } catch {
                     setError("Unknown error occurred");
                 }

@@ -22,7 +22,7 @@ export async function initGuest() {
       setCookie("sid", sid, { path: "/" });
     }
   } catch (err) {
-    console.error("Guest init failed", err);
+    console.warn("Guest init failed", err);
   }
 }
 

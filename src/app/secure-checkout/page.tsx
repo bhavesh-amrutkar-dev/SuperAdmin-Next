@@ -261,7 +261,7 @@ export default function SecureCheckoutPage() {
       }
 
       // Only log actual errors, not empty cart cases
-      console.error("Error fetching cart:", error);
+      console.warn("Error fetching cart:", error);
       setCartData({
         sellers: [],
         accounting: {
@@ -281,7 +281,7 @@ export default function SecureCheckoutPage() {
       const addressData = (response as any)?.data?.data || (response as any)?.data || [];
       setAddresses(Array.isArray(addressData) ? addressData : []);
     } catch (error: any) {
-      console.error("Error fetching addresses:", error);
+      console.warn("Error fetching addresses:", error);
       setAddresses([]);
     }
   };
@@ -300,7 +300,7 @@ export default function SecureCheckoutPage() {
       const data = await response.json();
       return data.ip || "0.0.0.0";
     } catch (error) {
-      console.error("Error fetching IP:", error);
+      console.warn("Error fetching IP:", error);
       return "0.0.0.0";
     }
   };
@@ -345,7 +345,7 @@ export default function SecureCheckoutPage() {
           }
         }
       } catch (error) {
-        console.error("Error fetching user ID:", error);
+        console.warn("Error fetching user ID:", error);
         // Continue with fallback - API might handle userId internally
       }
     }
@@ -563,7 +563,7 @@ export default function SecureCheckoutPage() {
             cartId: cartId || null,
           });
         } catch (error) {
-          console.error("Failed to update order status:", error);
+          console.warn("Failed to update order status:", error);
           // Continue with redirect even if status update fails
         }
       }
@@ -581,7 +581,7 @@ export default function SecureCheckoutPage() {
     try {
       await fetchCart();
     } catch (error) {
-      console.error("Error fetching cart after payment error:", error);
+      console.warn("Error fetching cart after payment error:", error);
     }
   };
 
@@ -593,7 +593,7 @@ export default function SecureCheckoutPage() {
     try {
       await fetchCart();
     } catch (error) {
-      console.error("Error fetching cart after closing payment modal:", error);
+      console.warn("Error fetching cart after closing payment modal:", error);
     }
 
     // Redirect to thank you page when X button is clicked

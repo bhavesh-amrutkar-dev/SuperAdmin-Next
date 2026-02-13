@@ -220,7 +220,7 @@ export default function RegisterPage() {
           setCountries(list);
         }
       } catch (err) {
-        console.error("Currency fetch failed", err);
+        console.warn("Currency fetch failed", err);
         if (mounted) {
           setCountriesError("Failed to load countries");
         }

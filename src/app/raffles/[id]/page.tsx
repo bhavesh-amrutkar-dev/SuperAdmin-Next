@@ -194,13 +194,13 @@ export default function RafflesDetailPage() {
                 } catch (err) {
                     clearInterval(interval);
                     // eslint-disable-next-line no-console
-                    console.error(`Error in animation for ${key}:`, err instanceof Error ? err.message : "Unknown error");
+                    console.warn(`Error in animation for ${key}:`, err instanceof Error ? err.message : "Unknown error");
                 }
             }, 16);
             return interval;
         } catch (err) {
             // eslint-disable-next-line no-console
-            console.error(`Error setting up animation for ${key}:`, err instanceof Error ? err.message : "Unknown error");
+            console.warn(`Error setting up animation for ${key}:`, err instanceof Error ? err.message : "Unknown error");
             return null;
         }
     }, []);
@@ -220,7 +220,7 @@ export default function RafflesDetailPage() {
         // Validate that pid is a valid ObjectId, not a slug
         if (lotteryId && !isValidObjectId(lotteryId)) {
             // If pid is a slug or invalid, log error
-            console.error("Invalid pid parameter - must be MongoDB ObjectId (24 hex chars):", {
+            console.warn("Invalid pid parameter - must be MongoDB ObjectId (24 hex chars):", {
                 pid,
                 paramsId: params.id,
                 pidLength: pid?.length,
@@ -232,7 +232,7 @@ export default function RafflesDetailPage() {
         // DO NOT use params.id as fallback - it's always the slug from URL path
         // If pid is missing or invalid, show not found
         if (!lotteryId) {
-            console.error("No valid campaignId found in pid parameter. URL must include ?pid=<campaignId>:", {
+            console.warn("No valid campaignId found in pid parameter. URL must include ?pid=<campaignId>:", {
                 pid,
                 paramsId: params.id,
                 currentUrl: typeof window !== "undefined" ? window.location.href : "N/A"
@@ -281,7 +281,7 @@ export default function RafflesDetailPage() {
                                     ? String(parseError.message)
                                     : "Failed to parse raffle data";
                     // eslint-disable-next-line no-console
-                    console.error("Raffle detail parse error:", errorMessage);
+                    console.warn("Raffle detail parse error:", errorMessage);
                     setNotFound(true);
                 }
             })
@@ -334,7 +334,7 @@ export default function RafflesDetailPage() {
             };
         } catch (err) {
             // eslint-disable-next-line no-console
-            console.error("Error in number animation effect:", err instanceof Error ? err.message : "Unknown error");
+            console.warn("Error in number animation effect:", err instanceof Error ? err.message : "Unknown error");
         }
     }, [lotteryItem, animateNumber]);
 
@@ -379,7 +379,7 @@ export default function RafflesDetailPage() {
                     }
                 } catch (err) {
                     // eslint-disable-next-line no-console
-                    console.error("Error calculating countdown:", err instanceof Error ? err.message : "Unknown error");
+                    console.warn("Error calculating countdown:", err instanceof Error ? err.message : "Unknown error");
                     setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
                 }
             };
@@ -393,7 +393,7 @@ export default function RafflesDetailPage() {
             return () => clearInterval(interval);
         } catch (err) {
             // eslint-disable-next-line no-console
-            console.error("Error setting up countdown:", err instanceof Error ? err.message : "Unknown error");
+            console.warn("Error setting up countdown:", err instanceof Error ? err.message : "Unknown error");
             setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         }
     }, [lotteryItem?.drawDateTimeStemp]);
@@ -462,7 +462,7 @@ export default function RafflesDetailPage() {
                             ? String(err.message)
                             : "Failed to fetch questions";
             // eslint-disable-next-line no-console
-            console.error("Error fetching questions:", errorMessage);
+            console.warn("Error fetching questions:", errorMessage);
             setQuestions([]);
             setQuestionsCount(0);
         } finally {
@@ -520,7 +520,7 @@ export default function RafflesDetailPage() {
                                 ? String(err.message)
                                 : "Failed to fetch ticket balance";
                 // eslint-disable-next-line no-console
-                console.error("Error fetching ticket balance:", errorMessage);
+                console.warn("Error fetching ticket balance:", errorMessage);
                 setUserTicketBalance(0);
             } finally {
                 setLoadingTicketBalance(false);
@@ -590,7 +590,7 @@ export default function RafflesDetailPage() {
                                 ? String(err.message)
                                 : "Failed to fetch raffles";
                 // eslint-disable-next-line no-console
-                console.error("Error fetching raffles:", errorMessage);
+                console.warn("Error fetching raffles:", errorMessage);
                 setAllRaffles([]);
             } finally {
                 setLoadingRaffles(false);
@@ -1054,7 +1054,7 @@ export default function RafflesDetailPage() {
             setShowQuantitySelector(true);
         } catch (error) {
             // Error is already handled in handleAddToCart
-            console.error("Error in handleParticipateClick:", error);
+            console.warn("Error in handleParticipateClick:", error);
         } finally {
             setParticipating(false);
         }
@@ -1232,7 +1232,7 @@ export default function RafflesDetailPage() {
                 toast.success("Link copied to clipboard!");
             }
         } catch (err) {
-            console.error("Share failed:", err);
+            console.warn("Share failed:", err);
         } finally {
             setSharing(false);
         }
