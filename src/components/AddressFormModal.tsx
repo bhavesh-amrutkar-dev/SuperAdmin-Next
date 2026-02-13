@@ -18,7 +18,7 @@ export default function AddressFormModal({
   editing,
 }: any) {
 
-  const handleSubmit = async (data: AddressFormRM) => {
+  const handleSubmit = async (data: any) => {
     try {
       if (editing?._id) {
         await UserAddressService.updateAddress(editing._id, data);
