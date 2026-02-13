@@ -17,4 +17,10 @@ export const UserAddressService = {
     getAddresses: () => {
         return apiClient.get("/address") as Promise<UserAddressListResponse>;
     },
+    deleteAddress: (id: string) => apiClient.delete(`/address/${id}`),
+    updateAddress: (id: string, payload: any) =>
+        apiClient.put(`/address/${id}`, payload),
+    setDefaultAddress: (id: string) =>
+        apiClient.patch(`/address/${id}/default`),
+
 };

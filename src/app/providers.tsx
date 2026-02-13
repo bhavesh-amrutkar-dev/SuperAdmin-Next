@@ -12,10 +12,10 @@ export default function ClientProviders({
 }) {
   return (
     <AuthProvider>
-      <CountryGuard>
+      {/* <CountryGuard> */}
         <Toaster position="top-center" richColors closeButton />
         {children}
-      </CountryGuard>
+      {/* </CountryGuard> */}
     </AuthProvider>
   );
 }

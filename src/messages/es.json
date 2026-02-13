@@ -411,5 +411,9 @@
     "serverErrorMessage": "Estamos experimentando dificultades técnicas. Por favor, inténtalo de nuevo en un momento.",
     "orderNotFoundMessage": "El pedido que buscas no se pudo encontrar.",
     "tryAgain": "Intentar de Nuevo",
-    "retrying": "Reintentando..."
+    "retrying": "Reintentando...",
+    "useCurrentLocation": "Usar mi ubicación actual",
+    "cityPlaceholder": "Ingresa tu ciudad",
+    "statePlaceholder": "Ingresa tu estado",
+    "pincodePlaceholder": "Ingresa tu código postal"
 }

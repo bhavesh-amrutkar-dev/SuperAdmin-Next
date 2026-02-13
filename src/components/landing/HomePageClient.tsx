@@ -21,6 +21,7 @@ import HowItWorksSection from "./HowItWorks";
 import RaffleSectionLayout from "./RafflesSelectionLayout";
 import { FullScreenLoader } from "../fullScreenLoader";
 import { useAuth } from "@/src/context/authContext";
+import Loader from "../loader";
 
 type LegacyRaffleItem = {
   _id?: string;
@@ -175,9 +176,9 @@ export default function HomePageClient() {
       }
 
     } catch (err: any) {
-      // if (err?.name !== "AbortError") {
-      //   console.error("Failed to load raffles", err);
-      // }
+      if (err?.name !== "AbortError") {
+        console.warn("Failed to load raffles", err);
+      }
     } finally {
       setLoadingRaffles(false);
     }
@@ -213,7 +214,8 @@ export default function HomePageClient() {
       {loadingRaffles ? (
         <section className="py-20 text-center text-[#797979]">
 
-          {t("loading") ?? "Loading..."}
+         <Loader/>
+          {/* {t("loading") ?? "Loading..."} */}
         </section>
       ) : raffleSection ? (
         <RaffleSectionLayout

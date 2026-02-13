@@ -499,6 +499,19 @@ export default function Header() {
                   </Link>
                 </Button>
 
+
+                <Button
+                  asChild
+                  variant="dropdown"
+                  size="sm"
+                  onClick={() => setUserMenuOpen(false)}
+                >
+                  <Link href="/orders">
+                    <Package size={16} />
+                    {t("myOrders")}
+                  </Link>
+                </Button>
+
                 <Button
                   variant="logout"
                   size="sm"

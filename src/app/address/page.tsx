@@ -14,6 +14,10 @@ import PreFooterIconModule from "@/src/components/layout/PreFooterIconModule";
 import Footer from "@/src/components/layout/Footer";
 import { CountryCurrency } from "@/src/models/api/response/auth";
 import ErrorMessage from "@/src/components/ui/errorMessage";
+import { Label } from "@/src/components/ui/label";
+import { Input } from "@/src/components/ui/input";
+import { Button } from "@/src/components/ui/button";
+import { Textarea } from "@/src/components/ui/textarea";
 
 type AddressFormRM = {
     firstName: string;
@@ -26,20 +30,15 @@ type AddressFormRM = {
     mobileNumber: string;
     taggedAs: "Home" | "Office" | "Other";
     taggedAsLabel?: string;
-
     mobileNumberCode: string;
     mobileNumberSortCode: string;
     landmark: string;
 };
 
-
 const DEFAULT_COORDS = {
     latitude: 0.0,
     longitude: 0.0,
 };
-
-const inputBase =
-    "w-full rounded-xl border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-100 focus:border-yellow-400";
 
 export default function AddressPage() {
     const t = useTranslations();
@@ -47,22 +46,68 @@ export default function AddressPage() {
 
     const [countries, setCountries] = useState<CountryCurrency[]>([]);
     const [countriesLoading, setCountriesLoading] = useState(false);
-    const [countriesError, setCountriesError] = useState<string | null>(null);
     const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
-    useEffect(() => {
-        if (!navigator.geolocation) return;
+
+    const requestLocation = async () => {
+        if (!("geolocation" in navigator)) {
+            toast.error("Geolocation not supported by your browser");
+            return;
+        }
 
         navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                setCoords({
-                    latitude: pos.coords.latitude,
-                    longitude: pos.coords.longitude,
-                });
+            async (pos) => {
+                const { latitude, longitude } = pos.coords;
+
+                setCoords({ latitude, longitude });
+
+                try {
+                    // 🔥 OpenStreetMap Reverse Geocode (FREE)
+                    const response = await fetch(
+                        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+                    );
+
+                    const data = await response.json();
+
+                    if (data?.address) {
+                        const addressLine = data.display_name || "";
+
+                        const city =
+                            data.address.city ||
+                            data.address.town ||
+                            data.address.village ||
+                            "";
+
+                        const state = data.address.state || "";
+                        const pincode = data.address.postcode || "";
+                        const country = data.address.country || "";
+
+                        // ✅ Prefill fields
+                        setValue("addLine1", addressLine, { shouldValidate: true });
+                        setValue("city", city, { shouldValidate: true });
+                        setValue("state", state, { shouldValidate: true });
+                        setValue("pincode", pincode, { shouldValidate: true });
+                        setValue("country", country, { shouldValidate: true });
+                    }
+
+                    toast.success("Location auto-filled successfully");
+                } catch (error) {
+                    toast.error("Failed to fetch address details");
+                }
             },
-            (err) => {
-                console.error("Geolocation error", err);
+            (error) => {
+                toast.error(error.message || "Failed to get location");
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0,
             }
         );
+    };
+
+
+    useEffect(() => {
+        requestLocation();
     }, []);
 
     const {
@@ -78,60 +123,42 @@ export default function AddressPage() {
     const taggedAs = watch("taggedAs");
 
     useEffect(() => {
-        let mounted = true;
-
         const fetchCountries = async () => {
             setCountriesLoading(true);
-            setCountriesError(null);
-
             try {
                 const res = await AuthService.getCurrency();
-                if (mounted) {
-                    setCountries(res?.data ?? []);
-                }
-            } catch (err) {
-                console.error("Currency fetch failed", err);
-                if (mounted) {
-                    setCountriesError("Failed to load countries");
-                }
+                setCountries(res?.data ?? []);
+            } catch {
+                toast.error("Failed to load countries");
             } finally {
-                if (mounted) {
-                    setCountriesLoading(false);
-                }
+                setCountriesLoading(false);
             }
         };
 
         fetchCountries();
-        return () => {
-            mounted = false;
-        };
     }, []);
+
     const onSubmit = async (payload: AddressFormRM) => {
         try {
             await AuthService.createAddress({
                 name: `${payload.firstName} ${payload.lastName}`,
-
                 addLine1: `${payload.city}, ${payload.state}, ${payload.country}`,
                 city: payload.city,
                 state: payload.state,
                 country: payload.country,
                 pincode: payload.pincode,
                 landmark: payload.landmark,
-
                 mobileNumber: payload.mobileNumber,
                 mobileNumberCode: payload.mobileNumberCode,
                 mobileNumberSortCode: payload.mobileNumberSortCode,
-
                 latitude: coords?.latitude ?? DEFAULT_COORDS.latitude,
                 longitude: coords?.longitude ?? DEFAULT_COORDS.longitude,
-
                 tagged:
                     payload.taggedAs === "Home"
                         ? 1
                         : payload.taggedAs === "Office"
                             ? 2
                             : 3,
-
                 taggedAs: payload.taggedAsLabel ?? payload.taggedAs,
                 default: false,
             });
@@ -141,9 +168,6 @@ export default function AddressPage() {
             toast.error(err?.message || t("addressSaveFailed"));
         }
     };
-
-
-
 
     return (
         <>
@@ -156,10 +180,8 @@ export default function AddressPage() {
                         <p className="mt-1 text-sm text-gray-500">{t("addressRequired")}</p>
                     </div>
 
-                    <form
-                        onSubmit={handleSubmit(onSubmit)}
-                        className="space-y-10 px-6 py-8"
-                    >
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-10 px-6 py-8">
+
                         {/* Personal Info */}
                         <section className="space-y-5">
                             <h2 className="text-sm font-semibold uppercase text-gray-600">
@@ -167,12 +189,15 @@ export default function AddressPage() {
                             </h2>
 
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                <div>
-                                    <label className="text-sm font-medium">{t("firstName")}</label>
-                                    <input
-                                        className={`${inputBase} ${errors.firstName ? "border-red-400" : "border-gray-300"
-                                            }`}
+
+                                {/* First Name */}
+                                <div className="space-y-2">
+                                    <Label required error={!!errors.firstName}>
+                                        {t("firstName")}
+                                    </Label>
+                                    <Input
                                         placeholder={t("firstNamePlaceholder")}
+                                        error={!!errors.firstName}
                                         {...register("firstName", {
                                             required: t("firstNameRequired"),
                                         })}
@@ -180,12 +205,14 @@ export default function AddressPage() {
                                     <ErrorMessage message={errors.firstName?.message} />
                                 </div>
 
-                                <div>
-                                    <label className="text-sm font-medium">{t("lastName")}</label>
-                                    <input
-                                        className={`${inputBase} ${errors.lastName ? "border-red-400" : "border-gray-300"
-                                            }`}
+                                {/* Last Name */}
+                                <div className="space-y-2">
+                                    <Label required error={!!errors.lastName}>
+                                        {t("lastName")}
+                                    </Label>
+                                    <Input
                                         placeholder={t("lastNamePlaceholder")}
+                                        error={!!errors.lastName}
                                         {...register("lastName", {
                                             required: t("lastNameRequired"),
                                         })}
@@ -193,23 +220,22 @@ export default function AddressPage() {
                                     <ErrorMessage message={errors.lastName?.message} />
                                 </div>
 
-                                <div className="md:col-span-2">
-                                    <label className="text-sm font-medium">{t("mobile")}</label>
+                                {/* Mobile */}
+                                <div className="md:col-span-2 space-y-2">
+                                    <Label required>{t("mobile")}</Label>
                                     <PhoneInput
                                         country="us"
                                         containerClass="!w-full"
-                                        inputClass="!w-full !h-[46px] !rounded-xl !border !border-gray-300 !text-sm !pl-14
-    focus:!border-yellow-400 focus:!ring-2 focus:!ring-yellow-100"
+                                        inputClass="!w-full !h-[44px] !rounded-lg !border !border-gray-300 !text-sm !pl-14 focus:!border-[#f3c200] focus:!ring-2 focus:!ring-yellow-200"
                                         onChange={(value, country: any) => {
                                             setValue("mobileNumber", value.replace(country.dialCode, ""));
                                             setValue("mobileNumberCode", country.dialCode);
                                             setValue("mobileNumberSortCode", country.countryCode);
                                         }}
                                     />
-
-
                                     <ErrorMessage message={errors.mobileNumber?.message} />
                                 </div>
+
                             </div>
                         </section>
 
@@ -220,26 +246,51 @@ export default function AddressPage() {
                             </h2>
 
                             <div className="space-y-4">
-                                <div>
-                                    <label className="text-sm font-medium">{t("address")}</label>
-                                    <textarea
+
+                                {/* Address Line */}
+                                <div className="space-y-2">
+                                    <Label required error={!!errors.addLine1}>
+                                        {t("address")}
+                                    </Label>
+
+                                    <Textarea
                                         rows={3}
-                                        className={`${inputBase} ${errors.addLine1 ? "border-red-400" : "border-gray-300"
-                                            }`}
                                         placeholder={t("addressPlaceholder")}
+                                        error={!!errors.addLine1}
                                         {...register("addLine1", {
                                             required: t("addressRequired"),
                                         })}
                                     />
+
                                     <ErrorMessage message={errors.addLine1?.message} />
+
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={requestLocation}
+                                    >
+                                        {t("useCurrentLocation")}
+                                    </Button>
                                 </div>
 
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                    <div>
-                                        <label className="text-sm font-medium">{t("country")}</label>
+                                    {/* Country */}
+                                    <div className="space-y-2">
+                                        <Label required error={!!errors.country}>
+                                            {t("country")}
+                                        </Label>
+
                                         <select
-                                            className={`${inputBase} ${errors.country ? "border-red-400" : "border-gray-300"
-                                                }`}
+                                            className={`
+      w-full rounded-lg border bg-background
+      px-4 py-2 text-sm
+      transition-colors duration-200
+      focus:outline-none focus:ring-2 focus:ring-yellow-200 focus:border-[#f3c200]
+      ${errors.country
+                                                    ? "border-red-500 focus:ring-red-200 focus:border-red-500"
+                                                    : "border-gray-300 hover:border-gray-400"}
+    `}
                                             {...register("country", {
                                                 required: t("countryRequired"),
                                             })}
@@ -247,70 +298,88 @@ export default function AddressPage() {
                                         >
                                             <option value="">{t("selectCountry")}</option>
                                             {countries.map((c) => (
-                                                <option
-                                                    key={c._id}
-                                                    value={c.name}
-                                                    data-code={c.countryCode}
-                                                >
+                                                <option key={c._id} value={c.name} data-code={c.countryCode}>
                                                     {c.emoji} {c.name}
                                                 </option>
                                             ))}
                                         </select>
+
                                         <ErrorMessage message={errors.country?.message} />
                                     </div>
 
-                                    <div>
-                                        <label className="text-sm font-medium">{t("city")}</label>
-                                        <input
-                                            className={`${inputBase} ${errors.city ? "border-red-400" : "border-gray-300"
-                                                }`}
+                                    {/* City */}
+                                    <div className="space-y-2">
+                                        <Label required error={!!errors.city}>
+                                            {t("city")}
+                                        </Label>
+
+                                        <Input
+                                            placeholder={t("cityPlaceholder")}
+                                            error={!!errors.city}
                                             {...register("city", {
                                                 required: t("cityRequired"),
                                             })}
                                         />
+
                                         <ErrorMessage message={errors.city?.message} />
                                     </div>
 
-                                    <div>
-                                        <label className="text-sm font-medium">{t("state")}</label>
-                                        <input
-                                            className={`${inputBase} ${errors.state ? "border-red-400" : "border-gray-300"
-                                                }`}
+                                    {/* State */}
+                                    <div className="space-y-2">
+                                        <Label required error={!!errors.state}>
+                                            {t("state")}
+                                        </Label>
+
+                                        <Input
+                                            placeholder={t("statePlaceholder")}
+                                            error={!!errors.state}
                                             {...register("state", {
                                                 required: t("stateRequired"),
                                             })}
                                         />
+
                                         <ErrorMessage message={errors.state?.message} />
                                     </div>
 
-                                    <div>
-                                        <label className="text-sm font-medium">{t("pincode")}</label>
-                                        <input
-                                            className={`${inputBase} ${errors.pincode ? "border-red-400" : "border-gray-300"
-                                                }`}
+                                    {/* Pincode */}
+                                    <div className="space-y-2">
+                                        <Label required error={!!errors.pincode}>
+                                            {t("pincode")}
+                                        </Label>
+
+                                        <Input
+                                            placeholder={t("pincodePlaceholder")}
+                                            error={!!errors.pincode}
                                             {...register("pincode", {
                                                 required: t("pincodeRequired"),
                                             })}
                                         />
+
                                         <ErrorMessage message={errors.pincode?.message} />
                                     </div>
 
-                                    <div>
-                                        <label className="text-sm font-medium">{t("landmark")}</label>
-                                        <input
-                                            className={`${inputBase} ${errors.landmark ? "border-red-400" : "border-gray-300"
-                                                }`}
+                                    {/* Landmark */}
+                                    <div className="space-y-2">
+                                        <Label required error={!!errors.landmark}>
+                                            {t("landmark")}
+                                        </Label>
+
+                                        <Input
                                             placeholder={t("landmarkPlaceholder")}
+                                            error={!!errors.landmark}
                                             {...register("landmark", {
                                                 required: t("landmarkRequired"),
                                             })}
                                         />
+
                                         <ErrorMessage message={errors.landmark?.message} />
                                     </div>
 
                                 </div>
+
                             </div>
                         </section>
+
 
                         {/* Address Type */}
                         <section className="space-y-4">
@@ -320,31 +389,25 @@ export default function AddressPage() {
 
                             <div className="grid grid-cols-3 gap-3">
                                 {["Home", "Office", "Other"].map((key) => (
-                                    <button
+                                    <Button
                                         key={key}
                                         type="button"
+                                        variant={taggedAs === key ? "primary" : "outline"}
+                                        size="sm"
                                         onClick={() =>
                                             setValue("taggedAs", key as AddressFormRM["taggedAs"])
                                         }
-                                        className={`rounded-xl border py-2.5 text-sm font-medium transition
-                      ${taggedAs === key
-                                                ? "border-yellow-400 bg-yellow-100"
-                                                : "border-gray-300 hover:border-gray-400"
-                                            }`}
                                     >
                                         {t(`addressType${key}`)}
-                                    </button>
+                                    </Button>
                                 ))}
                             </div>
 
                             {taggedAs === "Other" && (
-                                <div>
-                                    <input
-                                        className={`${inputBase} ${errors.taggedAsLabel
-                                            ? "border-red-400"
-                                            : "border-gray-300"
-                                            }`}
+                                <div className="space-y-2">
+                                    <Input
                                         placeholder={t("addressTypeOtherPlaceholder")}
+                                        error={!!errors.taggedAsLabel}
                                         {...register("taggedAsLabel", {
                                             required: t("addressTypeOtherRequired"),
                                         })}
@@ -354,13 +417,14 @@ export default function AddressPage() {
                             )}
                         </section>
 
-                        <button
+                        <Button
                             type="submit"
+                            className="w-full"
                             disabled={isSubmitting}
-                            className="w-full rounded-xl btn-primary py-3 text-sm font-semibold disabled:opacity-50"
                         >
                             {isSubmitting ? t("saving") : t("continue")}
-                        </button>
+                        </Button>
+
                     </form>
                 </div>
             </div>
@@ -368,7 +432,5 @@ export default function AddressPage() {
             <PreFooterIconModule />
             <Footer />
         </>
-
     );
-
 }

@@ -411,5 +411,9 @@
     "serverErrorMessage": "We're experiencing technical difficulties. Please try again in a moment.",
     "orderNotFoundMessage": "The order you're looking for could not be found.",
     "tryAgain": "Try Again",
-    "retrying": "Retrying..."
+    "retrying": "Retrying...",
+    "useCurrentLocation": "Use my current location",
+    "cityPlaceholder": "Enter your city",
+    "statePlaceholder": "Enter your state",
+    "pincodePlaceholder": "Enter your postal code"
 }
