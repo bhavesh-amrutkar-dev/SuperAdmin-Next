@@ -646,7 +646,9 @@ export default function SecureCheckoutPage() {
             <p className="text-sm sm:text-base text-gray-600">{t("cartEmpty") || "Your cart is empty"}</p>
             <Button
               onClick={() => router.push("/cart")}
-              className="mt-3 sm:mt-4 bg-[#D4AF37] hover:bg-[#B8860B] text-white font-semibold py-2 px-4 sm:px-6 rounded-lg transition-colors text-sm sm:text-base"
+              variant="primary"
+              size="default"
+              className="mt-3 sm:mt-4 text-white font-semibold py-2 px-4 sm:px-6 rounded-lg transition-colors text-sm sm:text-base"
             >
               {t("backToCart") || "Back to Cart"}
             </Button>
@@ -1034,12 +1036,14 @@ export default function SecureCheckoutPage() {
                         )}
                       </div>
                       {receiptFile && !manualPaymentConfirmed && (
-                        <button
+                        <Button
+                          variant="primary"
+                          size="default"
                           onClick={handleManualPaymentConfirm}
-                          className="mt-4 w-full px-4 py-2 bg-[#D4AF37] hover:bg-[#B8860B] text-gray-800 font-semibold rounded transition-colors"
+                          className="mt-4 w-full px-4 py-2 text-gray-800 font-semibold rounded transition-colors"
                         >
                           {t("confirm") || "Confirm"}
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </div>
