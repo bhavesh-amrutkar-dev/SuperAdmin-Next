@@ -94,7 +94,13 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [menuOpen]);
 
+  const fetchingCartRef = useRef(false);
+
   const fetchCartCount = async () => {
+    // Prevent duplicate calls
+    if (fetchingCartRef.current) return;
+
+    fetchingCartRef.current = true;
     try {
       const response = await CartService.getCart();
       const data = (response as any)?.data?.data || (response as any)?.data || response;
@@ -117,11 +123,15 @@ export default function Header() {
       }
     } catch {
       setCartCount(0);
+    } finally {
+      fetchingCartRef.current = false;
     }
   };
+
   useEffect(() => {
     setUserMenuOpen(false);
   }, [pathname]);
+
   // Check authentication status - reactive to changes in user context and cookies
   // Only run on client side to prevent hydration mismatch
   useEffect(() => {
@@ -138,16 +148,24 @@ export default function Header() {
     setCurrentCountry(country);
 
     if (!getCookie("C_code")) setCountryModalOpen(true);
+  }, [pathname, user]); // React to user context changes
 
+  // Separate effect for cart fetching - only on mount and cart updates
+  useEffect(() => {
     fetchCartCount();
 
-    const handleCartUpdate = () => fetchCartCount();
+    const handleCartUpdate = () => {
+      // Reset the ref to allow fetching on cart update events
+      fetchingCartRef.current = false;
+      fetchCartCount();
+    };
+
     window.addEventListener("cartUpdated", handleCartUpdate);
 
     return () => {
       window.removeEventListener("cartUpdated", handleCartUpdate);
     };
-  }, [pathname, user]); // React to user context changes
+  }, []); // Only run once on mount
 
   // Close user menu when clicking outside
   useEffect(() => {

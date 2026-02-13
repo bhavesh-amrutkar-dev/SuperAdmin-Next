@@ -511,10 +511,31 @@ export default function SecureCheckoutPage() {
     }
   };
 
-  const handlePlaceToPaySuccess = () => {
+  const handlePlaceToPaySuccess = async () => {
     setPlaceToPayUrl(null);
     setPlacingOrder(false);
-    router.push("/thank-you");
+
+    // Update order status to approved (statusId = 2) when Place to Pay payment is successful
+    if (typeof window !== "undefined") {
+      const orderId = localStorage.getItem("orderId");
+      const cartId = localStorage.getItem("cartId");
+
+      if (orderId) {
+        try {
+          await OrderService.orderStatusUpdate({
+            orderId: orderId,
+            statusId: 2, // Approved
+            cartId: cartId || null,
+          });
+        } catch (error) {
+          console.error("Failed to update order status:", error);
+          // Continue with redirect even if status update fails
+        }
+      }
+    }
+
+    // Redirect to thank-you page with payment parameter
+    router.push("/thank-you?payment=placetopay");
   };
 
   const handlePlaceToPayError = () => {
@@ -1037,10 +1058,8 @@ export default function SecureCheckoutPage() {
                       </div>
                       {receiptFile && !manualPaymentConfirmed && (
                         <Button
-                          variant="primary"
-                          size="default"
                           onClick={handleManualPaymentConfirm}
-                          className="mt-4 w-full px-4 py-2 text-gray-800 font-semibold rounded transition-colors"
+                          className="mt-4 w-full bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg uppercase text-sm md:text-default flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {t("confirm") || "Confirm"}
                         </Button>
@@ -1163,10 +1182,8 @@ export default function SecureCheckoutPage() {
               {paymentMethod !== "" && (
                 <Button
                   onClick={handlePlaceOrder}
-                  variant="primary"
-                  size="default"
                   disabled={!selectedAddress || placingOrder}
-                  className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-2.5 sm:py-3 px-4 sm:px-6 md:px-8 rounded-lg transition-colors text-xs sm:text-sm md:text-default whitespace-nowrap w-full sm:w-auto"
+                  className="w-full sm:w-auto bg-[#D4AF37] hover:bg-[#B8860B] text-white py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg text-sm md:text-default flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {placingOrder
                     ? t("placingOrder") || "Placing Order..."

@@ -1,18 +1,72 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { CheckCircle2, Home, Package } from "lucide-react";
 import Link from "next/link";
 import Header from "@/src/components/layout/Header";
 import Footer from "@/src/components/layout/Footer";
 import PreFooterIconModule from "@/src/components/layout/PreFooterIconModule";
+import { OrderService } from "@/src/lib/services/order";
+import { getCookie } from "cookies-next";
+import { DEFAULT_LANGUAGE } from "@/src/lib/config";
 
 export default function ThankYouPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const t = useTranslations();
     const [countdown, setCountdown] = useState(5);
+
+    // Update order status when order is completed
+    const orderStatusUpdateFn = async (statusData: number, updateTicketWalletFlag = false) => {
+        if (typeof window === "undefined") return;
+
+        const lang = getCookie("lang") || DEFAULT_LANGUAGE;
+        const orderId = localStorage.getItem("orderId");
+        const cartId = localStorage.getItem("cartId");
+
+        if (!orderId) {
+            console.warn("Order ID not found in localStorage");
+            return;
+        }
+
+        const orderStatusPayload = {
+            orderId: orderId,
+            statusId: statusData,
+            cartId: statusData === 3 ? cartId : null,
+        };
+
+        try {
+            const res = await OrderService.orderStatusUpdate(orderStatusPayload);
+            const { data } = res as any;
+            console.log("Order status updated:", data);
+
+            if (!updateTicketWalletFlag) {
+                localStorage.removeItem("orderId");
+            }
+        } catch (err) {
+            console.error("Order status update failed:", err);
+        }
+    };
+
+    useEffect(() => {
+        // Update order status to completed (statusId = 3) when order is completed
+        const handleOrderCompletion = async () => {
+            const payment = searchParams?.get("payment");
+
+            // If payment is from Place to Pay, update status to approved first (statusId = 2)
+            // Then update to completed (statusId = 3)
+            if (payment === "placetopay") {
+                await orderStatusUpdateFn(2); // Approved
+            }
+
+            // Always update to completed status (statusId = 3)
+            await orderStatusUpdateFn(3); // Completed
+        };
+
+        handleOrderCompletion();
+    }, [searchParams]);
 
     useEffect(() => {
         // Countdown timer for auto-redirect

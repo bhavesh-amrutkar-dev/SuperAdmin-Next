@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import Image from "next/image";
@@ -104,6 +104,7 @@ export default function RafflesDetailPage() {
     const [selectedTicket, setSelectedTicket] = useState<string | null>(null);
     const [ticketQuantity, setTicketQuantity] = useState<number>(0);
     const [applyingTicket, setApplyingTicket] = useState(false);
+    const [continuing, setContinuing] = useState(false);
     const [showApplyConfirmationModal, setShowApplyConfirmationModal] = useState(false);
     const [userTicketBalance, setUserTicketBalance] = useState<number>(0);
     const [loadingTicketBalance, setLoadingTicketBalance] = useState(false);
@@ -143,6 +144,14 @@ export default function RafflesDetailPage() {
     const [allRaffles, setAllRaffles] = useState<Array<LegacyRaffleDetail & { _id?: string }>>([]);
     const [displayedRafflesCount, setDisplayedRafflesCount] = useState(5);
     const [loadingRaffles, setLoadingRaffles] = useState(false);
+
+    // Refs to prevent duplicate API calls
+    const fetchingRaffleRef = useRef(false);
+    const lastFetchedPidRef = useRef<string | null>(null);
+    const fetchingTicketBalanceRef = useRef(false);
+    const fetchingAddressesRef = useRef(false);
+    const fetchingAllRafflesRef = useRef(false);
+    const lastFetchedLotteryIdRef = useRef<string | null>(null);
 
     const toggleSection = (section: keyof typeof openSections) => {
         setOpenSections((prev) => ({
@@ -231,6 +240,13 @@ export default function RafflesDetailPage() {
             return;
         }
 
+        // Prevent duplicate calls for the same pid
+        if (fetchingRaffleRef.current || lastFetchedPidRef.current === lotteryId) {
+            return;
+        }
+
+        fetchingRaffleRef.current = true;
+        lastFetchedPidRef.current = lotteryId;
         setLoading(true);
 
         RaffleService.getRaffleDetails(lotteryId)
@@ -283,8 +299,9 @@ export default function RafflesDetailPage() {
             })
             .finally(() => {
                 setLoading(false);
+                fetchingRaffleRef.current = false;
             });
-    }, [params.id, pid, locale]);
+    }, [params.id, pid]); // Removed locale dependency as it shouldn't trigger refetch
 
     useEffect(() => {
         const handleScroll = () => setShowScrollTop(window.scrollY > 400);
@@ -461,6 +478,9 @@ export default function RafflesDetailPage() {
     // Fetch user's ticket balance
     useEffect(() => {
         const fetchTicketBalance = async () => {
+            // Prevent duplicate calls
+            if (fetchingTicketBalanceRef.current) return;
+
             // Check if user is authenticated before making API call
             const token = getCookie("access_token");
             if (!token) {
@@ -469,6 +489,7 @@ export default function RafflesDetailPage() {
                 return;
             }
 
+            fetchingTicketBalanceRef.current = true;
             setLoadingTicketBalance(true);
             try {
                 const response = await TicketWalletService.getTicketBalance();
@@ -501,6 +522,7 @@ export default function RafflesDetailPage() {
                 setUserTicketBalance(0);
             } finally {
                 setLoadingTicketBalance(false);
+                fetchingTicketBalanceRef.current = false;
             }
         };
 
@@ -510,6 +532,10 @@ export default function RafflesDetailPage() {
     // Fetch user addresses (/address API) on detail page load and store default address id
     useEffect(() => {
         const fetchAddresses = async () => {
+            // Prevent duplicate calls
+            if (fetchingAddressesRef.current) return;
+
+            fetchingAddressesRef.current = true;
             try {
                 const response = await UserAddressService.getAddresses();
                 const addresses = response?.data || [];
@@ -520,6 +546,8 @@ export default function RafflesDetailPage() {
             } catch (err) {
                 // eslint-disable-next-line no-console
                 console.warn("Error fetching addresses (non-blocking):", err);
+            } finally {
+                fetchingAddressesRef.current = false;
             }
         };
 
@@ -529,12 +557,22 @@ export default function RafflesDetailPage() {
     // Fetch all raffles for display
     useEffect(() => {
         const fetchAllRaffles = async () => {
+            if (!lotteryItem) return;
+
+            const currentId = lotteryItem?.campaignId || lotteryItem?.childProductId || lotteryItem?.productId || (typeof params.id === 'string' ? params.id : null);
+
+            // Prevent duplicate calls for the same lottery item
+            if (fetchingAllRafflesRef.current || lastFetchedLotteryIdRef.current === currentId) {
+                return;
+            }
+
+            fetchingAllRafflesRef.current = true;
+            lastFetchedLotteryIdRef.current = currentId;
             setLoadingRaffles(true);
             try {
                 const payload = await RaffleService.getAllRaffles();
                 const items = (payload as any)?.data ?? [];
                 // Filter out the current raffle from the list
-                const currentId = lotteryItem?.campaignId || lotteryItem?.childProductId || lotteryItem?.productId || params.id;
                 const filteredItems = items.filter((item: any) => {
                     const itemId = item.campaignId || item.childProductId || item.productId || item._id;
                     return itemId !== currentId;
@@ -554,12 +592,11 @@ export default function RafflesDetailPage() {
                 setAllRaffles([]);
             } finally {
                 setLoadingRaffles(false);
+                fetchingAllRafflesRef.current = false;
             }
         };
 
-        if (lotteryItem) {
-            fetchAllRaffles();
-        }
+        fetchAllRaffles();
     }, [lotteryItem, params.id]);
 
     // Set default ticket on mount - MUST be before early returns
@@ -1327,7 +1364,7 @@ export default function RafflesDetailPage() {
                                     {freeTicketError}
                                 </p>
                             )}
-                            <div className="flex gap-3 overflow-x-auto pb-2 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-track]:bg-gray-100">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {(() => {
                                     // Check multiple possible ticket field names
                                     const tickets =
@@ -1352,16 +1389,16 @@ export default function RafflesDetailPage() {
                                                         <button
                                                             key={ticketId}
                                                             onClick={() => setSelectedTicket(ticketId)}
-                                                            className={`shrink-0 min-w-[220px] p-3 rounded-lg border-2 transition-all ${selectedTicket === ticketId
-                                                                ? "border-[#D4AF37] bg-[#FFF8E7]"
-                                                                : "border-gray-200 hover:border-[#D4AF37]"
+                                                            className={`p-4 sm:p-3 rounded-lg border-2 transition-all w-full ${selectedTicket === ticketId
+                                                                ? "border-[#D4AF37] bg-[#FFF8E7] shadow-md"
+                                                                : "border-gray-200 hover:border-[#D4AF37] bg-white"
                                                                 }`}
                                                         >
-                                                            <div className="flex justify-between items-center">
-                                                                <span className="text-sm font-medium text-[#797979]">
+                                                            <div className="flex flex-row justify-between items-center gap-2">
+                                                                <span className="text-base sm:text-sm font-semibold text-[#797979]">
                                                                     {displayCurrency} {ticketPrice?.toFixed(2) || "0.00"}
                                                                 </span>
-                                                                <span className="text-xs text-[#797979]">
+                                                                <span className="text-xs sm:text-xs text-[#797979] whitespace-nowrap">
                                                                     ({numberOfTickets || 0} {t("tickets") || "Tickets"})
                                                                 </span>
                                                             </div>
@@ -1372,7 +1409,7 @@ export default function RafflesDetailPage() {
                                         );
                                     } else {
                                         return (
-                                            <div className="text-sm text-[#797979] text-center py-4 w-full">
+                                            <div className="text-sm text-[#797979] text-center py-4 col-span-1 sm:col-span-2 lg:col-span-3">
                                                 {t("noTicketsAvailable") || "No tickets available"}
                                             </div>
                                         );
@@ -1551,14 +1588,23 @@ export default function RafflesDetailPage() {
 
                                 {/* Continue Button */}
                                 <Button
-                                    className="flex-1 bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg uppercase text-sm md:text-base"
+                                    className="flex-1 bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg uppercase text-sm md:text-base flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                     onClick={() => {
+                                        if (continuing || applyingTicket) return;
+                                        setContinuing(true);
                                         // Just redirect to cart page (cart is already updated via quantity selector)
                                         router.push("/cart");
                                     }}
-                                    disabled={applyingTicket}
+                                    disabled={applyingTicket || continuing}
                                 >
-                                    {t("continue") || "CONTINUE"}
+                                    {(applyingTicket || continuing) ? (
+                                        <>
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                            <span>{t("loading") || "Loading..."}</span>
+                                        </>
+                                    ) : (
+                                        <span>{t("continue") || "CONTINUE"}</span>
+                                    )}
                                 </Button>
                             </div>
                         ) : (

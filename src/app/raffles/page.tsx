@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { getCookie } from "cookies-next";
 import Image from "next/image";
@@ -45,8 +45,16 @@ export default function RafflesPage() {
     const t = useTranslations();
     const [loading, setLoading] = useState(true);
     const [raffles, setRaffles] = useState<LegacyRaffleItem[]>([]);
+    const fetchingRafflesRef = useRef(false);
+    const lastFetchedLocaleRef = useRef<string | null>(null);
 
     const fetchRaffles = useCallback(() => {
+        // Prevent duplicate calls
+        if (fetchingRafflesRef.current) {
+            return;
+        }
+
+        fetchingRafflesRef.current = true;
         setLoading(true);
 
         RaffleService.getAllRaffles()
@@ -93,10 +101,19 @@ export default function RafflesPage() {
                 }
                 setRaffles([]); // Set empty array on error
             })
-            .finally(() => setLoading(false));
+            .finally(() => {
+                setLoading(false);
+                fetchingRafflesRef.current = false;
+            });
     }, []);
 
     useEffect(() => {
+        // Prevent duplicate calls for the same locale
+        if (lastFetchedLocaleRef.current === locale && fetchingRafflesRef.current) {
+            return;
+        }
+
+        lastFetchedLocaleRef.current = locale;
         fetchRaffles();
     }, [locale, fetchRaffles]);
 

@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { setCookie } from "cookies-next";
+import { Loader2 } from "lucide-react";
 
 import Header from "@/src/components/layout/Header";
 import Footer from "@/src/components/layout/Footer";
@@ -112,6 +113,12 @@ export default function ShippingAddressPage() {
   const [selectedAddressId, setSelectedAddressId] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [loadingAddresses, setLoadingAddresses] = useState(true);
+  const [continuing, setContinuing] = useState(false);
+
+  // Refs to prevent duplicate API calls
+  const fetchingCartRef = useRef(false);
+  const fetchingAddressesRef = useRef(false);
+  const hasFetchedRef = useRef(false);
 
   const currency = cartData?.currencySymbol || "$";
   const accounting = cartData?.accounting || {};
@@ -133,6 +140,11 @@ export default function ShippingAddressPage() {
   }, [cartData]);
 
   useEffect(() => {
+    // Prevent duplicate calls from React Strict Mode
+    if (hasFetchedRef.current) {
+      return;
+    }
+    hasFetchedRef.current = true;
     fetchAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -143,6 +155,12 @@ export default function ShippingAddressPage() {
   };
 
   const fetchCart = async () => {
+    // Prevent duplicate calls
+    if (fetchingCartRef.current) {
+      return;
+    }
+
+    fetchingCartRef.current = true;
     try {
       const response = await CartService.getCart();
       const data = (response as any)?.data?.data || (response as any)?.data || response;
@@ -169,10 +187,18 @@ export default function ShippingAddressPage() {
       // eslint-disable-next-line no-console
       console.error("Error fetching cart:", err);
       setCartData(null);
+    } finally {
+      fetchingCartRef.current = false;
     }
   };
 
   const fetchAddresses = async () => {
+    // Prevent duplicate calls
+    if (fetchingAddressesRef.current) {
+      return;
+    }
+
+    fetchingAddressesRef.current = true;
     try {
       setLoadingAddresses(true);
       const response = await UserAddressService.getAddresses();
@@ -191,6 +217,7 @@ export default function ShippingAddressPage() {
       setSelectedAddressId("");
     } finally {
       setLoadingAddresses(false);
+      fetchingAddressesRef.current = false;
     }
   };
 
@@ -202,7 +229,9 @@ export default function ShippingAddressPage() {
     setCookie("appyingCheck", "1");
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    if (continuing) return;
+
     if (!selectedAddressId) {
       toast.error(t("selectAddress") || "Please select an address");
       return;
@@ -211,7 +240,18 @@ export default function ShippingAddressPage() {
       toast.error(t("cartEmpty") || "Your cart is empty");
       return;
     }
-    router.push("/secure-checkout");
+
+    setContinuing(true);
+    try {
+      // Refresh cart before proceeding to ensure latest data (only if not already fetching)
+      if (!fetchingCartRef.current) {
+        await fetchCart();
+      }
+      router.push("/secure-checkout");
+    } catch (error) {
+      console.error("Error during continue:", error);
+      setContinuing(false);
+    }
   };
 
   const shippingFee = Number((accounting as any).deliveryFee ?? (accounting as any).shippingFee ?? 0);
@@ -497,12 +537,17 @@ export default function ShippingAddressPage() {
             </div>
             <Button
               onClick={handleContinue}
-              disabled={!selectedAddressId || cartItems.length === 0}
-              variant="primary"
-              size="default"
-              className="w-full sm:w-auto"
+              disabled={!selectedAddressId || cartItems.length === 0 || continuing || loading}
+              className="w-full sm:w-auto bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg uppercase text-sm md:text-base flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {t("continue")}
+              {(continuing || loading) ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>{t("loading") || "Loading..."}</span>
+                </>
+              ) : (
+                <span>{t("continue")}</span>
+              )}
             </Button>
           </div>
         </div>
