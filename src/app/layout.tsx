@@ -38,22 +38,7 @@ export default async function RootLayout({
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#ededed]`}
       >
-        {/* Load Branch SDK */}
-        <Script
-          src="https://cdn.branch.io/branch-latest.min.js"
-          strategy="afterInteractive"
-        />
 
-        {/* Initialize Branch safely */}
-        <Script id="branch-init" strategy="afterInteractive">
-          {`
-            document.addEventListener("DOMContentLoaded", function () {
-              if (window.branch) {
-                window.branch.init("${process.env.NEXT_PUBLIC_BRANCH_KEY}");
-              }
-            });
-          `}
-        </Script>
 
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ClientProviders>

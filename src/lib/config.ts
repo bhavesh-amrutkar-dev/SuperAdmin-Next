@@ -798,6 +798,9 @@ export const gucci = "/images/sales/gucci.png";
 export const adidas = "/images/sales/adidas.png";
 export const fila = "/images/sales/fila.png";
 export const glassBottle = "/images/sales/glassBottle.png";
+
+export const ENABLE_BRANCH_IO = true;
+
 export const handtextoff = "/images/sales/handtextoff.png";
 export const handwithtext = "/images/sales/handwithtext.png";
 export const ladie1 = "/images/sales/ladie1.png";
