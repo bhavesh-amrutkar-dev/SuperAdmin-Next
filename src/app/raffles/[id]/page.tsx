@@ -18,7 +18,8 @@ import ComingSoon from "@/src/components/common/ComingSoon";
 import LoginModal from "@/src/components/modals/LoginModal";
 import FreeTicketConfirmationModal from "@/src/components/modals/FreeTicketConfirmationModal";
 import ApplyTicketConfirmationModal from "@/src/components/modals/ApplyTicketConfirmationModal";
-import { BASE_URL, PRODUCT_CART, STORE_CATEGORY_ID } from "@/src/lib/config";
+import { BASE_URL, PRODUCT_CART, STORE_CATEGORY_ID, ENABLE_BRANCH_IO } from "@/src/lib/config";
+import { createProductDeepLink } from "@/src/lib/services/deeplink";
 import { getCookie } from "cookies-next";
 
 type Ticket = {
@@ -80,7 +81,7 @@ type LegacyRaffleDetail = {
     storeId?: string;
 };
 import CountdownTimer from "@/src/components/CountdownTimer";
-import { createProductDeepLink } from "@/src/lib/services/deeplink";
+// 
 import { toast } from "sonner";
 import { stripHtml } from "@/src/lib/utils/HtmltoText";
 import { Button } from "../../../components/ui/button";
@@ -1192,18 +1193,48 @@ export default function RafflesDetailPage() {
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/^-+|-+$/g, "");
     const handleShare = async () => {
-        if (!lotteryItem) return;
+        console.log("handleShare called");
+        if (!lotteryItem) {
+            console.warn("lotteryItem is null, aborting share");
+            return;
+        }
 
         const displaySlug = slugifyName(displayName || "raffle");
+        let shareUrl = new URL(`raffles/${displaySlug}`, window.location.origin).toString();
 
-        // Absolute URL for Safari
-        const url = new URL(`raffles/${displaySlug}`, window.location.origin);
+        // Append params to the base URL for fallback/current behavior
+        const urlObj = new URL(shareUrl);
+        if (pid) urlObj.searchParams.append("pid", pid);
+        if (lotteryItem.childProductId) urlObj.searchParams.append("cpid", lotteryItem.childProductId);
+        shareUrl = urlObj.toString();
+        console.log("Initial fallback shareUrl:", shareUrl);
 
-        if (pid) url.searchParams.append("pid", pid);
-        if (lotteryItem.childProductId) url.searchParams.append("cpid", lotteryItem.childProductId);
+        console.log("ENABLE_BRANCH_IO:", ENABLE_BRANCH_IO);
+
+        if (ENABLE_BRANCH_IO) {
+            try {
+                setSharing(true);
+                console.log("Calling createProductDeepLink...");
+                const deepLink = await createProductDeepLink({
+                    id: typeof params.id === 'string' ? params.id : Array.isArray(params.id) ? params.id[0] : '',
+                    name: displayName || "Raffle",
+                    description: stripHtml(lotteryItem.description || lotteryItem.detailDesc || ""),
+                    image: displayImage || "",
+                    fallbackUrl: shareUrl
+                });
+                console.log("createProductDeepLink result:", deepLink);
+                if (deepLink) {
+                    shareUrl = deepLink;
+                    console.log("Using Branch Deep Link:", shareUrl);
+                }
+            } catch (error) {
+                console.warn("Error creating deep link:", error);
+            }
+        }
 
         try {
             setSharing(true);
+            console.log("Triggering navigator.share with URL:", shareUrl);
 
             if (navigator.share) {
                 // Mobile native share (Safari iOS works on HTTPS + user gesture)
@@ -1215,21 +1246,23 @@ export default function RafflesDetailPage() {
                         "Check this out on Donrifa!"
                     ),
 
-                    url: url.toString(),
+                    url: shareUrl,
                 });
+                console.log("navigator.share completed");
             } else {
                 // Clipboard fallback with Safari support
                 if (navigator.clipboard && navigator.clipboard.writeText) {
-                    await navigator.clipboard.writeText(url.toString());
+                    await navigator.clipboard.writeText(shareUrl);
                 } else {
                     const textarea = document.createElement("textarea");
-                    textarea.value = url.toString();
+                    textarea.value = shareUrl;
                     document.body.appendChild(textarea);
                     textarea.select();
                     document.execCommand("copy");
                     document.body.removeChild(textarea);
                 }
                 toast.success("Link copied to clipboard!");
+                console.log("Clipboard fallback completed");
             }
         } catch (err) {
             console.warn("Share failed:", err);

@@ -34,7 +34,9 @@ apiClient.interceptors.response.use(
     const status = error?.response?.status;
     const originalRequest = error.config;
 
-    if (status === 401 && !originalRequest._retry) {
+    // Prevent infinite loop: if the failed request was already for guest/signIn, do not retry
+    // Also check if we've already retried to be safe
+    if (status === 401 && !originalRequest._retry && !originalRequest.url?.includes("/guest/signIn")) {
       originalRequest._retry = true;
 
       try {
@@ -47,6 +49,7 @@ apiClient.interceptors.response.use(
 
         return apiClient(originalRequest); // retry request
       } catch {
+        // If re-init fails, redirect to home or handle gracefully
         window.location.replace("/");
       }
     }
