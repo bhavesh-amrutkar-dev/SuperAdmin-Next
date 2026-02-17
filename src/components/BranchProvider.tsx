@@ -3,36 +3,39 @@
 import { useEffect } from 'react'
 import { ENABLE_BRANCH_IO } from '../lib/config'
 
+let branchInitialized = false
+
 export default function BranchProvider() {
   useEffect(() => {
-    if (!ENABLE_BRANCH_IO) return;
-
-    // Check if script already exists to prevent duplicates
-    if (document.getElementById('branch-sdk-script')) {
-      return;
+    if (!ENABLE_BRANCH_IO) {
+      console.log('Branch disabled')
+      return
     }
 
-    const script = document.createElement('script')
-    script.id = 'branch-sdk-script'
-    script.src = 'https://cdn.branch.io/branch-latest.min.js'
-    script.async = true
-    document.head.appendChild(script)
-
-    script.onload = () => {
-      // @ts-ignore
-      if (window.branch) {
-        // @ts-ignore
-        window.branch.init(process.env.NEXT_PUBLIC_BRANCH_KEY)
-      }
+    if (branchInitialized) {
+      console.log('Branch already initialized')
+      return
     }
 
-    // Cleanup: remove script on unmount
-    return () => {
-      const existingScript = document.getElementById('branch-sdk-script');
-      if (existingScript) {
-        document.head.removeChild(existingScript);
-      }
+    const initBranch = async () => {
+      const branch = (await import('branch-sdk')).default
+
+      console.log('Initializing Branch SDK...')
+
+      branch.init(
+        process.env.NEXT_PUBLIC_BRANCH_KEY!,
+        (err: any, data: any) => {
+          if (err) {
+            console.error('Branch init failed', err)
+          } else {
+            console.log('Branch init success', data)
+            branchInitialized = true
+          }
+        }
+      )
     }
+
+    initBranch()
   }, [])
 
   return null
