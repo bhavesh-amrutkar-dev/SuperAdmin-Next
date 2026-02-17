@@ -7,10 +7,6 @@ const withNextIntl = createNextIntlPlugin();
 const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
-
-    // 🔥 Disable image cache
-    minimumCacheTTL: 0,
-
     remotePatterns: [
       { protocol: "https", hostname: "cdn.donrifa.com" },
       { protocol: "https", hostname: "dkzgp10lku01a.cloudfront.net" },
@@ -35,16 +31,8 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: [
           {
-            key: "Cache-Control",
-            value: "no-store, no-cache, must-revalidate, proxy-revalidate",
-          },
-          {
-            key: "Pragma",
-            value: "no-cache",
-          },
-          {
-            key: "Expires",
-            value: "0",
+            key: "X-Frame-Options",
+            value: "DENY",
           },
         ],
       },
