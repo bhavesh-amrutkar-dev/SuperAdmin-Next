@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import type { HomeBanner } from "@/src/models/api/response/home";
 
@@ -28,20 +27,26 @@ export default function HeroSlider({ banners, autoPlay = true }: Props) {
 
   return (
     <section className="w-full">
-      <div className="mx-auto w-full max-w-412">
-        {/* Image container MUST be relative */}
-        <div className="relative h-[40vh] sm:h-[50vh] md:h-[60vh] overflow-hidden">
-          <Image
-            src={banner.imageWeb}
-            alt="Home banner"
-            fill
-            priority={index === 0}
-            sizes="(max-width: 640px) 100vw, 100vw"
-            className="object-cover object-left"
-          />
+      <div className="w-full">
+        <div className="relative h-[45vh] overflow-hidden">
+          <picture>
+            {/* Desktop first in picture source */}
+            <source
+              media="(min-width: 768px)"
+              srcSet={banner.imageWeb}
+            />
+
+            {/* Mobile default */}
+            <img
+              src={banner.imageMobile}
+              alt="Home banner"
+              className="w-full h-full"
+              loading={index === 0 ? "eager" : "lazy"}
+            />
+          </picture>
         </div>
 
-        {/* Dots BELOW image */}
+        {/* Dots */}
         {banners.length > 1 && (
           <div className="flex justify-center gap-3 py-4">
             {banners.map((_, i) => (
@@ -50,9 +55,10 @@ export default function HeroSlider({ banners, autoPlay = true }: Props) {
                 onClick={() => setIndex(i)}
                 aria-label={`Go to slide ${i + 1}`}
                 className={`h-2.5 w-2.5 rounded-full transition-all duration-200
-                  ${i === index
-                    ? "bg-black scale-125"
-                    : "bg-black/30 hover:bg-black/50"
+                  ${
+                    i === index
+                      ? "bg-black scale-125"
+                      : "bg-black/30 hover:bg-black/50"
                   }`}
               />
             ))}

@@ -1,5 +1,7 @@
 'use client'
 
+import { Button } from '@/src/components/ui/button'
+
 export default function BranchTestPage() {
     const generateLink = async () => {
         const branch = (await import('branch-sdk')).default
@@ -25,9 +27,9 @@ export default function BranchTestPage() {
 
     return (
         <div style={{ padding: 40 }}>
-            <button onClick={generateLink}>
+            <Button onClick={generateLink} className='bg-blue-500 text-white hover:cursor-pointer'>
                 Generate Branch Test Link
-            </button>
+            </Button>
         </div>
     )
 }

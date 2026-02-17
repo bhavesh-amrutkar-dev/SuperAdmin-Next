@@ -18,22 +18,30 @@ export default function BranchProvider() {
     }
 
     const initBranch = async () => {
-      const branch = (await import('branch-sdk')).default
+      try {
+        const branch = (await import('branch-sdk')).default
 
-      console.log('Initializing Branch SDK...')
+        console.log('Initializing Branch SDK...')
 
-      branch.init(
-        process.env.NEXT_PUBLIC_BRANCH_KEY!,
-        (err: any, data: any) => {
+        const timeout = setTimeout(() => {
+          console.warn('Branch init timeout')
+        }, 5000)
+
+        branch.init(process.env.NEXT_PUBLIC_BRANCH_KEY!, (err: any, data: any) => {
+          clearTimeout(timeout)
+
           if (err) {
-            console.error('Branch init failed', err)
+            console.warn('Branch init failed', err)
           } else {
             console.log('Branch init success', data)
             branchInitialized = true
           }
-        }
-      )
+        })
+      } catch (error) {
+        console.warn('Branch import failed', error)
+      }
     }
+
 
     initBranch()
   }, [])

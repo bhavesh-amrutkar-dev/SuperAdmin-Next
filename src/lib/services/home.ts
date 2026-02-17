@@ -10,7 +10,7 @@ export const HomeService = {
         storeCategoryId: STORE_CATEGORY_ID,
         requestFrom,
       },
-    });
+    }) as unknown as Promise<HomeApiResponseV2>;
   },
 
   newsletter: (email: string) => {

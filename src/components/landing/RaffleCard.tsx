@@ -20,6 +20,7 @@ export default function RaffleCard({ item, cellType }: RaffleCardProps) {
           fill
           className="object-contain p-3 transition-transform duration-300 ease-in-out hover:scale-105"
           priority={false}
+          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
         />
       </div>
 

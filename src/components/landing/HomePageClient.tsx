@@ -39,18 +39,18 @@ type LegacyRaffleItem = {
 const isObjectId = (id?: string) =>
   typeof id === "string" && /^[a-f0-9]{24}$/i.test(id);
 
-export default function HomePageClient() {
+export default function HomePageClient({ initialBanners = [], initialRaffles }: { initialBanners?: HomeBanner[], initialRaffles?: RaffleSection | null }) {
   const locale = useLocale();
   const t = useTranslations();
   const { ready } = useAuth();
 
   const abortRef = useRef<AbortController | null>(null);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(initialBanners.length === 0);
   const [loadingRaffles, setLoadingRaffles] = useState(false);
 
-  const [banners, setBanners] = useState<HomeBanner[]>([]);
-  const [raffleSection, setRaffleSection] = useState<RaffleSection | null>(null);
+  const [banners, setBanners] = useState<HomeBanner[]>(initialBanners);
+  const [raffleSection, setRaffleSection] = useState<RaffleSection | null>(initialRaffles || null);
   const [countryId, setCountryId] = useState<string | null>(null);
 
   /* -----------------------------
@@ -88,6 +88,13 @@ export default function HomePageClient() {
   useEffect(() => {
     if (!ready) return;
 
+    // If we already have banners (from server), don't fetch again unless needed (e.g., refresh?)
+    // For now, if banners are present, we assume we are good.
+    if (initialBanners.length > 0) {
+      setLoading(false);
+      return;
+    }
+
     let active = true;
 
     (async () => {
@@ -115,6 +122,9 @@ export default function HomePageClient() {
      Fetch Raffles
   ------------------------------ */
   const fetchRaffles = useCallback(async () => {
+    // Skip if we already have raffles from server
+    if (initialRaffles) return;
+
     if (!countryId) return;
 
     if (abortRef.current) {
@@ -200,10 +210,10 @@ export default function HomePageClient() {
   /* -----------------------------
      Render
   ------------------------------ */
-  if (loading) {
+  if (loading && banners.length === 0) {
     return <FullScreenLoader />;
   }
-  
+
 
   return (
     <>
@@ -214,7 +224,7 @@ export default function HomePageClient() {
       {loadingRaffles ? (
         <section className="py-20 text-center text-[#797979]">
 
-         <Loader/>
+          <Loader />
           {/* {t("loading") ?? "Loading..."} */}
         </section>
       ) : raffleSection ? (

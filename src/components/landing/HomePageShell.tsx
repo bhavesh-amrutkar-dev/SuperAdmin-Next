@@ -1,12 +1,17 @@
-// components/landing/HomePageShell.tsx
 import { Suspense } from "react";
 import { FullScreenLoader } from "../fullScreenLoader";
 import HomePageClient from "./HomePageClient";
+import { HomeBanner, RaffleSection } from "@/src/models/api/response/home";
 
-export default function HomePageShell() {
+interface HomePageShellProps {
+  initialBanners?: HomeBanner[];
+  initialRaffles?: RaffleSection | null;
+}
+
+export default function HomePageShell({ initialBanners, initialRaffles }: HomePageShellProps) {
   return (
     <Suspense fallback={<FullScreenLoader />}>
-      <HomePageClient />
+      <HomePageClient initialBanners={initialBanners} initialRaffles={initialRaffles} />
     </Suspense>
   );
 }
