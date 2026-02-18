@@ -21,6 +21,7 @@ import ApplyTicketConfirmationModal from "@/src/components/modals/ApplyTicketCon
 import { BASE_URL, PRODUCT_CART, STORE_CATEGORY_ID, ENABLE_BRANCH_IO } from "@/src/lib/config";
 import { createProductDeepLink } from "@/src/lib/services/deeplink";
 import { getCookie } from "cookies-next";
+import { TICEKT } from "@/src/lib/config";
 
 type Ticket = {
     ticketId?: string;
@@ -1801,14 +1802,16 @@ export default function RafflesDetailPage() {
                                 }}
                                 disabled={participating || applyingTicket || !selectedTicket}
                             >
-                                {participating || applyingTicket ? (
-                                    <>
-                                        <Loader2 size={20} className="animate-spin" />
-                                        <span>{t("processing") || "Processing..."}</span>
-                                    </>
-                                ) : (
-                                    <span>{t("participate") || "PARTICIPATE"}</span>
-                                )}
+                                {
+                                    participating || applyingTicket ? (
+                                        <>
+                                            <Loader2 size={20} className="animate-spin" />
+                                            <span>{t("processing") || "Processing..."}</span>
+                                        </>
+                                    ) : (
+                                        <span>{t("participate") || "PARTICIPATE"}</span>
+                                    )
+                                }
                             </Button>
                         )}
                     </div>
@@ -2055,15 +2058,17 @@ export default function RafflesDetailPage() {
 
 
             {/* Scroll to Top Button */}
-            {showScrollTop && (
-                <button
-                    onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                    className="fixed bottom-8 right-8 w-12 h-12 bg-[#797979] hover:bg-[#5a5a5a] text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 z-50"
-                    aria-label={t("scrollToTop")}
-                >
-                    <ChevronUp size={24} />
-                </button>
-            )}
+            {
+                showScrollTop && (
+                    <button
+                        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                        className="fixed bottom-8 right-8 w-12 h-12 bg-[#797979] hover:bg-[#5a5a5a] text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 z-50"
+                        aria-label={t("scrollToTop")}
+                    >
+                        <ChevronUp size={24} />
+                    </button>
+                )
+            }
 
             {/* Login Modal */}
             <LoginModal
@@ -2076,24 +2081,26 @@ export default function RafflesDetailPage() {
             />
 
             {/* Free Ticket Confirmation Modal */}
-            {lotteryItem && (
-                <FreeTicketConfirmationModal
-                    isOpen={showFreeTicketModal}
-                    onClose={() => {
-                        setShowFreeTicketModal(false);
-                        setPendingFreeTicket(null);
-                        setFreeTicketError(null);
-                    }}
-                    pendingFreeTicket={pendingFreeTicket}
-                    displayName={displayName}
-                    lotteryItem={lotteryItem}
-                    productId={params.id as string}
-                    defaultAddressId={defaultAddressId}
-                    onError={(error) => {
-                        setFreeTicketError(error);
-                    }}
-                />
-            )}
+            {
+                lotteryItem && (
+                    <FreeTicketConfirmationModal
+                        isOpen={showFreeTicketModal}
+                        onClose={() => {
+                            setShowFreeTicketModal(false);
+                            setPendingFreeTicket(null);
+                            setFreeTicketError(null);
+                        }}
+                        pendingFreeTicket={pendingFreeTicket}
+                        displayName={displayName}
+                        lotteryItem={lotteryItem}
+                        productId={params.id as string}
+                        defaultAddressId={defaultAddressId}
+                        onError={(error) => {
+                            setFreeTicketError(error);
+                        }}
+                    />
+                )
+            }
 
             {/* Apply Ticket Confirmation Modal */}
             <ApplyTicketConfirmationModal
@@ -2108,7 +2115,7 @@ export default function RafflesDetailPage() {
 
             <PreFooterIconModule />
             <Footer />
-        </main>
+        </main >
     );
 }
 
