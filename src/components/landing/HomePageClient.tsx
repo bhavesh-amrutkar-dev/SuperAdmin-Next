@@ -231,19 +231,18 @@ export default function HomePageClient({ initialBanners = [], initialRaffles }: 
 
 
 
-      {loadingRaffles ? (
-        <section className="py-20 text-center text-[#797979]">
-
-          <Loader />
-          {/* {t("loading") ?? "Loading..."} */}
-        </section>
-      ) : raffleSection ? (
-        <RaffleSectionLayout
-          section={raffleSection}
-          viewMoreLabel={t("viewMore") ?? "View More"}
-        />
-
-      ) : null}
+      <div className="min-h-150">
+        {loadingRaffles ? (
+          <section className="py-20 text-center text-[#797979] flex flex-col items-center justify-center h-full">
+            <Loader />
+          </section>
+        ) : raffleSection ? (
+          <RaffleSectionLayout
+            section={raffleSection}
+            viewMoreLabel={t("viewMore") ?? "View More"}
+          />
+        ) : null}
+      </div>
 
       <HowItWorksSection />
     </>

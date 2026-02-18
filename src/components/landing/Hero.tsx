@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { HomeBanner } from "@/src/models/api/response/home";
+import Image from "next/image";
 
 type Props = {
   banners: HomeBanner[];
@@ -37,11 +38,14 @@ export default function HeroSlider({ banners, autoPlay = true }: Props) {
             />
 
             {/* Mobile default */}
-            <img
+            <Image
               src={banner.imageMobile}
               alt="Home banner"
               className="w-full h-full"
               loading={index === 0 ? "eager" : "lazy"}
+              fetchPriority={index === 0 ? "high" : "auto"}
+              width={800}
+              height={600}
             />
           </picture>
         </div>
@@ -55,10 +59,9 @@ export default function HeroSlider({ banners, autoPlay = true }: Props) {
                 onClick={() => setIndex(i)}
                 aria-label={`Go to slide ${i + 1}`}
                 className={`h-2.5 w-2.5 rounded-full transition-all duration-200
-                  ${
-                    i === index
-                      ? "bg-black scale-125"
-                      : "bg-black/30 hover:bg-black/50"
+                  ${i === index
+                    ? "bg-black scale-125"
+                    : "bg-black/30 hover:bg-black/50"
                   }`}
               />
             ))}

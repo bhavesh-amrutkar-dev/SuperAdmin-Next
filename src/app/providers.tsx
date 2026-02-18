@@ -3,19 +3,25 @@
 
 import { AuthProvider } from "@/src/context/authContext";
 import { Toaster } from "sonner";
-import CountryGuard from "./CountryGaurd";
+// import CountryGuard from "./CountryGaurd";
+import { CountryProvider } from "@/src/context/countryContext";
+import { CountryApiItem } from "@/src/lib/services/country";
 
 export default function ClientProviders({
   children,
+  countries,
 }: {
   children: React.ReactNode;
+  countries: CountryApiItem[];
 }) {
   return (
     <AuthProvider>
-      {/* <CountryGuard> */}
+      <CountryProvider countries={countries}>
+        {/* <CountryGuard> */}
         <Toaster position="top-center" richColors closeButton />
         {children}
-      {/* </CountryGuard> */}
+        {/* </CountryGuard> */}
+      </CountryProvider>
     </AuthProvider>
   );
 }
