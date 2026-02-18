@@ -121,9 +121,14 @@ export default function HomePageClient({ initialBanners = [], initialRaffles }: 
   /* -----------------------------
      Fetch Raffles
   ------------------------------ */
+  const isFirstRender = useRef(true);
+
   const fetchRaffles = useCallback(async () => {
-    // Skip if we already have raffles from server
-    if (initialRaffles) return;
+    // Prevent double-fetching on mount if server data exists
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      if (initialRaffles) return;
+    }
 
     if (!countryId) return;
 
@@ -175,6 +180,8 @@ export default function HomePageClient({ initialBanners = [], initialRaffles }: 
         })
         .filter(Boolean) as RaffleItem[];
 
+      // Always update the section if we fetched new data
+      // (Even if empty, we might want to show "No raffles found")
       if (raffleItems.length > 0) {
         setRaffleSection({
           id: "all-raffles",
@@ -183,6 +190,9 @@ export default function HomePageClient({ initialBanners = [], initialRaffles }: 
           cellType: 1,
           items: raffleItems,
         });
+      } else {
+        // Optional: Set to empty or handle "no items" state
+        setRaffleSection(null);
       }
 
     } catch (err: any) {
@@ -192,7 +202,7 @@ export default function HomePageClient({ initialBanners = [], initialRaffles }: 
     } finally {
       setLoadingRaffles(false);
     }
-  }, [countryId, t]);
+  }, [countryId, t, initialRaffles]);
 
   /* -----------------------------
      Trigger Raffle Fetch
