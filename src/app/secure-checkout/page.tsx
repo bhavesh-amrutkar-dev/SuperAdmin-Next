@@ -153,6 +153,8 @@ export default function SecureCheckoutPage() {
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [manualPaymentConfirmed, setManualPaymentConfirmed] = useState(false);
   const [showComingSoonModal, setShowComingSoonModal] = useState(false);
+  const [athResponses, setAthResponses] = useState<string[]>([]);
+  const [isLoadingAth, setIsLoadingAth] = useState(false);
 
   const currency = cartData?.currencySymbol || "$";
   const accounting = cartData?.accounting || {};
@@ -285,6 +287,46 @@ export default function SecureCheckoutPage() {
       setAddresses([]);
     }
   };
+  const addAthResponse = (res: any) => {
+    setAthResponses((prev) => [...prev, typeof res === "string" ? res : JSON.stringify(res)]);
+  };
+  const cancelATHM = async () => {
+    try {
+      const responseCancel = await (window as any).findPaymentATHM?.();
+      if (!responseCancel) {
+        addAthResponse("Payment cancelled (no response).");
+        return;
+      }
+      addAthResponse(responseCancel);
+    } catch (err) {
+      console.error(err);
+      addAthResponse("Error cancelling payment");
+    }
+  };
+
+  const authorizationATHM = async () => {
+    try {
+      const responseAuth = await (window as any).authorization?.();
+      addAthResponse(responseAuth);
+
+      if (responseAuth?.ecommerceStatus === "COMPLETED") {
+        router.push("/thank-you?payment=athmovil");
+      }
+    } catch (err) {
+      console.error(err);
+      addAthResponse("Error authorizing payment");
+    }
+  };
+
+  const expiredATHM = async () => {
+    try {
+      const responseExpired = await (window as any).findPaymentATHM?.();
+      addAthResponse(responseExpired);
+    } catch (err) {
+      console.error(err);
+      addAthResponse("Error: payment expired");
+    }
+  };
 
   const handleEditShipping = () => {
     router.push("/shipping-address");
@@ -304,6 +346,120 @@ export default function SecureCheckoutPage() {
       return "0.0.0.0";
     }
   };
+  const handleAuthMovil = async () => {
+    try {
+      if (!selectedAddress) return;
+
+      setPlacingOrder(true);
+
+      // 1️⃣ Get fresh cart
+      const freshCartResponse = await CartService.getCart();
+      const freshCartData =
+        (freshCartResponse as any)?.data?.data ||
+        (freshCartResponse as any)?.data ||
+        freshCartResponse;
+
+      const cartId =
+        (freshCartData as any)?._id ||
+        (freshCartData as any)?.cartId;
+
+      if (!cartId) {
+        throw new Error("Cart ID not found");
+      }
+
+      const addressId =
+        selectedAddress?._id ||
+        (getCookie("addressid") as string) ||
+        "";
+
+      const billingAddressId = addressId; // adjust if different
+      const uid = getCookie("uid") as string;
+      const latitude = (getCookie("lat") as string) || "0";
+      const longitude = (getCookie("long") as string) || "0";
+      const ipAddress = await getMyIP();
+      const orderImages: string[] = [];
+      // 👇 Use SAME values you use in normal order flow
+      const orderPayload = {
+        cartId: cartId,
+        addressId: addressId,
+        billingAddressId: billingAddressId,
+        coupon: "",
+        promoId: "",
+        discount: 0,
+        latitude: latitude,
+        longitude: longitude,
+        ipAddress: ipAddress,
+        storeType: 8,
+        delivery: [],
+        orderType: 2,
+        extraNote: "",
+        tip: 0,
+        orderImages: orderImages,
+        onlinePaymentMethod: 2, // 👈 ATH
+        payByRewardWallet: false,
+        cardId: "",
+        paymentType: 1,
+        payByWallet: false,
+        userId: (uid as string) || "1",
+      };
+
+      // 2️⃣ Create order
+      const response = await OrderService.placeOrder(orderPayload);
+
+      const createdOrder =
+        (response as any)?.data?.data ||
+        (response as any)?.data;
+
+      if (!createdOrder?.orderId) {
+        throw new Error("Order creation failed");
+      }
+
+      const orderId = createdOrder.orderId;
+
+      // 3️⃣ Configure ATH
+      (window as any).ATHM_Checkout = {
+        env: "production",
+        publicToken: process.env.NEXT_PUBLIC_ATH_PUBLIC_TOKEN,
+        ecommerceId: orderId,
+        total: grandTotal,
+        tax: 0,
+        subtotal: grandTotal,
+        callbackUrl: `${process.env.NEXT_PUBLIC_APP_WEBSITE}/thank-you`,
+        cancelUrl: `${process.env.NEXT_PUBLIC_APP_WEBSITE}/secure-checkout`,
+
+        onCompletedPayment: async () => {
+          await OrderService.orderStatusUpdate({
+            orderId,
+            statusId: 2, // Paid
+          });
+
+          router.push("/thank-you?payment=athmovil");
+        },
+
+        onCancelledPayment: async () => {
+          await OrderService.orderStatusUpdate({
+            orderId,
+            statusId: 5, // Cancelled
+          });
+
+          setPlacingOrder(false);
+        },
+      };
+
+      // 4️⃣ Load SDK
+      if (!document.getElementById("athmovil-sdk")) {
+        const script = document.createElement("script");
+        script.src = "https://payments.athmovil.com/api/js/athmovil_base.js";
+        script.id = "athmovil-sdk";
+        document.body.appendChild(script);
+      }
+
+    } catch (error) {
+      console.error("ATH error:", error);
+      setPlacingOrder(false);
+    }
+  };
+
 
   const handlePlaceOrder = async () => {
     if (!selectedAddress || !cartData) {
@@ -312,9 +468,10 @@ export default function SecureCheckoutPage() {
 
     // Show coming soon modal only for ATH Móvil
     if (paymentMethod === "athMovil") {
-      setShowComingSoonModal(true);
+      handleAuthMovil();
       return;
     }
+
 
     // Validate manual payment
     if (paymentMethod === "manual") {
@@ -699,12 +856,7 @@ export default function SecureCheckoutPage() {
       <div className="min-h-screen bg-[#ededed]">
         <Header />
         <div className="flex items-center justify-center min-h-[60vh]">
-          {/* <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D4AF37] mx-auto"></div>
-            <p className="mt-4 text-gray-600">{t("loading") || "Loading..."}</p>
-          </div> */}
-
-          <Loader/>
+          <Loader />
         </div>
         <Footer />
       </div>
@@ -845,110 +997,94 @@ export default function SecureCheckoutPage() {
               </div>
               <div className="p-3 sm:p-4 md:p-6">
                 {/* Payment Options */}
+                {/* Payment Options */}
                 <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
-                  {/* ATH Móvil button hidden */}
-                  <label className="hidden flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="athMovil"
-                      checked={paymentMethod === "athMovil"}
-                      onChange={(e) => handlePaymentMethodChange(e.target.value)}
-                      disabled={grandTotal <= 0}
-                      className="sr-only"
-                    />
-                    <div
-                      className={`px-3 sm:px-4 py-2 border-2 rounded-lg transition-all ${paymentMethod === "athMovil"
-                        ? "border-[#D4AF37] border-dashed bg-yellow-50"
-                        : "border-gray-300 hover:border-gray-400"
-                        } ${(grandTotal <= 0) ? "opacity-50 cursor-not-allowed" : ""}`}
-                    >
-                      <span className="text-xs sm:text-sm text-gray-800 font-medium">{t("payWithATHMovil")}</span>
-                    </div>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="creditCard"
-                      checked={paymentMethod === "creditCard"}
-                      onChange={(e) => handlePaymentMethodChange(e.target.value)}
-                      disabled={grandTotal <= 0}
-                      className="w-4 h-4 sm:w-5 sm:h-5 text-[#D4AF37] border-gray-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-                    />
-                    <div
-                      className={`px-3 sm:px-4 py-2 border-2 rounded-lg transition-all flex-1 ${paymentMethod === "creditCard"
-                        ? "border-[#D4AF37] border-dashed bg-yellow-50"
-                        : "border-gray-300 hover:border-gray-400"
-                        } ${(grandTotal <= 0) ? "opacity-50 cursor-not-allowed" : ""}`}
-                    >
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
-                        <span className="text-xs sm:text-sm text-gray-800 font-medium">{t("payWithCreditCard")}</span>
-                        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                          <Image
-                            src="/images/Profile_new/visa.svg"
-                            alt="VISA"
-                            width={40}
-                            height={25}
-                            className="h-4 sm:h-5 w-auto object-contain"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                          <Image
-                            src="/images/Profile_new/mastercard.svg"
-                            alt="Mastercard"
-                            width={40}
-                            height={25}
-                            className="h-4 sm:h-5 w-auto object-contain"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                          <Image
-                            src="/images/Profile_new/ath.jpg"
-                            alt="ATH"
-                            width={40}
-                            height={25}
-                            className="h-4 sm:h-5 w-auto object-contain"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                          <Image
-                            src="/images/Profile_new/amex.jpg"
-                            alt="AMEX"
-                            width={40}
-                            height={25}
-                            className="h-4 sm:h-5 w-auto object-contain"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
+                  {[
+                    {
+                      value: "athMovil",
+                      label: t("payWithATHMovil"),
+                    },
+                    {
+                      value: "creditCard",
+                      label: t("payWithCreditCard"),
+                      icons: true,
+                    },
+                    {
+                      value: "manual",
+                      label: t("manualPaymentMethods"),
+                    },
+                  ].map((method) => {
+                    const isSelected = paymentMethod === method.value;
+                    const isDisabled = grandTotal <= 0;
+
+                    return (
+                      <label
+                        key={method.value}
+                        className={`relative flex-1 min-w-[180px] cursor-pointer`}
+                      >
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value={method.value}
+                          checked={isSelected}
+                          onChange={(e) =>
+                            method.value === "manual"
+                              ? handleManualPaymentSelect()
+                              : handlePaymentMethodChange(e.target.value)
+                          }
+                          disabled={isDisabled}
+                          className="sr-only"
+                        />
+
+                        <div
+                          className={`px-3 sm:px-4 py-3 border-2 rounded-lg transition-all 
+            ${isSelected
+                              ? "border-[#D4AF37] border-dashed bg-yellow-50"
+                              : "border-gray-300 hover:border-gray-400"
+                            }
+            ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+          `}
+                        >
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                            <span className="text-xs sm:text-sm text-gray-800 font-medium">
+                              {method.label}
+                            </span>
+
+                            {method.icons && (
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Image src="/images/Profile_new/visa.svg" alt="VISA" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
+                                <Image src="/images/Profile_new/mastercard.svg" alt="Mastercard" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
+                                <Image src="/images/Profile_new/ath.jpg" alt="ATH" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
+                                <Image src="/images/Profile_new/amex.jpg" alt="AMEX" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="manual"
-                      checked={paymentMethod === "manual"}
-                      onChange={handleManualPaymentSelect}
-                      disabled={grandTotal <= 0}
-                      className="w-4 h-4 sm:w-5 sm:h-5 text-[#D4AF37] border-gray-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-                    />
-                    <div
-                      className={`px-3 sm:px-4 py-2 border-2 rounded-lg transition-all flex-1 ${paymentMethod === "manual"
-                        ? "border-[#D4AF37] border-dashed bg-yellow-50"
-                        : "border-gray-300 hover:border-gray-400"
-                        } ${(grandTotal <= 0) ? "opacity-50 cursor-not-allowed" : ""}`}
-                    >
-                      <span className="text-xs sm:text-sm text-gray-800 font-medium">{t("manualPaymentMethods")}</span>
-                    </div>
-                  </label>
+                      </label>
+                    );
+                  })}
                 </div>
+
+                {paymentMethod === "athMovil" && (
+                  <div className="mt-6">
+                    <div className="ATH_Movil">
+                      <div id="ATHMovil_Checkout_Button_payment" />
+                    </div>
+
+                    {/* Optional Debug Panel */}
+                    {athResponses.length > 0 && (
+                      <div className="mt-4 bg-gray-100 p-3 rounded text-xs max-h-40 overflow-y-auto">
+                        {athResponses.map((res, idx) => (
+                          <div key={idx} className="mb-1 break-all">
+                            {res}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+
               </div>
             </div>
 
