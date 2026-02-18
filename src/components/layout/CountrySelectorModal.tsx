@@ -9,6 +9,7 @@ import {
 } from "react";
 import { getCookie, setCookie } from "cookies-next";
 import { useTranslations } from "next-intl";
+import { useCountry } from "@/src/context/countryContext";
 
 import {
   COUNTRY,
@@ -121,8 +122,11 @@ export default function CountrySelectorModal({
   const [loading, setLoading] = useState(false);
 
   /* ------------------ */
-  /* Fetch Countries (Cached) */
+  /* Fetch Countries (Context) */
   /* ------------------ */
+
+  // Use context data instead of fetching
+  const { countries: contextCountries } = useCountry();
 
   useEffect(() => {
     if (!open) return;
@@ -133,6 +137,17 @@ export default function CountrySelectorModal({
 
     setSelectedCode(existingCode);
 
+    // Hydrate from context immediately
+    if (contextCountries && contextCountries.length > 0) {
+      setCountries(contextCountries.map((c) => ({
+        id: c._id,
+        code: c.countryCode,
+        name: c.countryName,
+      })));
+      return;
+    }
+
+    // Fallback to fetch if context is empty (shouldn't happen if server fetch works)
     if (countriesCache) {
       setCountries(countriesCache);
       return;
@@ -162,7 +177,7 @@ export default function CountrySelectorModal({
     countriesPromise.then((data) => {
       setCountries(data);
     });
-  }, [open]);
+  }, [open, contextCountries]);
 
   /* ------------------ */
   /* Memoized Handlers */
@@ -185,12 +200,12 @@ export default function CountrySelectorModal({
     setCookie(COUNTRY, selected.name || DEFAULT_COUNTRY, cookieOptions);
     setCookie("C_id", selected.id, cookieOptions);
 
-    try {
-      window.localStorage.setItem("C_code", selected.code);
-      window.dispatchEvent(
-        new CustomEvent("countryChanged", { detail: selected })
-      );
-    } catch { }
+    // try {
+    //   window.localStorage.setItem("C_code", selected.code);
+    //   window.dispatchEvent(
+    //     new CustomEvent("countryChanged", { detail: selected })
+    //   );
+    // } catch { }
 
     onCountryChange?.(selected);
     onClose();
@@ -242,14 +257,6 @@ export default function CountrySelectorModal({
         </div>
 
         <DialogFooter className="mt-6 gap-3 sm:mt-8">
-          {/* <Button
-            variant="outline"
-            onClick={onClose}
-            className="w-full sm:w-auto"
-          >
-            {t("countryModalCancel")}
-          </Button> */}
-
           <Button
             variant="primary"
             disabled={!selectedCode}
