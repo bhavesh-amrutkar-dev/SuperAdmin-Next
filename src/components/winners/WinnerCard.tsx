@@ -57,10 +57,10 @@ export default function WinnerCard({ item, customDrawDate }: WinnerCardProps) {
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     />
                     {/* Winner Badge/Overlay if needed */}
-                    <div className="absolute top-3 left-3 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-md uppercase tracking-wide shadow-sm flex items-center gap-1">
+                    {/* <div className="absolute top-3 left-3 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-md uppercase tracking-wide shadow-sm flex items-center gap-1">
                         <Image src={WINNER} alt="Winner" width={12} height={12} />
                         {t("winner")}
-                    </div>
+                    </div> */}
                 </div>
 
                 {/* Content Section */}

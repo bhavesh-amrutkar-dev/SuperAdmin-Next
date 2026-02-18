@@ -22,7 +22,7 @@ export default async function Winners() {
     try {
         const response = await WinnerServiceServer.getWinnersServer();
         if (response && response.data) {
-            winners = response.data;
+            winners = response.data.sort((a, b) => (b.drawDateTimeStemp || 0) - (a.drawDateTimeStemp || 0));
         }
     } catch (error) {
         console.error("Failed to fetch winners:", error);
@@ -33,10 +33,25 @@ export default async function Winners() {
             <Header />
             <div className="flex-grow pb-20">
                 {/* Header Section */}
-                <div className="bg-white border-b border-gray-200">
-                    <div className="container mx-auto px-4 py-8 md:py-12">
-                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">{t("winnersCircle")}</h1>
-                        <p className="text-gray-600 text-lg">{t("meetLuckyWinners")}</p>
+                {/* Header Section */}
+                <div className="bg-gray-900 text-white relative overflow-hidden">
+                    {/* Decorative background elements */}
+                    <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
+                        <div className="absolute top-[-50%] left-[-10%] w-[50%] h-[200%] bg-white/5 rotate-12 blur-3xl rounded-full" />
+                        <div className="absolute bottom-[-50%] right-[-10%] w-[50%] h-[200%] bg-yellow-400/10 rotate-12 blur-3xl rounded-full" />
+                    </div>
+
+                    <div className="container mx-auto px-4 py-16 md:py-20 relative z-10 text-center">
+                        <div className="inline-flex items-center justify-center p-3 bg-white/10 backdrop-blur-sm rounded-full mb-6 ring-1 ring-white/20">
+                            <Image src={WINNER} alt="Winner" width={24} height={24} className="w-6 h-6" />
+                        </div>
+                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4 tracking-tight">
+                            {t("winnersCircle")}
+                            <span className="text-yellow-400">.</span>
+                        </h1>
+                        <p className="text-gray-300 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
+                            {t("meetLuckyWinners")}
+                        </p>
                     </div>
                 </div>
 
