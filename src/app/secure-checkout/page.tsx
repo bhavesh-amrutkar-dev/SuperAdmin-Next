@@ -347,23 +347,37 @@ export default function SecureCheckoutPage() {
     }
   };
   const handleAuthMovil = async () => {
+    console.log("🚀 ATH FLOW STARTED");
+
     try {
-      if (!selectedAddress) return;
+      if (!selectedAddress) {
+        console.warn("❌ No selectedAddress");
+        return;
+      }
 
       setPlacingOrder(true);
+      console.log("🟡 Placing order started");
 
-      // 1️⃣ Get fresh cart
+      // 1️⃣ Refresh cart
+      console.log("🟡 Fetching cart...");
       const freshCartResponse = await CartService.getCart();
+      console.log("🟢 Cart response:", freshCartResponse);
+
       const freshCartData =
         (freshCartResponse as any)?.data?.data ||
         (freshCartResponse as any)?.data ||
         freshCartResponse;
 
+      console.log("🟢 Parsed cart data:", freshCartData);
+
       const cartId =
         (freshCartData as any)?._id ||
         (freshCartData as any)?.cartId;
 
+      console.log("🟢 Cart ID:", cartId);
+
       if (!cartId) {
+        console.error("❌ Cart ID not found");
         throw new Error("Cart ID not found");
       }
 
@@ -372,93 +386,173 @@ export default function SecureCheckoutPage() {
         (getCookie("addressid") as string) ||
         "";
 
-      const billingAddressId = addressId; // adjust if different
       const uid = getCookie("uid") as string;
       const latitude = (getCookie("lat") as string) || "0";
       const longitude = (getCookie("long") as string) || "0";
       const ipAddress = await getMyIP();
-      const orderImages: string[] = [];
-      // 👇 Use SAME values you use in normal order flow
+
+      console.log("🟢 User + Location:", {
+        uid,
+        latitude,
+        longitude,
+        ipAddress,
+      });
+
       const orderPayload = {
-        cartId: cartId,
-        addressId: addressId,
-        billingAddressId: billingAddressId,
+        cartId,
+        addressId,
+        billingAddressId: addressId,
         coupon: "",
         promoId: "",
         discount: 0,
-        latitude: latitude,
-        longitude: longitude,
-        ipAddress: ipAddress,
+        latitude,
+        longitude,
+        ipAddress,
         storeType: 8,
         delivery: [],
         orderType: 2,
         extraNote: "",
         tip: 0,
-        orderImages: orderImages,
-        onlinePaymentMethod: 2, // 👈 ATH
+        orderImages: [],
+        onlinePaymentMethod: 2,
         payByRewardWallet: false,
         cardId: "",
         paymentType: 1,
         payByWallet: false,
-        userId: (uid as string) || "1",
+        userId: uid || "1",
       };
+
+      console.log("🟡 Creating order with payload:", orderPayload);
 
       // 2️⃣ Create order
       const response = await OrderService.placeOrder(orderPayload);
+      console.log("🟢 Order API raw response:", response);
 
       const createdOrder =
         (response as any)?.data?.data ||
         (response as any)?.data;
 
+      console.log("🟢 Parsed order:", createdOrder);
+
       if (!createdOrder?.orderId) {
+        console.error("❌ Order ID missing");
         throw new Error("Order creation failed");
       }
 
       const orderId = createdOrder.orderId;
+      console.log("✅ Order created:", orderId);
 
-      // 3️⃣ Configure ATH
-      (window as any).ATHM_Checkout = {
-        env: "production",
-        publicToken: process.env.NEXT_PUBLIC_ATH_PUBLIC_TOKEN,
-        ecommerceId: orderId,
-        total: grandTotal,
-        tax: 0,
-        subtotal: grandTotal,
-        callbackUrl: `${process.env.NEXT_PUBLIC_APP_WEBSITE}/thank-you`,
-        cancelUrl: `${process.env.NEXT_PUBLIC_APP_WEBSITE}/secure-checkout`,
+      // 3️⃣ GET TOKEN
+      console.log("🟡 Fetching ATH public token...");
+      const tokenResponse = await PaymentService.ATHMovileToken();
+      console.log("🟢 Token API response:", tokenResponse);
 
-        onCompletedPayment: async () => {
-          await OrderService.orderStatusUpdate({
-            orderId,
-            statusId: 2, // Paid
-          });
+      const publicToken =
+        (tokenResponse as any)?.data?.data?.publicToken ||
+        (tokenResponse as any)?.data?.publicToken;
 
-          router.push("/thank-you?payment=athmovil");
-        },
+      console.log("🟢 Extracted public token:", publicToken);
 
-        onCancelledPayment: async () => {
-          await OrderService.orderStatusUpdate({
-            orderId,
-            statusId: 5, // Cancelled
-          });
-
-          setPlacingOrder(false);
-        },
-      };
-
-      // 4️⃣ Load SDK
-      if (!document.getElementById("athmovil-sdk")) {
-        const script = document.createElement("script");
-        script.src = "https://payments.athmovil.com/api/js/athmovil_base.js";
-        script.id = "athmovil-sdk";
-        document.body.appendChild(script);
+      if (!publicToken) {
+        console.error("❌ Public token missing");
+        throw new Error("ATH Public Token not received");
       }
 
+      // 4️⃣ Callbacks
+      console.log("🟡 Attaching global callbacks...");
+
+      (window as any).authorizationATHM = async () => {
+        console.log("✅ PAYMENT COMPLETED CALLBACK FIRED");
+        await OrderService.orderStatusUpdate({
+          orderId,
+          statusId: 2,
+        });
+        router.push("/thank-you?payment=athmovil");
+      };
+
+      (window as any).cancelATHM = async () => {
+        console.log("⚠️ PAYMENT CANCELLED CALLBACK FIRED");
+        await OrderService.orderStatusUpdate({
+          orderId,
+          statusId: 5,
+        });
+        setPlacingOrder(false);
+      };
+
+      (window as any).expiredATHM = async () => {
+        console.log("⏳ PAYMENT EXPIRED CALLBACK FIRED");
+        await OrderService.orderStatusUpdate({
+          orderId,
+          statusId: 5,
+        });
+        setPlacingOrder(false);
+      };
+
+      console.log("🟢 Callbacks attached");
+
+      // 5️⃣ Configure ATH
+      (window as any).ATHM_Checkout = {
+        env: "production",
+        publicToken,
+        timeout: 600,
+        theme: "btn",
+        lang: "en",
+        total: Number(grandTotal),
+        subtotal: Number(grandTotal),
+        tax: 0,
+        ecommerceId: orderId,
+        metadata1: orderId,
+        metadata2: uid,
+        phoneNumber: "",
+      };
+
+      console.log("🟢 ATH CONFIG READY:", (window as any).ATHM_Checkout);
+      console.log("🟢 grandTotal:", grandTotal);
+
+      // 6️⃣ Check container
+      const container = document.getElementById(
+        "ATHMovil_Checkout_Button_payment"
+      );
+
+      console.log("🟡 Checking container...");
+      console.log("Container element:", container);
+
+      if (!container) {
+        console.error("❌ ATH container missing in DOM");
+        return;
+      }
+
+      // Remove old script
+      const oldScript = document.getElementById("athmovil-sdk");
+      if (oldScript) {
+        console.log("🟡 Removing old SDK script");
+        oldScript.remove();
+      }
+
+      console.log("🟡 Loading ATH SDK...");
+
+      const script = document.createElement("script");
+      script.src =
+        "https://payments.athmovil.com/api/modal/js/athmovil_base.js";
+      script.id = "athmovil-sdk";
+
+      script.onload = () => {
+        console.log("✅ ATH SDK LOADED SUCCESSFULLY");
+        console.log("window.ATHM_Checkout now:", (window as any).ATHM_Checkout);
+      };
+
+      script.onerror = (err) => {
+        console.error("❌ ATH SDK FAILED TO LOAD", err);
+      };
+
+      document.body.appendChild(script);
+
     } catch (error) {
-      console.error("ATH error:", error);
+      console.error("🔥 ATH FLOW ERROR:", error);
       setPlacingOrder(false);
     }
   };
+
 
 
   const handlePlaceOrder = async () => {
@@ -996,7 +1090,6 @@ export default function SecureCheckoutPage() {
                 <h2 className="text-xs sm:text-sm font-bold text-gray-800 uppercase">{t("paymentMethod")}</h2>
               </div>
               <div className="p-3 sm:p-4 md:p-6">
-                {/* Payment Options */}
                 {/* Payment Options */}
                 <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
                   {[
