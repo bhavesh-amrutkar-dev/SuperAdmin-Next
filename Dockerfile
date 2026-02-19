@@ -5,7 +5,7 @@ FROM 767417401669.dkr.ecr.us-east-1.amazonaws.com/donrifa-stage/landing-page:nod
 WORKDIR /app
 
 # Set environment variables
-ENV NODE_ENV=development
+ENV NODE_ENV=stage
 ENV PORT=6060
 
 # Copy package files and install dependencies 
