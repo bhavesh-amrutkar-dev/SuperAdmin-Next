@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
@@ -121,14 +122,9 @@ export default function HomePageClient({ initialBanners = [], initialRaffles }: 
   /* -----------------------------
      Fetch Raffles
   ------------------------------ */
-  const isFirstRender = useRef(true);
-
   const fetchRaffles = useCallback(async () => {
-    // Prevent double-fetching on mount if server data exists
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      if (initialRaffles) return;
-    }
+    // Skip if we already have raffles from server
+    if (initialRaffles) return;
 
     if (!countryId) return;
 
@@ -180,8 +176,6 @@ export default function HomePageClient({ initialBanners = [], initialRaffles }: 
         })
         .filter(Boolean) as RaffleItem[];
 
-      // Always update the section if we fetched new data
-      // (Even if empty, we might want to show "No raffles found")
       if (raffleItems.length > 0) {
         setRaffleSection({
           id: "all-raffles",
@@ -190,9 +184,6 @@ export default function HomePageClient({ initialBanners = [], initialRaffles }: 
           cellType: 1,
           items: raffleItems,
         });
-      } else {
-        // Optional: Set to empty or handle "no items" state
-        setRaffleSection(null);
       }
 
     } catch (err: any) {
@@ -202,7 +193,7 @@ export default function HomePageClient({ initialBanners = [], initialRaffles }: 
     } finally {
       setLoadingRaffles(false);
     }
-  }, [countryId, t, initialRaffles]);
+  }, [countryId, t]);
 
   /* -----------------------------
      Trigger Raffle Fetch
@@ -231,18 +222,19 @@ export default function HomePageClient({ initialBanners = [], initialRaffles }: 
 
 
 
-      <div className="min-h-150">
-        {loadingRaffles ? (
-          <section className="py-20 text-center text-[#797979] flex flex-col items-center justify-center h-full">
-            <Loader />
-          </section>
-        ) : raffleSection ? (
-          <RaffleSectionLayout
-            section={raffleSection}
-            viewMoreLabel={t("viewMore") ?? "View More"}
-          />
-        ) : null}
-      </div>
+      {loadingRaffles ? (
+        <section className="py-20 text-center text-[#797979]">
+
+          <Loader />
+          {/* {t("loading") ?? "Loading..."} */}
+        </section>
+      ) : raffleSection ? (
+        <RaffleSectionLayout
+          section={raffleSection}
+          viewMoreLabel={t("viewMore") ?? "View More"}
+        />
+
+      ) : null}
 
       <HowItWorksSection />
     </>
