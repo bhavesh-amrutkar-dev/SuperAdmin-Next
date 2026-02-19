@@ -183,6 +183,14 @@ export default function SecureCheckoutPage() {
     fetchAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://payments.athmovil.com/api/js/athmovil_base.js";
+    script.async = true;
+    script.id = "athmovil-sdk";
+
+    document.head.appendChild(script);
+  }, []);
 
   useEffect(() => {
     // Get selected address from cookie
@@ -355,7 +363,8 @@ export default function SecureCheckoutPage() {
 
     await OrderService.orderStatusUpdate({
       orderId: athOrderId,
-      statusId: 2,
+      paymentMethod: 10
+      // statusId: 2,
     });
 
     router.push("/thank-you?payment=athmovil");
@@ -366,7 +375,8 @@ export default function SecureCheckoutPage() {
 
     await OrderService.orderStatusUpdate({
       orderId: athOrderId,
-      statusId: 5,
+      paymentMethod: 10
+      // statusId: 5,
     });
 
     setPlacingOrder(false);
@@ -378,18 +388,17 @@ export default function SecureCheckoutPage() {
       if (!selectedAddress) return;
 
       setPlacingOrder(true);
-      const freshCartResponse = await CartService.getCart();
+      // const freshCartResponse = await CartService.getCart();
 
-      const freshCartData =
-        (freshCartResponse as any)?.data?.data ||
-        (freshCartResponse as any)?.data ||
-        freshCartResponse;
+      // const freshCartData =
+      //   (freshCartResponse as any)?.data?.data ||
+      //   (freshCartResponse as any)?.data ||
+      //   freshCartResponse;
 
-      const cartId =
-        (freshCartData as any)?._id ||
-        (freshCartData as any)?.cartId;
-
-
+      // const cartId =
+      //   (freshCartData as any)?._id ||
+      //   (freshCartData as any)?.cartId;
+      const cartId = (cartData as any)?._id;
       if (!cartId) {
         console.error("❌ Cart ID not found");
         throw new Error("Cart ID not found");
@@ -467,8 +476,6 @@ export default function SecureCheckoutPage() {
       setPlacingOrder(false);
     }
   };
-
-
 
   const handlePlaceOrder = async () => {
     if (!selectedAddress || !cartData) {
@@ -776,7 +783,7 @@ export default function SecureCheckoutPage() {
     setConvertedAmount(null);
   };
 
-  const handlePaymentMethodChange = (method: string) => {
+  const handlePaymentMethodChange = async (method: string) => {
     setPaymentMethod(method);
     if (method !== "manual") {
       setShowBankDetails(false);
@@ -787,6 +794,21 @@ export default function SecureCheckoutPage() {
       setConvertedAmount(null);
     } else {
       setShowBankDetails(true);
+    }
+
+    if (method === "athMovil") {
+      try {
+        const tokenResponse = await PaymentService.ATHMovileToken();
+        const publicToken =
+          (tokenResponse as any)?.data?.data?.publicToken ||
+          (tokenResponse as any)?.data?.publicToken;
+
+        if (publicToken) {
+          setAthToken(publicToken);
+        }
+      } catch (err) {
+        console.error("Token preload failed", err);
+      }
     }
   };
 
@@ -1433,16 +1455,7 @@ export default function SecureCheckoutPage() {
         onClose={() => setShowComingSoonModal(false)}
         paymentMethod={paymentMethod}
       />
-      {/* {isAthReady && athToken && athOrderId && (
-        <AthMovilPayment
-          total={orderTotal || grandTotal}
-          publicToken={athToken}
-          orderId={athOrderId}
-          userId={(getCookie("uid") as string) || ""}
-          onSuccess={handleAthSuccess}
-          onCancel={handleAthCancel}
-        />
-      )} */}
+
 
       <Footer />
     </div>
