@@ -16,12 +16,12 @@ export default function ClientProviders({
 }) {
   return (
     <AuthProvider>
-      <CountryProvider countries={countries}>
-        {/* <CountryGuard> */}
-        <Toaster position="top-center" richColors closeButton />
-        {children}
-        {/* </CountryGuard> */}
-      </CountryProvider>
+      {/* <CountryProvider countries={countries}> */}
+      {/* <CountryGuard> */}
+      <Toaster position="top-center" richColors closeButton />
+      {children}
+      {/* </CountryGuard> */}
+      {/* </CountryProvider> */}
     </AuthProvider>
   );
 }
