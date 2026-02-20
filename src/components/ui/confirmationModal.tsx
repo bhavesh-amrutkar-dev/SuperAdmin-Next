@@ -51,14 +51,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                 </DialogHeader>
 
                 <DialogFooter className="mt-6 gap-3">
-                    <Button
-                        variant="outline"
-                        onClick={onCancel}
-                        disabled={loading}
-                    >
-                        {cancelText}
-                    </Button>
-
+                  
                     <Button
                         variant={variant === "destructive" ? "destructive" : "primary"}
                         onClick={onConfirm}
