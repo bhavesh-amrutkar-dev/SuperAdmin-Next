@@ -57,10 +57,9 @@ export default function ForgotPasswordPage() {
               type="button"
               onClick={() => setMethod("email")}
               className={`flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium
-                ${
-                  method === "email"
-                    ? "border-[#f3c200] bg-yellow-50"
-                    : "border-[#2f2f2f]"
+                ${method === "email"
+                  ? "border-[#f3c200] bg-yellow-50"
+                  : "border-[#2f2f2f]"
                 }`}
             >
               {t("email")}
@@ -70,10 +69,9 @@ export default function ForgotPasswordPage() {
               type="button"
               onClick={() => setMethod("mobile")}
               className={`flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium
-                ${
-                  method === "mobile"
-                    ? "border-[#f3c200] bg-yellow-50"
-                    : "border-[#2f2f2f]"
+                ${method === "mobile"
+                  ? "border-[#f3c200] bg-yellow-50"
+                  : "border-[#2f2f2f]"
                 }`}
             >
               {t("mobile")}

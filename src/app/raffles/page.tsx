@@ -276,7 +276,7 @@ export default function RafflesPage() {
 
                                         <div className="px-6 flex-grow mt-4 xl:mt-0">
                                             <div className="flex items-center gap-2 text-[#f3c200] font-bold text-sm uppercase mb-2">
-                                                Buy Digital File and Participate
+                                                {t("buyDigitalFileAndParticipate")}
                                             </div>
                                             {name && (
                                                 <h2 className="text-2xl font-black text-[#2f2f2f] uppercase tracking-tight line-clamp-2">
@@ -296,7 +296,6 @@ export default function RafflesPage() {
                                                         {progress}%
                                                     </span>
                                                 </div>
-
                                                 {endTime && <CountdownTimer endTime={endTime} />}
                                             </div>
                                         </div>
