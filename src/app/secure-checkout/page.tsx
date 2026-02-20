@@ -22,6 +22,9 @@ import { getCommonHeaders } from "@/src/lib/api/headers";
 import axios from "axios";
 import { Button } from "../../components/ui/button";
 import Loader from "@/src/components/loader";
+import AthMovilPayment from "@/src/components/payments/AuthMovilPayment";
+import { ConfirmationModal } from "@/src/components/ui/confirmationModal";
+import { getMyIP } from "@/src/lib/utils/getIp";
 
 type TaxItem = {
   taxName?: string;
@@ -153,10 +156,15 @@ export default function SecureCheckoutPage() {
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [manualPaymentConfirmed, setManualPaymentConfirmed] = useState(false);
   const [showComingSoonModal, setShowComingSoonModal] = useState(false);
+  const [athResponses, setAthResponses] = useState<string[]>([]);
+  const [isLoadingAth, setIsLoadingAth] = useState(false);
 
   const currency = cartData?.currencySymbol || "$";
   const accounting = cartData?.accounting || {};
-
+  const [athOrderId, setAthOrderId] = useState<string | null>(null);
+  const [athToken, setAthToken] = useState<string | null>(null);
+  const [isAthReady, setIsAthReady] = useState(false);
+  const [orderTotal, setOrderTotal] = useState(0)
   const cartItems = useMemo(() => {
     const items: CartItem[] = [];
     const sellers = cartData?.sellers || [];
@@ -172,10 +180,28 @@ export default function SecureCheckoutPage() {
     });
     return items;
   }, [cartData]);
-
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm?: () => void;
+  }>({
+    title: "",
+    message: "",
+  });
   useEffect(() => {
     fetchAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://payments.athmovil.com/api/js/athmovil_base.js";
+    script.async = true;
+    script.id = "athmovil-sdk";
+
+    document.head.appendChild(script);
   }, []);
 
   useEffect(() => {
@@ -285,6 +311,46 @@ export default function SecureCheckoutPage() {
       setAddresses([]);
     }
   };
+  const addAthResponse = (res: any) => {
+    setAthResponses((prev) => [...prev, typeof res === "string" ? res : JSON.stringify(res)]);
+  };
+  const cancelATHM = async () => {
+    try {
+      const responseCancel = await (window as any).findPaymentATHM?.();
+      if (!responseCancel) {
+        addAthResponse("Payment cancelled (no response).");
+        return;
+      }
+      addAthResponse(responseCancel);
+    } catch (err) {
+      console.error(err);
+      addAthResponse("Error cancelling payment");
+    }
+  };
+
+  const authorizationATHM = async () => {
+    try {
+      const responseAuth = await (window as any).authorization?.();
+      addAthResponse(responseAuth);
+
+      if (responseAuth?.ecommerceStatus === "COMPLETED") {
+        router.push("/thank-you?payment=athmovil");
+      }
+    } catch (err) {
+      console.error(err);
+      addAthResponse("Error authorizing payment");
+    }
+  };
+
+  const expiredATHM = async () => {
+    try {
+      const responseExpired = await (window as any).findPaymentATHM?.();
+      addAthResponse(responseExpired);
+    } catch (err) {
+      console.error(err);
+      addAthResponse("Error: payment expired");
+    }
+  };
 
   const handleEditShipping = () => {
     router.push("/shipping-address");
@@ -294,14 +360,226 @@ export default function SecureCheckoutPage() {
     router.push("/shipping-address");
   };
 
-  const getMyIP = async (): Promise<string> => {
+
+  const handleAthSuccess = async () => {
+    if (!athOrderId) return;
+
     try {
-      const response = await fetch("https://api.ipify.org?format=json");
-      const data = await response.json();
-      return data.ip || "0.0.0.0";
-    } catch (error) {
-      console.warn("Error fetching IP:", error);
-      return "0.0.0.0";
+      setPlacingOrder(true);
+
+      await OrderService.orderStatusUpdate({
+        orderId: athOrderId,
+        paymentMethod: 10,
+      });
+
+      router.push("/thank-you?payment=athmovil");
+    } catch (error: any) {
+      console.error("ATH Móvil success handler error:", error);
+
+      setModalConfig({
+        title: t("athPaymentConfirmationError"),
+        message: t("athPaymentConfirmationErrorDescription"),
+        confirmText: t("tryAgain"),
+        cancelText: t("close"),
+        onConfirm: () => {
+          setConfirmOpen(false);
+        },
+      });
+
+      setConfirmOpen(true);
+    } finally {
+      fetchCart()
+      setPlacingOrder(false);
+    }
+  };
+
+  const handleAthCancel = async () => {
+    if (!athOrderId) return;
+
+    // 1️⃣ Immediate UI response
+    setIsAthReady(false);
+    setPlacingOrder(false);
+
+    setModalConfig({
+      title: t("paymentCancelled"),
+      message: t("paymentCancelledDescription"),
+      confirmText: t("retryPayment"),
+      cancelText: t("chooseAnotherMethod"),
+      onConfirm: () => {
+        setConfirmOpen(false);
+        // Re-init payment here
+      },
+    });
+
+    setConfirmOpen(true);
+
+    // 2️⃣ Background backend update (non-blocking)
+    OrderService.orderStatusUpdate({
+      orderId: athOrderId,
+      paymentMethod: 10,
+    }).catch((error) => {
+      console.error("ATH cancel background update failed:", error);
+    });
+    fetchCart()
+  };
+  const handleAuthMovil = async () => {
+    try {
+      if (!selectedAddress) return;
+
+      setPlacingOrder(true);
+      // const freshCartResponse = await CartService.getCart();
+
+      // const freshCartData =
+      //   (freshCartResponse as any)?.data?.data ||
+      //   (freshCartResponse as any)?.data ||
+      //   freshCartResponse;
+
+      // const cartId =
+      //   (freshCartData as any)?._id ||
+      //   (freshCartData as any)?.cartId;
+      const cartId = (cartData as any)?._id;
+      if (!cartId) {
+        console.error("❌ Cart ID not found");
+        throw new Error("Cart ID not found");
+      }
+
+      const addressId =
+        selectedAddress?._id ||
+        (getCookie("addressid") as string) ||
+        "";
+
+      const uid = getCookie("uid") as string;
+      const latitude = (getCookie("lat") as string) || "0";
+      const longitude = (getCookie("long") as string) || "0";
+      const ipAddress = await getMyIP();
+
+      console.log("🟢 User + Location:", {
+        uid,
+        latitude,
+        longitude,
+        ipAddress,
+      });
+
+      const orderPayload = {
+        cartId,
+        addressId,
+        billingAddressId: addressId,
+        coupon: "",
+        promoId: "",
+        discount: 0,
+        latitude,
+        longitude,
+        ipAddress,
+        storeType: 8,
+        delivery: [],
+        orderType: 2,
+        extraNote: "",
+        tip: 0,
+        orderImages: [],
+        onlinePaymentMethod: 10,
+        payByRewardWallet: false,
+        cardId: "",
+        paymentType: 1,
+        payByWallet: false,
+        userId: uid || "1",
+      };
+      // 1️⃣ Create order (your existing logic)
+      const response = await OrderService.placeOrder(orderPayload);
+      const createdOrder =
+        (response as any)?.data?.data ||
+        (response as any)?.data || response;
+      if (
+        createdOrder?.message &&
+        createdOrder.message.toLowerCase().includes("cart not found")
+      ) {
+        setConfirmOpen(true);
+        setPlacingOrder(false);
+        return;
+      }
+
+      if (!createdOrder?.orderId) {
+        throw new Error("Order creation failed");
+      }
+
+      // Store order ID for later use
+      if (typeof window !== "undefined") {
+        localStorage.setItem("orderId", createdOrder.orderId);
+        localStorage.setItem("cartId", cartId);
+        if (createdOrder.numberOfFreeTickets) {
+          localStorage.setItem("TotalFreeTicket", String(createdOrder.numberOfFreeTickets));
+        }
+      }
+
+      setOrderTotal(createdOrder?.totalAmount)
+      const orderId = createdOrder.orderId;
+
+      // 2️⃣ Get public token
+      const tokenResponse = await PaymentService.ATHMovileToken();
+      const publicToken =
+        (tokenResponse as any)?.data?.data?.publicToken ||
+        (tokenResponse as any)?.data?.publicToken;
+
+      if (!publicToken) {
+        throw new Error("Public token not received");
+      }
+
+      // 3️⃣ Save to state (THIS triggers component mount)
+      setAthOrderId(orderId);
+      setAthToken(publicToken);
+      setIsAthReady(true);
+
+    } catch (error: any) {
+      // Extract error message from various possible locations
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        error?.data?.message ||
+        (typeof error === "string" ? error : null) ||
+        "Failed to place order. Please try again.";
+
+      console.warn("Error placing order:", {
+        message: errorMessage,
+        error: error,
+        status: error?.status || error?.response?.status,
+        data: error?.response?.data || error?.data,
+      });
+
+      // Handle specific error cases
+      const errorMsgLower = errorMessage.toLowerCase();
+
+      if (errorMsgLower.includes("cart not found")) {
+        setModalConfig({
+          title: t("cartNotFound"),
+          message: t("cartNotFoundDescription"),
+          confirmText: t("returnToCart"),
+          cancelText: t("continueShopping"),
+          onConfirm: () => router.push("/cart"),
+        });
+        setConfirmOpen(true);
+        router.push("/cart");
+      } else if (
+        errorMsgLower.includes("cart id not found") ||
+        errorMsgLower.includes("cart is empty")
+      ) {
+        setModalConfig({
+          title: t("cartEmpty"),
+          message: t("cartEmptyDescription"),
+          confirmText: t("goToCart"),
+          cancelText: t("continueShopping"),
+          onConfirm: () => router.push("/cart"),
+        });
+        setConfirmOpen(true);
+        router.push("/cart");
+      } else {
+        setModalConfig({
+          title: t("checkoutError"),
+          message: t("checkoutErrorDescription"),
+          confirmText: t("tryAgain"),
+        });
+        setConfirmOpen(true);
+      }
+
+      setPlacingOrder(false);
     }
   };
 
@@ -312,18 +590,29 @@ export default function SecureCheckoutPage() {
 
     // Show coming soon modal only for ATH Móvil
     if (paymentMethod === "athMovil") {
-      setShowComingSoonModal(true);
+      handleAuthMovil();
       return;
     }
+
 
     // Validate manual payment
     if (paymentMethod === "manual") {
       if (!selectedBank) {
-        alert(t("selectBank") || "Please select a bank");
+        setModalConfig({
+          title: t("validationError"),
+          message: t("selectBank"),
+        });
+        setConfirmOpen(true);
         return;
       }
+
       if (!receiptFile || !manualPaymentConfirmed) {
-        alert(t("uploadReceipt") || "Please upload proof of payment and confirm");
+        setModalConfig({
+          title: t("validationError"),
+          message: t("uploadReceipt"),
+        });
+        setConfirmOpen(true);
+        setConfirmOpen(true);
         return;
       }
     }
@@ -363,13 +652,16 @@ export default function SecureCheckoutPage() {
       const freshCartData = (freshCartResponse as any)?.data?.data || (freshCartResponse as any)?.data || freshCartResponse;
 
       // Check if cart is empty or not found
-      if (!freshCartData || freshCartData.message === "Data not found" || !freshCartData.sellers || freshCartData.sellers.length === 0) {
-        alert(t("cartEmpty") || "Your cart is empty. Please add items to your cart before placing an order.");
+      if (
+        !freshCartData ||
+        freshCartData.message === "Data not found" ||
+        !freshCartData.sellers ||
+        freshCartData.sellers.length === 0
+      ) {
+        setConfirmOpen(true);
         setPlacingOrder(false);
-        router.push("/cart");
         return;
       }
-
       // Update cartData state with fresh data
       setCartData(freshCartData as CartData);
 
@@ -441,10 +733,12 @@ export default function SecureCheckoutPage() {
       const orderData = (response as any)?.data?.data || (response as any)?.data || response;
 
       // Check if order API returned an error
-      if (orderData?.message && orderData.message.toLowerCase().includes("cart not found")) {
-        alert(t("cartNotFound") || "Cart not found. Your cart may have expired. Please add items to your cart again.");
+      if (
+        orderData?.message &&
+        orderData.message.toLowerCase().includes("cart not found")
+      ) {
+        setConfirmOpen(true);
         setPlacingOrder(false);
-        router.push("/cart");
         return;
       }
 
@@ -531,15 +825,37 @@ export default function SecureCheckoutPage() {
 
       // Handle specific error cases
       const errorMsgLower = errorMessage.toLowerCase();
-      if (errorMsgLower.includes("cart not found") || errorMsgLower.includes("cart not found")) {
-        alert(t("cartNotFound") || "Cart not found. Your cart may have expired. Please add items to your cart again.");
+
+      if (errorMsgLower.includes("cart not found")) {
+        setModalConfig({
+          title: t("cartNotFound"),
+          message: t("cartNotFoundDescription"),
+          confirmText: t("returnToCart"),
+          cancelText: t("continueShopping"),
+          onConfirm: () => router.push("/cart"),
+        });
+        setConfirmOpen(true);
         router.push("/cart");
-      } else if (errorMsgLower.includes("cart id not found") || errorMsgLower.includes("cart is empty")) {
-        alert(t("cartEmpty") || "Your cart is empty. Please add items to your cart before placing an order.");
+      } else if (
+        errorMsgLower.includes("cart id not found") ||
+        errorMsgLower.includes("cart is empty")
+      ) {
+        setModalConfig({
+          title: t("cartEmpty"),
+          message: t("cartEmptyDescription"),
+          confirmText: t("goToCart"),
+          cancelText: t("continueShopping"),
+          onConfirm: () => router.push("/cart"),
+        });
+        setConfirmOpen(true);
         router.push("/cart");
       } else {
-        // Show error message to user
-        alert(errorMessage);
+        setModalConfig({
+          title: t("checkoutError"),
+          message: t("checkoutErrorDescription"),
+          confirmText: t("tryAgain"),
+        });
+        setConfirmOpen(true);
       }
 
       setPlacingOrder(false);
@@ -610,7 +926,7 @@ export default function SecureCheckoutPage() {
     setConvertedAmount(null);
   };
 
-  const handlePaymentMethodChange = (method: string) => {
+  const handlePaymentMethodChange = async (method: string) => {
     setPaymentMethod(method);
     if (method !== "manual") {
       setShowBankDetails(false);
@@ -621,6 +937,21 @@ export default function SecureCheckoutPage() {
       setConvertedAmount(null);
     } else {
       setShowBankDetails(true);
+    }
+
+    if (method === "athMovil") {
+      try {
+        const tokenResponse = await PaymentService.ATHMovileToken();
+        const publicToken =
+          (tokenResponse as any)?.data?.data?.publicToken ||
+          (tokenResponse as any)?.data?.publicToken;
+
+        if (publicToken) {
+          setAthToken(publicToken);
+        }
+      } catch (err) {
+        console.error("Token preload failed", err);
+      }
     }
   };
 
@@ -699,12 +1030,7 @@ export default function SecureCheckoutPage() {
       <div className="min-h-screen bg-[#ededed]">
         <Header />
         <div className="flex items-center justify-center min-h-[60vh]">
-          {/* <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D4AF37] mx-auto"></div>
-            <p className="mt-4 text-gray-600">{t("loading") || "Loading..."}</p>
-          </div> */}
-
-          <Loader/>
+          <Loader />
         </div>
         <Footer />
       </div>
@@ -734,545 +1060,563 @@ export default function SecureCheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#ededed]">
-      <Header />
+    <>
+      <ConfirmationModal
+        open={confirmOpen}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          modalConfig.onConfirm?.();
+        }}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        confirmText={modalConfig.confirmText || t("ok")}
+        cancelText={modalConfig.cancelText || t("close")}
+        variant="default"
+      />
+      <div className="min-h-screen bg-[#ededed]">
+        <Header />
 
-      {/* Progress Stepper */}
-      <div className="bg-white border-b border-gray-200 py-3 sm:py-4">
-        <div className="container mx-auto px-2 sm:px-4">
-          <div className="flex items-center justify-center gap-2 sm:gap-4 md:gap-8 max-w-3xl mx-auto">
-            <div className="flex items-center gap-1 sm:gap-2">
-              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-white font-semibold text-xs sm:text-sm">1</div>
-              <span className="font-semibold text-gray-600 text-xs sm:text-sm hidden sm:inline">{t("bag")}</span>
-            </div>
-            <div className="flex-1 h-0.5 bg-[#D4AF37] hidden sm:block"></div>
-            <div className="flex items-center gap-1 sm:gap-2">
-              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-white font-semibold text-xs sm:text-sm">2</div>
-              <span className="font-semibold text-gray-600 text-xs sm:text-sm hidden md:inline">{t("shippingDetails")}</span>
-            </div>
-            <div className="flex-1 h-0.5 bg-[#D4AF37] hidden sm:block"></div>
-            <div className="flex items-center gap-1 sm:gap-2">
-              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-white font-semibold text-xs sm:text-sm">3</div>
-              <span className="font-semibold text-[#D4AF37] text-xs sm:text-sm">{t("secureCheckout")}</span>
+        {/* Progress Stepper */}
+        <div className="bg-white border-b border-gray-200 py-3 sm:py-4">
+          <div className="container mx-auto px-2 sm:px-4">
+            <div className="flex items-center justify-center gap-2 sm:gap-4 md:gap-8 max-w-3xl mx-auto">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-white font-semibold text-xs sm:text-sm">1</div>
+                <span className="font-semibold text-gray-600 text-xs sm:text-sm hidden sm:inline">{t("bag")}</span>
+              </div>
+              <div className="flex-1 h-0.5 bg-[#D4AF37] hidden sm:block"></div>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-white font-semibold text-xs sm:text-sm">2</div>
+                <span className="font-semibold text-gray-600 text-xs sm:text-sm hidden md:inline">{t("shippingDetails")}</span>
+              </div>
+              <div className="flex-1 h-0.5 bg-[#D4AF37] hidden sm:block"></div>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-white font-semibold text-xs sm:text-sm">3</div>
+                <span className="font-semibold text-[#D4AF37] text-xs sm:text-sm">{t("secureCheckout")}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 md:py-8 pb-24 sm:pb-28 md:pb-32">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          {/* LEFT COLUMN */}
-          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-            {/* SHIPPING INFORMATION */}
-            <div className="bg-white rounded-lg shadow-md">
-              <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-200">
-                <h2 className="text-xs sm:text-sm font-bold text-gray-800 uppercase">{t("shippingInformation")}</h2>
-              </div>
-              <div className="p-3 sm:p-4 md:p-6">
-                {selectedAddress ? (
-                  <div>
-                    {selectedAddress.name && (
+        <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 md:py-8 pb-24 sm:pb-28 md:pb-32">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+            {/* LEFT COLUMN */}
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+              {/* SHIPPING INFORMATION */}
+              <div className="bg-white rounded-lg shadow-md">
+                <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-200">
+                  <h2 className="text-xs sm:text-sm font-bold text-gray-800 uppercase">{t("shippingInformation")}</h2>
+                </div>
+                <div className="p-3 sm:p-4 md:p-6">
+                  {selectedAddress ? (
+                    <div>
+                      {selectedAddress.name && (
+                        <p className="text-xs sm:text-sm text-gray-800 mb-1 break-words">
+                          <span className="font-semibold">{t("name")}:</span> {selectedAddress.name}
+                        </p>
+                      )}
                       <p className="text-xs sm:text-sm text-gray-800 mb-1 break-words">
-                        <span className="font-semibold">{t("name")}:</span> {selectedAddress.name}
+                        <span className="font-semibold">{t("address")}:</span> {formatAddress(selectedAddress)}.
                       </p>
-                    )}
-                    <p className="text-xs sm:text-sm text-gray-800 mb-1 break-words">
-                      <span className="font-semibold">{t("address")}:</span> {formatAddress(selectedAddress)}.
-                    </p>
-                    {selectedAddress.mobileNumber && (
-                      <p className="text-xs sm:text-sm text-gray-800 mb-3 break-words">
-                        <span className="font-semibold">{t("phoneNumber")}:</span>{" "}
-                        {selectedAddress.mobileNumberCode && `+${selectedAddress.mobileNumberCode} `}
-                        {selectedAddress.mobileNumber}
-                      </p>
-                    )}
-                    <button onClick={handleEditShipping} className="text-xs sm:text-sm text-[#D4AF37] hover:text-[#B8860B] font-medium cursor-pointer">
-                      {t("edit")}
-                    </button>
-                  </div>
-                ) : (
-                  <p className="text-xs sm:text-sm text-gray-600">{t("noAddressFound")}</p>
-                )}
-              </div>
-            </div>
-
-            {/* BILLING INFORMATION */}
-            <div className="bg-white rounded-lg shadow-md">
-              <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-200">
-                <h2 className="text-xs sm:text-sm font-bold text-gray-800 uppercase">{t("billingInformation")}</h2>
-              </div>
-              <div className="p-3 sm:p-4 md:p-6">
-                <label className="flex items-center gap-2 mb-3 sm:mb-4 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={billingSameAsShipping}
-                    onChange={(e) => setBillingSameAsShipping(e.target.checked)}
-                    className="w-4 h-4 text-[#D4AF37] border-gray-300 rounded focus:ring-[#D4AF37] flex-shrink-0"
-                  />
-                  <span className="text-xs sm:text-sm text-gray-800">{t("sameAsDeliveryAddress")}</span>
-                </label>
-                {billingAddress && (
-                  <div>
-                    {billingAddress.name && (
-                      <p className="text-xs sm:text-sm text-gray-800 mb-1 break-words">
-                        <span className="font-semibold">{t("name")}:</span> {billingAddress.name}
-                      </p>
-                    )}
-                    <p className="text-xs sm:text-sm text-gray-800 mb-1 break-words">
-                      <span className="font-semibold">{t("address")}:</span> {formatAddress(billingAddress)}.
-                    </p>
-                    {billingAddress.mobileNumber && (
-                      <p className="text-xs sm:text-sm text-gray-800 break-words">
-                        <span className="font-semibold">{t("phoneNumber")}:</span>{" "}
-                        {billingAddress.mobileNumberCode && `+${billingAddress.mobileNumberCode} `}
-                        {billingAddress.mobileNumber}
-                      </p>
-                    )}
-                    {!billingSameAsShipping && (
-                      <button onClick={handleEditBilling} className="mt-2 sm:mt-3 text-xs sm:text-sm text-[#D4AF37] hover:text-[#B8860B] font-medium cursor-pointer">
+                      {selectedAddress.mobileNumber && (
+                        <p className="text-xs sm:text-sm text-gray-800 mb-3 break-words">
+                          <span className="font-semibold">{t("phoneNumber")}:</span>{" "}
+                          {selectedAddress.mobileNumberCode && `+${selectedAddress.mobileNumberCode} `}
+                          {selectedAddress.mobileNumber}
+                        </p>
+                      )}
+                      <button onClick={handleEditShipping} className="text-xs sm:text-sm text-[#D4AF37] hover:text-[#B8860B] font-medium cursor-pointer">
                         {t("edit")}
                       </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* PAYMENT METHOD */}
-            <div className="bg-white rounded-lg shadow-md">
-              <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-200">
-                <h2 className="text-xs sm:text-sm font-bold text-gray-800 uppercase">{t("paymentMethod")}</h2>
-              </div>
-              <div className="p-3 sm:p-4 md:p-6">
-                {/* Payment Options */}
-                <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
-                  {/* ATH Móvil button hidden */}
-                  <label className="hidden flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="athMovil"
-                      checked={paymentMethod === "athMovil"}
-                      onChange={(e) => handlePaymentMethodChange(e.target.value)}
-                      disabled={grandTotal <= 0}
-                      className="sr-only"
-                    />
-                    <div
-                      className={`px-3 sm:px-4 py-2 border-2 rounded-lg transition-all ${paymentMethod === "athMovil"
-                        ? "border-[#D4AF37] border-dashed bg-yellow-50"
-                        : "border-gray-300 hover:border-gray-400"
-                        } ${(grandTotal <= 0) ? "opacity-50 cursor-not-allowed" : ""}`}
-                    >
-                      <span className="text-xs sm:text-sm text-gray-800 font-medium">{t("payWithATHMovil")}</span>
                     </div>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="creditCard"
-                      checked={paymentMethod === "creditCard"}
-                      onChange={(e) => handlePaymentMethodChange(e.target.value)}
-                      disabled={grandTotal <= 0}
-                      className="w-4 h-4 sm:w-5 sm:h-5 text-[#D4AF37] border-gray-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-                    />
-                    <div
-                      className={`px-3 sm:px-4 py-2 border-2 rounded-lg transition-all flex-1 ${paymentMethod === "creditCard"
-                        ? "border-[#D4AF37] border-dashed bg-yellow-50"
-                        : "border-gray-300 hover:border-gray-400"
-                        } ${(grandTotal <= 0) ? "opacity-50 cursor-not-allowed" : ""}`}
-                    >
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
-                        <span className="text-xs sm:text-sm text-gray-800 font-medium">{t("payWithCreditCard")}</span>
-                        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                          <Image
-                            src="/images/Profile_new/visa.svg"
-                            alt="VISA"
-                            width={40}
-                            height={25}
-                            className="h-4 sm:h-5 w-auto object-contain"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                          <Image
-                            src="/images/Profile_new/mastercard.svg"
-                            alt="Mastercard"
-                            width={40}
-                            height={25}
-                            className="h-4 sm:h-5 w-auto object-contain"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                          <Image
-                            src="/images/Profile_new/ath.jpg"
-                            alt="ATH"
-                            width={40}
-                            height={25}
-                            className="h-4 sm:h-5 w-auto object-contain"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                          <Image
-                            src="/images/Profile_new/amex.jpg"
-                            alt="AMEX"
-                            width={40}
-                            height={25}
-                            className="h-4 sm:h-5 w-auto object-contain"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="manual"
-                      checked={paymentMethod === "manual"}
-                      onChange={handleManualPaymentSelect}
-                      disabled={grandTotal <= 0}
-                      className="w-4 h-4 sm:w-5 sm:h-5 text-[#D4AF37] border-gray-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-                    />
-                    <div
-                      className={`px-3 sm:px-4 py-2 border-2 rounded-lg transition-all flex-1 ${paymentMethod === "manual"
-                        ? "border-[#D4AF37] border-dashed bg-yellow-50"
-                        : "border-gray-300 hover:border-gray-400"
-                        } ${(grandTotal <= 0) ? "opacity-50 cursor-not-allowed" : ""}`}
-                    >
-                      <span className="text-xs sm:text-sm text-gray-800 font-medium">{t("manualPaymentMethods")}</span>
-                    </div>
-                  </label>
+                  ) : (
+                    <p className="text-xs sm:text-sm text-gray-600">{t("noAddressFound")}</p>
+                  )}
                 </div>
               </div>
-            </div>
 
-            {/* Manual Payment Bank Details Section */}
-            {paymentMethod === "manual" && (
-              <div className="mt-4 bg-white rounded-lg shadow-md p-4 sm:p-6">
-                <h3 className="text-sm sm:text-base font-bold text-gray-800 mb-4">{t("manualPaymentMethods")}</h3>
+              {/* BILLING INFORMATION */}
+              <div className="bg-white rounded-lg shadow-md">
+                <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-200">
+                  <h2 className="text-xs sm:text-sm font-bold text-gray-800 uppercase">{t("billingInformation")}</h2>
+                </div>
+                <div className="p-3 sm:p-4 md:p-6">
+                  <label className="flex items-center gap-2 mb-3 sm:mb-4 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={billingSameAsShipping}
+                      onChange={(e) => setBillingSameAsShipping(e.target.checked)}
+                      className="w-4 h-4 text-[#D4AF37] border-gray-300 rounded focus:ring-[#D4AF37] flex-shrink-0"
+                    />
+                    <span className="text-xs sm:text-sm text-gray-800">{t("sameAsDeliveryAddress")}</span>
+                  </label>
+                  {billingAddress && (
+                    <div>
+                      {billingAddress.name && (
+                        <p className="text-xs sm:text-sm text-gray-800 mb-1 break-words">
+                          <span className="font-semibold">{t("name")}:</span> {billingAddress.name}
+                        </p>
+                      )}
+                      <p className="text-xs sm:text-sm text-gray-800 mb-1 break-words">
+                        <span className="font-semibold">{t("address")}:</span> {formatAddress(billingAddress)}.
+                      </p>
+                      {billingAddress.mobileNumber && (
+                        <p className="text-xs sm:text-sm text-gray-800 break-words">
+                          <span className="font-semibold">{t("phoneNumber")}:</span>{" "}
+                          {billingAddress.mobileNumberCode && `+${billingAddress.mobileNumberCode} `}
+                          {billingAddress.mobileNumber}
+                        </p>
+                      )}
+                      {!billingSameAsShipping && (
+                        <button onClick={handleEditBilling} className="mt-2 sm:mt-3 text-xs sm:text-sm text-[#D4AF37] hover:text-[#B8860B] font-medium cursor-pointer">
+                          {t("edit")}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
 
-                {/* Loading State */}
-                {loadingBankDetails && (
-                  <div className="text-center py-4">
-                    <p className="text-sm text-gray-600">{t("loading") || "Loading..."}</p>
-                  </div>
-                )}
+              {/* PAYMENT METHOD */}
+              <div className="bg-white rounded-lg shadow-md">
+                <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-200">
+                  <h2 className="text-xs sm:text-sm font-bold text-gray-800 uppercase">{t("paymentMethod")}</h2>
+                </div>
+                <div className="p-3 sm:p-4 md:p-6">
+                  {/* Payment Options */}
+                  <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
+                    {[
+                      {
+                        value: "athMovil",
+                        label: t("payWithATHMovil"),
+                      },
+                      {
+                        value: "creditCard",
+                        label: t("payWithCreditCard"),
+                        icons: true,
+                      },
+                      {
+                        value: "manual",
+                        label: t("manualPaymentMethods"),
+                      },
+                    ].map((method) => {
+                      const isSelected = paymentMethod === method.value;
+                      const isDisabled = grandTotal <= 0;
 
-                {/* Bank Selection */}
-                {!loadingBankDetails && bankDetails.length > 0 && (
-                  <div className="mb-6">
-                    <p className="text-xs sm:text-sm text-gray-600 mb-3">{t("selectBank") || "Select a bank:"}</p>
-                    <div className="flex flex-wrap gap-3 sm:gap-4">
-                      {bankDetails.map((bank) => (
-                        <div
-                          key={bank._id}
-                          onClick={() => handleBankSelect(bank)}
-                          className={`relative border-2 rounded-lg p-2 cursor-pointer transition-all ${selectedBank?._id === bank._id
-                            ? "border-[#D4AF37] bg-yellow-50"
-                            : "border-gray-300 hover:border-gray-400"
-                            }`}
+                      return (
+                        <label
+                          key={method.value}
+                          className={`relative flex-1 min-w-[180px] cursor-pointer`}
                         >
-                          {bank.paymentMethodLogo && (
-                            <img
-                              src={bank.paymentMethodLogo}
-                              alt={bank.bankName || "Bank"}
-                              className="w-16 h-12 object-contain"
-                            />
-                          )}
-                          {selectedBank?._id === bank._id && (
-                            <div className="absolute -top-2 -right-2 bg-[#D4AF37] rounded-full p-1">
-                              <Check className="w-3 h-3 text-gray-800" />
+                          <input
+                            type="radio"
+                            name="paymentMethod"
+                            value={method.value}
+                            checked={isSelected}
+                            onChange={(e) =>
+                              method.value === "manual"
+                                ? handleManualPaymentSelect()
+                                : handlePaymentMethodChange(e.target.value)
+                            }
+                            disabled={isDisabled}
+                            className="sr-only"
+                          />
+
+                          <div
+                            className={`px-3 sm:px-4 py-3 border-2 rounded-lg transition-all 
+            ${isSelected
+                                ? "border-[#D4AF37] border-dashed bg-yellow-50"
+                                : "border-gray-300 hover:border-gray-400"
+                              }
+            ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+          `}
+                          >
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                              <span className="text-xs sm:text-sm text-gray-800 font-medium">
+                                {method.label}
+                              </span>
+
+                              {method.icons && (
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <Image src="/images/Profile_new/visa.svg" alt="VISA" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
+                                  <Image src="/images/Profile_new/mastercard.svg" alt="Mastercard" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
+                                  <Image src="/images/Profile_new/ath.jpg" alt="ATH" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
+                                  <Image src="/images/Profile_new/amex.jpg" alt="AMEX" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  {/* {paymentMethod === "athMovil" && (
+                  <div className="mt-6">
+                    <div className="ATH_Movil">
+                      <div id="ATHMovil_Checkout_Button_payment" />
+
+                    </div>
+
+              
+                    {athResponses.length > 0 && (
+                      <div className="mt-4 bg-gray-100 p-3 rounded text-xs max-h-40 overflow-y-auto">
+                        {athResponses.map((res, idx) => (
+                          <div key={idx} className="mb-1 break-all">
+                            {res}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )} */}
+
+
+                </div>
+              </div>
+
+              {/* Manual Payment Bank Details Section */}
+              {paymentMethod === "manual" && (
+                <div className="mt-4 bg-white rounded-lg shadow-md p-4 sm:p-6">
+                  <h3 className="text-sm sm:text-base font-bold text-gray-800 mb-4">{t("manualPaymentMethods")}</h3>
+
+                  {/* Loading State */}
+                  {loadingBankDetails && (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-gray-600">{t("loading") || "Loading..."}</p>
+                    </div>
+                  )}
+
+                  {/* Bank Selection */}
+                  {!loadingBankDetails && bankDetails.length > 0 && (
+                    <div className="mb-6">
+                      <p className="text-xs sm:text-sm text-gray-600 mb-3">{t("selectBank") || "Select a bank:"}</p>
+                      <div className="flex flex-wrap gap-3 sm:gap-4">
+                        {bankDetails.map((bank) => (
+                          <div
+                            key={bank._id}
+                            onClick={() => handleBankSelect(bank)}
+                            className={`relative border-2 rounded-lg p-2 cursor-pointer transition-all ${selectedBank?._id === bank._id
+                              ? "border-[#D4AF37] bg-yellow-50"
+                              : "border-gray-300 hover:border-gray-400"
+                              }`}
+                          >
+                            {bank.paymentMethodLogo && (
+                              <img
+                                src={bank.paymentMethodLogo}
+                                alt={bank.bankName || "Bank"}
+                                className="w-16 h-12 object-contain"
+                              />
+                            )}
+                            {selectedBank?._id === bank._id && (
+                              <div className="absolute -top-2 -right-2 bg-[#D4AF37] rounded-full p-1">
+                                <Check className="w-3 h-3 text-gray-800" />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No Banks Available */}
+                  {!loadingBankDetails && bankDetails.length === 0 && (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-gray-600">{t("noBanksAvailable") || "No banks available for manual payment"}</p>
+                    </div>
+                  )}
+
+                  {/* Bank Details */}
+                  {!loadingBankDetails && selectedBank && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                      <div>
+                        <h4 className="text-sm sm:text-base font-semibold text-gray-700 mb-3">{selectedBank.bankName}</h4>
+
+                        {selectedBank.bankPaymentNumber ? (
+                          <div className="mb-3">
+                            <p className="text-xs text-gray-600 mb-1">{t("accountNumber") || "Account Number"}:</p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm sm:text-base font-semibold text-gray-800">{selectedBank.bankPaymentNumber}</p>
+                              <button
+                                onClick={() => handleCopyToClipboard(selectedBank.bankPaymentNumber || "")}
+                                className="p-1 hover:bg-gray-100 rounded transition-colors"
+                                title={t("copy") || "Copy"}
+                              >
+                                <Copy className="w-4 h-4 text-gray-600" />
+                              </button>
+                            </div>
+                          </div>
+                        ) : selectedBank.bankPaymentURL ? (
+                          <div className="mb-3">
+                            <p className="text-xs text-gray-600 mb-1">{t("paymentURL") || "Payment URL"}:</p>
+                            <a
+                              href={selectedBank.bankPaymentURL}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm sm:text-base text-[#D4AF37] hover:underline break-words"
+                            >
+                              {selectedBank.bankPaymentURL}
+                            </a>
+                          </div>
+                        ) : null}
+
+                        {selectedBank.accountHolderID && (
+                          <div className="mb-3">
+                            <p className="text-xs text-gray-600 mb-1">{t("ID") || "ID"}:</p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm sm:text-base font-semibold text-gray-800">{selectedBank.accountHolderID}</p>
+                              <button
+                                onClick={() => handleCopyToClipboard(selectedBank.accountHolderID || "")}
+                                className="p-1 hover:bg-gray-100 rounded transition-colors"
+                                title={t("copy") || "Copy"}
+                              >
+                                <Copy className="w-4 h-4 text-gray-600" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {selectedBank.accountHolderName && (
+                          <div className="mb-3">
+                            <p className="text-xs text-gray-600 mb-1">{t("Holder") || "Account Holder"}:</p>
+                            <p className="text-sm sm:text-base font-semibold text-gray-800">{selectedBank.accountHolderName}</p>
+                          </div>
+                        )}
+
+                        {convertedAmount && (
+                          <div className="mt-4">
+                            <p className="text-xs text-gray-600 mb-1">{t("Total") || "Total"}:</p>
+                            <p className="text-base sm:text-lg font-bold text-[#D4AF37] bg-yellow-50 px-3 py-1 rounded inline-block">
+                              {convertedAmount.convertedCurrencySymbol}
+                              {Number(convertedAmount.TotalconvertedValue || 0).toFixed(2)} {convertedAmount.to_currency}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Receipt Upload */}
+                      <div>
+                        <label className="block text-xs sm:text-sm font-semibold text-gray-800 mb-2">
+                          {t("ProofOfPayment") || "Proof of Payment"}
+                        </label>
+                        <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6 text-center">
+                          <input
+                            type="file"
+                            id="receiptUpload"
+                            accept="image/jpeg,image/png,image/webp,image/jpg"
+                            onChange={handleReceiptUpload}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          />
+                          {!receiptImage ? (
+                            <div className="flex flex-col items-center gap-2">
+                              <Upload className="w-8 h-8 text-gray-400" />
+                              <p className="text-xs sm:text-sm text-gray-600">{t("PHOTOSCREENSHOT") || "Upload Photo/Screenshot"}</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              <img
+                                src={receiptImage}
+                                alt="Receipt"
+                                className="max-w-full max-h-64 mx-auto rounded object-contain"
+                              />
+                              <button
+                                onClick={() => {
+                                  setReceiptImage(null);
+                                  setReceiptFile(null);
+                                  setManualPaymentConfirmed(false);
+                                }}
+                                className="text-xs text-red-600 hover:underline"
+                              >
+                                {t("remove") || "Remove"}
+                              </button>
                             </div>
                           )}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* No Banks Available */}
-                {!loadingBankDetails && bankDetails.length === 0 && (
-                  <div className="text-center py-4">
-                    <p className="text-sm text-gray-600">{t("noBanksAvailable") || "No banks available for manual payment"}</p>
-                  </div>
-                )}
-
-                {/* Bank Details */}
-                {!loadingBankDetails && selectedBank && (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                    <div>
-                      <h4 className="text-sm sm:text-base font-semibold text-gray-700 mb-3">{selectedBank.bankName}</h4>
-
-                      {selectedBank.bankPaymentNumber ? (
-                        <div className="mb-3">
-                          <p className="text-xs text-gray-600 mb-1">{t("accountNumber") || "Account Number"}:</p>
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm sm:text-base font-semibold text-gray-800">{selectedBank.bankPaymentNumber}</p>
-                            <button
-                              onClick={() => handleCopyToClipboard(selectedBank.bankPaymentNumber || "")}
-                              className="p-1 hover:bg-gray-100 rounded transition-colors"
-                              title={t("copy") || "Copy"}
-                            >
-                              <Copy className="w-4 h-4 text-gray-600" />
-                            </button>
-                          </div>
-                        </div>
-                      ) : selectedBank.bankPaymentURL ? (
-                        <div className="mb-3">
-                          <p className="text-xs text-gray-600 mb-1">{t("paymentURL") || "Payment URL"}:</p>
-                          <a
-                            href={selectedBank.bankPaymentURL}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm sm:text-base text-[#D4AF37] hover:underline break-words"
+                        {receiptFile && !manualPaymentConfirmed && (
+                          <Button
+                            onClick={handleManualPaymentConfirm}
+                            className="mt-4 w-full bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg uppercase text-sm md:text-default flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {selectedBank.bankPaymentURL}
-                          </a>
-                        </div>
-                      ) : null}
-
-                      {selectedBank.accountHolderID && (
-                        <div className="mb-3">
-                          <p className="text-xs text-gray-600 mb-1">{t("ID") || "ID"}:</p>
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm sm:text-base font-semibold text-gray-800">{selectedBank.accountHolderID}</p>
-                            <button
-                              onClick={() => handleCopyToClipboard(selectedBank.accountHolderID || "")}
-                              className="p-1 hover:bg-gray-100 rounded transition-colors"
-                              title={t("copy") || "Copy"}
-                            >
-                              <Copy className="w-4 h-4 text-gray-600" />
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {selectedBank.accountHolderName && (
-                        <div className="mb-3">
-                          <p className="text-xs text-gray-600 mb-1">{t("Holder") || "Account Holder"}:</p>
-                          <p className="text-sm sm:text-base font-semibold text-gray-800">{selectedBank.accountHolderName}</p>
-                        </div>
-                      )}
-
-                      {convertedAmount && (
-                        <div className="mt-4">
-                          <p className="text-xs text-gray-600 mb-1">{t("Total") || "Total"}:</p>
-                          <p className="text-base sm:text-lg font-bold text-[#D4AF37] bg-yellow-50 px-3 py-1 rounded inline-block">
-                            {convertedAmount.convertedCurrencySymbol}
-                            {Number(convertedAmount.TotalconvertedValue || 0).toFixed(2)} {convertedAmount.to_currency}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Receipt Upload */}
-                    <div>
-                      <label className="block text-xs sm:text-sm font-semibold text-gray-800 mb-2">
-                        {t("ProofOfPayment") || "Proof of Payment"}
-                      </label>
-                      <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6 text-center">
-                        <input
-                          type="file"
-                          id="receiptUpload"
-                          accept="image/jpeg,image/png,image/webp,image/jpg"
-                          onChange={handleReceiptUpload}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        />
-                        {!receiptImage ? (
-                          <div className="flex flex-col items-center gap-2">
-                            <Upload className="w-8 h-8 text-gray-400" />
-                            <p className="text-xs sm:text-sm text-gray-600">{t("PHOTOSCREENSHOT") || "Upload Photo/Screenshot"}</p>
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            <img
-                              src={receiptImage}
-                              alt="Receipt"
-                              className="max-w-full max-h-64 mx-auto rounded object-contain"
-                            />
-                            <button
-                              onClick={() => {
-                                setReceiptImage(null);
-                                setReceiptFile(null);
-                                setManualPaymentConfirmed(false);
-                              }}
-                              className="text-xs text-red-600 hover:underline"
-                            >
-                              {t("remove") || "Remove"}
-                            </button>
-                          </div>
+                            {t("confirm") || "Confirm"}
+                          </Button>
                         )}
                       </div>
-                      {receiptFile && !manualPaymentConfirmed && (
-                        <Button
-                          onClick={handleManualPaymentConfirm}
-                          className="mt-4 w-full bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg uppercase text-sm md:text-default flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {t("confirm") || "Confirm"}
-                        </Button>
-                      )}
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+                  )}
+                </div>
+              )}
+            </div>
 
-          {/* RIGHT COLUMN */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md lg:sticky lg:top-4">
-              {/* ORDER DETAILS */}
-              <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-200">
-                <h2 className="text-xs sm:text-sm font-bold text-gray-800 uppercase">{t("orderDetails")}</h2>
-              </div>
-              <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
-                {cartItems.map((item, idx) => {
-                  const qty = typeof item.quantity === "object" ? item.quantity?.value || 1 : item.quantity || 1;
-                  // Use accounting.finalUnitPrice or accounting.subTotal if available, otherwise calculate from unit price
-                  const itemTotal = item.accounting?.subTotal
-                    ? Number(item.accounting.subTotal)
-                    : item.accounting?.finalUnitPrice
-                      ? Number(item.accounting.finalUnitPrice) * qty
-                      : Number(item.price ?? item.unitPrice ?? item.ticketPrice ?? item.accounting?.unitPrice ?? 0) * qty;
+            {/* RIGHT COLUMN */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-lg shadow-md lg:sticky lg:top-4">
+                {/* ORDER DETAILS */}
+                <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-200">
+                  <h2 className="text-xs sm:text-sm font-bold text-gray-800 uppercase">{t("orderDetails")}</h2>
+                </div>
+                <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
+                  {cartItems.map((item, idx) => {
+                    const qty = typeof item.quantity === "object" ? item.quantity?.value || 1 : item.quantity || 1;
+                    // Use accounting.finalUnitPrice or accounting.subTotal if available, otherwise calculate from unit price
+                    const itemTotal = item.accounting?.subTotal
+                      ? Number(item.accounting.subTotal)
+                      : item.accounting?.finalUnitPrice
+                        ? Number(item.accounting.finalUnitPrice) * qty
+                        : Number(item.price ?? item.unitPrice ?? item.ticketPrice ?? item.accounting?.unitPrice ?? 0) * qty;
 
-                  const unitPrice = item.accounting?.finalUnitPrice
-                    ? Number(item.accounting.finalUnitPrice)
-                    : item.accounting?.unitPrice
-                      ? Number(item.accounting.unitPrice)
-                      : Number(item.price ?? item.unitPrice ?? item.ticketPrice ?? 0);
+                    const unitPrice = item.accounting?.finalUnitPrice
+                      ? Number(item.accounting.finalUnitPrice)
+                      : item.accounting?.unitPrice
+                        ? Number(item.accounting.unitPrice)
+                        : Number(item.price ?? item.unitPrice ?? item.ticketPrice ?? 0);
 
-                  const ticketCount = item.ticketCount || item.ticketDetails?.numberOfTicket || 0;
-                  const sellerName = item.sellerName || item.storeName || "Unknown";
+                    const ticketCount = item.ticketCount || item.ticketDetails?.numberOfTicket || 0;
+                    const sellerName = item.sellerName || item.storeName || "Unknown";
 
-                  return (
-                    <div key={idx} className="flex gap-2 sm:gap-3 md:gap-4 pb-3 sm:pb-4 border-b border-gray-100 last:border-0">
-                      <div className="flex-shrink-0">
-                        <Image src={getProductImage(item)} alt={item.name || item.productName || "Product"} width={80} height={80} className="rounded object-cover w-16 h-16 sm:w-20 sm:h-20 md:w-20 md:h-20" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs sm:text-sm font-semibold text-gray-800 mb-1 line-clamp-2">{item.name || item.productName || "Product"}</p>
-                        <p className="text-xs text-gray-600 mb-1">
-                          {t("soldBy")}: <span className="text-[#D4AF37]">{sellerName}</span>
-                        </p>
-                        {ticketCount > 0 && (
+                    return (
+                      <div key={idx} className="flex gap-2 sm:gap-3 md:gap-4 pb-3 sm:pb-4 border-b border-gray-100 last:border-0">
+                        <div className="flex-shrink-0">
+                          <Image src={getProductImage(item)} alt={item.name || item.productName || "Product"} width={80} height={80} className="rounded object-cover w-16 h-16 sm:w-20 sm:h-20 md:w-20 md:h-20" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs sm:text-sm font-semibold text-gray-800 mb-1 line-clamp-2">{item.name || item.productName || "Product"}</p>
                           <p className="text-xs text-gray-600 mb-1">
-                            {t("totalTicketsCount")}: {ticketCount}
+                            {t("soldBy")}: <span className="text-[#D4AF37]">{sellerName}</span>
                           </p>
-                        )}
-                        <div className="flex justify-between items-center mt-2">
-                          <span className="text-xs text-gray-600">
-                            {qty} x {currency} {formatCurrency(unitPrice)}
-                          </span>
-                          <span className="text-xs sm:text-sm font-semibold text-gray-800">{currency} {formatCurrency(itemTotal)}</span>
+                          {ticketCount > 0 && (
+                            <p className="text-xs text-gray-600 mb-1">
+                              {t("totalTicketsCount")}: {ticketCount}
+                            </p>
+                          )}
+                          <div className="flex justify-between items-center mt-2">
+                            <span className="text-xs text-gray-600">
+                              {qty} x {currency} {formatCurrency(unitPrice)}
+                            </span>
+                            <span className="text-xs sm:text-sm font-semibold text-gray-800">{currency} {formatCurrency(itemTotal)}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
 
-              {/* PAYMENT INFORMATION */}
-              <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-t border-gray-200">
-                <h2 className="text-xs sm:text-sm font-bold text-gray-800 uppercase mb-3 sm:mb-4">{t("paymentInformation")}</h2>
-                <div className="space-y-2 text-xs sm:text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">{t("bagTotal")}:</span>
-                    <span className="text-gray-800">{currency} {formatCurrency(bagTotal)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">{t("subTotal")}:</span>
-                    <span className="text-gray-800">{currency} {formatCurrency(subTotal)}</span>
-                  </div>
-                  {hasNamedTax && taxItems ? (
-                    taxItems.map((taxItem, idx) => (
-                      <div key={idx} className="flex justify-between">
-                        <span className="text-gray-600">{taxItem.taxName || t("tax")}:</span>
-                        <span className="text-gray-800">{currency} {formatCurrency(taxItem.totalValue)}</span>
-                      </div>
-                    ))
-                  ) : taxAmount > 0 ? (
+                {/* PAYMENT INFORMATION */}
+                <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-t border-gray-200">
+                  <h2 className="text-xs sm:text-sm font-bold text-gray-800 uppercase mb-3 sm:mb-4">{t("paymentInformation")}</h2>
+                  <div className="space-y-2 text-xs sm:text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">{t("tax")}:</span>
-                      <span className="text-gray-800">{currency} {formatCurrency(taxAmount)}</span>
+                      <span className="text-gray-600">{t("bagTotal")}:</span>
+                      <span className="text-gray-800">{currency} {formatCurrency(bagTotal)}</span>
                     </div>
-                  ) : null}
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">{t("shippingFee")}:</span>
-                    <span className="text-gray-800">{shippingFee > 0 ? `${currency} ${formatCurrency(shippingFee)}` : t("free")}</span>
-                  </div>
-                  <div className="flex justify-between pt-2 border-t border-gray-200 mt-2">
-                    <span className="font-bold text-gray-800">{t("grandTotal")}:</span>
-                    <span className="font-bold text-gray-800">{currency} {formatCurrency(grandTotal)}</span>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">{t("subTotal")}:</span>
+                      <span className="text-gray-800">{currency} {formatCurrency(subTotal)}</span>
+                    </div>
+                    {hasNamedTax && taxItems ? (
+                      taxItems.map((taxItem, idx) => (
+                        <div key={idx} className="flex justify-between">
+                          <span className="text-gray-600">{taxItem.taxName || t("tax")}:</span>
+                          <span className="text-gray-800">{currency} {formatCurrency(taxItem.totalValue)}</span>
+                        </div>
+                      ))
+                    ) : taxAmount > 0 ? (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">{t("tax")}:</span>
+                        <span className="text-gray-800">{currency} {formatCurrency(taxAmount)}</span>
+                      </div>
+                    ) : null}
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">{t("shippingFee")}:</span>
+                      <span className="text-gray-800">{shippingFee > 0 ? `${currency} ${formatCurrency(shippingFee)}` : t("free")}</span>
+                    </div>
+                    <div className="flex justify-between pt-2 border-t border-gray-200 mt-2">
+                      <span className="font-bold text-gray-800">{t("grandTotal")}:</span>
+                      <span className="font-bold text-gray-800">{currency} {formatCurrency(grandTotal)}</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Bottom Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
-        <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 max-w-6xl mx-auto">
-            <div className="flex items-center gap-2 flex-1">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p className="text-[10px] sm:text-xs text-gray-600">{t("taxInfoMessage")}</p>
-            </div>
-            <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 sm:gap-6">
-              <div className="text-right">
-                <p className="text-[10px] sm:text-xs text-gray-500">{t("totalAmount")}</p>
-                <p className="text-base sm:text-lg font-bold text-gray-800">{currency} {formatCurrency(grandTotal)}</p>
+        {/* Bottom Bar */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
+          <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 max-w-6xl mx-auto">
+              <div className="flex items-center gap-2 flex-1">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-[10px] sm:text-xs text-gray-600">{t("taxInfoMessage")}</p>
               </div>
-              {paymentMethod !== "" && (
-                <Button
-                  onClick={handlePlaceOrder}
-                  disabled={!selectedAddress || placingOrder}
-                  className="w-full sm:w-auto bg-[#D4AF37] hover:bg-[#B8860B] text-white py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg text-sm md:text-default flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {placingOrder
-                    ? t("placingOrder") || "Placing Order..."
-                    : paymentMethod === "manual"
-                      ? t("placeOrder") || "PLACE ORDER"
-                      : paymentMethod === "athMovil"
-                        ? t("payWithATHMovil") || "PAY WITH ATH MÓVIL"
-                        : paymentMethod === "creditCard"
-                          ? t("payWithPlaceToPay") || "PAY WITH PLACE TO PAY"
-                          : t("pay") || "PAY"}
-                </Button>
-              )}
+              <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 sm:gap-6">
+                <div className="text-right">
+                  <p className="text-[10px] sm:text-xs text-gray-500">{t("totalAmount")}</p>
+                  <p className="text-base sm:text-lg font-bold text-gray-800">{currency} {formatCurrency(grandTotal)}</p>
+                </div>
+                {paymentMethod !== "" && (
+                  <>
+                    {/* BEFORE ORDER CREATION */}
+                    {!(paymentMethod === "athMovil" && isAthReady) && (
+                      <Button
+                        onClick={handlePlaceOrder}
+                        disabled={!selectedAddress || placingOrder}
+                        className="w-full sm:w-auto bg-[#D4AF37] hover:bg-[#B8860B] text-white py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg text-sm md:text-default flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {placingOrder
+                          ? t("placingOrder") || "Placing Order..."
+                          : paymentMethod === "manual"
+                            ? t("placeOrder") || "PLACE ORDER"
+                            : paymentMethod === "athMovil"
+                              ? t("payWithATHMovil") || "PAY WITH ATH MÓVIL"
+                              : paymentMethod === "creditCard"
+                                ? t("payWithPlaceToPay") || "PAY WITH PLACE TO PAY"
+                                : t("pay") || "PAY"}
+                      </Button>
+                    )}
+
+                    {/* AFTER ORDER CREATION — SHOW REAL ATH BUTTON */}
+                    {paymentMethod === "athMovil" && isAthReady && athToken && athOrderId && (
+                      <AthMovilPayment
+                        total={orderTotal || grandTotal}
+                        publicToken={athToken}
+                        orderId={athOrderId}
+                        userId={(getCookie("uid") as string) || ""}
+                        onSuccess={handleAthSuccess}
+                        onCancel={handleAthCancel}
+                      />
+                    )}
+                  </>
+                )}
+
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Place to Pay Lightbox */}
-      {placeToPayUrl && (
-        <PlaceToPayLightbox
-          url={placeToPayUrl}
-          onSuccess={handlePlaceToPaySuccess}
-          onError={handlePlaceToPayError}
-          onClose={handlePlaceToPayClose}
+        {/* Place to Pay Lightbox */}
+        {placeToPayUrl && (
+          <PlaceToPayLightbox
+            url={placeToPayUrl}
+            onSuccess={handlePlaceToPaySuccess}
+            onError={handlePlaceToPayError}
+            onClose={handlePlaceToPayClose}
+          />
+        )}
+
+        {/* Coming Soon Modal */}
+        <ComingSoonModal
+          isOpen={showComingSoonModal}
+          onClose={() => setShowComingSoonModal(false)}
+          paymentMethod={paymentMethod}
         />
-      )}
 
-      {/* Coming Soon Modal */}
-      <ComingSoonModal
-        isOpen={showComingSoonModal}
-        onClose={() => setShowComingSoonModal(false)}
-        paymentMethod={paymentMethod}
-      />
 
-      <Footer />
-    </div>
+        <Footer />
+      </div>
+    </>
   );
 }
 

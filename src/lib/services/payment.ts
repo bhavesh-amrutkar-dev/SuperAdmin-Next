@@ -97,5 +97,9 @@ export const PaymentService = {
             },
         }) as Promise<CurrencyConvertResponse>;
     },
+
+    ATHMovileToken: () => {
+        return apiClient.get(`/athmovil/config`);
+    },
 };
 
