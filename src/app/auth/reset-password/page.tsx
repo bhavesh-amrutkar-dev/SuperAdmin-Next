@@ -76,10 +76,9 @@ export default function ResetPasswordPage() {
                 type={showPassword ? "text" : "password"}
                 className={`w-full rounded-xl border px-4 py-3 pr-14 text-sm
                   transition focus:outline-none focus:ring-2
-                  ${
-                    error
-                      ? "border-red-400 focus:ring-red-200"
-                      : "border-gray-300 focus:border-yellow-400 focus:ring-yellow-200"
+                  ${error
+                    ? "border-red-400 focus:ring-red-200"
+                    : "border-gray-300 focus:border-yellow-400 focus:ring-yellow-200"
                   }`}
                 value={password}
                 onChange={(e) => {
@@ -111,10 +110,9 @@ export default function ResetPasswordPage() {
               type={showPassword ? "text" : "password"}
               className={`mt-1 w-full rounded-xl border px-4 py-3 text-sm
                 transition focus:outline-none focus:ring-2
-                ${
-                  error
-                    ? "border-red-400 focus:ring-red-200"
-                    : "border-gray-300 focus:border-yellow-400 focus:ring-yellow-200"
+                ${error
+                  ? "border-red-400 focus:ring-red-200"
+                  : "border-gray-300 focus:border-yellow-400 focus:ring-yellow-200"
                 }`}
               value={confirmPassword}
               onChange={(e) => {
