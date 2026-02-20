@@ -225,10 +225,11 @@ export default function RafflesPage() {
                 </div>
 
                 {/* Raffles Grid */}
-                <div className="mx-auto w-full max-w-[1648px] px-2 md:px-6 lg:pt-[60px] pb-[100px]">
-                    <div className="mb-6 border-b border-gray-300 pb-2 flex items-center justify-between">
-                        <h2 className="text-base font-bold text-[#2f2f2f] uppercase tracking-tight">
-                            {raffles.length} {t("raffles")}
+                <div className="mx-auto w-full max-w-[1648px] px-4 md:px-6 pt-10 lg:pt-[60px] pb-10">
+                    <div className="mb-6 border-b border-gray-300 pb-3 flex items-center justify-between">
+                        <h2 className="text-lg lg:text-2xl font-bold text-[#2f2f2f] uppercase tracking-tight flex items-center gap-2">
+                            <span className="bg-[#f3c200] text-[#2f2f2f] py-1 px-2 text-lg lg:text-xl rounded-lg !leading-none">{raffles.length}</span>
+                            {t("raffles")}
                         </h2>
                     </div>
 
@@ -237,7 +238,7 @@ export default function RafflesPage() {
                             <p className="text-lg text-[#797979]">No raffles available</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mx-auto">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-8 mx-auto">
                             {raffles.map((raffle, index) => {
                                 const name = raffle.campaignTitle ?? raffle.productName ?? "";
                                 const id = raffle._id ?? raffle.childProductId ?? "";
@@ -262,29 +263,30 @@ export default function RafflesPage() {
                                     <Link
                                         key={`${id}-${index}`}
                                         href={id ? `/raffles/${slug}?pid=${id}&cpid=${raffle.childProductId ?? ""}` : "#"}
-                                        className="bg-white rounded-[25px] shadow-xl overflow-hidden flex flex-col xl:flex-row p-4 hover:shadow-2xl transition-shadow"
+                                        className="bg-white rounded-4xl shadow-xl flex flex-col p-4 hover:shadow-2xl transition-shadow"
                                     >
-                                        <div className="aspect-video flex items-center justify-center w-full max-w-[320px] overflow-hidden rounded-[25px] bg-[#f5f5f5]">
+                                        
+                                        <div className="aspect-video flex items-center justify-center w-full h-[250px] overflow-hidden rounded-4xl bg-white">
                                             <Image
                                                 src={imageSrc}
                                                 alt={name || "Prize"}
                                                 width={320}
-                                                height={200}
-                                                className="max-h-full w-full h-full object-contain rounded-[25px]"
+                                                height={320}
+                                                className="max-h-full w-full h-full object-contain rounded-4xl"
                                             />
                                         </div>
 
-                                        <div className="px-6 flex-grow mt-4 xl:mt-0">
+                                        <div className="flex-grow mt-4 bg-gray-50 p-4 rounded-4xl flex flex-col">
                                             <div className="flex items-center gap-2 text-[#f3c200] font-bold text-sm uppercase mb-2">
                                                 {t("buyDigitalFileAndParticipate")}
                                             </div>
                                             {name && (
-                                                <h2 className="text-2xl font-black text-[#2f2f2f] uppercase tracking-tight line-clamp-2">
+                                                <h2 className="text-2xl font-black text-[#2f2f2f]  tracking-tight line-clamp-2 min-h-[64px]">
                                                     {name}
                                                 </h2>
                                             )}
 
-                                            <div className="py-4">
+                                            <div className="pt-3">
                                                 <div className="flex items-center gap-4 mb-4">
                                                     <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
                                                         <div
@@ -296,9 +298,12 @@ export default function RafflesPage() {
                                                         {progress}%
                                                     </span>
                                                 </div>
-                                                {endTime && <CountdownTimer endTime={endTime} />}
                                             </div>
+                                            
+                                        {endTime && <CountdownTimer endTime={endTime} />}
                                         </div>
+
+
                                     </Link>
                                 );
                             })}

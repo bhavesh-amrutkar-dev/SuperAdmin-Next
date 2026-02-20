@@ -45,9 +45,9 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="w-full max-w-md rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] border border-gray-200 p-8">
+        <div className="w-full max-w-md rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] border border-gray-200 p-6 sm:p-8">
             {/* Header */}
-            <div className="mb-8 text-center">
+            <div className="mb-6 sm:mb-8 text-center">
                 <h1 className="text-2xl font-bold section_title">
                     {t("welcomeBack")}
                 </h1>
@@ -57,7 +57,7 @@ export default function LoginPage() {
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 sm:space-y-6">
 
                 {/* Email */}
                 <div className="space-y-2">
@@ -132,8 +132,8 @@ export default function LoginPage() {
             </form>
 
             {/* OR CONNECT WITH */}
-            <div className="mt-6">
-                <div className="flex items-center gap-3 max-w-[75%] mx-auto">
+            <div className="mt-4">
+                <div className="flex items-center gap-3 max-w-[80%] mx-auto">
                     <div className="flex-1 h-px bg-gray-300" />
                     <span className="text-sm text-muted-foreground font-medium">
                         {t("orConnectWith")}
@@ -153,7 +153,7 @@ export default function LoginPage() {
 
 
             {/* Footer */}
-            <p className="mt-8 text-center text-sm text-foreground">
+            <p className="mt-5 sm:mt-6 text-center text-sm text-foreground">
                 {t("dontHaveAccount")}{" "}
                 <Link
                     href="/auth/register"
