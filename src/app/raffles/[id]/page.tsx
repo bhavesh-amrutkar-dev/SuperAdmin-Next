@@ -101,6 +101,7 @@ type LegacyRaffleDetail = {
 import { toast } from "sonner";
 import { stripHtml } from "@/src/lib/utils/HtmltoText";
 import { Button } from "../../../components/ui/button";
+import ImageMagnify from "@/src/lib/utils/imageMagnify";
 
 
 export default function RafflesDetailPage() {
@@ -1234,12 +1235,15 @@ export default function RafflesDetailPage() {
                         {/* Product Image Area */}
                         <div className="bg-white rounded-xl shadow-lg p-3 md:p-4 min-h-[250px] flex items-center justify-center">
                             <div className="relative w-full max-w-xs aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden flex items-center justify-center shadow-inner">
-                                <Image
-                                    src={displayImage}
-                                    alt={displayName}
-                                    fill
-                                    unoptimized
-                                    className="object-contain p-3 md:p-4"
+                                <ImageMagnify
+                                    largeImage={displayImage}
+                                    product={{
+                                        images: [
+                                            {
+                                                altText: displayName,
+                                            },
+                                        ],
+                                    }}
                                 />
                             </div>
                         </div>

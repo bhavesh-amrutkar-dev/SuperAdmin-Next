@@ -1,8 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useRef, useState } from "react";
 import { PLACE_HOLDER } from "../config";
-import ReactImageMagnify from "react-image-magnify";
 
 interface ImageMagnifyProps {
   largeImage?: string;
@@ -14,53 +13,53 @@ const ImageMagnify: React.FC<ImageMagnifyProps> = ({
   product,
 }) => {
   const imageSrc = largeImage || PLACE_HOLDER;
+  const altText = product?.images?.[0]?.altText ?? "";
 
-  const altText =
-    product?.images?.[0]?.altText ?? "";
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [backgroundPosition, setBackgroundPosition] = useState("0% 0%");
+  const [showZoom, setShowZoom] = useState(false);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const { left, top, width, height } =
+      containerRef.current!.getBoundingClientRect();
+
+    const x = ((e.pageX - left) / width) * 100;
+    const y = ((e.pageY - top) / height) * 100;
+
+    setBackgroundPosition(`${x}% ${y}%`);
+  };
 
   return (
-    <div id="imageZoom" className="w-full">
-      <div className="h-88.5 md:h-full relative">
-        <ReactImageMagnify
-          smallImage={{
-            alt: altText,
-            isFluidWidth: true,
-            src: imageSrc,
-            onError: (e: any) => {
-              e.target.onerror = null;
-              e.target.src = PLACE_HOLDER;
-            },
+    <div
+      ref={containerRef}
+      className="relative w-full h-full overflow-hidden rounded-xl cursor-zoom-in"
+      onMouseEnter={() => setShowZoom(true)}
+      onMouseLeave={() => setShowZoom(false)}
+      onMouseMove={handleMouseMove}
+    >
+      {/* Normal Image */}
+      <img
+        src={imageSrc}
+        alt={altText}
+        onError={(e: any) => {
+          e.target.onerror = null;
+          e.target.src = PLACE_HOLDER;
+        }}
+        className="w-full h-full object-contain bg-white"
+      />
+
+      {/* Zoom Overlay */}
+      {showZoom && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: `url(${imageSrc})`,
+            backgroundRepeat: "no-repeat",
+            backgroundSize: "400%",
+            backgroundPosition: backgroundPosition,
           }}
-          largeImage={{
-            src: imageSrc,
-            width: 2000,
-            height: 3000,
-            onError: (e: any) => {
-              e.target.onerror = null;
-              e.target.src = PLACE_HOLDER;
-            },
-          }}
-          lensStyle={{
-            height: "100%",
-          }}
-          enlargedImageContainerStyle={{
-            background: "#ffffff",
-            zIndex: 50,
-          }}
-          imageClassName="
-            relative
-            mx-auto
-            w-[90%] md:w-full
-            max-w-full
-            max-h-full md:max-h-[90%]
-            object-contain
-            bg-white
-            transition-opacity
-            duration-150
-          "
-          className="h-full"
         />
-      </div>
+      )}
     </div>
   );
 };
