@@ -14,16 +14,11 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         ref={ref}
         className={cn(
           `
-          w-full h-[44px] rounded-lg border bg-background
+          w-full h-[44px] rounded-lg border !border-[#2f2f2f]
           px-4 text-sm
           placeholder:text-muted-foreground
           transition-colors duration-200
-
-          focus:outline-none
-          focus:ring-2
-           focus:ring-yellow-200
-            focus:border-[#f3c200]
-
+          focus:outline-none focus:!border-[#f3c200]
           disabled:opacity-50 disabled:cursor-not-allowed
           `,
           error

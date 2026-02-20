@@ -10,7 +10,7 @@ export default function AuthLayout({
     return (
         <>
             <Header />
-            <div className="flex items-center justify-center mx-auto w-full max-w-[1648px] px-2 md:px-6 lg:py-16 xl:py-20">
+            <div className="flex items-center justify-center mx-auto w-full max-w-[1648px] px-4 md:px-6 pt-10 lg:py-16 xl:py-20">
                 {children}
             </div>
             <PreFooterIconModule />

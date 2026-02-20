@@ -51,7 +51,7 @@ export default function LoginPage() {
                 <h1 className="text-2xl font-bold section_title">
                     {t("welcomeBack")}
                 </h1>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-sm text-gray-500 mb-6">
                     {t("signInToAccount")}
                 </p>
             </div>
@@ -113,7 +113,7 @@ export default function LoginPage() {
                 <div className="flex justify-end">
                     <Link
                         href="/auth/forgot-password"
-                        className="text-sm font-medium text-foreground hover:text-primary transition"
+                        className="text-sm font-medium text-foreground hover:text-[#d6ab00] transition"
                     >
                         {t("forgotPassword")}
                     </Link>
@@ -133,9 +133,9 @@ export default function LoginPage() {
 
             {/* OR CONNECT WITH */}
             <div className="mt-6">
-                <div className="flex items-center gap-3">
-                    <div className="flex-1 h-px bg-border" />
-                    <span className="text-xs text-muted-foreground font-medium">
+                <div className="flex items-center gap-3 max-w-[75%] mx-auto">
+                    <div className="flex-1 h-px bg-gray-300" />
+                    <span className="text-sm text-muted-foreground font-medium">
                         {t("orConnectWith")}
                     </span>
                     <div className="flex-1 h-px bg-gray-300" />
@@ -143,9 +143,8 @@ export default function LoginPage() {
 
                 <Link
                     href="/auth/login-mobile"
-                    className="mt-4 flex items-center justify-center rounded-lg border border-input
-py-2.5 text-sm font-semibold text-foreground
-hover:border-primary hover:text-primary transition"
+                    className="mt-4 w-full rounded-lg btn-primary py-3 font-semibold
+      hover:bg-yellow-400 hover:text-black transition disabled:opacity-50 flex items-center justify-center gap-2"
 
                 >
                     {t("loginWithNumber")}
