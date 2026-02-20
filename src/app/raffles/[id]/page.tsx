@@ -18,9 +18,21 @@ import ComingSoon from "@/src/components/common/ComingSoon";
 import LoginModal from "@/src/components/modals/LoginModal";
 import FreeTicketConfirmationModal from "@/src/components/modals/FreeTicketConfirmationModal";
 import ApplyTicketConfirmationModal from "@/src/components/modals/ApplyTicketConfirmationModal";
+import TermsAndConditionsModal from "@/src/components/modals/TermsAndConditionsModal";
 import { BASE_URL, PRODUCT_CART, STORE_CATEGORY_ID, ENABLE_BRANCH_IO } from "@/src/lib/config";
 import { createProductDeepLink } from "@/src/lib/services/deeplink";
 import { getCookie } from "cookies-next";
+import { useAuth } from "@/src/context/authContext";
+// Raffle Detail Components
+import WinProbabilitySection from "@/src/components/raffle-detail/WinProbabilitySection";
+import CountdownTimerDisplay from "@/src/components/raffle-detail/CountdownTimerDisplay";
+import PriceProgressBar from "@/src/components/raffle-detail/PriceProgressBar";
+import Timeline from "@/src/components/raffle-detail/Timeline";
+import EntrySelection from "@/src/components/raffle-detail/EntrySelection";
+import QuantitySelector from "@/src/components/raffle-detail/QuantitySelector";
+import AccordionSection from "@/src/components/raffle-detail/AccordionSection";
+import QuestionsSection from "@/src/components/raffle-detail/QuestionsSection";
+import HighlightsSection from "@/src/components/raffle-detail/HighlightsSection";
 
 type Ticket = {
     ticketId?: string;
@@ -79,15 +91,20 @@ type LegacyRaffleDetail = {
     availableTickets?: number;
     unitId?: string;
     storeId?: string;
+    highlights?: string[];
+    raffleEmailEntry?: boolean;
+    raffleEmailEntryDesc?: {
+        en?: string;
+        es?: string;
+    };
 };
-import CountdownTimer from "@/src/components/CountdownTimer";
-// 
 import { toast } from "sonner";
 import { stripHtml } from "@/src/lib/utils/HtmltoText";
 import { Button } from "../../../components/ui/button";
 
 
 export default function RafflesDetailPage() {
+    const { user } = useAuth();
     const [sharing, setSharing] = useState(false)
     const params = useParams();
     const searchParams = useSearchParams();
@@ -116,17 +133,19 @@ export default function RafflesDetailPage() {
         sellerInfo: boolean;
         questionsAnswers: boolean;
     }>({
-        productDescription: true,
+        productDescription: false,
         rulesOfDraw: false,
         termsConditions: false,
         sellerInfo: false,
-        questionsAnswers: true,
+        questionsAnswers: false,
     });
     const [questionText, setQuestionText] = useState("");
     const [submittingQuestion, setSubmittingQuestion] = useState(false);
     const [questions, setQuestions] = useState<Question[]>([]);
     const [questionsLoading, setQuestionsLoading] = useState(false);
     const [questionsCount, setQuestionsCount] = useState(0);
+    const [showTermsModal, setShowTermsModal] = useState(false);
+    const [showEmailEntryModal, setShowEmailEntryModal] = useState(false);
     const [freeTicketError, setFreeTicketError] = useState<string | null>(null);
     const [selectedQuantity, setSelectedQuantity] = useState<number>(1);
     const [showQuantitySelector, setShowQuantitySelector] = useState(false);
@@ -153,6 +172,7 @@ export default function RafflesDetailPage() {
     const fetchingAddressesRef = useRef(false);
     const fetchingAllRafflesRef = useRef(false);
     const lastFetchedLotteryIdRef = useRef<string | null>(null);
+    const lastFetchedLocaleRef = useRef<string | null>(null);
     const hasRestoredFromCartRef = useRef(false);
     const restoringFromCartRef = useRef(false);
 
@@ -243,13 +263,14 @@ export default function RafflesDetailPage() {
             return;
         }
 
-        // Prevent duplicate calls for the same pid
-        if (fetchingRaffleRef.current || lastFetchedPidRef.current === lotteryId) {
+        // Prevent duplicate calls for the same pid AND locale
+        if (fetchingRaffleRef.current || (lastFetchedPidRef.current === lotteryId && lastFetchedLocaleRef.current === locale)) {
             return;
         }
 
         fetchingRaffleRef.current = true;
         lastFetchedPidRef.current = lotteryId;
+        lastFetchedLocaleRef.current = locale;
         setLoading(true);
 
         RaffleService.getRaffleDetails(lotteryId)
@@ -304,7 +325,7 @@ export default function RafflesDetailPage() {
                 setLoading(false);
                 fetchingRaffleRef.current = false;
             });
-    }, [params.id, pid]); // Removed locale dependency as it shouldn't trigger refetch
+    }, [params.id, pid, locale]); // Include locale to trigger refetch when language changes
 
     useEffect(() => {
         const handleScroll = () => setShowScrollTop(window.scrollY > 400);
@@ -600,7 +621,7 @@ export default function RafflesDetailPage() {
         };
 
         fetchAllRaffles();
-    }, [lotteryItem, params.id]);
+    }, [lotteryItem, params.id, locale]);
 
     // Set default ticket on mount - MUST be before early returns
     useEffect(() => {
@@ -775,30 +796,6 @@ export default function RafflesDetailPage() {
 
     if (!lotteryItem) return null;
 
-    // Helper function to calculate progress percentage
-    // Based on old code: CountPercentage(ProductData?.goalValue, ProductData?.ticketGoalAmount)
-    // Progress = (current amount / target amount) * 100
-    // ticketGoalAmount = current amount sold, goalValue = target amount
-    const calculateProgress = (goalValue: number | undefined, ticketGoalAmount: number | undefined): number => {
-        if (!goalValue || !ticketGoalAmount || goalValue === 0) return 0;
-        const percentage = (ticketGoalAmount / goalValue) * 100;
-        return Math.min(100, Math.max(0, Math.round(percentage)));
-    };
-
-    // Helper function to format date
-    const formatDate = (timestamp: number | undefined): string => {
-        if (!timestamp) return "";
-        try {
-            const date = new Date(timestamp * 1000);
-            return date.toLocaleDateString(locale === "es" ? "es-ES" : "en-US", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-            }).toUpperCase();
-        } catch {
-            return "";
-        }
-    };
 
     // Check if user is authenticated
     const isAuthenticated = (): boolean => {
@@ -1116,76 +1113,12 @@ export default function RafflesDetailPage() {
     const displayName = lotteryItem.campaignTitle || lotteryItem.productName || lotteryItem.name || "";
     const displayImage =
         lotteryItem.image?.[0]?.medium ?? PRODUCT_CART;
-    const displayPrice = lotteryItem.goalValue ?? lotteryItem.ticketPrice ?? lotteryItem.price;
     const displayCurrency = lotteryItem.currencySymbol ?? "USD";
-    const progressPercentage = calculateProgress(
-        lotteryItem.goalValue,
-        lotteryItem.ticketGoalAmount
-    );
     const timelineData = getTimelineData();
-
-    // Calculate probabilities - use API values if available, otherwise calculate
-    const totalEntries = lotteryItem.totalTicketsGenerated ?? lotteryItem.totalEntriesSold ?? 0;
-    // Paid probability: use API value or calculate
-    const paidProbability = lotteryItem.paidProbability !== undefined
-        ? Math.round(lotteryItem.paidProbability)
-        : totalEntries > 0
-            ? Math.round(((lotteryItem.paidEntries ?? lotteryItem.sold ?? 0) / totalEntries) * 100)
-            : 0;
-    // Free probability: use API value or calculate
-    const freeProbability = lotteryItem.freeProbability !== undefined
-        ? Math.round(lotteryItem.freeProbability)
-        : totalEntries > 0
-            ? Math.round(((lotteryItem.freeEntries ?? 0) / totalEntries) * 100)
-            : 0;
-    // My probability: use API value or calculate
-    const myTotalEntries = (lotteryItem.totalPaidTicketsGeneratedUser ?? 0) + (lotteryItem.totalFreeTicketsGeneratedUser ?? 0);
-    const myProbability = lotteryItem.myProbablity !== undefined
-        ? Math.round(lotteryItem.myProbablity)
-        : totalEntries > 0
-            ? Math.round((myTotalEntries / totalEntries) * 100)
-            : 0;
 
     // User's available tickets (total wallet balance, not raffle-specific)
     // Use the fetched ticket balance from the API
     const userTickets = userTicketBalance;
-
-    // Circular Progress Bar Component
-    const CircularProgressBar = ({ percentage }: { percentage: number }) => {
-        const radius = 40;
-        const circumference = 2 * Math.PI * radius;
-        const offset = circumference - (percentage / 100) * circumference;
-
-        return (
-            <div className="relative w-24 h-24">
-                <svg className="transform -rotate-90 w-full h-full">
-                    <circle
-                        cx="50%"
-                        cy="50%"
-                        r={radius}
-                        fill="none"
-                        stroke="#E5E7EB"
-                        strokeWidth="8"
-                    />
-                    <circle
-                        cx="50%"
-                        cy="50%"
-                        r={radius}
-                        fill="none"
-                        stroke="#D4AF37"
-                        strokeWidth="8"
-                        strokeDasharray={circumference}
-                        strokeDashoffset={offset}
-                        strokeLinecap="round"
-                        className="transition-all duration-300"
-                    />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-sm font-bold text-[#797979]">{percentage}%</span>
-                </div>
-            </div>
-        );
-    };
     const slugifyName = (name: string) =>
         name
             .toLowerCase()
@@ -1271,40 +1204,33 @@ export default function RafflesDetailPage() {
         }
     };
 
-
     return (
         <main className="bg-gray-50 min-h-screen">
             <Header />
 
             <div className="w-full px-4 py-4 md:py-6">
-                {/* Campaign Title and Product Name - Full Width */}
+                {/* Full Width Header Title Section */}
                 <div className="mx-auto mb-6">
-                    <div className="bg-white rounded-lg shadow-lg p-4 flex items-start justify-between">
-                        <div>
-                            {lotteryItem.campaignTitle && (
-                                <h3 className="text-lg font-bold text-[#2f2f2f] uppercase mb-2">
-                                    {lotteryItem.campaignTitle}
-                                </h3>
-                            )}
-                        </div>
+                    <div className="bg-white rounded-lg shadow-lg p-4 flex items-center justify-between">
+                        <h1 className="text-lg md:text-xl font-black text-[#2f2f2f] uppercase">
+                            {lotteryItem.productName || lotteryItem.name || lotteryItem.campaignTitle}
+                        </h1>
 
                         <Button
                             onClick={handleShare}
                             disabled={sharing}
-                            className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-[#2f2f2f] border border-gray-200 rounded-lg hover:bg-gray-100 cursor-pointer transition"
+                            className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-black bg-[#FECB02] hover:bg-[#FFD84D] rounded-lg shadow-md transition-all active:scale-95"
                         >
                             <Share2 size={18} />
-                            {sharing ? "Sharing..." : "Share"}
+                            {sharing ? "..." : t("share") || "Share"}
                         </Button>
                     </div>
-
                 </div>
 
                 {/* Main Content Layout */}
                 <div className="flex flex-col lg:flex-row gap-6 mb-6 mx-auto items-start">
-                    {/* Left Side - Product Image and Win Probability */}
+                    {/* Left Column - Product Image and Win Probability */}
                     <div className="w-full lg:w-2/5 space-y-6">
-
                         {/* Product Image Area */}
                         <div className="bg-white rounded-xl shadow-lg p-3 md:p-4 min-h-[250px] flex items-center justify-center">
                             <div className="relative w-full max-w-xs aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden flex items-center justify-center shadow-inner">
@@ -1319,797 +1245,427 @@ export default function RafflesDetailPage() {
                         </div>
 
                         {/* Win Probability Section */}
-                        <div className="bg-white rounded-xl shadow-lg p-6 md:p-8">
-                            {/* Row 1: Title */}
-                            <h2 className="text-lg md:text-xl font-bold text-[#2f2f2f] mb-6 uppercase text-center">
-                                {t("winProbability")}
-                            </h2>
+                        <WinProbabilitySection lotteryItem={lotteryItem} />
 
-                            {/* Row 2: Statistics */}
-                            <div className="mb-6">
-                                <div className="flex flex-col md:flex-row md:justify-center gap-4 md:gap-6">
-                                    <div className="text-center">
-                                        <div className="text-sm md:text-base text-[#2f2f2f]">
-                                            <span className="font-semibold">{t("totalEntriesSold")}:</span>
-                                            <br />
-                                            <span className="text-[#797979]">{totalEntries.toLocaleString()}</span>
-                                        </div>
-                                    </div>
-                                    <div className="text-center">
-                                        <div className="text-sm md:text-base text-[#2f2f2f]">
-                                            <span className="font-semibold">{t("myPaidEntries")}:</span>
-                                            <br />
-                                            <span className="text-[#797979]">
-                                                {(lotteryItem.totalPaidTicketsGeneratedUser ?? 0).toLocaleString()}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="text-center">
-                                        <div className="text-sm md:text-base text-[#2f2f2f]">
-                                            <span className="font-semibold">{t("myFreeEntries")}:</span>
-                                            <br />
-                                            <span className="text-[#797979]">
-                                                {(lotteryItem.totalFreeTicketsGeneratedUser ?? 0).toLocaleString()}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
+                        {/* Participate Rule Button - Moved to Left Column per User request */}
+                        {lotteryItem?.raffleEmailEntry && (
+                            <div className="flex justify-start">
+                                <Button
+                                    onClick={() => setShowEmailEntryModal(true)}
+                                    className="w-fit bg-gray-100 hover:bg-gray-200 text-[#2f2f2f] font-bold h-8 px-3 rounded-md transition-all border border-gray-200 flex items-center justify-center gap-2 uppercase text-[10px] tracking-wider"
+                                >
+                                    <span className="text-[12px]">ℹ️</span>
+                                    {t("participateRule") || "Participate Rule"}
+                                </Button>
                             </div>
-
-                            {/* Row 3: Progress Bars */}
-                            <div className="mb-6">
-                                <div className="flex flex-wrap justify-center gap-6 md:gap-8">
-                                    <div className="flex flex-col items-center">
-                                        <CircularProgressBar percentage={paidProbability} />
-                                        <p className="SubProgress text-xs md:text-sm font-medium text-[#797979] mt-3 whitespace-nowrap">
-                                            {t("paid")}
-                                        </p>
-                                    </div>
-                                    <div className="flex flex-col items-center">
-                                        <CircularProgressBar percentage={freeProbability} />
-                                        <p className="SubProgress text-xs md:text-sm font-medium text-[#797979] mt-3 whitespace-nowrap">
-                                            {t("free")}
-                                        </p>
-                                    </div>
-                                    <div className="flex flex-col items-center">
-                                        <CircularProgressBar percentage={myProbability} />
-                                        <p className="SubProgress text-xs md:text-sm font-medium text-[#797979] mt-3 whitespace-nowrap">
-                                            {t("myProbability")}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Disclaimer */}
-                            <p className="text-xs md:text-sm text-[#797979] leading-relaxed text-center">
-                                {t("probabilityDisclaimer")}
-                            </p>
-                        </div>
+                        )}
                     </div>
 
-                    {/* Right Side - Sidebar */}
+                    {/* Right Column - Selection and Call-to-Action */}
                     <div className="w-full lg:w-3/5 space-y-6">
                         {/* Countdown Timer */}
-                        <div className="bg-black rounded-lg p-4">
-                            <div className="grid grid-cols-4 gap-2">
-                                <div className="bg-[#D4AF37] rounded p-3 text-center">
-                                    <div className="text-2xl font-bold text-black">{countdown.days}</div>
-                                    <div className="text-xs font-medium text-black mt-1">{t("days")}</div>
-                                </div>
-                                <div className="bg-[#D4AF37] rounded p-3 text-center">
-                                    <div className="text-2xl font-bold text-black">{countdown.hours}</div>
-                                    <div className="text-xs font-medium text-black mt-1">{t("hrs")}</div>
-                                </div>
-                                <div className="bg-[#D4AF37] rounded p-3 text-center">
-                                    <div className="text-2xl font-bold text-black">{countdown.minutes}</div>
-                                    <div className="text-xs font-medium text-black mt-1">{t("mins")}</div>
-                                </div>
-                                <div className="bg-[#D4AF37] rounded p-3 text-center">
-                                    <div className="text-2xl font-bold text-black">{countdown.seconds}</div>
-                                    <div className="text-xs font-medium text-black mt-1">{t("sec")}</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Price and Progress Bar */}
-                        <div className="bg-white rounded-lg shadow-lg p-4">
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-lg font-semibold text-[#797979]">
-                                    {displayCurrency} {displayPrice ?? "0"}
-                                </span>
-                                <span className="text-lg font-semibold text-[#797979]">
-                                    {progressPercentage}%
-                                </span>
-                            </div>
-                            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-[#D4AF37] transition-all duration-300"
-                                    style={{ width: `${progressPercentage}%` }}
-                                ></div>
-                            </div>
-                        </div>
-
-                        {/* Ticket Offer Section - Mobile View */}
-                        {selectedTicket && (() => {
-                            const ticketsSource: any[] =
-                                lotteryItem.tickets ||
-                                (lotteryItem as any).ticketPackages ||
-                                (lotteryItem as any).ticketOptions ||
-                                (lotteryItem as any).entryOptions ||
-                                [];
-
-                            let selectedTicketData: any = null;
-                            ticketsSource.forEach((ticket: any) => {
-                                const ticketId = ticket.ticketId || ticket.id || ticket._id || "";
-                                if (selectedTicket === ticketId) {
-                                    selectedTicketData = ticket;
-                                }
-                            });
-
-                            if (selectedTicketData) {
-                                const ticketPrice = selectedTicketData.price || selectedTicketData.ticketPrice || 0;
-                                const numberOfTickets = selectedTicketData.numberOfTicket || selectedTicketData.numberOfTickets || selectedTicketData.quantity || 0;
-
-                                return (
-                                    <div className="bg-gray-100 rounded-lg p-3 md:hidden">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-base font-semibold text-[#797979]">
-                                                {displayCurrency} {ticketPrice?.toFixed(2) || "0.00"}
-                                            </span>
-                                            <span className="text-sm text-[#797979]">
-                                                ({numberOfTickets} {t("tickets") || "Tickets"})
-                                            </span>
-                                        </div>
-                                    </div>
-                                );
-                            }
-                            return null;
-                        })()}
+                        <CountdownTimerDisplay countdown={countdown} />
 
                         {/* Timeline */}
-                        {timelineData.length > 0 && (
-                            <div className="bg-white rounded-lg shadow-lg p-4">
-                                <div className="relative flex items-start justify-between">
-                                    {/* Connecting line */}
-                                    <div className="absolute top-1.5 left-0 right-0 h-0.5 bg-[#D4AF37] z-0"></div>
+                        <Timeline timelineData={timelineData} />
 
-                                    {timelineData.map((item, index) => (
-                                        <div key={item.key} className="flex flex-col items-center flex-1 relative z-10">
-                                            <div
-                                                className={`w-3 h-3 rounded-full ${item.isActive ? "bg-[#D4AF37]" : "bg-gray-300"
-                                                    } mb-2`}
-                                            ></div>
-                                            <div className="text-center">
-                                                <p className="text-xs font-medium text-[#797979]">
-                                                    {formatDate(item.date)}
-                                                </p>
-                                                <p className="text-xs text-[#797979] mt-1">
-                                                    {item.label}
-                                                </p>
+                        {/* Price and Progress Bar */}
+                        <PriceProgressBar lotteryItem={lotteryItem} />
+
+                        {/* Titles and Highlights Card */}
+                        {lotteryItem.highlights && lotteryItem.highlights.length > 0 && (
+                            <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 border border-gray-50">
+                                <div className="space-y-5">
+                                    {/* Campaign Title */}
+                                    {lotteryItem.campaignTitle && (
+                                        <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
+                                            <div className="w-8 h-8 rounded-lg bg-[#FECB02]/10 flex items-center justify-center flex-shrink-0">
+                                                <span className="text-sm">🏆</span>
                                             </div>
+                                            <h3 className="text-lg md:text-xl font-black text-[#2f2f2f] uppercase tracking-wider leading-tight">
+                                                {lotteryItem.campaignTitle}
+                                            </h3>
                                         </div>
-                                    ))}
+                                    )}
+
+                                    {/* Highlights Content */}
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <div className="h-4 w-1 bg-[#FECB02] rounded-full"></div>
+                                            <h4 className="text-xs md:text-sm font-black text-amber-600 uppercase tracking-[0.1em]">
+                                                {t("highlights") || "HIGHLIGHTS"}
+                                            </h4>
+                                        </div>
+
+                                        <ul className="space-y-4">
+                                            {(() => {
+                                                const fullText = lotteryItem.highlights
+                                                    .join('\n')
+                                                    .replace(/\uFFFD/g, '')
+                                                    .trim();
+
+                                                if (!fullText) return [];
+
+                                                const fragments = fullText
+                                                    .split(/\n/g)
+                                                    .map(f => f.trim())
+                                                    .filter(f => f.length > 0);
+
+                                                // 3. Process fragments to ensure icons are attached to content
+                                                const processedRows: string[] = [];
+                                                for (let i = 0; i < fragments.length; i++) {
+                                                    const current = fragments[i];
+                                                    const isIconOnly = current.length <= 4 && /[📌📁⚠️🏆]/.test(current);
+
+                                                    if (isIconOnly && i + 1 < fragments.length) {
+                                                        processedRows.push(current + " " + fragments[i + 1]);
+                                                        i++; // Skip merged text
+                                                    } else {
+                                                        processedRows.push(current);
+                                                    }
+                                                }
+                                                return processedRows;
+                                            })().map((highlight: string, index: number) => {
+                                                const hasEmoji = /[📌📁⚠️🏆]/.test(highlight.charAt(0));
+                                                return (
+                                                    <li key={index} className="flex items-start gap-3 group">
+                                                        {!hasEmoji && (
+                                                            <div className="mt-1.5 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#FECB02] group-hover:scale-125 transition-transform shadow-[0_0_8px_rgba(254,203,2,0.4)]" />
+                                                        )}
+                                                        <span className={`text-sm md:text-base text-[#4a4a4a] font-medium leading-[1.6] ${hasEmoji ? 'pl-0' : ''}`}>
+                                                            {highlight}
+                                                        </span>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* Entry Selection */}
-                        <div className="bg-white rounded-lg shadow-lg p-4">
-                            <p className="text-sm font-semibold text-[#797979] mb-1">{t("selectEntries")}</p>
-                            {freeTicketError && (
-                                <p className="mb-2 text-xs text-red-500">
-                                    {freeTicketError}
-                                </p>
-                            )}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {(() => {
-                                    // Check multiple possible ticket field names
-                                    const tickets =
-                                        lotteryItem.tickets ||
-                                        (lotteryItem as any).ticketPackages ||
-                                        (lotteryItem as any).ticketOptions ||
-                                        (lotteryItem as any).entryOptions ||
-                                        [];
+                        <EntrySelection
+                            lotteryItem={lotteryItem}
+                            selectedTicket={selectedTicket}
+                            onTicketSelect={setSelectedTicket}
+                            currencySymbol={displayCurrency}
+                            freeTicketError={freeTicketError}
+                            userTickets={userTickets}
+                            ticketQuantity={ticketQuantity}
+                            onTicketQuantityChange={setTicketQuantity}
+                            onApplyClick={() => {
+                                if (ticketQuantity <= 0 || ticketQuantity > userTickets || !lotteryItem) {
+                                    return;
+                                }
+                                setShowApplyConfirmationModal(true);
+                            }}
+                            applyingTicket={applyingTicket}
+                        />
 
-                                    // eslint-disable-next-line no-console
-
-                                    if (tickets && Array.isArray(tickets) && tickets.length > 0) {
-                                        return (
-                                            <>
-                                                {tickets.map((ticket: any, index: number) => {
-                                                    // Handle different ticket structures
-                                                    const ticketId = ticket.ticketId || ticket.id || ticket._id || index.toString();
-                                                    const ticketPrice = ticket.price || ticket.ticketPrice || 0;
-                                                    const numberOfTickets = ticket.numberOfTicket || ticket.numberOfTickets || ticket.quantity || 0;
-
-                                                    return (
-                                                        <button
-                                                            key={ticketId}
-                                                            onClick={() => setSelectedTicket(ticketId)}
-                                                            className={`p-4 sm:p-3 rounded-lg border-2 transition-all w-full ${selectedTicket === ticketId
-                                                                ? "border-[#D4AF37] bg-[#FFF8E7] shadow-md"
-                                                                : "border-gray-200 hover:border-[#D4AF37] bg-white"
-                                                                }`}
-                                                        >
-                                                            <div className="flex flex-row justify-between items-center gap-2">
-                                                                <span className="text-base sm:text-sm font-semibold text-[#797979]">
-                                                                    {displayCurrency} {ticketPrice?.toFixed(2) || "0.00"}
-                                                                </span>
-                                                                <span className="text-xs sm:text-xs text-[#797979] whitespace-nowrap">
-                                                                    ({numberOfTickets || 0} {t("tickets") || "Tickets"})
-                                                                </span>
-                                                            </div>
-                                                        </button>
-                                                    );
-                                                })}
-                                            </>
-                                        );
-                                    } else {
-                                        return (
-                                            <div className="text-sm text-[#797979] text-center py-4 col-span-1 sm:col-span-2 lg:col-span-3">
-                                                {t("noTicketsAvailable") || "No tickets available"}
-                                            </div>
-                                        );
-                                    }
-                                })()}
-                            </div>
-
-                            {/* Special Ticket Entry Box */}
-                            <div className="mt-4 p-4 bg-[#2f2f2f] rounded-lg">
-                                <div className="flex items-center justify-between mb-4">
-                                    <span className="text-sm font-semibold text-white uppercase">{t("tickets") || "TICKETS"}</span>
-                                    <button className="text-xs px-3 py-1 bg-transparent border border-white text-white rounded hover:bg-white hover:text-[#2f2f2f] transition-colors">
-                                        {t("useWithRestrictions") || "Use with Restrictions"}
-                                    </button>
-                                </div>
-                                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-                                    <div className="flex items-center gap-3 md:gap-4">
-                                        <div className="w-12 h-12 md:w-14 md:h-14 bg-[#D4AF37] rounded-full flex items-center justify-center flex-shrink-0">
-                                            <span className="text-white font-bold text-xl md:text-2xl">⭐</span>
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-xl md:text-2xl font-bold text-[#D4AF37] uppercase break-words">
-                                                {userTickets?.toLocaleString() || "0"} {t("tickets") || "TICKETS"}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="flex md:hidden items-center gap-2">
-                                        <Button
-                                            type="button"
-                                            onClick={() => {
-                                                if (ticketQuantity > 0) {
-                                                    setTicketQuantity(ticketQuantity - 1);
-                                                }
-                                            }}
-                                            disabled={ticketQuantity <= 0}
-                                            className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-700 hover:bg-gray-600 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                                        >
-                                            <Minus size={20} />
-                                        </Button>
-                                        <input
-                                            id="ticketQuantityMobile"
-                                            type="number"
-                                            min="0"
-                                            max={userTickets}
-                                            value={ticketQuantity}
-                                            onChange={(e) => {
-                                                const val = Math.max(0, Math.min(userTickets, parseInt(e.target.value) || 0));
-                                                setTicketQuantity(val);
-                                            }}
-                                            className="w-16 h-10 bg-gray-700 text-white font-bold rounded text-center focus:outline-none focus:ring-2 focus:ring-[#D4AF37] transition-colors"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                if (ticketQuantity < userTickets) {
-                                                    setTicketQuantity(ticketQuantity + 1);
-                                                }
-                                            }}
-                                            disabled={ticketQuantity >= userTickets}
-                                            className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-700 hover:bg-gray-600 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                                        >
-                                            <Plus size={20} />
-                                        </button>
-                                    </div>
-                                    <div className="hidden md:flex items-center gap-3">
-                                        <label htmlFor="ticketQuantity" className="text-white text-sm">
-                                            Tickets
-                                        </label>
-                                        <input
-                                            id="ticketQuantity"
-                                            type="number"
-                                            min="0"
-                                            max={userTickets}
-                                            value={ticketQuantity}
-                                            onChange={(e) => {
-                                                const val = Math.max(0, Math.min(userTickets, parseInt(e.target.value) || 0));
-                                                setTicketQuantity(val);
-                                            }}
-                                            className="ticket-quantity w-16 h-12 bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold rounded text-center focus:outline-none focus:ring-2 focus:ring-white transition-colors"
-                                        />
-                                    </div>
-                                </div>
-                                {/* How to earn text and Apply button */}
-                                <div className="mt-4 mb-1 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                                    <div className="flex-1">
-                                        <button className="text-sm text-white hover:text-[#D4AF37] font-semibold transition-colors">
-                                            {t("howToEarn") || "How to Earn?"}
-                                        </button>
-                                        <p className="mt-2 text-xs text-white italic">
-                                            {t("ticketPurchaseNote") || "NOTE: Please click on Request purchase with ticket"}
-                                        </p>
-                                    </div>
-                                    {ticketQuantity > 0 && (
-                                        <Button
-                                            onClick={() => {
-                                                if (ticketQuantity <= 0 || ticketQuantity > userTickets || !lotteryItem) {
-                                                    return;
-                                                }
-                                                setShowApplyConfirmationModal(true);
-                                            }}
-                                            disabled={ticketQuantity <= 0 || ticketQuantity > userTickets || applyingTicket || !lotteryItem}
-                                            className="px-8 py-2 bg-[#D4AF37] hover:bg-[#B8860B] disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-bold rounded transition-colors uppercase whitespace-nowrap"
-                                        >
-                                            {t("apply") || "APPLY"}
-                                        </Button>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Participate/Continue Button */}
-                        {showQuantitySelector ? (
-                            // Show quantity selector + CONTINUE button together in one row
-                            <div className="flex items-center gap-2 md:gap-4">
-                                {/* Quantity Selector */}
-                                <div className="flex items-center gap-2">
-                                    <Button
-                                        type="button"
-                                        onClick={async () => {
-                                            const currentQty = Number(selectedQuantity) || 1;
-                                            if (!applyingTicket && selectedTicket) {
-                                                if (currentQty > 1) {
-                                                    // Decrease quantity
-                                                    const newQty = currentQty - 1;
-                                                    setSelectedQuantity(newQty);
-                                                    // Update cart with new quantity (set exact quantity)
-                                                    await handleAddToCart(selectedTicket, newQty, false, true);
-                                                } else if (currentQty === 1) {
-                                                    // Remove from cart when quantity is 1
-                                                    await handleRemoveFromCart(selectedTicket);
-                                                }
-                                            }
-                                        }}
-                                        disabled={applyingTicket}
-                                        className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-gray-100 hover:bg-[#D4AF37] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-100 disabled:hover:text-[#797979] transition-all duration-200"
-                                    >
-                                        <Minus size={20} className="text-[#797979]" />
-                                    </Button>
-
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        value={selectedQuantity}
-                                        onBlur={async (e) => {
-                                            const val = Math.max(1, parseInt(e.target.value) || 1);
-                                            if (val !== selectedQuantity && !applyingTicket && selectedTicket) {
-                                                setSelectedQuantity(val);
-                                                // Update cart with new quantity when user finishes editing (set exact quantity)
-                                                await handleAddToCart(selectedTicket, val, false, true);
-                                            }
-                                        }}
-                                        onChange={(e) => {
-                                            const val = Math.max(1, parseInt(e.target.value) || 1);
-                                            setSelectedQuantity(val);
-                                        }}
-                                        className="w-16 md:w-20 h-10 md:h-12 text-center text-lg md:text-xl font-bold text-[#797979] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:ring-opacity-50 ticket-quantity bg-gray-50"
-                                    />
-
-                                    <Button
-                                        type="button"
-                                        onClick={async () => {
-                                            const currentQty = Number(selectedQuantity) || 1;
-                                            const newQty = currentQty + 1;
-                                            setSelectedQuantity(newQty);
-                                            // Update cart with new quantity (set exact quantity)
-                                            if (!applyingTicket && selectedTicket) {
+                        {/* Participate Action Area - Sticky for conversion */}
+                        <div className="mt-6 sticky bottom-0 bg-white/95 backdrop-blur-md p-4 -mx-4 md:mx-0 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05),0_-4px_6px_-2px_rgba(0,0,0,0.05)] rounded-t-2xl z-40 border-t border-gray-100/50">
+                            {showQuantitySelector ? (
+                                <QuantitySelector
+                                    selectedQuantity={selectedQuantity}
+                                    onQuantityChange={setSelectedQuantity}
+                                    onDecrease={async () => {
+                                        const currentQty = Number(selectedQuantity) || 1;
+                                        if (!applyingTicket && selectedTicket) {
+                                            if (currentQty > 1) {
+                                                const newQty = currentQty - 1;
+                                                setSelectedQuantity(newQty);
                                                 await handleAddToCart(selectedTicket, newQty, false, true);
+                                            } else if (currentQty === 1) {
+                                                await handleRemoveFromCart(selectedTicket);
                                             }
-                                        }}
-                                        disabled={applyingTicket}
-                                        className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-gray-100 hover:bg-[#D4AF37] hover:text-white transition-all duration-200"
-                                    >
-                                        <Plus size={20} className="text-[#797979]" />
-                                    </Button>
-                                </div>
-
-                                {/* Continue Button */}
-                                <Button
-                                    className="flex-1 bg-[#D4AF37] hover:bg-[#B8860B] text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg uppercase text-sm md:text-base flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    onClick={async () => {
+                                        }
+                                    }}
+                                    onIncrease={async () => {
+                                        const currentQty = Number(selectedQuantity) || 1;
+                                        const newQty = currentQty + 1;
+                                        setSelectedQuantity(newQty);
+                                        if (!applyingTicket && selectedTicket) {
+                                            await handleAddToCart(selectedTicket, newQty, false, true);
+                                        }
+                                    }}
+                                    onContinue={async () => {
                                         if (continuing || applyingTicket || !selectedTicket) return;
                                         setContinuing(true);
                                         try {
-                                            // Ensure cart is updated with current quantity before redirecting (set exact quantity)
                                             await handleAddToCart(selectedTicket, selectedQuantity, false, true);
-                                            // Small delay to ensure cart update completes
                                             await new Promise(resolve => setTimeout(resolve, 100));
                                         } catch (error) {
                                             console.warn("Error updating cart before redirect:", error);
                                         } finally {
-                                            // Redirect to cart page
                                             router.push("/cart");
                                         }
                                     }}
-                                    disabled={applyingTicket || continuing}
+                                    applyingTicket={applyingTicket}
+                                    continuing={continuing}
+                                />
+                            ) : (
+                                <Button
+                                    className="w-full bg-gradient-to-r from-[#FECB02] to-[#FFD84D] hover:from-[#FFD84D] hover:to-[#FECB02] disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold h-12 rounded-lg transition-all shadow-lg flex items-center justify-center gap-2 text-sm md:text-base transform hover:-translate-y-1 uppercase"
+                                    onClick={() => {
+                                        if (!lotteryItem || !selectedTicket || participating || applyingTicket) return;
+
+                                        const ticketsSource: any[] =
+                                            lotteryItem.tickets ||
+                                            (lotteryItem as any).ticketPackages ||
+                                            (lotteryItem as any).ticketOptions ||
+                                            (lotteryItem as any).entryOptions ||
+                                            [];
+
+                                        let selectedTicketData: any = null;
+
+                                        ticketsSource.forEach((ticket: any, index: number) => {
+                                            const ticketId = ticket.ticketId || ticket.id || ticket._id || index.toString();
+                                            if (selectedTicket && ticketId === selectedTicket) {
+                                                const ticketPrice = ticket.price || ticket.ticketPrice || 0;
+                                                const numberOfTickets = ticket.numberOfTicket || ticket.numberOfTickets || ticket.quantity || 0;
+                                                selectedTicketData = {
+                                                    id: ticketId,
+                                                    price: ticketPrice,
+                                                    quantity: numberOfTickets || 0,
+                                                };
+                                            }
+                                        });
+
+                                        if (selectedTicketData && selectedTicketData.price === 0) {
+                                            if (!user) {
+                                                setShowLoginModal(true);
+                                                return;
+                                            }
+                                            setPendingFreeTicket({
+                                                id: selectedTicketData.id,
+                                                quantity: selectedTicketData.quantity || 1,
+                                            });
+                                            setShowFreeTicketModal(true);
+                                            return;
+                                        }
+
+                                        if (selectedTicketData && selectedTicketData.price > 0) {
+                                            handleParticipateClick(selectedTicketData.id, 1);
+                                            return;
+                                        }
+                                    }}
+                                    disabled={participating || applyingTicket || !selectedTicket}
                                 >
-                                    {(applyingTicket || continuing) ? (
+                                    {participating || applyingTicket ? (
                                         <>
-                                            <Loader2 className="w-5 h-5 animate-spin" />
-                                            <span>{t("loading") || "Loading..."}</span>
+                                            <Loader2 size={20} className="animate-spin" />
+                                            <span>{t("processing") || "Processing..."}</span>
                                         </>
                                     ) : (
-                                        <span>{t("continue") || "CONTINUE"}</span>
+                                        <span>{t("participate") || "PARTICIPATE"}</span>
                                     )}
                                 </Button>
-                            </div>
-                        ) : (
-                            // Show PARTICIPATE button
-                            <Button
-                                className="w-full bg-[#D4AF37] hover:bg-[#B8860B] disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 rounded-lg transition-colors shadow-lg flex items-center justify-center gap-2 text-sm md:text-default"
-                                onClick={() => {
-                                    if (!lotteryItem || !selectedTicket || participating || applyingTicket) return;
-
-                                    const ticketsSource: any[] =
-                                        lotteryItem.tickets ||
-                                        (lotteryItem as any).ticketPackages ||
-                                        (lotteryItem as any).ticketOptions ||
-                                        (lotteryItem as any).entryOptions ||
-                                        [];
-
-                                    let selectedTicketData: any = null;
-
-                                    ticketsSource.forEach((ticket: any, index: number) => {
-                                        const ticketId = ticket.ticketId || ticket.id || ticket._id || index.toString();
-                                        if (selectedTicket && ticketId === selectedTicket) {
-                                            const ticketPrice = ticket.price || ticket.ticketPrice || 0;
-                                            const numberOfTickets = ticket.numberOfTicket || ticket.numberOfTickets || ticket.quantity || 0;
-                                            selectedTicketData = {
-                                                id: ticketId,
-                                                price: ticketPrice,
-                                                quantity: numberOfTickets || 0,
-                                            };
-                                        }
-                                    });
-
-                                    // Free ticket flow - show confirmation modal
-                                    if (selectedTicketData && selectedTicketData.price === 0) {
-                                        setPendingFreeTicket({
-                                            id: selectedTicketData.id,
-                                            quantity: selectedTicketData.quantity || 1,
-                                        });
-                                        setShowFreeTicketModal(true);
-                                        return;
-                                    }
-
-                                    // Paid ticket flow - add 1 quantity to cart without redirect, show quantity selector
-                                    if (selectedTicketData && selectedTicketData.price > 0) {
-                                        // Use handleParticipateClick which checks auth, adds to cart, and shows quantity selector
-                                        handleParticipateClick(selectedTicketData.id, 1);
-                                        return;
-                                    }
-                                }}
-                                disabled={participating || applyingTicket || !selectedTicket}
-                            >
-                                {participating || applyingTicket ? (
-                                    <>
-                                        <Loader2 size={20} className="animate-spin" />
-                                        <span>{t("processing") || "Processing..."}</span>
-                                    </>
-                                ) : (
-                                    <span>{t("participate") || "PARTICIPATE"}</span>
-                                )}
-                            </Button>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </div>
 
-                {/* Additional Information Sections */}
-                <div className="bg-white rounded-xl shadow-lg">
+                {/* Additional Information Sections - Now properly at the bottom */}
+                <div className="bg-white rounded-xl shadow-lg mt-8">
                     {/* Product Description Section */}
-                    <div className="border-b border-gray-200">
-                        <button
-                            onClick={() => toggleSection("productDescription")}
-                            className="w-full p-4 md:p-5 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                        >
-                            <h2 className="text-lg md:text-xl font-bold text-[#2f2f2f]">
-                                {t("productDescription")}
-                            </h2>
-                            {openSections.productDescription ? (
-                                <ChevronUp className="text-[#2f2f2f] w-5 h-5" />
+                    <AccordionSection
+                        title={t("productDescription")}
+                        isOpen={openSections.productDescription}
+                        onToggle={() => toggleSection("productDescription")}
+                    >
+                        <div className="text-sm md:text-base text-[#797979] leading-relaxed">
+                            {lotteryItem.detailDesc || lotteryItem.description ? (
+                                <div
+                                    className="accordion-content"
+                                    dangerouslySetInnerHTML={{
+                                        __html: lotteryItem.detailDesc || lotteryItem.description || ""
+                                    }}
+                                />
                             ) : (
-                                <ChevronDown className="text-[#2f2f2f] w-5 h-5" />
+                                <p className="text-sm text-[#797979]">{t("noDataAvailable")}</p>
                             )}
-                        </button>
-                        {openSections.productDescription && (
-                            <div className="px-4 md:px-5 pb-4 md:pb-5">
-                                <div className="text-sm md:text-base text-[#797979] leading-relaxed">
-                                    {lotteryItem.detailDesc || lotteryItem.description ? (
-                                        <div
-                                            className="accordion-content"
-                                            dangerouslySetInnerHTML={{
-                                                __html: lotteryItem.detailDesc || lotteryItem.description || ""
-                                            }}
-                                        />
-                                    ) : (
-                                        <p className="text-sm text-[#797979]">{t("noDataAvailable")}</p>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                        </div>
+                    </AccordionSection>
 
                     {/* Rules of the Draw Section */}
-                    <div className="border-b border-gray-200">
-                        <button
-                            onClick={() => toggleSection("rulesOfDraw")}
-                            className="w-full p-4 md:p-5 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                        >
-                            <h2 className="text-lg md:text-xl font-bold text-[#2f2f2f]">
-                                {t("rulesOfTheDraw")}
-                            </h2>
-                            {openSections.rulesOfDraw ? (
-                                <ChevronUp className="text-[#2f2f2f] w-5 h-5" />
+                    <AccordionSection
+                        title={t("rulesOfTheDraw")}
+                        isOpen={openSections.rulesOfDraw}
+                        onToggle={() => toggleSection("rulesOfDraw")}
+                    >
+                        <div className="text-sm md:text-base text-[#797979] mb-3 leading-relaxed">
+                            {lotteryItem.raffleRules ? (
+                                <div
+                                    className="accordion-content"
+                                    dangerouslySetInnerHTML={{ __html: lotteryItem.raffleRules }}
+                                />
                             ) : (
-                                <ChevronDown className="text-[#2f2f2f] w-5 h-5" />
+                                <p className="text-sm text-[#797979]">{t("noDataAvailable")}</p>
                             )}
-                        </button>
-                        {openSections.rulesOfDraw && (
-                            <div className="px-4 md:px-5 pb-4 md:pb-5">
-                                <div className="text-sm md:text-base text-[#797979] mb-3 leading-relaxed">
-                                    {lotteryItem.raffleRules ? (
-                                        <div
-                                            className="accordion-content"
-                                            dangerouslySetInnerHTML={{ __html: lotteryItem.raffleRules }}
-                                        />
-                                    ) : (
-                                        <p className="text-sm text-[#797979]">{t("noDataAvailable")}</p>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                        </div>
+                    </AccordionSection>
 
                     {/* Terms and Conditions Section */}
-                    <div className="border-b border-gray-200">
-                        <button
-                            onClick={() => toggleSection("termsConditions")}
-                            className="w-full p-4 md:p-5 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                        >
-                            <h2 className="text-lg md:text-xl font-bold text-[#2f2f2f]">
-                                {t("termsAndConditions")}
-                            </h2>
-                            {openSections.termsConditions ? (
-                                <ChevronUp className="text-[#2f2f2f] w-5 h-5" />
-                            ) : (
-                                <ChevronDown className="text-[#2f2f2f] w-5 h-5" />
-                            )}
-                        </button>
-                        {openSections.termsConditions && (
-                            <div className="px-4 md:px-5 pb-4 md:pb-5">
-                                {/* <div className="text-sm md:text-base text-[#797979] mb-3 leading-relaxed">
-                                    {lotteryItem.termsAndConditions ? (
-                                        <div
-                                            className="accordion-content"
-                                            dangerouslySetInnerHTML={{ __html: lotteryItem.termsAndConditions }}
-                                        />
-                                    ) : (
-                                        <p className="text-sm text-[#797979]">{t("noDataAvailable")}</p>
-                                    )}
-                                </div> */}
-                                <div className="flex items-center gap-2">
-                                    <span className="text-sm text-[#797979]">-</span>
-                                    <button
-                                        onClick={() => router.push(`/raffles/${pid}/terms`)}
-                                        className="text-xs md:text-sm font-bold text-[#D4AF37] hover:text-[#B8860B] transition-colors uppercase"
-                                    >
-                                        {t("allDetails")}
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                    <AccordionSection
+                        title={t("termsAndConditions")}
+                        isOpen={openSections.termsConditions}
+                        onToggle={() => toggleSection("termsConditions")}
+                    >
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-[#797979]">-</span>
+                            <button
+                                onClick={() => setShowTermsModal(true)}
+                                className="text-xs md:text-sm font-bold text-[#D4AF37] hover:text-[#B8860B] transition-colors uppercase"
+                            >
+                                {t("allDetails")}
+                            </button>
+                        </div>
+                    </AccordionSection>
 
                     {/* Questions & Answers Section */}
-                    <div className="border-b border-gray-200">
-                        <button
-                            onClick={() => toggleSection("questionsAnswers")}
-                            className="w-full p-4 md:p-5 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                        >
-                            <h2 className="text-lg md:text-xl font-bold text-[#2f2f2f]">
-                                {t("questionsAndAnswers")} ({questionsCount})
-                            </h2>
-                            {openSections.questionsAnswers ? (
-                                <ChevronUp className="text-[#2f2f2f] w-5 h-5" />
-                            ) : (
-                                <ChevronDown className="text-[#2f2f2f] w-5 h-5" />
-                            )}
-                        </button>
-                        {openSections.questionsAnswers && (
-                            <div className="px-4 md:px-5 pb-4 md:pb-5">
-                                <div className="border-t border-gray-200 mt-2"></div>
-
-                                {/* Questions List */}
-                                {questionsLoading ? (
-                                    <div className="py-8 text-center">
-                                        <p className="text-sm text-[#797979]">{t("loading") || "Loading..."}</p>
-                                    </div>
-                                ) : questions.length > 0 ? (
-                                    <div className="mt-4 space-y-6">
-                                        {questions.map((item, index) => (
-                                            <div key={item._id || index} className="border-b border-gray-200 pb-6 last:border-b-0">
-                                                {/* Question */}
-                                                <div className="mb-3">
-                                                    <div className="flex gap-3">
-                                                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#D4AF37] text-white flex items-center justify-center text-sm font-bold">
-                                                            Q
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <p className="text-sm md:text-base font-medium text-[#2f2f2f] mb-2">
-                                                                {item.question}
-                                                            </p>
-                                                            <p className="text-xs text-[#797979]">
-                                                                {t("asked") || "Asked"} {getRelativeTime(item.postedOn)} {t("by") || "by"} {item.userName || t("anonymous") || "Anonymous"}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Answer */}
-                                                <div className="ml-9">
-                                                    {item.answer && item.answer.length > 0 ? (
-                                                        <div>
-                                                            <div className="flex gap-3 mb-2">
-                                                                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-300 text-[#2f2f2f] flex items-center justify-center text-sm font-bold">
-                                                                    A
-                                                                </div>
-                                                                <div className="flex-1">
-                                                                    <p className="text-sm text-[#797979] mb-2">
-                                                                        {item.answer[0].answer}
-                                                                    </p>
-                                                                    <p className="text-xs text-[#797979] mb-2">
-                                                                        {t("answered") || "Answered"} {getRelativeTime(item.answer[0].postedOn)} {t("by") || "by"} {item.answer[0].userName || t("anonymous") || "Anonymous"}
-                                                                    </p>
-                                                                    <div className="flex items-center gap-4 text-xs text-[#797979]">
-                                                                        <span>
-                                                                            👍 {item.answer[0].upVoteCount || 0}
-                                                                        </span>
-                                                                        <span>
-                                                                            👎 {item.answer[0].downVoteCount || 0}
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            {item.answer.length > 1 && (
-                                                                <button className="text-xs text-[#D4AF37] hover:text-[#B8860B] font-medium mt-2">
-                                                                    {t("readMoreAnswers") || "Read more answers"} ({item.answer.length - 1})
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex gap-3">
-                                                            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-300 text-[#2f2f2f] flex items-center justify-center text-sm font-bold">
-                                                                A
-                                                            </div>
-                                                            <div className="flex-1">
-                                                                <p className="text-sm text-[#797979]">
-                                                                    {t("noAnswerFound") || "No answer found"}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="py-8 text-center">
-                                        <p className="text-sm text-[#797979]">{t("noQuestionsFound") || "No questions found"}</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
+                    <AccordionSection
+                        title={`${t("questionsAndAnswers")} (${questionsCount})`}
+                        isOpen={openSections.questionsAnswers}
+                        onToggle={() => toggleSection("questionsAnswers")}
+                    >
+                        <div className="border-t border-gray-200 mt-2"></div>
+                        <QuestionsSection
+                            questions={questions}
+                            questionsLoading={questionsLoading}
+                            questionsCount={questionsCount}
+                            getRelativeTime={getRelativeTime}
+                        />
+                    </AccordionSection>
 
                     {/* Seller Information Section */}
-                    <div>
-                        <button
-                            onClick={() => toggleSection("sellerInfo")}
-                            className="w-full p-4 md:p-5 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                        >
-                            <h2 className="text-lg md:text-xl font-bold text-[#2f2f2f] uppercase">
-                                {t("sellerInformation")}
-                            </h2>
-                            {openSections.sellerInfo ? (
-                                <ChevronUp className="text-[#2f2f2f] w-5 h-5" />
+                    <AccordionSection
+                        title={t("sellerInformation").toUpperCase()}
+                        isOpen={openSections.sellerInfo}
+                        onToggle={() => toggleSection("sellerInfo")}
+                    >
+                        <div className="text-sm md:text-base text-[#797979] leading-relaxed">
+                            {lotteryItem.sellerInfo || lotteryItem.sellerName ? (
+                                <p className="text-sm text-[#797979]">
+                                    {lotteryItem.sellerInfo || lotteryItem.sellerName || t("noDataAvailable")}
+                                </p>
                             ) : (
-                                <ChevronDown className="text-[#2f2f2f] w-5 h-5" />
+                                <p className="text-sm text-[#797979]">{t("noDataAvailable")}</p>
                             )}
+                        </div>
+                    </AccordionSection>
+                </div>
+
+
+                {/* Scroll to Top Button */}
+                {
+                    showScrollTop && (
+                        <button
+                            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                            className="fixed bottom-8 right-8 w-12 h-12 bg-[#797979] hover:bg-[#5a5a5a] text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 z-50"
+                            aria-label={t("scrollToTop")}
+                        >
+                            <ChevronUp size={24} />
                         </button>
-                        {openSections.sellerInfo && (
-                            <div className="px-4 md:px-5 pb-4 md:pb-5">
-                                <div className="text-sm md:text-base text-[#797979] leading-relaxed">
-                                    {lotteryItem.sellerInfo || lotteryItem.sellerName ? (
-                                        <p className="text-sm text-[#797979]">
-                                            {lotteryItem.sellerInfo || lotteryItem.sellerName || t("noDataAvailable")}
-                                        </p>
-                                    ) : (
-                                        <p className="text-sm text-[#797979]">{t("noDataAvailable")}</p>
-                                    )}
+                    )
+                }
+
+                {/* Login Modal */}
+                <LoginModal
+                    isOpen={showLoginModal}
+                    onClose={() => {
+                        setShowLoginModal(false);
+                        setPendingCartData(null);
+                    }}
+                    onLoginSuccess={handleLoginSuccess}
+                />
+
+                {/* Free Ticket Confirmation Modal */}
+                {
+                    lotteryItem && (
+                        <FreeTicketConfirmationModal
+                            isOpen={showFreeTicketModal}
+                            onClose={() => {
+                                setShowFreeTicketModal(false);
+                                setPendingFreeTicket(null);
+                                setFreeTicketError(null);
+                            }}
+                            pendingFreeTicket={pendingFreeTicket}
+                            displayName={displayName}
+                            lotteryItem={lotteryItem}
+                            productId={params.id as string}
+                            defaultAddressId={defaultAddressId}
+                            onError={(error) => {
+                                setFreeTicketError(error);
+                            }}
+                        />
+                    )
+                }
+
+                {/* Participate Rule Modal */}
+                {
+                    lotteryItem && showEmailEntryModal && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                            <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                                {/* Modal Header */}
+                                <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                                    <h2 className="text-lg font-black text-[#2f2f2f] uppercase tracking-wide">
+                                        {t("participateRule") || "Participate Rule"}
+                                    </h2>
+                                    <button
+                                        onClick={() => setShowEmailEntryModal(false)}
+                                        className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-black"
+                                    >
+                                        <X size={20} />
+                                    </button>
+                                </div>
+
+                                {/* Modal Content */}
+                                <div className="p-6 overflow-y-auto custom-scrollbar">
+                                    <div
+                                        className="text-sm md:text-base text-[#4a4a4a] leading-relaxed space-y-4"
+                                        dangerouslySetInnerHTML={{
+                                            __html: typeof lotteryItem.raffleEmailEntryDesc === 'string'
+                                                ? lotteryItem.raffleEmailEntryDesc
+                                                : (lotteryItem.raffleEmailEntryDesc as any)?.[locale] || (lotteryItem.raffleEmailEntryDesc as any)?.["en"] || ""
+                                        }}
+                                    />
+                                </div>
+
+                                {/* Modal Footer */}
+                                <div className="p-4 border-t border-gray-100 flex justify-end">
+                                    <Button
+                                        onClick={() => setShowEmailEntryModal(false)}
+                                        className="bg-[#2f2f2f] hover:bg-black text-white font-bold px-8"
+                                    >
+                                        {t("close") || "Close"}
+                                    </Button>
                                 </div>
                             </div>
-                        )}
-                    </div>
-                </div>
-            </div>
+                        </div>
+                    )
+                }
 
-
-            {/* Scroll to Top Button */}
-            {showScrollTop && (
-                <button
-                    onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                    className="fixed bottom-8 right-8 w-12 h-12 bg-[#797979] hover:bg-[#5a5a5a] text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 z-50"
-                    aria-label={t("scrollToTop")}
-                >
-                    <ChevronUp size={24} />
-                </button>
-            )}
-
-            {/* Login Modal */}
-            <LoginModal
-                isOpen={showLoginModal}
-                onClose={() => {
-                    setShowLoginModal(false);
-                    setPendingCartData(null);
-                }}
-                onLoginSuccess={handleLoginSuccess}
-            />
-
-            {/* Free Ticket Confirmation Modal */}
-            {lotteryItem && (
-                <FreeTicketConfirmationModal
-                    isOpen={showFreeTicketModal}
+                {/* Apply Ticket Confirmation Modal */}
+                <ApplyTicketConfirmationModal
+                    isOpen={showApplyConfirmationModal}
                     onClose={() => {
-                        setShowFreeTicketModal(false);
-                        setPendingFreeTicket(null);
-                        setFreeTicketError(null);
+                        setShowApplyConfirmationModal(false);
                     }}
-                    pendingFreeTicket={pendingFreeTicket}
-                    displayName={displayName}
-                    lotteryItem={lotteryItem}
-                    productId={params.id as string}
-                    defaultAddressId={defaultAddressId}
-                    onError={(error) => {
-                        setFreeTicketError(error);
-                    }}
+                    onConfirm={handleApplyTicketsConfirm}
+                    ticketQuantity={ticketQuantity}
+                    isApplying={applyingTicket}
                 />
-            )}
 
-            {/* Apply Ticket Confirmation Modal */}
-            <ApplyTicketConfirmationModal
-                isOpen={showApplyConfirmationModal}
-                onClose={() => {
-                    setShowApplyConfirmationModal(false);
-                }}
-                onConfirm={handleApplyTicketsConfirm}
-                ticketQuantity={ticketQuantity}
-                isApplying={applyingTicket}
-            />
+                {/* Terms and Conditions Modal */}
+                <TermsAndConditionsModal
+                    isOpen={showTermsModal}
+                    onClose={() => setShowTermsModal(false)}
+                    termsAndConditions={lotteryItem.termsAndConditions}
+                />
 
-            <PreFooterIconModule />
-            <Footer />
+                <PreFooterIconModule />
+                <Footer />
+            </div>
         </main>
     );
 }
-
-

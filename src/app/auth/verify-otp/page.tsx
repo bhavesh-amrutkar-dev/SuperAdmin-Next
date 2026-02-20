@@ -165,8 +165,8 @@ export default function VerifyOtpPage() {
                 text-center text-lg font-semibold
                 transition-all duration-200
                 focus:outline-none 
-                focus:ring-2 focus:ring-primary/40 
-                focus:border-primary
+                focus:ring-2 focus:ring-[#FECB02]/40 
+                focus:border-[#FECB02]
               "
               />
             ))}
@@ -175,7 +175,7 @@ export default function VerifyOtpPage() {
           {/* Submit Button */}
           <Button
             type="submit"
-            className="w-full h-12 text-base font-semibold rounded-xl"
+            className="w-full h-12 text-base font-bold rounded-xl bg-gradient-to-r from-[#FECB02] to-[#FFD84D] hover:from-[#FFD84D] hover:to-[#FECB02] text-black shadow-lg transition-all transform hover:-translate-y-0.5 active:scale-[0.98]"
             disabled={loading || otp.some((d) => !d)}
           >
             {loading ? t("verifying") : t("verifyContinue")}
@@ -192,7 +192,7 @@ export default function VerifyOtpPage() {
           ) : (
             <button
               onClick={resendOtp}
-              className="font-semibold text-primary hover:underline transition"
+              className="font-bold text-[#FECB02] hover:underline transition"
             >
               {t("resendOtp")}
             </button>

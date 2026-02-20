@@ -170,15 +170,16 @@ export const OrderService = {
         payByWallet?: boolean;
         userId?: string | number;
     }) => {
-        return apiClient.post("/order", data);
+        return apiClient.post("/order/V2", data);
     },
 
     orderStatusUpdate: (data: {
         orderId?: string;
         statusId?: number;
         cartId?: string | null;
+        paymentMethod?: number;
     }) => {
-        return apiClient.post("/order/statusUpdate", data);
+        return apiClient.post("/order/statusUpdate/V2", data);
     },
 };
 

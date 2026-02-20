@@ -94,10 +94,20 @@ body {
 }
 
 .raffle-card {
-  background: #fff;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
   border-radius: 50px;
   overflow: hidden;
   box-shadow: 3.915px 7.831px 10.534px rgba(0, 0, 0, .04);
+}
+
+.raffle-card:hover,
+.raffle-card.bg-white:hover,
+div.raffle-card:hover,
+div.raffle-card.bg-white:hover {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  opacity: 1 !important;
 }
 
 .raffle-card .raffle-card-image img {
@@ -233,7 +243,9 @@ html {
 
 .form-input {
   @apply w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:border-yellow-400 placeholder:text-gray-400;
-/* Hide spinner arrows for ticket quantity input */}
+  /* Hide spinner arrows for ticket quantity input */
+}
+
 .ticket-quantity::-webkit-outer-spin-button,
 .ticket-quantity::-webkit-inner-spin-button {
   -webkit-appearance: none;
