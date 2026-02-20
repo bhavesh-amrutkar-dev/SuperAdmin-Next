@@ -29,10 +29,10 @@ export default function HeroSlider({ banners, autoPlay = true }: Props) {
   return (
     <section className="w-full">
       <div className="w-full">
-        <div className="relative h-[45vh] overflow-hidden">
-          <picture>
+        <div className="relative overflow-hidden">
+          <picture className="w-full h-full block">
             {/* Desktop first in picture source */}
-            <source
+            <source className="w-full h-full"
               media="(min-width: 768px)"
               srcSet={banner.imageWeb}
             />
@@ -41,7 +41,7 @@ export default function HeroSlider({ banners, autoPlay = true }: Props) {
             <Image
               src={banner.imageMobile}
               alt="Home banner"
-              className="w-full h-full"
+              className="w-full h-full object-cover object-left"
               loading={index === 0 ? "eager" : "lazy"}
               fetchPriority={index === 0 ? "high" : "auto"}
               width={800}

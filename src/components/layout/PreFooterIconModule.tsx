@@ -19,7 +19,7 @@ export default function PreFooterIconModule() {
     <>
       {/* App Download */}
       <div className="px-4 mt-8">
-        <div className="max-w-4xl mx-auto bg-[#f3f3f3] rounded-2xl sm:rounded-full px-5 py-6">
+        <div className="max-w-xl mx-auto bg-white shadow-lg rounded-2xl sm:rounded-full px-4 sm:px-5 py-6">
           <h3 className="text-center font-semibold text-lg sm:text-xl text-[#2f2f2f]">
             {t("downloadTitle")}
           </h3>

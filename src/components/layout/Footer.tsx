@@ -116,7 +116,7 @@ export default function Footer() {
                 target="_blank"
                 className="transition transform hover:scale-110"
               >
-                <div className="w-10 h-10 flex items-center justify-center rounded-full bg-white">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-white hover:bg-[#f3c200] transition-colors">
                   <Image src={item.icon} alt={item.name} width={24} height={24} />
                 </div>
               </Link>

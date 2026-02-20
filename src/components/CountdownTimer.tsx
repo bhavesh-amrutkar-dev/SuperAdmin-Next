@@ -72,20 +72,20 @@ export default function CountdownTimer({ endTime, onExpired }: CountdownTimerPro
     }
 
     return (
-        <div className="flex justify-end gap-1">
-            <div className="bg-yellow-400 text-black p-2 rounded-[10px] flex flex-col items-center min-w-[50px]">
+        <div className="inline-flex justify-end gap-1 bg-white max-w-max py-[6px] px-2 rounded-[12px] mx-auto shadow-lg">
+            <div className="flex flex-col items-center min-w-[50px] border-r border-gray-300">
                 <span className="text-xl font-black leading-none">{days}</span>
                 <span className="text-[10px] font-bold uppercase">Days</span>
             </div>
-            <div className="bg-yellow-400 text-black p-2 rounded-[10px] flex flex-col items-center min-w-[50px]">
+            <div className="flex flex-col items-center min-w-[50px] border-r border-gray-300">
                 <span className="text-xl font-black leading-none">{hours}</span>
                 <span className="text-[10px] font-bold uppercase">Hrs</span>
             </div>
-            <div className="bg-yellow-400 text-black p-2 rounded-[10px] flex flex-col items-center min-w-[50px]">
+            <div className="flex flex-col items-center min-w-[50px] border-r border-gray-300">
                 <span className="text-xl font-black leading-none">{minutes}</span>
                 <span className="text-[10px] font-bold uppercase">Mins</span>
             </div>
-            <div className="bg-yellow-400 text-black p-2 rounded-[10px] flex flex-col items-center min-w-[50px]">
+            <div className="flex flex-col items-center min-w-[50px]">
                 <span className="text-xl font-black leading-none">{seconds}</span>
                 <span className="text-[10px] font-bold uppercase">Sec</span>
             </div>

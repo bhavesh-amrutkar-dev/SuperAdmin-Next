@@ -35,13 +35,15 @@ export default function RaffleSectionLayout({
   const isLoading = !section.items?.length;
 
   return (
-    <section className="w-full py-10 md:py-14 xl:py-20">
+    <section className="w-full py-10 md:py-14">
       <div className="mx-auto w-full max-w-screen-2xl px-4 md:px-6">
         {/* Header */}
         <div className="mb-8 md:mb-12 text-center">
-          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold uppercase tracking-wide leading-tight text-gray-900">
-            {section.title}
-          </h2>
+          <div className="text-center section_heading min-w-[200px] sm:min-w-[400px] inline-block px-8 py-3">
+            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold uppercase tracking-wide leading-tight text-gray-900">
+              {section.title}
+            </h2>
+          </div>
 
           {section.description && (
             <div
@@ -98,12 +100,9 @@ export default function RaffleSectionLayout({
                   >
                     <div
                       className="
-                        rounded-2xl
-                        overflow-hidden
+                        rounded-4xl
                         transition-transform
                         duration-200
-                        md:hover:scale-[1.03]
-                        md:hover:shadow-lg
                       "
                     >
                       <RaffleCard

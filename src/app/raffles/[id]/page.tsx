@@ -1233,7 +1233,19 @@ export default function RafflesDetailPage() {
                     {/* Left Column - Product Image and Win Probability */}
                     <div className="w-full lg:w-2/5 space-y-6">
                         {/* Product Image Area */}
-                        <div className="bg-white rounded-xl shadow-lg p-3 md:p-4 min-h-[250px] flex items-center justify-center">
+                        <div className="bg-white rounded-xl shadow-lg p-3 md:p-4 min-h-[250px] flex items-center justify-center relative">
+                            {/* Participate Rule Button - Moved to Left Column per User request */}
+                            {lotteryItem?.raffleEmailEntry && (
+                                <div className="flex justify-start">
+                                    <Button
+                                        onClick={() => setShowEmailEntryModal(true)}
+                                        className="bg-black text-white font-bold h-8 w-8 rounded-full transition-all flex items-center justify-center gap-2 tracking-wider absolute top-3 right-3" title="Participate Rule"
+                                    >
+                                        <svg fill="#fff" viewBox="0 0 640 640"><path d="M272 112C272 85.5 293.5 64 320 64C346.5 64 368 85.5 368 112C368 138.5 346.5 160 320 160C293.5 160 272 138.5 272 112zM224 256C224 238.3 238.3 224 256 224L320 224C337.7 224 352 238.3 352 256L352 512L384 512C401.7 512 416 526.3 416 544C416 561.7 401.7 576 384 576L256 576C238.3 576 224 561.7 224 544C224 526.3 238.3 512 256 512L288 512L288 288L256 288C238.3 288 224 273.7 224 256z"/></svg>
+                                        {/* {t("participateRule") || "Participate Rule"} */}
+                                    </Button>
+                                </div>
+                            )}
                             <div className="relative w-full max-w-xs aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden flex items-center justify-center shadow-inner">
                                 <ImageMagnify
                                     largeImage={displayImage}
@@ -1250,19 +1262,6 @@ export default function RafflesDetailPage() {
 
                         {/* Win Probability Section */}
                         <WinProbabilitySection lotteryItem={lotteryItem} />
-
-                        {/* Participate Rule Button - Moved to Left Column per User request */}
-                        {lotteryItem?.raffleEmailEntry && (
-                            <div className="flex justify-start">
-                                <Button
-                                    onClick={() => setShowEmailEntryModal(true)}
-                                    className="w-fit bg-gray-100 hover:bg-gray-200 text-[#2f2f2f] font-bold h-8 px-3 rounded-md transition-all border border-gray-200 flex items-center justify-center gap-2 uppercase text-[10px] tracking-wider"
-                                >
-                                    <span className="text-[12px]">ℹ️</span>
-                                    {t("participateRule") || "Participate Rule"}
-                                </Button>
-                            </div>
-                        )}
                     </div>
 
                     {/* Right Column - Selection and Call-to-Action */}
@@ -1609,7 +1608,7 @@ export default function RafflesDetailPage() {
                 {
                     lotteryItem && showEmailEntryModal && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                            <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                            <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-[0px_2px_16px_0px_#f3c200b5] overflow-hidden animate-in fade-in zoom-in duration-200">
                                 {/* Modal Header */}
                                 <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                                     <h2 className="text-lg font-black text-[#2f2f2f] uppercase tracking-wide">
@@ -1617,7 +1616,7 @@ export default function RafflesDetailPage() {
                                     </h2>
                                     <button
                                         onClick={() => setShowEmailEntryModal(false)}
-                                        className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-black"
+                                        className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-black cursor-pointer"
                                     >
                                         <X size={20} />
                                     </button>
@@ -1639,7 +1638,7 @@ export default function RafflesDetailPage() {
                                 <div className="p-4 border-t border-gray-100 flex justify-end">
                                     <Button
                                         onClick={() => setShowEmailEntryModal(false)}
-                                        className="bg-[#2f2f2f] hover:bg-black text-white font-bold px-8"
+                                        className="rounded-lg btn-primary py-3 px-6 font-semibold  hover:bg-yellow-400 hover:text-black transition disabled:opacity-50"
                                     >
                                         {t("close") || "Close"}
                                     </Button>

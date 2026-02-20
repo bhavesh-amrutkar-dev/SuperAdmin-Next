@@ -22,17 +22,15 @@ export default function RaffleCard({ item, cellType }: RaffleCardProps) {
         rounded-2xl
         bg-white
         text-left
-        shadow-sm
-        border border-gray-100
+        shadow-xl
         transition-all
         duration-300
-        hover:shadow-xl
         hover:-translate-y-1
         overflow-hidden
       "
     >
       {/* Image Container */}
-      <div className={`relative w-full ${aspect} bg-gray-50 overflow-hidden`}>
+      <div className={`relative w-full ${aspect} bg-white overflow-hidden`}>
         {/* Badge/Tag placeholder if needed in future */}
         {/* <div className="absolute top-3 left-3 z-10 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md text-xs font-bold shadow-sm uppercase tracking-wide text-gray-800">
             Raffle
@@ -56,7 +54,7 @@ export default function RaffleCard({ item, cellType }: RaffleCardProps) {
       </div>
 
       {/* Content Container */}
-      <div className="flex flex-col flex-grow p-4 md:p-5">
+      <div className="flex flex-col flex-grow p-4 md:p-5 bg-gray-50">
 
         {/* Title */}
         {item.name && (
@@ -75,9 +73,9 @@ export default function RaffleCard({ item, cellType }: RaffleCardProps) {
         )}
 
         {/* Price Section */}
-        <div className="mt-auto pt-3 flex items-center justify-center border-t border-gray-100">
+        <div className="mt-auto pt-3 flex items-center justify-center border-t border-gray-200">
           {item.price && (
-            <span className="text-xl md:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-yellow-600">
+            <span className="text-xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-yellow-600">
               {item.currencySymbol} {item.price}
             </span>
           )}

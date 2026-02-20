@@ -302,8 +302,8 @@ export default function RegisterPage() {
 
 
   return (
-    <div className="w-full max-w-md rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] p-8">
-      <div className="mb-8 text-center">
+    <div className="w-full max-w-md rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] p-6 sm:p-8">
+      <div className="mb-6 sm:mb-8 text-center">
         <h1 className="text-2xl font-bold section_title mb-1">
           {t("createAccount")}
         </h1>
@@ -480,10 +480,10 @@ export default function RegisterPage() {
           <select
             id="country"
             className={`
-        w-full h-[44px] rounded-lg border bg-background
-        px-4 text-sm
+        w-full h-[44px] rounded-lg border
+        px-3 text-sm
         transition-all duration-200
-        focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring
+        focus:outline-none focus:ring-0 focus:border-ring focus:!border-[#f3c200]
         ${errors.country
                 ? "border-red-500 focus:ring-red-200 focus:border-red-500"
                 : "border-input hover:border-muted-foreground/40"
@@ -511,7 +511,8 @@ export default function RegisterPage() {
         {/* Button */}
         <button
           disabled={loading}
-          className="md:col-span-2 w-full rounded-lg bg-[#f3c200] py-3 text-sm font-semibold text-black hover:bg-yellow-400 transition"
+          className="md:col-span-2 w-full rounded-lg btn-primary py-3 font-semibold
+      hover:bg-yellow-400 hover:text-black transition disabled:opacity-50 mt-3"
         >
           {loading ? t("sendingOtp") : t("signUp")}
         </button>
@@ -521,10 +522,10 @@ export default function RegisterPage() {
 
 
 
-      <div className="mt-8 text-center">
+      <div className="mt-5 sm:mt-6 text-center">
         <p className="text-sm">
           {t("alreadyHaveAccount")}{" "}
-          <Link href="/auth/login" className="font-semibold hover:underline">
+          <Link href="/auth/login" className="font-semibold text-[#2f2f2f] hover:text-[#f3c200] hover:underline transition">
             {t("signIn")}
           </Link>
         </p>
