@@ -61,10 +61,10 @@ export default function EntrySelection({
 
     return (
         <div className="">
-            <div className={`grid grid-cols-1 ${user ? "lg:grid-cols-2" : "grid-cols-1"} gap-6`}>
+            <div className={`grid grid-cols-1 ${user ? "lg:grid-cols-1 xl:grid-cols-2" : "grid-cols-1"} gap-4 2xl:gap-6`}>
                 {/* Left Column: Tickets */}
                 <div className="space-y-4">
-                    <div className="grid sm:grid-cols-2 gap-3">
+                    <div className="grid sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-2 gap-3">
                         {tickets && Array.isArray(tickets) && tickets.length > 0 ? (
                             tickets.map((ticket: any, index: number) => {
                                 // Handle different ticket structures
@@ -76,12 +76,12 @@ export default function EntrySelection({
                                     <button
                                         key={ticketId}
                                         onClick={() => onTicketSelect(ticketId)}
-                                        className={`p-4 lg:p-3 xl:p-4 rounded-xl border-2 transition-all w-full cursor-pointer ${selectedTicket === ticketId
+                                        className={`p-4 lg:p-3 2xl:p-4 rounded-xl border-2 transition-all w-full cursor-pointer ${selectedTicket === ticketId
                                             ? "border-[#FECB02] bg-[#fffbf3] ring-3 ring-[#FECB02]/20"
                                             : "border-gray-200 hover:border-[#FECB02]/50 bg-white"
                                             }`}
                                     >
-                                        <div className="flex flex-row justify-between items-center gap-2">
+                                        <div className="flex flex-row justify-between items-center gap-2 flex-wrap">
                                             <span className="inline-flex items-center gap-2 text-base font-semibold text-[#2f2f2f]">
                                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-muted-foreground"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path><path d="M13 5v2"></path><path d="M13 17v2"></path><path d="M13 11v2"></path></svg>
                                                 {displayCurrency} {ticketPrice?.toFixed(2) || "0.00"}
@@ -103,18 +103,20 @@ export default function EntrySelection({
 
                 {/* Right Column: Special Ticket Entry Box - Only visible if logged in */}
                 {user && (
-                    <div className="p-3 bg-[#2f2f2f] rounded-lg flex flex-col justify-between min-h-[180px]">
+                    <div className="p-3 bg-[#2f2f2f] rounded-lg flex flex-col justify-between min-h-[150px]">
                         <div>
                             <div className="flex items-center justify-between mb-3">
                                 <span className="text-xs font-semibold text-white uppercase tracking-wider">{t("tickets") || "TICKETS"}</span>
-                                <button className="text-[9px] px-2 py-0.5 bg-transparent border border-white text-white rounded hover:bg-white hover:text-[#2f2f2f] transition-colors uppercase">
+                                <button className="text-[10px] px-2 py-0.5 bg-transparent border border-white text-white rounded hover:bg-white hover:text-[#2f2f2f] transition-colors uppercase">
                                     {t("useWithRestrictions") || "USE WITH RESTRICTIONS"}
                                 </button>
                             </div>
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-10 h-10 bg-[#FECB02] rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
-                                        <span className="text-white font-bold text-lg">⭐</span>
+                                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
+                                        <span className="text-[#2f2f2f] font-bold text-lg">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="w-5 h-5 text-muted-foreground"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path><path d="M13 5v2"></path><path d="M13 17v2"></path><path d="M13 11v2"></path></svg>
+                                        </span>
                                     </div>
                                     <div className="min-w-0">
                                         <p className="text-lg font-extrabold text-[#FECB02] uppercase leading-none">
@@ -133,7 +135,7 @@ export default function EntrySelection({
                                         onTicketQuantityChange(val);
                                     }}
                                     placeholder="0"
-                                    className="ticket-quantity w-14 h-8 bg-[#FECB02] hover:bg-[#FFD84D] transition-all text-black font-extrabold rounded-md text-center focus:outline-none text-sm shadow-md"
+                                    className="ticket-quantity w-14 h-8 bg-[#fff] focus:ring-3 focus:ring-[#FECB02]  transition-all text-black font-extrabold rounded-md text-center focus:outline-none text-sm shadow-md"
                                 />
                             </div>
                         </div>
@@ -141,10 +143,10 @@ export default function EntrySelection({
                         {/* Footer section of the black box */}
                         <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between gap-2">
                             <div className="text-left">
-                                <button className="text-[10px] text-white hover:text-[#FECB02] font-semibold transition-colors block leading-tight">
+                                <button className="text-[11px] text-white hover:text-[#FECB02] font-semibold transition-colors block leading-tight">
                                     {t("howToEarn") || "How to Earn?"}
                                 </button>
-                                <p className="text-[9px] text-gray-400 italic mt-0.5">
+                                <p className="text-[10px] text-gray-400 italic mt-0.5">
                                     {t("ticketPurchaseNote") || "NOTE: Request purchase with ticket"}
                                 </p>
                             </div>

@@ -93,7 +93,7 @@ export default function LanguageSwitcher({ variant = "header" }: Props) {
             bg-white overflow-hidden z-50
             ${isSidebar
               ? "left-0 border-gray-200"
-              : "right-0 border-black/10"
+              : "right-0 border-black/10 top-10"
             }
           `}
         >

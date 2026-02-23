@@ -270,7 +270,7 @@ export default function Header() {
             ) : (
               <div
                 ref={userMenuRef}
-                className="relative user-menu-container"
+                className="relative user-menu-container hidden lg:inline-block"
               >
                 <Button
                   variant="dark"
@@ -292,84 +292,85 @@ export default function Header() {
                     </div>
                   )}
                 </Button>
+                {userMenuOpen && (
+                  <div className="absolute right-0 mt-3 w-56 rounded-xl bg-white shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+
+                    {/* User Info Section */}
+                    <div className="px-4 py-3 bg-gray-50 border-b">
+                      <p className="text-sm font-semibold text-gray-800">
+                        {displayUser?.name || t("user")}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {t("welcomeBackShort")}
+                      </p>
+                    </div>
+
+                    {/* Menu Items */}
+                    <div className="py-2 px-2 flex flex-col gap-1">
+
+                      <Button
+                        asChild
+                        variant="dropdown"
+                        size="sm"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        <Link href="/profile">
+                          <User size={16} />
+                          {t("manageProfile")}
+                        </Link>
+                      </Button>
+
+                      <Button
+                        asChild
+                        variant="dropdown"
+                        size="sm"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        <Link href="/addresses">
+                          <MapPin size={16} />
+                          {t("savedAddresses")}
+                        </Link>
+                      </Button>
+
+                      <Button
+                        asChild
+                        variant="dropdown"
+                        size="sm"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        <Link href="/orders">
+                          <Package size={16} />
+                          {t("myOrders")}
+                        </Link>
+                      </Button>
+
+                    </div>
+
+
+                    {/* Divider */}
+                    <div className="border-t" />
+
+                    <div className="px-2 pb-2 mt-2">
+
+                      <Button
+                        variant="logout"
+                        size="sm"
+                        onClick={handleLogout}
+
+                      >
+                        <LogOut size={16} />
+                        {t("logout")}
+                      </Button>
+
+                    </div>
+
+
+                  </div>
+                )}
               </div>
 
             )}
-            {userMenuOpen && (
-              <div className="absolute right-0 mt-3 w-56 rounded-xl bg-white shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
 
-                {/* User Info Section */}
-                <div className="px-4 py-3 bg-gray-50 border-b">
-                  <p className="text-sm font-semibold text-gray-800">
-                    {displayUser?.name || t("user")}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {t("welcomeBackShort")}
-                  </p>
-                </div>
-
-                {/* Menu Items */}
-                <div className="py-2 px-2 flex flex-col gap-1">
-
-                  <Button
-                    asChild
-                    variant="dropdown"
-                    size="sm"
-                    onClick={() => setUserMenuOpen(false)}
-                  >
-                    <Link href="/profile">
-                      <User size={16} />
-                      {t("manageProfile")}
-                    </Link>
-                  </Button>
-
-                  <Button
-                    asChild
-                    variant="dropdown"
-                    size="sm"
-                    onClick={() => setUserMenuOpen(false)}
-                  >
-                    <Link href="/addresses">
-                      <MapPin size={16} />
-                      {t("savedAddresses")}
-                    </Link>
-                  </Button>
-
-                  <Button
-                    asChild
-                    variant="dropdown"
-                    size="sm"
-                    onClick={() => setUserMenuOpen(false)}
-                  >
-                    <Link href="/orders">
-                      <Package size={16} />
-                      {t("myOrders")}
-                    </Link>
-                  </Button>
-
-                </div>
-
-
-                {/* Divider */}
-                <div className="border-t" />
-
-                <div className="px-2 pb-2">
-
-                  <Button
-                    variant="logout"
-                    size="sm"
-                    onClick={handleLogout}
-
-                  >
-                    <LogOut size={16} />
-                    {t("logout")}
-                  </Button>
-
-                </div>
-
-
-              </div>
-            )}
             <Button asChild size="icon" className="relative">
               <Link
                 href="/cart"
