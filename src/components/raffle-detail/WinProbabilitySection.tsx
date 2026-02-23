@@ -51,7 +51,7 @@ const CircularProgressBar = ({ percentage }: { percentage: number }) => {
                 />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm font-bold text-[#797979]">{percentage}%</span>
+                <span className="text-sm font-bold text-[#2f2f2f]">{percentage}%</span>
             </div>
         </div>
     );
@@ -83,36 +83,36 @@ export default function WinProbabilitySection({ lotteryItem }: WinProbabilitySec
             : 0;
 
     return (
-        <div className="bg-white rounded-xl shadow-lg p-6 md:p-8">
+        <div className="border border-gray-200 rounded-xl">
             {/* Row 1: Title */}
-            <h2 className="text-lg md:text-xl font-bold text-[#2f2f2f] mb-6 uppercase text-center">
+            <h2 className="p-3 md:p-4 bg-gray-200 text-lg md:text-xl font-bold text-[#2f2f2f] mb-6 uppercase text-center rounded-t-xl">
                 {t("winProbability")}
             </h2>
 
             {/* Row 2: Statistics */}
             <div className="mb-6">
-                <div className="flex flex-col md:flex-row md:justify-center gap-4 md:gap-6">
+                <div className="flex flex-col md:flex-row md:justify-between gap-4 md:gap-6 px-4 sm:max-w-[80%] sm:mx-auto lg:max-w-full xl:max-w-[92%] 2xl:max-w-[80%]">
                     <div className="text-center">
                         <div className="text-sm md:text-base text-[#2f2f2f]">
-                            <span className="font-semibold">{t("totalEntriesSold")}:</span>
+                            <span className="text-[#797979] text-sm font-semibold">{t("totalEntriesSold")}:</span>
                             <br />
-                            <span className="text-[#797979]">{totalEntries.toLocaleString()}</span>
+                            <span className="text-[#2f2f2f] font-semibold">{totalEntries.toLocaleString()}</span>
                         </div>
                     </div>
                     <div className="text-center">
                         <div className="text-sm md:text-base text-[#2f2f2f]">
-                            <span className="font-semibold">{t("myPaidEntries")}:</span>
+                            <span className="text-[#797979] text-sm font-semibold">{t("myPaidEntries")}:</span>
                             <br />
-                            <span className="text-[#797979]">
+                            <span className="text-[#2f2f2f] font-semibold">
                                 {(lotteryItem.totalPaidTicketsGeneratedUser ?? 0).toLocaleString()}
                             </span>
                         </div>
                     </div>
                     <div className="text-center">
                         <div className="text-sm md:text-base text-[#2f2f2f]">
-                            <span className="font-semibold">{t("myFreeEntries")}:</span>
+                            <span className="text-[#797979] text-sm font-semibold">{t("myFreeEntries")}:</span>
                             <br />
-                            <span className="text-[#797979]">
+                            <span className="text-[#2f2f2f] font-semibold">
                                 {(lotteryItem.totalFreeTicketsGeneratedUser ?? 0).toLocaleString()}
                             </span>
                         </div>
@@ -122,7 +122,7 @@ export default function WinProbabilitySection({ lotteryItem }: WinProbabilitySec
 
             {/* Row 3: Progress Bars */}
             <div className="mb-6">
-                <div className="flex flex-wrap justify-center gap-6 md:gap-8">
+                <div className="flex flex-wrap justify-center gap-6 md:gap-8 px-4">
                     <div className="flex flex-col items-center">
                         <CircularProgressBar percentage={paidProbability} />
                         <p className="SubProgress text-xs md:text-sm font-medium text-[#797979] mt-3 whitespace-nowrap">
@@ -145,7 +145,7 @@ export default function WinProbabilitySection({ lotteryItem }: WinProbabilitySec
             </div>
 
             {/* Disclaimer */}
-            <p className="text-xs md:text-sm text-[#797979] leading-relaxed text-center">
+            <p className="text-xs md:text-sm text-[#797979] leading-relaxed text-center p-4">
                 {t("probabilityDisclaimer")}
             </p>
         </div>

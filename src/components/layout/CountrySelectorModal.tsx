@@ -78,7 +78,7 @@ const CountryCard = memo(function CountryCard({
       onClick={() => onSelect(country.code)}
       className={`
         group flex flex-col items-center rounded-xl border
-        px-4 py-4 transition-all duration-150
+        px-4 py-4 transition-all duration-150 w-[47%] sm:w-full
         ${isSelected
           ? "border-[#FECB02] ring-2 ring-[#FECB02]/40 shadow-sm"
           : "border-gray-200 hover:border-[#FECB02]/60 hover:shadow-sm hover:cursor-pointer"
@@ -270,7 +270,7 @@ export default function CountrySelectorModal({
               <Loader />
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            <div className="flex flex-wrap justify-center sm:grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 py-1">
               {countryList}
             </div>
           )}
@@ -281,7 +281,7 @@ export default function CountrySelectorModal({
             variant="primary"
             disabled={!selectedCode}
             onClick={handleContinue}
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto btn-primary"
           >
             {t("countryModalContinue")}
           </Button>

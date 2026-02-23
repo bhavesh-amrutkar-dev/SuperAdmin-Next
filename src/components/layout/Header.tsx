@@ -244,23 +244,25 @@ export default function Header() {
                 {t(item.key)}
               </Link>
             ))}
+          </nav>
 
+          {/* CART ICON RIGHT */}
+          <div className="flex items-center gap-2">
             <Button
               variant="dark"
               size="sm"
               onClick={() => setCountryModalOpen(true)}
-              className="hidden md:flex uppercase text-xs"
+              className="hidden md:flex uppercase text-xs min-h-10 btn-primary"
             >
               <Globe size={14} />
               {currentCountry}
             </Button>
-
             <LanguageSwitcher variant="header" />
 
 
             {!isLoggedIn && !displayUser ? (
               <Button asChild size="sm">
-                <Link href="/auth/login">
+                <Link href="/auth/login" className="btn-primary min-h-10">
                   <User size={16} /> {t("login")}
                 </Link>
               </Button>
@@ -290,96 +292,92 @@ export default function Header() {
                     </div>
                   )}
                 </Button>
-
-                {userMenuOpen && (
-                  <div className="absolute right-0 mt-3 w-56 rounded-xl bg-white shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-
-                    {/* User Info Section */}
-                    <div className="px-4 py-3 bg-gray-50 border-b">
-                      <p className="text-sm font-semibold text-gray-800">
-                        {displayUser?.name || t("user")}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {t("welcomeBackShort")}
-                      </p>
-                    </div>
-
-                    {/* Menu Items */}
-                    <div className="py-2 px-2 flex flex-col gap-1">
-
-                      <Button
-                        asChild
-                        variant="dropdown"
-                        size="sm"
-                        onClick={() => setUserMenuOpen(false)}
-                      >
-                        <Link href="/profile">
-                          <User size={16} />
-                          {t("manageProfile")}
-                        </Link>
-                      </Button>
-
-                      <Button
-                        asChild
-                        variant="dropdown"
-                        size="sm"
-                        onClick={() => setUserMenuOpen(false)}
-                      >
-                        <Link href="/addresses">
-                          <MapPin size={16} />
-                          {t("savedAddresses")}
-                        </Link>
-                      </Button>
-
-                      <Button
-                        asChild
-                        variant="dropdown"
-                        size="sm"
-                        onClick={() => setUserMenuOpen(false)}
-                      >
-                        <Link href="/orders">
-                          <Package size={16} />
-                          {t("myOrders")}
-                        </Link>
-                      </Button>
-
-                    </div>
-
-
-                    {/* Divider */}
-                    <div className="border-t" />
-
-                    <div className="px-2 pb-2">
-
-                      <Button
-                        variant="logout"
-                        size="sm"
-                        onClick={handleLogout}
-
-                      >
-                        <LogOut size={16} />
-                        {t("logout")}
-                      </Button>
-
-                    </div>
-
-
-                  </div>
-                )}
               </div>
 
             )}
-          </nav>
+            {userMenuOpen && (
+              <div className="absolute right-0 mt-3 w-56 rounded-xl bg-white shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
 
-          {/* CART ICON RIGHT */}
-          <div className="flex items-center gap-2">
+                {/* User Info Section */}
+                <div className="px-4 py-3 bg-gray-50 border-b">
+                  <p className="text-sm font-semibold text-gray-800">
+                    {displayUser?.name || t("user")}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {t("welcomeBackShort")}
+                  </p>
+                </div>
+
+                {/* Menu Items */}
+                <div className="py-2 px-2 flex flex-col gap-1">
+
+                  <Button
+                    asChild
+                    variant="dropdown"
+                    size="sm"
+                    onClick={() => setUserMenuOpen(false)}
+                  >
+                    <Link href="/profile">
+                      <User size={16} />
+                      {t("manageProfile")}
+                    </Link>
+                  </Button>
+
+                  <Button
+                    asChild
+                    variant="dropdown"
+                    size="sm"
+                    onClick={() => setUserMenuOpen(false)}
+                  >
+                    <Link href="/addresses">
+                      <MapPin size={16} />
+                      {t("savedAddresses")}
+                    </Link>
+                  </Button>
+
+                  <Button
+                    asChild
+                    variant="dropdown"
+                    size="sm"
+                    onClick={() => setUserMenuOpen(false)}
+                  >
+                    <Link href="/orders">
+                      <Package size={16} />
+                      {t("myOrders")}
+                    </Link>
+                  </Button>
+
+                </div>
+
+
+                {/* Divider */}
+                <div className="border-t" />
+
+                <div className="px-2 pb-2">
+
+                  <Button
+                    variant="logout"
+                    size="sm"
+                    onClick={handleLogout}
+
+                  >
+                    <LogOut size={16} />
+                    {t("logout")}
+                  </Button>
+
+                </div>
+
+
+              </div>
+            )}
             <Button asChild size="icon" className="relative">
               <Link
                 href="/cart"
+                className="btn-primary"
               >
                 <ShoppingCart size={20} />
                 {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs min-w-[20px] h-5 rounded-full flex items-center justify-center px-1">
+                  <span className="absolute -top-2 -right-1 bg-red-500 text-white text-xs min-w-[20px] h-5 rounded-full flex items-center justify-center px-1">
                     {cartCount > 99 ? "99+" : cartCount}
                   </span>
                 )}

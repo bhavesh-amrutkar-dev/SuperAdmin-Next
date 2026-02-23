@@ -1209,44 +1209,28 @@ export default function RafflesDetailPage() {
         <main className="bg-gray-50 min-h-screen">
             <Header />
 
-            <div className="w-full px-4 py-4 md:py-6">
+            <div className="mx-auto w-full max-w-[1648px] px-4 md:px-6 py-4 md:py-10 pb-0 md:pb-10">
                 {/* Full Width Header Title Section */}
-                <div className="mx-auto mb-6">
-                    <div className="bg-white rounded-lg shadow-lg p-4 flex items-center justify-between">
-                        <h1 className="text-lg md:text-xl font-black text-[#2f2f2f] uppercase">
-                            {lotteryItem.productName || lotteryItem.name || lotteryItem.campaignTitle}
-                        </h1>
 
-                        <Button
-                            onClick={handleShare}
-                            disabled={sharing}
-                            className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-black bg-[#FECB02] hover:bg-[#FFD84D] rounded-lg shadow-md transition-all active:scale-95"
-                        >
-                            <Share2 size={18} />
-                            {sharing ? "..." : t("share") || "Share"}
-                        </Button>
-                    </div>
-                </div>
 
                 {/* Main Content Layout */}
                 <div className="flex flex-col lg:flex-row gap-6 mb-6 mx-auto items-start">
                     {/* Left Column - Product Image and Win Probability */}
-                    <div className="w-full lg:w-2/5 space-y-6">
+                    <div className="w-full lg:w-1/2 space-y-6 relative lg:sticky lg:top-[100px] xl:me-3">
                         {/* Product Image Area */}
-                        <div className="bg-white rounded-xl shadow-lg p-3 md:p-4 min-h-[250px] flex items-center justify-center relative">
+                        <div className="bg-white rounded-xl shadow-lg p-3 md:p-4 min-h-[250px] md:h-[500px] lg:h-[calc(100vh-150px)] flex items-center justify-center">
                             {/* Participate Rule Button - Moved to Left Column per User request */}
                             {lotteryItem?.raffleEmailEntry && (
                                 <div className="flex justify-start">
                                     <Button
                                         onClick={() => setShowEmailEntryModal(true)}
-                                        className="bg-black text-white font-bold h-8 w-8 rounded-full transition-all flex items-center justify-center gap-2 tracking-wider absolute top-3 right-3" title="Participate Rule"
+                                        className="bg-gray-100 font-bold h-8 w-8 rounded-full transition-all flex items-center justify-center gap-2 tracking-wider absolute top-5 right-5 z-10" title="Participate Rule"
                                     >
-                                        <svg fill="#fff" viewBox="0 0 640 640"><path d="M272 112C272 85.5 293.5 64 320 64C346.5 64 368 85.5 368 112C368 138.5 346.5 160 320 160C293.5 160 272 138.5 272 112zM224 256C224 238.3 238.3 224 256 224L320 224C337.7 224 352 238.3 352 256L352 512L384 512C401.7 512 416 526.3 416 544C416 561.7 401.7 576 384 576L256 576C238.3 576 224 561.7 224 544C224 526.3 238.3 512 256 512L288 512L288 288L256 288C238.3 288 224 273.7 224 256z"/></svg>
-                                        {/* {t("participateRule") || "Participate Rule"} */}
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="!w-[18px] !h-[18px] text-muted-foreground"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
                                     </Button>
                                 </div>
                             )}
-                            <div className="relative w-full max-w-xs aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden flex items-center justify-center shadow-inner">
+                            <div className="relative w-full aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden flex items-center justify-center shadow-inner min-h-[250px] md:h-[500px] lg:h-[calc(100vh-150px)]">
                                 <ImageMagnify
                                     largeImage={displayImage}
                                     product={{
@@ -1259,13 +1243,26 @@ export default function RafflesDetailPage() {
                                 />
                             </div>
                         </div>
-
-                        {/* Win Probability Section */}
-                        <WinProbabilitySection lotteryItem={lotteryItem} />
                     </div>
 
                     {/* Right Column - Selection and Call-to-Action */}
-                    <div className="w-full lg:w-3/5 space-y-6">
+                    <div className="w-full lg:w-1/2 space-y-6 bg-gray-100 p-4 xl:p-6 rounded-xl">
+                        <div className="mx-auto mb-6">
+                            <div className="flex items-center justify-between gap-2">
+                                <h1 className="text-lg md:text-xl font-black text-[#2f2f2f] uppercase">
+                                    {lotteryItem.productName || lotteryItem.name || lotteryItem.campaignTitle}
+                                </h1>
+
+                                <Button
+                                    onClick={handleShare}
+                                    disabled={sharing}
+                                    className="relative -mr-px flex items-center justify-center rounded-full transition-colors duration-300 ease-in-out border border-gray-300 bg-white font-semibold transition-all hover:scale-102 hover:border-[#FECB02] px-3 sm:px-4"
+                                >
+                                    <Share2 size={18} />
+                                    {sharing ? "..." : t("share") || "Share"}
+                                </Button>
+                            </div>
+                        </div>
                         {/* Countdown Timer */}
                         <CountdownTimerDisplay countdown={countdown} />
 
@@ -1366,7 +1363,7 @@ export default function RafflesDetailPage() {
                         />
 
                         {/* Participate Action Area - Sticky for conversion */}
-                        <div className="mt-6 sticky bottom-0 bg-white/95 backdrop-blur-md p-4 -mx-4 md:mx-0 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05),0_-4px_6px_-2px_rgba(0,0,0,0.05)] rounded-t-2xl z-40 border-t border-gray-100/50">
+                        <div className="mt-4 md:mt-6 z-40 border-t border-gray-100/50">
                             {showQuantitySelector ? (
                                 <QuantitySelector
                                     selectedQuantity={selectedQuantity}
@@ -1408,7 +1405,7 @@ export default function RafflesDetailPage() {
                                 />
                             ) : (
                                 <Button
-                                    className="w-full bg-gradient-to-r from-[#FECB02] to-[#FFD84D] hover:from-[#FFD84D] hover:to-[#FECB02] disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold h-12 rounded-lg transition-all shadow-lg flex items-center justify-center gap-2 text-sm md:text-base transform hover:-translate-y-1 uppercase"
+                                    className="w-full btn-primary  disabled:opacity-50 disabled:cursor-not-allowed h-12 transition-all shadow-lg flex items-center justify-center gap-2 text-sm md:text-base transform hover:-translate-y-1 uppercase"
                                     onClick={() => {
                                         if (!lotteryItem || !selectedTicket || participating || applyingTicket) return;
 
@@ -1465,11 +1462,15 @@ export default function RafflesDetailPage() {
                                 </Button>
                             )}
                         </div>
+
+                        {/* Win Probability Section */}
+                        <WinProbabilitySection lotteryItem={lotteryItem} />
+
                     </div>
                 </div>
 
                 {/* Additional Information Sections - Now properly at the bottom */}
-                <div className="bg-white rounded-xl shadow-lg mt-8">
+                <div className="border border-gray-200 bg-white rounded-xl mt-6 lg:mt-8 overflow-hidden">
                     {/* Product Description Section */}
                     <AccordionSection
                         title={t("productDescription")}
@@ -1557,7 +1558,7 @@ export default function RafflesDetailPage() {
                         </div>
                     </AccordionSection>
                 </div>
-
+            </div>
 
                 {/* Scroll to Top Button */}
                 {
@@ -1668,7 +1669,7 @@ export default function RafflesDetailPage() {
 
                 <PreFooterIconModule />
                 <Footer />
-            </div>
+            
         </main>
     );
 }

@@ -12,12 +12,12 @@ interface AccordionSectionProps {
 
 export default function AccordionSection({ title, isOpen, onToggle, children }: AccordionSectionProps) {
     return (
-        <div className="border-b border-gray-200 last:border-b-0">
+        <div className="border-b border-gray-300 last:border-b-0">
             <button
                 onClick={onToggle}
-                className="w-full p-4 md:p-5 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                className="w-full p-4 md:p-5 flex items-center justify-between bg-gray-100 transition-colors cursor-pointer"
             >
-                <h2 className="text-lg md:text-xl font-bold text-[#2f2f2f]">
+                <h2 className="text-base lg:text-lg font-semibold text-[#2f2f2f]">
                     {title}
                 </h2>
                 {isOpen ? (
@@ -27,7 +27,7 @@ export default function AccordionSection({ title, isOpen, onToggle, children }: 
                 )}
             </button>
             {isOpen && (
-                <div className="px-4 md:px-5 pb-4 md:pb-5">
+                <div className="p-4 md:p-5 bg-white">
                     {children}
                 </div>
             )}

@@ -60,11 +60,11 @@ export default function EntrySelection({
         [];
 
     return (
-        <div className="bg-white rounded-lg shadow-lg p-4">
+        <div className="">
             <div className={`grid grid-cols-1 ${user ? "lg:grid-cols-2" : "grid-cols-1"} gap-6`}>
                 {/* Left Column: Tickets */}
                 <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid sm:grid-cols-2 gap-3">
                         {tickets && Array.isArray(tickets) && tickets.length > 0 ? (
                             tickets.map((ticket: any, index: number) => {
                                 // Handle different ticket structures
@@ -76,16 +76,17 @@ export default function EntrySelection({
                                     <button
                                         key={ticketId}
                                         onClick={() => onTicketSelect(ticketId)}
-                                        className={`p-4 sm:p-3 rounded-lg border-2 transition-all w-full ${selectedTicket === ticketId
-                                            ? "border-[#FECB02] bg-[#FFF8E7] shadow-md ring-1 ring-[#FECB02]"
-                                            : "border-gray-200 hover:border-[#FECB02] hover:bg-gradient-to-r hover:from-[#FECB02]/10 hover:to-[#FFD84D]/10 bg-white"
+                                        className={`p-4 lg:p-3 xl:p-4 rounded-xl border-2 transition-all w-full cursor-pointer ${selectedTicket === ticketId
+                                            ? "border-[#FECB02] bg-[#fffbf3] ring-3 ring-[#FECB02]/20"
+                                            : "border-gray-200 hover:border-[#FECB02]/50 bg-white"
                                             }`}
                                     >
                                         <div className="flex flex-row justify-between items-center gap-2">
-                                            <span className="text-sm sm:text-base font-bold text-[#797979]">
+                                            <span className="inline-flex items-center gap-2 text-base font-semibold text-[#2f2f2f]">
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="w-4 h-4 text-muted-foreground"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path><path d="M13 5v2"></path><path d="M13 17v2"></path><path d="M13 11v2"></path></svg>
                                                 {displayCurrency} {ticketPrice?.toFixed(2) || "0.00"}
                                             </span>
-                                            <span className="text-[10px] sm:text-xs text-[#797979] whitespace-nowrap">
+                                            <span className="text-xs text-[#797979] whitespace-nowrap font-medium">
                                                 ({numberOfTickets || 0} {t("tickets") || "Tickets"})
                                             </span>
                                         </div>
