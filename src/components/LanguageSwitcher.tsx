@@ -62,14 +62,14 @@ export default function LanguageSwitcher({ variant = "header" }: Props) {
   const isSidebar = variant === "sidebar";
 
   return (
-    <div ref={ref} className={`relative ${isSidebar ? "w-full" : ""}`}>
+    <div ref={ref} className={`relative min-h-10 ${isSidebar ? "w-full" : ""}`}>
       {/* Trigger */}
       <Button
         variant={isSidebar ? "dropdown" : "dark"}
         size="sm"
         onClick={() => setOpen((v) => !v)}
         className={`
-          ${isSidebar ? "w-full justify-start" : "rounded-full px-4"}
+          ${isSidebar ? "w-full justify-start btn-primary" : "rounded-full btn-primary px-4 min-h-10"}
         `}
       >
         <Globe size={16} />
@@ -109,8 +109,8 @@ export default function LanguageSwitcher({ variant = "header" }: Props) {
                 className={`
         w-full justify-start rounded-none transition-colors
         ${isActive
-                    ? "text-yellow-500 hover:bg-[#FECB02] hover:text-black"
-                    : "hover:bg-[#FECB02] hover:text-black"
+                    ? "text-yellow-500 hover:text-black"
+                    : "hover:text-black"
                   }
       `}
               >

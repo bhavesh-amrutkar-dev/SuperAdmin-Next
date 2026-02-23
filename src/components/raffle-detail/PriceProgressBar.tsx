@@ -28,7 +28,7 @@ export default function PriceProgressBar({ lotteryItem }: PriceProgressBarProps)
     );
 
     return (
-        <div className="bg-white rounded-lg shadow-lg p-4">
+        <div className="px-2">
             <div className="flex items-center justify-between mb-2">
                 <span className="text-lg font-semibold text-[#797979]">
                     {displayCurrency} {displayPrice ?? "0"}
@@ -39,7 +39,7 @@ export default function PriceProgressBar({ lotteryItem }: PriceProgressBarProps)
             </div>
             <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div
-                    className="h-full bg-gradient-to-r from-[#FECB02] to-[#FFD84D] transition-all duration-300 "
+                    className="bg-gradient-to-r to-[#f3c200] from-[#2f2f2f] h-2.5 rounded-full transition-all"
                     style={{ width: `${progressPercentage}%` }}
                 ></div>
             </div>
