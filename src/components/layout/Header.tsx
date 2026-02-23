@@ -207,7 +207,7 @@ export default function Header() {
 
       {/* MAIN BAR */}
       <div className="mx-auto max-w-412 px-4">
-        <div className="flex h-16 md:h-20 items-center justify-between">
+        <div className="flex h-16 md:h-18 lg:h-20 items-center justify-between">
 
 
           {/* MOBILE MENU BUTTON */}
@@ -220,7 +220,7 @@ export default function Header() {
           </button>
 
           {/* LOGO CENTERED ON MOBILE */}
-          <Link href="/" className="absolute left-1/2 transform -translate-x-1/2 lg:static lg:translate-x-0">
+          <Link href="/" className="absolute left-1/2 transform -translate-x-1/2 lg:static lg:translate-x-0 lg:max-w-[160px] xl:max-w-[200px]">
             <Image
               src={website_logo}
               alt="DonRifa"
@@ -234,7 +234,7 @@ export default function Header() {
 
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-10 text-sm font-semibold uppercase text-white ml-10">
+          <nav className="hidden lg:flex items-center gap-8 xl:gap-10 text-[12px] xl:text-sm font-semibold uppercase text-white ml-10 lg:mr-4 lg:ml-[4%] xl:ml-[10%]">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -252,7 +252,7 @@ export default function Header() {
               variant="dark"
               size="sm"
               onClick={() => setCountryModalOpen(true)}
-              className="hidden md:flex uppercase text-xs min-h-10 btn-primary"
+              className="hidden lg:flex uppercase text-xs min-h-10 btn-primary"
             >
               <Globe size={14} />
               {currentCountry}
@@ -261,7 +261,7 @@ export default function Header() {
 
 
             {!isLoggedIn && !displayUser ? (
-              <Button asChild size="sm">
+              <Button asChild size="sm" className="hidden lg:inline-flex">
                 <Link href="/auth/login" className="btn-primary min-h-10">
                   <User size={16} /> {t("login")}
                 </Link>
@@ -418,7 +418,7 @@ export default function Header() {
                   <Button
                     asChild
                     size="sm"
-                    className="flex-1"
+                    className="flex-1 btn-primary"
                     onClick={() => setMenuOpen(false)}
                   >
                     <Link href="/auth/login">
@@ -430,7 +430,7 @@ export default function Header() {
                     asChild
                     variant="outline"
                     size="sm"
-                    className="flex-1"
+                    className="flex-1 btn-primary"
                     onClick={() => setMenuOpen(false)}
                   >
                     <Link href="/auth/register">

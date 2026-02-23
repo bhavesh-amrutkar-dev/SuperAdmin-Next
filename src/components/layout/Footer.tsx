@@ -36,7 +36,7 @@ export default function Footer() {
 
   return (
     <footer className="bg-[#2f2f2f] text-white">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 sm:py-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 xl:px-8 py-10 sm:py-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
 
         {/* Logo & Description */}
         <div className="text-center sm:text-left">
@@ -55,7 +55,7 @@ export default function Footer() {
         </div>
 
         {/* Company Links */}
-        <div className="text-center sm:text-left">
+        <div className="text-center sm:text-left md:ps-10 lg:ps-12">
           <h4 className="uppercase text-base font-semibold mb-4 text-[#f3c200]">{t("companyTitle")}</h4>
           <ul className="space-y-2 text-sm">
             {[
@@ -91,7 +91,7 @@ export default function Footer() {
         </div>
 
         {/* Payments & Social */}
-        <div className="text-center sm:text-left">
+        <div className="text-center sm:text-left md:ps-10 lg:ps-0">
           {/* Payments */}
           <div className="flex justify-center sm:justify-start gap-3 flex-wrap">
             {PAYMENT_ICONS.map((src, i) => (
@@ -108,7 +108,7 @@ export default function Footer() {
 
           {/* Social */}
           <h4 className="mt-6 mb-3 text-sm font-semibold text-[#f3c200]">{t("followUs")}</h4>
-          <div className="flex justify-center sm:justify-start gap-3 flex-wrap">
+          <div className="flex justify-center sm:justify-start gap-2 2xl:gap-3 flex-wrap">
             {SOCIAL_MEDIA_LINKS.map((item) => (
               <Link
                 key={item.name}
@@ -116,7 +116,7 @@ export default function Footer() {
                 target="_blank"
                 className="transition transform hover:scale-110"
               >
-                <div className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-white hover:bg-[#f3c200] transition-colors">
+                <div className="w-9 h-9 2xl:w-10 2xl:h-10 flex items-center justify-center rounded-full bg-white hover:bg-[#f3c200] transition-colors">
                   <Image src={item.icon} alt={item.name} width={24} height={24} />
                 </div>
               </Link>

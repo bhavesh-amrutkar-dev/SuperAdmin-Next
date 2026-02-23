@@ -35,11 +35,11 @@ export default function RaffleSectionLayout({
   const isLoading = !section.items?.length;
 
   return (
-    <section className="w-full py-10 md:py-14">
+    <section className="w-full py-8 lg:py-10 xl:py-14">
       <div className="mx-auto w-full max-w-screen-2xl px-4 md:px-6">
         {/* Header */}
-        <div className="mb-8 md:mb-12 text-center">
-          <div className="text-center section_heading min-w-[200px] sm:min-w-[400px] inline-block px-8 py-3">
+        <div className="mb-6 md:mb-8 xl:mb-10 text-center">
+          <div className="text-center section_heading min-w-[200px] lg:min-w-[400px] inline-block px-8 py-3">
             <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold uppercase tracking-wide leading-tight text-gray-900">
               {section.title}
             </h2>

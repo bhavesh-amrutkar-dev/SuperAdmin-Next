@@ -9,10 +9,10 @@ export default function HowItWorksSection() {
 
   return (
     <section
-      className="mx-auto w-full max-w-[1648px] px-2 md:px-6 pt-10 pb-[60px]"
+      className="mx-auto w-full max-w-[1648px] px-2 md:px-6 pt-8 lg:pt-4 xl:pt-8 pb-7 lg:pb-9 xl:pb-10"
     >
-      <div className="text-center mb-14">
-        <div className="text-center section_heading min-w-[200px] sm:min-w-[400px] inline-block px-8 py-3">
+      <div className="text-center mb-10 lg:mb-12">
+        <div className="text-center section_heading min-w-[200px] lg:min-w-[400px] inline-block px-8 py-3">
         <h2 className="
         text-lg md:text-2xl lg:text-3xl xl:text-4xl
         font-bold

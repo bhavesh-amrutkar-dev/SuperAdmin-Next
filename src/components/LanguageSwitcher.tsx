@@ -62,14 +62,14 @@ export default function LanguageSwitcher({ variant = "header" }: Props) {
   const isSidebar = variant === "sidebar";
 
   return (
-    <div ref={ref} className={`relative min-h-10 ${isSidebar ? "w-full" : ""}`}>
+    <div ref={ref} className={`relative min-h-10 ${isSidebar ? "w-full" : "hidden lg:inline-flex"}`}>
       {/* Trigger */}
       <Button
         variant={isSidebar ? "dropdown" : "dark"}
         size="sm"
         onClick={() => setOpen((v) => !v)}
         className={`
-          ${isSidebar ? "w-full justify-start btn-primary" : "rounded-full btn-primary px-4 min-h-10"}
+          ${isSidebar ? "w-full justify-start" : "rounded-full btn-primary px-4 min-h-10"}
         `}
       >
         <Globe size={16} />
@@ -89,7 +89,7 @@ export default function LanguageSwitcher({ variant = "header" }: Props) {
       {open && (
         <div
           className={`
-            absolute mt-2 w-44 rounded-xl border shadow-xl
+            lg:absolute mt-2 w-full lg:w-44 rounded-xl border shadow-xl
             bg-white overflow-hidden z-50
             ${isSidebar
               ? "left-0 border-gray-200"

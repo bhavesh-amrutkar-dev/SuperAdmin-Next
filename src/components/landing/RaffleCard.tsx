@@ -59,7 +59,7 @@ export default function RaffleCard({ item, cellType }: RaffleCardProps) {
         {/* Title */}
         {item.name && (
           <h3 className="
-            text-base md:text-lg 
+            text-base lg:text-lg 
             font-bold 
             text-gray-900 
             text-center
@@ -75,7 +75,7 @@ export default function RaffleCard({ item, cellType }: RaffleCardProps) {
         {/* Price Section */}
         <div className="mt-auto pt-3 flex items-center justify-center border-t border-gray-200">
           {item.price && (
-            <span className="text-xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-yellow-600">
+            <span className="text-xl md:text-2xl lg:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-yellow-600">
               {item.currencySymbol} {item.price}
             </span>
           )}
