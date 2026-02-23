@@ -200,12 +200,9 @@ export default function CountrySelectorModal({
     setCookie(COUNTRY, selected.name || DEFAULT_COUNTRY, cookieOptions);
     setCookie("C_id", selected.id, cookieOptions);
 
-    // try {
-    //   window.localStorage.setItem("C_code", selected.code);
-    //   window.dispatchEvent(
-    //     new CustomEvent("countryChanged", { detail: selected })
-    //   );
-    // } catch { }
+    window.dispatchEvent(
+      new CustomEvent("countryChanged", { detail: { id: selected.id } })
+    );
 
     onCountryChange?.(selected);
     onClose();
