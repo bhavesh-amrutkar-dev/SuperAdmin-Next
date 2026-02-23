@@ -8,12 +8,12 @@ let branchInitialized = false
 export default function BranchProvider() {
   useEffect(() => {
     if (!ENABLE_BRANCH_IO) {
-      console.log('Branch disabled')
+      // console.log('Branch disabled')
       return
     }
 
     if (branchInitialized) {
-      console.log('Branch already initialized')
+      // console.log('Branch already initialized')
       return
     }
 
@@ -21,7 +21,7 @@ export default function BranchProvider() {
       try {
         const branch = (await import('branch-sdk')).default
 
-        console.log('Initializing Branch SDK...')
+        // console.log('Initializing Branch SDK...')
 
         const timeout = setTimeout(() => {
           console.warn('Branch init timeout')
@@ -33,7 +33,7 @@ export default function BranchProvider() {
           if (err) {
             console.warn('Branch init failed', err)
           } else {
-            console.log('Branch init success', data)
+            // console.log('Branch init success', data)
             branchInitialized = true
           }
         })

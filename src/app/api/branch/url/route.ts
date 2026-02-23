@@ -12,9 +12,9 @@ export async function POST(request: Request) {
         const keyType = "Public Key";
 
 
-        console.log("Branch API Route called");
-        console.log(`Using ${keyType}:`, branchKey ? (branchKey.substring(0, 10) + "...") : "None");
-        console.log("Request Body:", JSON.stringify(body, null, 2));
+        // console.log("Branch API Route called");
+        // console.log(`Using ${keyType}:`, branchKey ? (branchKey.substring(0, 10) + "...") : "None");
+        // console.log("Request Body:", JSON.stringify(body, null, 2));
 
         const branchPayload = {
             app_id: process.env.NEXT_BRANCH_APP_ID,
@@ -26,9 +26,9 @@ export async function POST(request: Request) {
             data,
         };
 
-        console.log("Sending payload to Branch:", JSON.stringify({
-            ...branchPayload,
-        }));
+        // console.log("Sending payload to Branch:", JSON.stringify({
+        //     ...branchPayload,
+        // }));
 
         const response = await fetch("https://api2.branch.io/v1/url", {
             method: "POST",
@@ -39,8 +39,8 @@ export async function POST(request: Request) {
         });
 
         const result = await response.json();
-        console.log("Deeplink Service: API result:", result);
-        console.log("Branch API Response:", JSON.stringify(result, null, 2));
+        // console.log("Deeplink Service: API result:", result);
+        // console.log("Branch API Response:", JSON.stringify(result, null, 2));
         return NextResponse.json(result);
     } catch (error) {
         console.error("Error creating Branch link:", error);

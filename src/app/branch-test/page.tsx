@@ -18,7 +18,7 @@ export default function BranchTestPage() {
                 if (err) {
                     console.error(err)
                 } else {
-                    console.log('Generated Branch URL:', url)
+                    // console.log('Generated Branch URL:', url)
                     alert(url)
                 }
             }

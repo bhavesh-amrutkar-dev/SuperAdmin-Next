@@ -1141,14 +1141,14 @@ export default function RafflesDetailPage() {
         if (pid) urlObj.searchParams.append("pid", pid);
         if (lotteryItem.childProductId) urlObj.searchParams.append("cpid", lotteryItem.childProductId);
         shareUrl = urlObj.toString();
-        console.log("Initial fallback shareUrl:", shareUrl);
+        // console.log("Initial fallback shareUrl:", shareUrl);
 
-        console.log("ENABLE_BRANCH_IO:", ENABLE_BRANCH_IO);
+        // console.log("ENABLE_BRANCH_IO:", ENABLE_BRANCH_IO);
 
         if (ENABLE_BRANCH_IO) {
             try {
                 setSharing(true);
-                console.log("Calling createProductDeepLink...");
+                // console.log("Calling createProductDeepLink...");
                 const deepLink = await createProductDeepLink({
                     id: typeof params.id === 'string' ? params.id : Array.isArray(params.id) ? params.id[0] : '',
                     name: displayName || "Raffle",
@@ -1156,10 +1156,10 @@ export default function RafflesDetailPage() {
                     image: displayImage || "",
                     fallbackUrl: shareUrl
                 });
-                console.log("createProductDeepLink result:", deepLink);
+                // console.log("createProductDeepLink result:", deepLink);
                 if (deepLink) {
                     shareUrl = deepLink;
-                    console.log("Using Branch Deep Link:", shareUrl);
+                    // console.log("Using Branch Deep Link:", shareUrl);
                 }
             } catch (error) {
                 console.warn("Error creating deep link:", error);
@@ -1168,7 +1168,7 @@ export default function RafflesDetailPage() {
 
         try {
             setSharing(true);
-            console.log("Triggering navigator.share with URL:", shareUrl);
+            // console.log("Triggering navigator.share with URL:", shareUrl);
 
             if (navigator.share) {
                 // Mobile native share (Safari iOS works on HTTPS + user gesture)
@@ -1182,7 +1182,7 @@ export default function RafflesDetailPage() {
 
                     url: shareUrl,
                 });
-                console.log("navigator.share completed");
+                // console.log("navigator.share completed");
             } else {
                 // Clipboard fallback with Safari support
                 if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -1196,7 +1196,7 @@ export default function RafflesDetailPage() {
                     document.body.removeChild(textarea);
                 }
                 toast.success("Link copied to clipboard!");
-                console.log("Clipboard fallback completed");
+                // console.log("Clipboard fallback completed");
             }
         } catch (err) {
             console.warn("Share failed:", err);

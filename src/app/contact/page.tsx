@@ -8,6 +8,10 @@ import Footer from "@/src/components/layout/Footer";
 import PreFooterIconModule from "@/src/components/layout/PreFooterIconModule";
 import { contactUsBanner, Contate_girl } from "@/src/lib/config";
 import { Mail, Phone, MapPin } from "lucide-react";
+import { Button } from "@/src/components/ui/button";
+import { Label } from "@/src/components/ui/label";
+import { Input } from "@/src/components/ui/input";
+import PhoneInput from "react-phone-input-2";
 
 // Contact page component
 
@@ -54,7 +58,7 @@ export default function ContactPage() {
         <main>
             <Header />
 
-            <div className="w-full bg-gradient-to-b from-gray-50 to-white min-h-screen">
+            <div className="w-full bg-linear-to-b from-gray-50 to-white min-h-screen">
                 <div className="mx-auto w-full max-w-7xl px-4 md:px-6 py-8 md:py-16">
                     {/* Page Header */}
                     <div className="text-center mb-12">
@@ -67,53 +71,60 @@ export default function ContactPage() {
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-                        {/* Left Column - Image */}
+
+                        {/* LEFT COLUMN */}
                         <div className="flex items-center justify-center">
-                            <div className="relative w-full max-w-sm aspect-[3/4] overflow-hidden rounded-2xl bg-gradient-to-br from-[#D4AF37]/10 to-gray-100 shadow-xl">
+                            <div className="relative w-full max-w-md aspect-4/5 overflow-hidden rounded-3xl shadow-2xl">
                                 <Image
                                     src={Contate_girl || contactUsBanner || "/images/contactUs/contactUsBanner.png"}
                                     alt="Contact Us"
                                     fill
-                                    className="object-cover rounded-2xl"
-                                    unoptimized
+                                    className="object-cover"
+
                                 />
                             </div>
                         </div>
 
-                        {/* Right Column - Company Information */}
-                        <div className="space-y-6">
-                            <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 border border-gray-100">
-                                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+                        {/* RIGHT COLUMN */}
+                        <div className="flex flex-col gap-8">
+
+                            {/* Company Info Card */}
+                            <div className="bg-white rounded-3xl shadow-md p-8 border border-gray-100">
+                                <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
                                     <div className="w-1 h-8 bg-[#D4AF37] rounded-full"></div>
                                     {t("companyInformation") || "COMPANY INFORMATION"}
                                 </h2>
 
-                                <div className="space-y-6">
+                                <div className="space-y-8">
                                     {/* Address */}
                                     <div className="flex items-start gap-4 group">
-                                        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[#D4AF37]/10 flex items-center justify-center group-hover:bg-[#D4AF37] transition-colors">
-                                            <MapPin className="w-6 h-6 text-[#D4AF37] group-hover:text-white transition-colors" />
+                                        <div className="w-12 h-12 rounded-full bg-[#D4AF37]/10 flex items-center justify-center group-hover:bg-[#D4AF37] transition-all duration-300">
+                                            <MapPin className="w-5 h-5 text-[#D4AF37] group-hover:text-white transition-colors" />
                                         </div>
-                                        <div className="flex-1">
-                                            <h3 className="font-semibold text-gray-900 mb-2">{t("address") || "Address"}</h3>
-                                            <p className="text-gray-600 leading-relaxed">
+                                        <div>
+                                            <h3 className="font-semibold text-gray-900 mb-1">
+                                                {t("address") || "Address"}
+                                            </h3>
+                                            <p className="text-gray-600 leading-relaxed text-sm">
                                                 1413 PR-25 4to piso, Puerto Rico<br />
                                                 25, DON RIFA LLC<br />
-                                                San Juan San Juan, 00918
+                                                San Juan, 00918
                                             </p>
                                         </div>
                                     </div>
 
                                     {/* Email */}
                                     <div className="flex items-start gap-4 group">
-                                        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[#D4AF37]/10 flex items-center justify-center group-hover:bg-[#D4AF37] transition-colors">
-                                            <Mail className="w-6 h-6 text-[#D4AF37] group-hover:text-white transition-colors" />
+                                        <div className="w-12 h-12 rounded-full bg-[#D4AF37]/10 flex items-center justify-center group-hover:bg-[#D4AF37] transition-all duration-300">
+                                            <Mail className="w-5 h-5 text-[#D4AF37] group-hover:text-white transition-colors" />
                                         </div>
-                                        <div className="flex-1">
-                                            <h3 className="font-semibold text-gray-900 mb-2">{t("email")}</h3>
+                                        <div>
+                                            <h3 className="font-semibold text-gray-900 mb-1">
+                                                {t("email") || "Email"}
+                                            </h3>
                                             <a
                                                 href="mailto:service@donrifa.com"
-                                                className="text-[#D4AF37] hover:text-[#B8860B] transition-colors font-medium break-all"
+                                                className="text-[#D4AF37] hover:text-[#B8860B] transition-colors font-medium text-sm"
                                             >
                                                 service@donrifa.com
                                             </a>
@@ -122,146 +133,142 @@ export default function ContactPage() {
 
                                     {/* Phone */}
                                     <div className="flex items-start gap-4 group">
-                                        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[#D4AF37]/10 flex items-center justify-center group-hover:bg-[#D4AF37] transition-colors">
-                                            <Phone className="w-6 h-6 text-[#D4AF37] group-hover:text-white transition-colors" />
+                                        <div className="w-12 h-12 rounded-full bg-[#D4AF37]/10 flex items-center justify-center group-hover:bg-[#D4AF37] transition-all duration-300">
+                                            <Phone className="w-5 h-5 text-[#D4AF37] group-hover:text-white transition-colors" />
                                         </div>
-                                        <div className="flex-1">
-                                            <h3 className="font-semibold text-gray-900 mb-2">{t("phoneNumber") || "Phone Number"}</h3>
+                                        <div>
+                                            <h3 className="font-semibold text-gray-900 mb-1">
+                                                {t("phoneNumber") || "Phone"}
+                                            </h3>
                                             <a
                                                 href="tel:434497151"
-                                                className="text-[#D4AF37] hover:text-[#B8860B] transition-colors font-medium"
+                                                className="text-[#D4AF37] hover:text-[#B8860B] transition-colors font-medium text-sm"
                                             >
-                                                434497151
+                                                434 497 151
                                             </a>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Right Column - Contact Form - Hidden */}
-                        <div className="space-y-6 hidden">
-                            <h2 className="text-xl md:text-2xl font-bold text-[#2f2f2f] uppercase mb-4">
-                                {t("sendMessage") || "SEND MESSAGE"}
-                            </h2>
-                            <form onSubmit={handleSubmit} className="space-y-4">
-                                {/* First Name */}
-                                <div>
-                                    <label
-                                        htmlFor="firstName"
-                                        className="block text-sm font-semibold text-[#2f2f2f] mb-2"
-                                    >
-                                        {t("firstName") || "First Name"} *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="firstName"
-                                        name="firstName"
-                                        value={formData.firstName}
-                                        onChange={handleChange}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f3c200] focus:border-transparent"
-                                        required
-                                    />
+                            {/* Contact Form Card */}
+                            <div className="bg-white rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] p-6 sm:p-8">
+                                <div className="mb-6 text-center">
+                                    <h2 className="text-2xl font-bold section_title">
+                                        {t("sendMessage")}
+                                    </h2>
                                 </div>
 
-                                {/* Last Name */}
-                                <div>
-                                    <label
-                                        htmlFor="lastName"
-                                        className="block text-sm font-semibold text-[#2f2f2f] mb-2"
-                                    >
-                                        {t("lastName") || "Last Name"} *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="lastName"
-                                        name="lastName"
-                                        value={formData.lastName}
-                                        onChange={handleChange}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f3c200] focus:border-transparent"
-                                        required
-                                    />
-                                </div>
+                                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                                {/* Email */}
-                                <div>
-                                    <label
-                                        htmlFor="email"
-                                        className="block text-sm font-semibold text-[#2f2f2f] mb-2"
-                                    >
-                                        {t("email")} *
-                                    </label>
-                                    <input
-                                        type="email"
-                                        id="email"
-                                        name="email"
-                                        value={formData.email}
-                                        onChange={handleChange}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f3c200] focus:border-transparent"
-                                        required
-                                    />
-                                </div>
-
-                                {/* Phone Number with Country Code */}
-                                <div>
-                                    <label
-                                        htmlFor="phone"
-                                        className="block text-sm font-semibold text-[#2f2f2f] mb-2"
-                                    >
-                                        {t("phone") || "Phone"}
-                                    </label>
-                                    <div className="flex gap-2">
-                                        <select
-                                            name="phoneCode"
-                                            value={formData.phoneCode}
-                                            onChange={handlePhoneCodeChange}
-                                            className="px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f3c200] focus:border-transparent bg-white"
-                                        >
-                                            <option value="+1">🇺🇸 +1</option>
-                                            <option value="+52">🇲🇽 +52</option>
-                                            <option value="+1-787">🇵🇷 +1-787</option>
-                                            <option value="+1-809">🇩🇴 +1-809</option>
-                                        </select>
-                                        <input
-                                            type="tel"
-                                            id="phone"
-                                            name="phone"
-                                            value={formData.phone}
+                                    {/* First Name */}
+                                    <div className="space-y-2">
+                                        <Label htmlFor="firstName" required>
+                                            {t("firstName")}
+                                        </Label>
+                                        <Input
+                                            id="firstName"
+                                            name="firstName"
+                                            value={formData.firstName}
                                             onChange={handleChange}
-                                            placeholder={t("enterPhoneNumber") || "Enter Phone Number"}
-                                            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f3c200] focus:border-transparent"
                                         />
                                     </div>
-                                </div>
 
-                                {/* Query/Message */}
-                                <div>
-                                    <label
-                                        htmlFor="query"
-                                        className="block text-sm font-semibold text-[#2f2f2f] mb-2"
+                                    {/* Last Name */}
+                                    <div className="space-y-2">
+                                        <Label htmlFor="lastName" required>
+                                            {t("lastName")}
+                                        </Label>
+                                        <Input
+                                            id="lastName"
+                                            name="lastName"
+                                            value={formData.lastName}
+                                            onChange={handleChange}
+                                        />
+                                    </div>
+
+                                    {/* Email */}
+                                    <div className="md:col-span-2 space-y-2">
+                                        <Label htmlFor="email" required>
+                                            {t("email")}
+                                        </Label>
+                                        <Input
+                                            id="email"
+                                            type="email"
+                                            name="email"
+                                            value={formData.email}
+                                            onChange={handleChange}
+                                        />
+                                    </div>
+
+                                    {/* Phone */}
+                                    <div className="md:col-span-2 space-y-2">
+                                        <Label htmlFor="phone">
+                                            {t("phone")}
+                                        </Label>
+
+                                        <PhoneInput
+                                            inputProps={{ id: "phone" }}
+                                            country="us"
+                                            value={`${formData.phoneCode}${formData.phone}`}
+                                            onChange={(value, country) => {
+                                                if (!("dialCode" in country)) return;
+
+                                                const dialCode = `+${country.dialCode}`;
+                                                const mobile = value.replace(country.dialCode, "");
+
+                                                setFormData((prev) => ({
+                                                    ...prev,
+                                                    phoneCode: dialCode,
+                                                    phone: mobile,
+                                                }));
+                                            }}
+                                            inputClass="
+          !w-full !h-[44px] !rounded-lg
+          !border !border-input
+          !pl-14 !text-sm
+          focus:!border-[#f3c200]
+          focus:!ring-2 focus:!ring-yellow-200
+        "
+                                        />
+                                    </div>
+
+                                    {/* Message */}
+                                    <div className="md:col-span-2 space-y-2">
+                                        <Label htmlFor="query" required>
+                                            {t("message")}
+                                        </Label>
+                                        <textarea
+                                            id="query"
+                                            name="query"
+                                            value={formData.query}
+                                            onChange={handleChange}
+                                            rows={5}
+                                            className="
+          w-full rounded-lg border border-input
+          px-4 py-3 text-sm
+          focus:outline-none
+          focus:!border-[#f3c200]
+          focus:!ring-2 focus:!ring-yellow-200
+          transition-all duration-200
+        "
+                                        />
+                                    </div>
+
+                                    {/* Button */}
+                                    <button
+                                        disabled={loading}
+                                        className="
+        md:col-span-2 w-full rounded-lg btn-primary py-3 font-semibold
+        hover:bg-yellow-400 hover:text-black transition
+        disabled:opacity-50 mt-3
+      "
                                     >
-                                        {t("enterYourQuery") || "Enter Your Query"} *
-                                    </label>
-                                    <textarea
-                                        id="query"
-                                        name="query"
-                                        value={formData.query}
-                                        onChange={handleChange}
-                                        rows={6}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f3c200] focus:border-transparent resize-none"
-                                        required
-                                    ></textarea>
-                                </div>
+                                        {loading ? t("sending") : t("send")}
+                                    </button>
 
-                                {/* Submit Button */}
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="w-full bg-[#9B9B9B] text-white py-3 px-6 rounded-lg font-semibold uppercase hover:bg-[#7A7A7A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {loading ? t("sending") || "Sending..." : t("send") || "SEND"}
-                                </button>
-                            </form>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
