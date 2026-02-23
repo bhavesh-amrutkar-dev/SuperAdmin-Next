@@ -11,13 +11,25 @@ import { Mail, Phone, MapPin } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
+import ErrorMessage from "@/src/components/ui/errorMessage";
 import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
 
+type ContactForm = {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    phoneCode: string;
+    query: string;
+};
+
+type Errors = Partial<Record<keyof ContactForm, string>>;
 // Contact page component
 
 export default function ContactPage() {
     const t = useTranslations();
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<ContactForm>({
         firstName: "",
         lastName: "",
         email: "",
@@ -25,6 +37,8 @@ export default function ContactPage() {
         phoneCode: "+1",
         query: "",
     });
+
+    const [errors, setErrors] = useState<Errors>({});
     const [loading, setLoading] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -35,14 +49,43 @@ export default function ContactPage() {
     const handlePhoneCodeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         setFormData((prev) => ({ ...prev, phoneCode: e.target.value }));
     };
+    const validate = (): boolean => {
+        const newErrors: Errors = {};
 
+        if (!formData.firstName.trim())
+            newErrors.firstName = t("firstNameRequired");
+
+        if (!formData.lastName.trim())
+            newErrors.lastName = t("lastNameRequired");
+
+        if (!formData.email) {
+            newErrors.email = t("emailRequired");
+        } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+            newErrors.email = t("emailInvalid");
+        }
+
+        if (!formData.query.trim())
+            newErrors.query = t("messageRequired");
+
+        // phone optional — validate only if filled
+        if (formData.phone && formData.phone.length < 6)
+            newErrors.phone = t("invalidMobile");
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!validate()) return;
+
         setLoading(true);
-        // TODO: Implement API call
-        setTimeout(() => {
-            setLoading(false);
-            alert(t("messageSent") || "Message sent successfully!");
+
+        try {
+            // TODO: API call
+            await new Promise((res) => setTimeout(res, 1000));
+
+            alert(t("messageSent"));
             setFormData({
                 firstName: "",
                 lastName: "",
@@ -51,7 +94,10 @@ export default function ContactPage() {
                 phoneCode: "+1",
                 query: "",
             });
-        }, 1000);
+            setErrors({});
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -163,42 +209,62 @@ export default function ContactPage() {
 
                                     {/* First Name */}
                                     <div className="space-y-2">
-                                        <Label htmlFor="firstName" required>
+                                        <Label htmlFor="firstName" error={!!errors.firstName} required>
                                             {t("firstName")}
                                         </Label>
+
                                         <Input
                                             id="firstName"
-                                            name="firstName"
+                                            placeholder={t("firstNamePlaceholder")}
                                             value={formData.firstName}
-                                            onChange={handleChange}
+                                            error={!!errors.firstName}
+                                            onChange={(e) => {
+                                                setFormData({ ...formData, firstName: e.target.value });
+                                                setErrors({ ...errors, firstName: undefined });
+                                            }}
                                         />
+
+                                        <ErrorMessage message={errors.firstName} />
                                     </div>
 
                                     {/* Last Name */}
                                     <div className="space-y-2">
-                                        <Label htmlFor="lastName" required>
+                                        <Label htmlFor="lastName" error={!!errors.lastName} required>
                                             {t("lastName")}
                                         </Label>
                                         <Input
                                             id="lastName"
-                                            name="lastName"
+                                            placeholder={t("lastNamePlaceholder")}
                                             value={formData.lastName}
-                                            onChange={handleChange}
+                                            error={!!errors.lastName}
+                                            onChange={(e) => {
+                                                setFormData({ ...formData, lastName: e.target.value });
+                                                setErrors({ ...errors, lastName: undefined });
+                                            }}
                                         />
+
+                                        <ErrorMessage message={errors.lastName} />
                                     </div>
 
                                     {/* Email */}
                                     <div className="md:col-span-2 space-y-2">
-                                        <Label htmlFor="email" required>
+                                        <Label htmlFor="email" error={!!errors.email} required>
                                             {t("email")}
                                         </Label>
+
                                         <Input
                                             id="email"
                                             type="email"
-                                            name="email"
+                                            placeholder="you@example.com"
                                             value={formData.email}
-                                            onChange={handleChange}
+                                            error={!!errors.email}
+                                            onChange={(e) => {
+                                                setFormData({ ...formData, email: e.target.value });
+                                                setErrors({ ...errors, email: undefined });
+                                            }}
                                         />
+
+                                        <ErrorMessage message={errors.email} />
                                     </div>
 
                                     {/* Phone */}
@@ -208,51 +274,63 @@ export default function ContactPage() {
                                         </Label>
 
                                         <PhoneInput
-                                            inputProps={{ id: "phone" }}
+                                            inputProps={{
+                                                id: "phone",
+                                                // placeholder: t("mobilePlaceholder") || "Enter phone number",
+                                            }}
                                             country="us"
                                             value={`${formData.phoneCode}${formData.phone}`}
                                             onChange={(value, country) => {
                                                 if (!("dialCode" in country)) return;
 
                                                 const dialCode = `+${country.dialCode}`;
-                                                const mobile = value.replace(country.dialCode, "");
+                                                const mobile = value.slice(country.dialCode.length);
 
                                                 setFormData((prev) => ({
                                                     ...prev,
                                                     phoneCode: dialCode,
                                                     phone: mobile,
                                                 }));
+
+                                                setErrors((prev) => ({ ...prev, phone: undefined }));
                                             }}
-                                            inputClass="
-          !w-full !h-[44px] !rounded-lg
-          !border !border-input
-          !pl-14 !text-sm
-          focus:!border-[#f3c200]
-          focus:!ring-2 focus:!ring-yellow-200
-        "
+                                            specialLabel=""   
+                                            inputClass={`
+    !w-full !h-[44px] !rounded-lg
+    !border ${errors.phone ? "!border-red-500" : "!border-input"}
+    !pl-14 !text-sm
+    focus:!border-[#f3c200]
+    focus:!ring-2 focus:!ring-yellow-200
+  `}
                                         />
+
+                                        <ErrorMessage message={errors.phone} />
                                     </div>
 
                                     {/* Message */}
                                     <div className="md:col-span-2 space-y-2">
-                                        <Label htmlFor="query" required>
+                                        <Label htmlFor="query" error={!!errors.query} required>
                                             {t("message")}
                                         </Label>
+
                                         <textarea
                                             id="query"
-                                            name="query"
                                             value={formData.query}
-                                            onChange={handleChange}
-                                            rows={5}
-                                            className="
-          w-full rounded-lg border border-input
-          px-4 py-3 text-sm
-          focus:outline-none
-          focus:!border-[#f3c200]
-          focus:!ring-2 focus:!ring-yellow-200
-          transition-all duration-200
-        "
+                                            placeholder={t("messagePlaceholder")}
+                                            onChange={(e) => {
+                                                setFormData({ ...formData, query: e.target.value });
+                                                setErrors({ ...errors, query: undefined });
+                                            }}
+                                            className={`
+    w-full rounded-lg px-4 py-3 text-sm
+    transition-all duration-200
+    ${errors.query
+                                                    ? "border border-red-500 focus:ring-red-200"
+                                                    : "border border-input focus:border-[#f3c200] focus:ring-2 focus:ring-yellow-200"}
+  `}
                                         />
+
+                                        <ErrorMessage message={errors.query} />
                                     </div>
 
                                     {/* Button */}
