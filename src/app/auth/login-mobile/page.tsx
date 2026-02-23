@@ -55,21 +55,21 @@ export default function LoginMobilePage() {
   };
 
   return (
-    <div className="w-full max-w-md rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] border border-gray-200 p-8">
+    <div className="w-full max-w-md rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] border border-gray-200 p-6 sm:p-8">
       {/* Header */}
-      <div className="mb-8 text-center">
+      <div className="mb-6 sm:mb-8 text-center">
         <h1 className="text-2xl font-bold section_title">
           {t("loginWithPhoneTitle")}
         </h1>
-        <p className="text-sm text-[#7c7878] mt-1">
+        <p className="text-sm text-gray-500 mb-6">
           {t("loginWithPhoneSubtitle")}
         </p>
       </div>
 
       {/* Form */}
-      <form onSubmit={onSubmit} className="space-y-6">
+      <form onSubmit={onSubmit} className="space-y-5 sm:space-y-6">
         {/* Mobile */}
-        <div className="space-y-1">
+        <div className="space-y-2">
           <label className="text-sm font-medium text-[#2f2f2f]">
             {t("mobileNumberLabel")}
           </label>
@@ -91,16 +91,16 @@ export default function LoginMobilePage() {
         <button
           type="submit"
           disabled={loading || !mobile}
-          className="w-full rounded-lg btn-primary py-3 text-white font-semibold hover:bg-yellow-400 hover:text-black transition disabled:opacity-50 !border-0"
+          className="w-full rounded-lg btn-primary py-3 text-white font-semibold hover:bg-yellow-400 hover:text-black transition disabled:opacity-50 !border-0 disabled:pointer-events-none"
         >
           {loading ? t("sendingOtp") : t("sendOtp")}
         </button>
 
         {/* OR CONNECT WITH */}
-        <div className="mt-6">
-          <div className="flex items-center gap-3">
+        <div>
+          <div className="flex items-center gap-3 max-w-[80%] mx-auto">
             <div className="flex-1 h-px bg-gray-300" />
-            <span className="text-xs text-gray-500 font-medium">
+            <span className="text-sm text-muted-foreground font-medium">
               {t("orConnectWith")}
             </span>
             <div className="flex-1 h-px bg-gray-300" />
@@ -108,7 +108,8 @@ export default function LoginMobilePage() {
 
           <Link
             href="/auth/login"
-            className="mt-4 flex items-center justify-center rounded-lg border border-[#2f2f2f] py-2.5 text-sm font-semibold text-[#2f2f2f] hover:border-[#f3c200] hover:text-[#f3c200] transition"
+            className="mt-4 w-full rounded-lg btn-primary py-3 font-semibold
+      hover:bg-yellow-400 hover:text-black transition disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {t("loginWithEmail")}
           </Link>
@@ -116,11 +117,11 @@ export default function LoginMobilePage() {
       </form>
 
       {/* Footer */}
-      <p className="mt-8 text-center text-sm text-[#2f2f2f]">
+      <p className="mt-5 sm:mt-6 text-center text-sm text-foreground">
         {t("noAccount")}{" "}
         <Link
           href="/auth/register"
-          className="font-semibold hover:text-[#f3c200] hover:underline transition"
+          className="font-semibold text-[#2f2f2f] hover:text-[#f3c200] hover:underline transition"
         >
           {t("signUp")}
         </Link>

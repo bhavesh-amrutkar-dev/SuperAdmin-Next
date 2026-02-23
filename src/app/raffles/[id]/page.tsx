@@ -1246,7 +1246,7 @@ export default function RafflesDetailPage() {
                     </div>
 
                     {/* Right Column - Selection and Call-to-Action */}
-                    <div className="w-full lg:w-1/2 space-y-6 bg-gray-100 p-4 xl:p-6 rounded-xl">
+                    <div className="w-full lg:w-1/2 space-y-6 bg-gray-100 p-4 2xl:p-6 rounded-xl">
                         <div className="mx-auto mb-6">
                             <div className="flex items-center justify-between gap-2">
                                 <h1 className="text-lg md:text-xl font-black text-[#2f2f2f] uppercase">
