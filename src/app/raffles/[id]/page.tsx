@@ -1226,7 +1226,7 @@ export default function RafflesDetailPage() {
                                         onClick={() => setShowEmailEntryModal(true)}
                                         className="bg-gray-100 font-bold h-8 w-8 rounded-full transition-all flex items-center justify-center gap-2 tracking-wider absolute top-5 right-5 z-10" title="Participate Rule"
                                     >
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="!w-[18px] !h-[18px] text-muted-foreground"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="!w-[18px] !h-[18px] text-muted-foreground"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
                                     </Button>
                                 </div>
                             )}
