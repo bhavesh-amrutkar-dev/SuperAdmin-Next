@@ -13,6 +13,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
+import { useProfile } from "../lib/hooks/userProfile";
 
 export type AddressFormRM = {
     firstName: string;
@@ -29,7 +30,7 @@ export type AddressFormRM = {
     mobileNumberSortCode: string;
     landmark: string;
 
-    
+
 };
 
 const inputBase =
@@ -50,7 +51,7 @@ export default function AddressForm({
     const [countriesLoading, setCountriesLoading] = useState(false);
     const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
     const [loadingLocation, setLoadingLocation] = useState(false);
-
+    const { user } = useProfile();
     const {
         register,
         handleSubmit,
@@ -63,6 +64,18 @@ export default function AddressForm({
             ...defaultValues,
         },
     });
+    useEffect(() => {
+        if (!user) return;
+
+        setValue("firstName", user.firstName || "");
+        setValue("lastName", user.lastName || "");
+        // Mobile handling
+        if (user.mobile) {
+            setValue("mobileNumber", user.mobile);
+            setValue("mobileNumberCode", user.countryCode?.replace("+", "") || "");
+            setValue("mobileNumberSortCode", user.sortCountryCode || "");
+        }
+    }, [user, setValue]);
 
     const taggedAs = watch("taggedAs");
     const askLocationPermission = () => {

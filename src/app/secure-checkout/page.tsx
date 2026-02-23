@@ -453,12 +453,12 @@ export default function SecureCheckoutPage() {
       const longitude = (getCookie("long") as string) || "0";
       const ipAddress = await getMyIP();
 
-      console.log("🟢 User + Location:", {
-        uid,
-        latitude,
-        longitude,
-        ipAddress,
-      });
+      // console.log("🟢 User + Location:", {
+      //   uid,
+      //   latitude,
+      //   longitude,
+      //   ipAddress,
+      // });
 
       const orderPayload = {
         cartId,

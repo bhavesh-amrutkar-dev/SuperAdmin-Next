@@ -18,6 +18,7 @@ import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import { Textarea } from "@/src/components/ui/textarea";
+import { useProfile } from "@/src/lib/hooks/userProfile";
 
 type AddressFormRM = {
     firstName: string;
@@ -48,7 +49,7 @@ export default function AddressPage() {
     const [countriesLoading, setCountriesLoading] = useState(false);
     const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
     const [loadingLocation, setLoadingLocation] = useState(false);
-
+    const { user } = useProfile();
     const requestLocation = async () => {
         if (!("geolocation" in navigator)) {
             toast.error("Geolocation not supported by your browser");
@@ -135,11 +136,22 @@ export default function AddressPage() {
     } = useForm<AddressFormRM>({
         defaultValues: { taggedAs: "Home" },
     });
+    useEffect(() => {
+        if (!user) return;
+        setValue("firstName", user.firstName || "");
+        setValue("lastName", user.lastName || "");
+        // Mobile handling
+        if (user.mobile) {
+            setValue("mobileNumber", user.mobile);
+            setValue("mobileNumberCode", user.countryCode?.replace("+", "") || "");
+            setValue("mobileNumberSortCode", user.sortCountryCode || "");
+        }
+    }, [user, setValue]);
 
     const taggedAs = watch("taggedAs");
-
     useEffect(() => {
         const fetchCountries = async () => {
+
             setCountriesLoading(true);
             try {
                 const res = await AuthService.getCurrency();
@@ -288,7 +300,7 @@ export default function AddressPage() {
                                         onClick={requestLocation}
                                         disabled={loadingLocation}
                                     >
-                                        {loadingLocation ? t("detecting") :  t("useCurrentLocation")}
+                                        {loadingLocation ? t("detecting") : t("useCurrentLocation")}
                                     </Button>
 
                                 </div>

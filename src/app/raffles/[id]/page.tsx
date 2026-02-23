@@ -1127,7 +1127,7 @@ export default function RafflesDetailPage() {
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/^-+|-+$/g, "");
     const handleShare = async () => {
-        console.log("handleShare called");
+        // console.log("handleShare called");
         if (!lotteryItem) {
             console.warn("lotteryItem is null, aborting share");
             return;
