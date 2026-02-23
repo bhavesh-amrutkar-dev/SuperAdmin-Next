@@ -64,7 +64,14 @@ const CountryCard = memo(function CountryCard({
   onSelect: (code: string) => void;
 }) {
   const isSelected = selectedCode === country.code;
+  const [showFlag, setShowFlag] = useState(false);
 
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      setShowFlag(true);
+    });
+    return () => cancelAnimationFrame(id);
+  }, []);
   return (
     <button
       type="button"
@@ -89,14 +96,18 @@ const CountryCard = memo(function CountryCard({
           }
         `}
       >
-        <ReactCountryFlag
-          countryCode={country.code}
-          svg
-          style={{
-            width: "2.2em",
-            height: "2.2em",
-          }}
-        />
+        {showFlag ? (
+          <ReactCountryFlag
+            countryCode={country.code}
+            svg
+            style={{
+              width: "2.2em",
+              height: "2.2em",
+            }}
+          />
+        ) : (
+          <div style={{ width: "2.2em", height: "2.2em" }} />
+        )}
       </div>
 
       <span className="text-center text-sm font-medium text-gray-800">
@@ -120,7 +131,17 @@ export default function CountrySelectorModal({
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
   const [countries, setCountries] = useState<CountryOption[]>([]);
   const [loading, setLoading] = useState(false);
+  const [renderList, setRenderList] = useState(false);
 
+  useEffect(() => {
+    if (!open) return;
+
+    const id = requestAnimationFrame(() => {
+      setRenderList(true);
+    });
+
+    return () => cancelAnimationFrame(id);
+  }, [open]);
   /* ------------------ */
   /* Fetch Countries (Context) */
   /* ------------------ */
@@ -224,9 +245,11 @@ export default function CountrySelectorModal({
       )),
     [countries, selectedCode, handleSelect]
   );
+  if (!open) return null;
 
   return (
-    <Dialog open={open}>
+
+    <Dialog open>
       <DialogContent
         showCloseButton={false}
         disableOutsideClose
@@ -242,7 +265,7 @@ export default function CountrySelectorModal({
         </DialogHeader>
 
         <div className="mt-6 max-h-[55vh] overflow-y-auto pr-1">
-          {loading ? (
+          {loading || !renderList ? (
             <div className="text-center text-sm text-gray-500 py-10">
               <Loader />
             </div>
