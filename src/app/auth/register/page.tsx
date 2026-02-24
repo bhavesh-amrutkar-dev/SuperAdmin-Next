@@ -308,7 +308,7 @@ export default function RegisterPage() {
           {t("createAccount")}
         </h1>
       </div>
-      <form onSubmit={onSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <form onSubmit={onSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
         {/* First Name */}
         <div className="space-y-2">
@@ -356,7 +356,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Email */}
-        <div className="md:col-span-2 space-y-2">
+        <div className="sm:col-span-2 space-y-2">
           <Label
             htmlFor="email"
             error={!!errors.email}
@@ -384,7 +384,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Password */}
-        <div className="md:col-span-2 space-y-2">
+        <div className="sm:col-span-2 space-y-2">
           <Label
             htmlFor="password"
             error={!!errors.password}
@@ -407,7 +407,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Mobile */}
-        <div className="md:col-span-2 space-y-2">
+        <div className="sm:col-span-2 space-y-2">
           <Label
             htmlFor="mobile"
             error={!!errors.mobile}
@@ -415,6 +415,7 @@ export default function RegisterPage() {
           >
             {t("mobile")}
           </Label>
+          <div className="phone-input">
           <PhoneInput
             inputProps={{ id: "mobile" }}
             country="us"
@@ -433,13 +434,13 @@ export default function RegisterPage() {
               setErrors((prev) => ({ ...prev, mobile: undefined }));
             }}
             inputClass={`
-        !w-full !h-[44px] !rounded-lg
+        !bg-transparent !w-full !h-[44px] !text-sm !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200]
         !border ${errors.mobile ? "!border-red-500" : "!border-input"}
         !pl-14 !text-sm
-        focus:!border-ring
-        focus:!ring-2 focus:!ring-ring
+        
       `}
           />
+          </div>
           {/* {errors.mobile && (
             <p className="text-xs text-red-500">{errors.mobile}</p>
           )} */}
@@ -511,7 +512,7 @@ export default function RegisterPage() {
         {/* Button */}
         <button
           disabled={loading}
-          className="md:col-span-2 w-full rounded-lg btn-primary py-3 font-semibold
+          className="sm:col-span-2 w-full rounded-lg btn-primary py-3 font-semibold
       hover:bg-yellow-400 hover:text-black transition disabled:opacity-50 mt-3"
         >
           {loading ? t("sendingOtp") : t("signUp")}

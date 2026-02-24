@@ -48,7 +48,7 @@ export default function WinnerCard({ item, customDrawDate }: WinnerCardProps) {
                 </Link>
 
                 {/* Product Image Section */}
-                <div className="relative w-full aspect-[4/3] bg-gray-50 flex items-center justify-center p-4 overflow-hidden pointer-events-none">
+                <div className="relative w-full aspect-[4/3] bg-white flex items-center justify-center p-4 overflow-hidden pointer-events-none">
                     <Image
                         src={productImage}
                         alt={item.productName}
@@ -64,7 +64,7 @@ export default function WinnerCard({ item, customDrawDate }: WinnerCardProps) {
                 </div>
 
                 {/* Content Section */}
-                <div className="p-5 flex flex-col flex-grow">
+                <div className="p-4 md:p-5 flex flex-col flex-grow bg-gray-50">
                     {/* Product Name */}
                     <h3 className="font-bold text-gray-900 text-lg mb-1 line-clamp-1" title={item.productName}>
                         {item.productName}
@@ -105,9 +105,9 @@ export default function WinnerCard({ item, customDrawDate }: WinnerCardProps) {
                                 e.preventDefault();
                                 openModal();
                             }}
-                            className="mt-4 w-full py-2.5 px-4 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 relative z-10"
+                            className="mt-4 w-full py-2.5 px-4 btn-primary text-sm font-medium rounded-xl hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 relative z-10"
                         >
-                            <Play className="w-4 h-4 text-yellow-400" fill="currentColor" />
+                            <Play className="w-4 h-4 text-white" fill="currentColor" />
                             {t("watchWinningMoment")}
                         </Button>
                     )}

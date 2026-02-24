@@ -73,7 +73,7 @@ export default function LoginMobilePage() {
           <label className="text-sm font-medium text-[#2f2f2f]">
             {t("mobileNumberLabel")}
           </label>
-
+          <div className="phone-input">
           <PhoneInput
             country="us"
             value={`${countryCode.replace("+", "")}${mobile}`}
@@ -81,10 +81,11 @@ export default function LoginMobilePage() {
               setCountryCode(`+${data.dialCode}`);
               setMobile(value.slice(data.dialCode.length));
             }}
-            inputClass="!w-full !h-[44px] !text-sm !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200]"
+            inputClass="!bg-transparent !w-full !h-[44px] !text-sm !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200]"
             buttonClass="!border-[#2f2f2f]"
             containerClass="!w-full"
           />
+          </div>
         </div>
 
         {/* Submit */}

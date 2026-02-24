@@ -84,6 +84,12 @@ body {
   font-weight: bold;
 }
 
+@media (max-width:767px){
+  .section_title{
+    font-size: 26px;
+  }
+}
+
 .section_heading {
   /* background: linear-gradient(314deg, #ffd018 10%, #2f2f2f 95.43%);
   border-radius: 50px; */
@@ -126,6 +132,12 @@ div.raffle-card.bg-white:hover {
   background: linear-gradient(180deg, #2e2e2e 0%, #2f2f2f 50%, #443600 100%) !important;
   padding: 30px 0px !important;
   width: 100% !important;
+}
+
+@media (max-width: 767px) {
+  .page-head-wrapper {
+    padding: 22px 0px !important;
+  }
 }
 
 /* Rules Page Styles */
@@ -254,4 +266,54 @@ html {
 
 .ticket-quantity {
   -moz-appearance: textfield;
+}
+
+.phone-input .flag-dropdown {
+    border: none;
+    top: 2px !important;
+    left: 4px;
+    background-color: transparent !important;
+    background: transparent !important;
+    height: calc(100% - 4px);
+    border: none !important;
+}
+.phone-input .flag-dropdown ul.country-list {
+    border-radius: 4px;
+    padding: 8px;
+}
+
+.phone-input .flag-dropdown ul.country-list li{
+  margin: 4px 0px !important;
+}
+
+.phone-input .flag-dropdown ul.country-list li:hover {
+    background: #f3c2002e;
+    border-radius: 6px;
+}
+
+.phone-input .flag-dropdown ul.country-list li.country.highlight {
+    background: #2f2f2f;
+    color: #fff;
+    border-radius: 6px;
+}
+
+.phone-input .flag-dropdown ul.country-list li.country.highlight .dial-code {
+    color: #fff;
+}
+
+.phone-input .form-control{
+  background: transparent !important;
+}
+
+.phone-input .flag-dropdown .selected-flag {
+    background: transparent !important;
+}
+
+.phone-input .flag-dropdown ul.country-list::-webkit-scrollbar{
+  width: 6px;
+}
+
+.phone-input .flag-dropdown ul.country-list::-webkit-scrollbar-thumb{
+  background: #2f2f2f;
+  border-radius: 3px;
 }

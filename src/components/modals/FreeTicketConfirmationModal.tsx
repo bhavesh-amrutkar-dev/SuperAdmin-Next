@@ -290,14 +290,14 @@ export default function FreeTicketConfirmationModal({
                                 ) : (
                                     <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
                                         <button
-                                            className="min-w-[100px] px-4 sm:px-6 py-2.5 sm:py-2 rounded-md bg-[#D4AF37] hover:bg-[#B8860B] text-white font-semibold uppercase text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                            className="min-w-[100px] px-4 sm:px-6 py-2.5 sm:py-2 rounded-md btn-primary text-white font-semibold uppercase text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                             onClick={handleConfirm}
                                             disabled={applyingTicket}
                                         >
                                             {applyingTicket ? (t("processing") || "Processing...") : (t("yes") || "Yes")}
                                         </button>
                                         <button
-                                            className="min-w-[100px] px-4 sm:px-6 py-2.5 sm:py-2 rounded-md border border-gray-300 text-xs sm:text-sm font-semibold uppercase text-[#2f2f2f] hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                            className="min-w-[100px] px-4 sm:px-6 py-2.5 sm:py-2 rounded-full border border-gray-300 text-xs sm:text-sm font-semibold uppercase text-[#2f2f2f] hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                                             onClick={handleCancel}
                                             disabled={applyingTicket}
                                         >

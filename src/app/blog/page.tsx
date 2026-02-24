@@ -108,10 +108,10 @@ export default function BlogPage() {
             {/* Blog Banner */}
             <div className="w-full">
                 <div className="text-center page-head-wrapper">
-                    <h1 className="pt-2 pb-2 text-lg md:text-2xl lg:text-3xl xl:text-4xl font-bold uppercase tracking-[1px] leading-[1.35] text-white overflow-hidden text-ellipsis">
+                    <h1 className="pt-2 pb-2 text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold uppercase tracking-[1px] leading-[1.35] text-white overflow-hidden text-ellipsis">
                         {t("blogs") || "Blogs"}
                     </h1>
-                    <p className="text-[13px] md:text-[16px] uppercase text-white leading-relaxed mt-2">
+                    <p className="text-[13px] md:text-[16px] uppercase text-white leading-relaxed">
                         {t("discoverStories") || "Discover Stories & Insights"}
                     </p>
                 </div>

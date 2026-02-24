@@ -203,7 +203,7 @@ export default function Header() {
   }, [userMenuOpen]);
 
   return (
-    <header className="sticky top-0 z-50 bg-[#2F2F2F]">
+    <header className="sticky top-0 z-50 bg-[#2F2F2F] border-b border-white/10">
 
       {/* MAIN BAR */}
       <div className="mx-auto max-w-412 px-4">
@@ -287,7 +287,7 @@ export default function Header() {
                       />
                     </div>
                   ) : (
-                    <div className="w-full h-full rounded-full bg-[#FECB02] flex items-center justify-center text-black font-semibold text-sm">
+                    <div className="w-full h-full rounded-full btn-primary flex items-center justify-center text-black font-semibold text-sm">
                       {displayUser?.name?.charAt(0).toUpperCase() || <User />}
                     </div>
                   )}
@@ -296,7 +296,7 @@ export default function Header() {
                   <div className="absolute right-0 mt-3 w-56 rounded-xl bg-white shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
 
                     {/* User Info Section */}
-                    <div className="px-4 py-3 bg-gray-50 border-b">
+                    <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
                       <p className="text-sm font-semibold text-gray-800">
                         {displayUser?.name || t("user")}
                       </p>
@@ -309,6 +309,7 @@ export default function Header() {
                     <div className="py-2 px-2 flex flex-col gap-1">
 
                       <Button
+                        className="hover:bg-[#FECB02]/30 font-medium"
                         asChild
                         variant="dropdown"
                         size="sm"
@@ -321,6 +322,7 @@ export default function Header() {
                       </Button>
 
                       <Button
+                        className="hover:bg-[#FECB02]/30 font-medium"
                         asChild
                         variant="dropdown"
                         size="sm"
@@ -333,6 +335,7 @@ export default function Header() {
                       </Button>
 
                       <Button
+                        className="hover:bg-[#FECB02]/30 font-medium"
                         asChild
                         variant="dropdown"
                         size="sm"
@@ -348,11 +351,12 @@ export default function Header() {
 
 
                     {/* Divider */}
-                    <div className="border-t" />
+                    <div className="border-t border-gray-200" />
 
                     <div className="px-2 pb-2 mt-2">
 
                       <Button
+                        className="hover:bg-red-500/10 hover:text-red-500 font-medium"
                         variant="logout"
                         size="sm"
                         onClick={handleLogout}
@@ -451,7 +455,7 @@ export default function Header() {
                     className="rounded-full object-cover"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-[#FECB02] flex items-center justify-center text-black font-semibold">
+                  <div className="w-10 h-10 rounded-full btn-primary flex items-center justify-center text-black font-semibold">
                     {displayUser?.name?.charAt(0).toUpperCase() || "U"}
                   </div>
                 )}

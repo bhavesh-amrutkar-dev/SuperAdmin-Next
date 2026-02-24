@@ -31,7 +31,7 @@ export default async function Winners() {
     return (
         <main className="min-h-screen bg-gray-50 flex flex-col">
             <Header />
-            <div className="flex-grow pb-20">
+            <div className="flex-grow">
                 {/* Header Section */}
                 {/* Header Section */}
                 <div className="bg-gray-900 text-white relative overflow-hidden">
@@ -41,22 +41,22 @@ export default async function Winners() {
                         <div className="absolute bottom-[-50%] right-[-10%] w-[50%] h-[200%] bg-yellow-400/10 rotate-12 blur-3xl rounded-full" />
                     </div>
 
-                    <div className="container mx-auto px-4 py-16 md:py-20 relative z-10 text-center">
-                        <div className="inline-flex items-center justify-center p-3 bg-white/10 backdrop-blur-sm rounded-full mb-6 ring-1 ring-white/20">
+                    <div className="text-center page-head-wrapper">
+                        {/* <div className="inline-flex items-center justify-center p-3 bg-white/10 backdrop-blur-sm rounded-full mb-6 ring-1 ring-white/20">
                             <Image src={WINNER} alt="Winner" width={24} height={24} className="w-6 h-6" />
-                        </div>
-                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4 tracking-tight">
+                        </div> */}
+                        <h1 className="pt-2 pb-2 text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold uppercase tracking-[1px] leading-[1.35] text-white overflow-hidden text-ellipsis">
                             {t("winnersCircle")}
                             <span className="text-yellow-400">.</span>
                         </h1>
-                        <p className="text-gray-300 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
+                        <p className="text-[13px] md:text-[16px] uppercase text-white leading-relaxed mt-2">
                             {t("meetLuckyWinners")}
                         </p>
                     </div>
                 </div>
 
                 {/* Main Content */}
-                <div className="container mx-auto px-4 py-8 md:py-12">
+                <div className="mx-auto w-full max-w-[1648px] px-4 md:px-6 pt-10 lg:pt-[60px] pb-4 md:pb-6">
                     {winners.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
                             {winners.map((winner) => {
