@@ -104,22 +104,83 @@ export default function ContactPage() {
         <main>
             <Header />
 
-            <div className="w-full bg-linear-to-b from-gray-50 to-white min-h-screen">
-                <div className="mx-auto w-full max-w-7xl px-4 md:px-6 py-8 md:py-16">
-                    {/* Page Header */}
-                    <div className="text-center mb-12">
-                        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-                            {t("contactUs") || "CONTACT US"}
-                        </h1>
-                        <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-                            {t("contactUsDescription") || "Get in touch with us. We're here to help!"}
-                        </p>
-                    </div>
+            <div className="w-full bg-[#ededed]">
+                <div className="text-center page-head-wrapper">
+                    <h1 className="pt-2 pb-2 text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold uppercase tracking-[1px] leading-[1.35] text-white overflow-hidden text-ellipsis">
+                        {t("contactUs") || "CONTACT US"}
+                    </h1>
+                    <p className="text-[13px] md:text-[16px] uppercase text-white leading-relaxed">
+                        {t("contactUsDescription") || "Get in touch with us. We're here to help!"}
+                    </p>
+                </div>
+                <div className="flex items-center justify-center mx-auto w-full max-w-[1648px] px-4 md:px-6 pt-10 pb-2 lg:pt-16 lg:pb-8">
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-12 w-full max-w-[400px] md:max-w-full">
 
                         {/* LEFT COLUMN */}
-                        <div className="flex items-center justify-center">
+                        {/* Company Info Card */}
+                            <div className="rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] p-6 lg:p-8">
+                                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+                                    <div className="w-1 h-8 bg-[#FECB02] rounded-full"></div>
+                                    {t("companyInformation") || "COMPANY INFORMATION"}
+                                </h2>
+
+                                <div className="space-y-8 lg:space-y-10">
+                                    {/* Address */}
+                                    <div className="flex items-start gap-3 sm:gap-4 group">
+                                        <div className="w-12 h-12 rounded-full btn-primary flex items-center justify-center transition-all duration-300">
+                                            <MapPin className="w-5 h-5 transition-colors" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-semibold text-gray-900 mb-1">
+                                                {t("address") || "Address"}
+                                            </h3>
+                                            <p className="text-gray-500 leading-relaxed text-sm">
+                                                1413 PR-25 4to piso, Puerto Rico<br />
+                                                25, DON RIFA LLC<br />
+                                                San Juan, 00918
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Email */}
+                                    <div className="flex items-start gap-3 sm:gap-4 group">
+                                        <div className="w-12 h-12 rounded-full btn-primary flex items-center justify-center transition-all duration-300">
+                                            <Mail className="w-5 h-5 transition-colors" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-semibold text-gray-900 mb-1">
+                                                {t("email") || "Email"}
+                                            </h3>
+                                            <a
+                                                href="mailto:service@donrifa.com"
+                                                className="text-gray-600 hover:text-[#FECB02] transition-colors font-medium text-sm"
+                                            >
+                                                service@donrifa.com
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    {/* Phone */}
+                                    <div className="flex items-start gap-3 sm:gap-4 group">
+                                        <div className="w-12 h-12 rounded-full btn-primary flex items-center justify-center transition-all duration-300">
+                                            <Phone className="w-5 h-5 transition-colors" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-semibold text-gray-900 mb-1">
+                                                {t("phoneNumber") || "Phone"}
+                                            </h3>
+                                            <a
+                                                href="tel:434497151"
+                                                className="text-gray-600 hover:text-[#FECB02] transition-colors font-medium text-sm"
+                                            >
+                                                434 497 151
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {/* <div className="flex items-center justify-center">
                             <div className="relative w-full max-w-md aspect-4/5 overflow-hidden rounded-3xl shadow-2xl">
                                 <Image
                                     src={Contate_girl || contactUsBanner || "/images/contactUs/contactUsBanner.png"}
@@ -129,78 +190,15 @@ export default function ContactPage() {
 
                                 />
                             </div>
-                        </div>
+                        </div> */}
 
                         {/* RIGHT COLUMN */}
                         <div className="flex flex-col gap-8">
 
-                            {/* Company Info Card */}
-                            <div className="bg-white rounded-3xl shadow-md p-8 border border-gray-100">
-                                <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-                                    <div className="w-1 h-8 bg-[#D4AF37] rounded-full"></div>
-                                    {t("companyInformation") || "COMPANY INFORMATION"}
-                                </h2>
-
-                                <div className="space-y-8">
-                                    {/* Address */}
-                                    <div className="flex items-start gap-4 group">
-                                        <div className="w-12 h-12 rounded-full bg-[#D4AF37]/10 flex items-center justify-center group-hover:bg-[#D4AF37] transition-all duration-300">
-                                            <MapPin className="w-5 h-5 text-[#D4AF37] group-hover:text-white transition-colors" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-gray-900 mb-1">
-                                                {t("address") || "Address"}
-                                            </h3>
-                                            <p className="text-gray-600 leading-relaxed text-sm">
-                                                1413 PR-25 4to piso, Puerto Rico<br />
-                                                25, DON RIFA LLC<br />
-                                                San Juan, 00918
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {/* Email */}
-                                    <div className="flex items-start gap-4 group">
-                                        <div className="w-12 h-12 rounded-full bg-[#D4AF37]/10 flex items-center justify-center group-hover:bg-[#D4AF37] transition-all duration-300">
-                                            <Mail className="w-5 h-5 text-[#D4AF37] group-hover:text-white transition-colors" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-gray-900 mb-1">
-                                                {t("email") || "Email"}
-                                            </h3>
-                                            <a
-                                                href="mailto:service@donrifa.com"
-                                                className="text-[#D4AF37] hover:text-[#B8860B] transition-colors font-medium text-sm"
-                                            >
-                                                service@donrifa.com
-                                            </a>
-                                        </div>
-                                    </div>
-
-                                    {/* Phone */}
-                                    <div className="flex items-start gap-4 group">
-                                        <div className="w-12 h-12 rounded-full bg-[#D4AF37]/10 flex items-center justify-center group-hover:bg-[#D4AF37] transition-all duration-300">
-                                            <Phone className="w-5 h-5 text-[#D4AF37] group-hover:text-white transition-colors" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-gray-900 mb-1">
-                                                {t("phoneNumber") || "Phone"}
-                                            </h3>
-                                            <a
-                                                href="tel:434497151"
-                                                className="text-[#D4AF37] hover:text-[#B8860B] transition-colors font-medium text-sm"
-                                            >
-                                                434 497 151
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
                             {/* Contact Form Card */}
-                            <div className="bg-white rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] p-6 sm:p-8">
+                            <div className="rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] p-6 lg:p-8">
                                 <div className="mb-6 text-center">
-                                    <h2 className="text-2xl font-bold section_title">
+                                    <h2 className="text-xl sm:text-2xl font-bold section_title">
                                         {t("sendMessage")}
                                     </h2>
                                 </div>
@@ -272,7 +270,7 @@ export default function ContactPage() {
                                         <Label htmlFor="phone">
                                             {t("phone")}
                                         </Label>
-
+                                        <div className="phone-input">
                                         <PhoneInput
                                             inputProps={{
                                                 id: "phone",
@@ -294,15 +292,15 @@ export default function ContactPage() {
 
                                                 setErrors((prev) => ({ ...prev, phone: undefined }));
                                             }}
-                                            specialLabel=""   
+                                            specialLabel=""
                                             inputClass={`
-    !w-full !h-[44px] !rounded-lg
+    !bg-transparent !w-full !h-[44px] !text-sm !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200]
     !border ${errors.phone ? "!border-red-500" : "!border-input"}
     !pl-14 !text-sm
-    focus:!border-[#f3c200]
-    focus:!ring-2 focus:!ring-yellow-200
+    
   `}
                                         />
+                                        </div>
 
                                         <ErrorMessage message={errors.phone} />
                                     </div>
@@ -326,7 +324,7 @@ export default function ContactPage() {
     transition-all duration-200
     ${errors.query
                                                     ? "border border-red-500 focus:ring-red-200"
-                                                    : "border border-input focus:border-[#f3c200] focus:ring-2 focus:ring-yellow-200"}
+                                                    : "border focus:border-[#f3c200] ring-0 outline-0"}
   `}
                                         />
 
