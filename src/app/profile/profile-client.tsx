@@ -73,10 +73,10 @@ export default function ProfileClient() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-50 to-gray-100">
       <Header />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
+      <div className="mx-auto w-full max-w-[1648px] px-4 md:px-6 py-6 space-y-4 sm:space-y-6">
 
         {/* ===== Profile Header Card ===== */}
-        <div className="relative bg-gradient-to-br from-white via-white to-gray-50 rounded-2xl shadow-lg p-5 sm:p-6 border border-gray-200/50 overflow-hidden">
+        <div className="relative bg-gradient-to-br from-white via-white to-gray-50 rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-200/50 overflow-hidden">
           {/* Decorative background elements */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#D4AF37]/5 to-transparent rounded-full blur-2xl"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-[#D4AF37]/5 to-transparent rounded-full blur-2xl"></div>
@@ -84,16 +84,16 @@ export default function ProfileClient() {
           <div className="relative flex flex-col md:flex-row gap-4 md:gap-5">
             {/* Profile Picture */}
             <div className="relative flex-shrink-0">
-              <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden shadow-lg ring-2 ring-white ring-offset-2 ring-offset-gray-50 bg-gradient-to-br from-[#D4AF37] to-[#B8941F]">
+              <div>
                 <Avatar
                   src={user.profilePic}
                   firstName={user.firstName}
                   lastName={user.lastName}
-                  size={96}
-                  className="shadow-lg ring-2 ring-white ring-offset-2 ring-offset-gray-50"
+                  size={80}
+                  className="shadow-lg w-20 h-20 sm:w-24 sm:h-24 ring-2 ring-white ring-offset-2 ring-offset-gray-50 w-full h-full !overflow-visible"
                 />
 
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                {/* <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div> */}
               </div>
             </div>
 
@@ -137,7 +137,7 @@ export default function ProfileClient() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
 
           {/* Contact Information Card */}
-          <div className="relative bg-white rounded-2xl shadow-lg p-6 sm:p-7 border border-gray-200/50 hover:shadow-2xl hover:border-[#D4AF37]/30 transition-all duration-300 overflow-hidden group">
+          <div className="relative bg-white rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-200/50 hover:shadow-2xl hover:border-[#D4AF37]/30 transition-all duration-300 overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#D4AF37]/5 to-transparent rounded-full blur-2xl"></div>
             <div className="relative">
               <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
@@ -212,7 +212,7 @@ export default function ProfileClient() {
           </div>
 
           {/* Account Details Card */}
-          <div className="relative bg-white rounded-2xl shadow-lg p-6 sm:p-7 border border-gray-200/50 hover:shadow-2xl hover:border-[#D4AF37]/30 transition-all duration-300 overflow-hidden group">
+          <div className="relative bg-white rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-200/50 hover:shadow-2xl hover:border-[#D4AF37]/30 transition-all duration-300 overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#D4AF37]/5 to-transparent rounded-full blur-2xl"></div>
             <div className="relative">
               <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
@@ -264,7 +264,7 @@ export default function ProfileClient() {
           </div>
 
           {/* Wallet & Verification Card */}
-          <div className="relative bg-white rounded-2xl shadow-lg p-6 sm:p-7 border border-gray-200/50 hover:shadow-2xl hover:border-[#D4AF37]/30 transition-all duration-300 overflow-hidden group">
+          <div className="relative bg-white rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-200/50 hover:shadow-2xl hover:border-[#D4AF37]/30 transition-all duration-300 overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#D4AF37]/5 to-transparent rounded-full blur-2xl"></div>
             <div className="relative">
               <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
@@ -310,7 +310,7 @@ export default function ProfileClient() {
           </div>
 
           {/* Activity Card */}
-          <div className="relative bg-white rounded-2xl shadow-lg p-6 sm:p-7 border border-gray-200/50 hover:shadow-2xl hover:border-[#D4AF37]/30 transition-all duration-300 overflow-hidden group">
+          <div className="relative bg-white rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-200/50 hover:shadow-2xl hover:border-[#D4AF37]/30 transition-all duration-300 overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#D4AF37]/5 to-transparent rounded-full blur-2xl"></div>
             <div className="relative">
               <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
