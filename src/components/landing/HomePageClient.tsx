@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { getCookie } from "cookies-next";
 
@@ -23,6 +22,7 @@ import RaffleSectionLayout from "./RafflesSelectionLayout";
 import { FullScreenLoader } from "../fullScreenLoader";
 import { useAuth } from "@/src/context/authContext";
 import Loader from "../loader";
+import FallbackUI from "../common/FallBackUi";
 
 type LegacyRaffleItem = {
   _id?: string;
@@ -40,19 +40,29 @@ type LegacyRaffleItem = {
 const isObjectId = (id?: string) =>
   typeof id === "string" && /^[a-f0-9]{24}$/i.test(id);
 
-export default function HomePageClient({ initialBanners = [], initialRaffles }: { initialBanners?: HomeBanner[], initialRaffles?: RaffleSection | null }) {
+export default function HomePageClient({
+  initialBanners = [],
+  initialRaffles,
+}: {
+  initialBanners?: HomeBanner[];
+  initialRaffles?: RaffleSection | null;
+}) {
   const locale = useLocale();
   const t = useTranslations();
   const { ready } = useAuth();
 
   const abortRef = useRef<AbortController | null>(null);
 
-  const [loading, setLoading] = useState(initialBanners.length === 0);
-  const [loadingRaffles, setLoadingRaffles] = useState(false);
-
+  const [loading, setLoading] = useState(true);
   const [banners, setBanners] = useState<HomeBanner[]>(initialBanners);
-  const [raffleSection, setRaffleSection] = useState<RaffleSection | null>(initialRaffles || null);
+  const [raffleSection, setRaffleSection] = useState<RaffleSection | null>(
+    initialRaffles || null
+  );
   const [countryId, setCountryId] = useState<string | null>(null);
+
+  // Global error if any API fails
+  const [globalError, setGlobalError] = useState<string | null>(null);
+  const [loadingRaffles, setLoadingRaffles] = useState(false);
 
   /* -----------------------------
      Resolve Country ID
@@ -61,77 +71,32 @@ export default function HomePageClient({ initialBanners = [], initialRaffles }: 
     const id = getCookie("C_id");
     if (id) setCountryId(id as string);
   }, []);
+
   /* -----------------------------
-     Listen for country changes
+     Fetch Home Banners
   ------------------------------ */
-  useEffect(() => {
-    const handleCountryChange = (e: Event) => {
-      const customEvent = e as CustomEvent<{ id: string }>;
-      if (customEvent.detail?.id) {
-        setCountryId(customEvent.detail.id);
-      } else {
-        // fallback: re-read cookie
-        const id = getCookie("C_id");
-        if (id) setCountryId(id as string);
+  const fetchBanners = useCallback(async () => {
+    try {
+      const res = await HomeService.getHomePage(1);
+
+      if (!Array.isArray(res?.banner_images)) {
+        throw new Error(t("serviceDown") || "Failed to load banners");
       }
-    };
 
-    window.addEventListener("countryChanged", handleCountryChange);
-
-    return () => {
-      window.removeEventListener("countryChanged", handleCountryChange);
-    };
-  }, []);
-
-  /* -----------------------------
-     Fetch Home Page Content
-  ------------------------------ */
-  useEffect(() => {
-    if (!ready) return;
-
-    // If we already have banners (from server), don't fetch again unless needed (e.g., refresh?)
-    // For now, if banners are present, we assume we are good.
-    if (initialBanners.length > 0) {
-      setLoading(false);
-      return;
+      setBanners(mapBanners(res.banner_images, locale));
+    } catch (err: any) {
+      console.warn("Home Banners Fetch Failed:", err);
+      throw err; // propagate to global error
     }
-
-    let active = true;
-
-    (async () => {
-      try {
-        const res = await HomeService.getHomePage(1);
-
-        if (!active) return;
-
-        if (Array.isArray(res?.banner_images)) {
-          setBanners(mapBanners(res.banner_images, locale));
-        }
-      } catch {
-        // silent fail
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-
-    return () => {
-      active = false;
-    };
-  }, [ready, locale]);
+  }, [locale, t]);
 
   /* -----------------------------
      Fetch Raffles
   ------------------------------ */
   const fetchRaffles = useCallback(async () => {
-    // Skip if we already have raffles from server
-    if (initialRaffles) return;
-
     if (!countryId) return;
 
-    if (abortRef.current) {
-      abortRef.current.abort();
-    }
-
+    if (abortRef.current) abortRef.current.abort();
     const controller = new AbortController();
     abortRef.current = controller;
 
@@ -147,27 +112,17 @@ export default function HomePageClient({ initialBanners = [], initialRaffles }: 
         : [];
 
       const raffleItems: RaffleItem[] = items
-        // .slice(0, 5)
         .map((raffle) => {
           const campaignId =
-            raffle.campaignId ||
-            raffle._id ||
-            raffle.childProductId;
+            raffle.campaignId || raffle._id || raffle.childProductId;
 
           if (!isObjectId(campaignId)) return null;
 
           return {
             id: campaignId,
-            name:
-              raffle.campaignTitle ||
-              raffle.productName ||
-              "",
-            price:
-              raffle.goalValue ??
-              raffle.ticketPrice ??
-              0,
-            currencySymbol:
-              raffle.currencySymbol || "$",
+            name: raffle.campaignTitle || raffle.productName || "",
+            price: raffle.goalValue ?? raffle.ticketPrice ?? 0,
+            currencySymbol: raffle.currencySymbol || "$",
             image:
               raffle.image?.[0]?.medium ||
               raffle.mobileImage?.[0]?.medium ||
@@ -184,11 +139,13 @@ export default function HomePageClient({ initialBanners = [], initialRaffles }: 
           cellType: 1,
           items: raffleItems,
         });
+      } else {
+        throw new Error(t("serviceDown") || "No raffles available");
       }
-
     } catch (err: any) {
       if (err?.name !== "AbortError") {
-        console.warn("Failed to load raffles", err);
+        console.warn("Raffles Fetch Failed:", err);
+        throw err; // propagate to global error
       }
     } finally {
       setLoadingRaffles(false);
@@ -196,46 +153,50 @@ export default function HomePageClient({ initialBanners = [], initialRaffles }: 
   }, [countryId, t]);
 
   /* -----------------------------
-     Trigger Raffle Fetch
+     Fetch All Data
   ------------------------------ */
+  const fetchAll = useCallback(async () => {
+    setGlobalError(null);
+    setLoading(true);
+
+    try {
+      await Promise.all([fetchBanners(), fetchRaffles()]);
+    } catch (err: any) {
+      setGlobalError(
+        err?.message ||
+          t("serviceDown") ||
+          "Oops! Our services are temporarily unavailable."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchBanners, fetchRaffles, t]);
+
   useEffect(() => {
-    if (!ready || !countryId) return;
-
-    fetchRaffles();
-
-    return () => {
-      abortRef.current?.abort();
-    };
-  }, [ready, countryId, locale, fetchRaffles]);
+    if (ready) fetchAll();
+    return () => abortRef.current?.abort();
+  }, [ready, fetchAll]);
 
   /* -----------------------------
      Render
   ------------------------------ */
-  if (loading && banners.length === 0) {
-    return <FullScreenLoader />;
-  }
+  if (loading) return <FullScreenLoader />;
 
+  if (globalError) {
+    return <FallbackUI message={globalError} onRetry={fetchAll} />;
+  }
 
   return (
     <>
       {banners.length > 0 && <HeroSlider banners={banners} />}
-
-
-
       {loadingRaffles ? (
-        <section className="py-20 text-center text-[#797979]">
-
-          <Loader />
-          {/* {t("loading") ?? "Loading..."} */}
-        </section>
+        <Loader />
       ) : raffleSection ? (
         <RaffleSectionLayout
           section={raffleSection}
           viewMoreLabel={t("viewMore") ?? "View More"}
         />
-
       ) : null}
-
       <HowItWorksSection />
     </>
   );

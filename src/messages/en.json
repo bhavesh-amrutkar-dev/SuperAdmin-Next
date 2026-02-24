@@ -521,5 +521,11 @@
     },
     "subscribeError": "Failed to subscribe, please try again",
     "newsletterSuccessTitle": "Thank you for subscribing!",
-    "newsletterSuccessMessage": "Thank you registering to our newsletter. We will send you some really interesting content which we hope you will love."
+    "newsletterSuccessMessage": "Thank you registering to our newsletter. We will send you some really interesting content which we hope you will love.",
+    "serviceDown": "Sorry, the service is currently unavailable. Please try again later.",
+    "retry": "Retry",
+    "serviceDownTitle": "Oops! Services are down",
+    "serviceDownMessage": "Our backend services are temporarily unavailable. Please try again later.",
+    "pageNotFound": "Oops! Page not found.",
+    "goHome": "Go Home"
 }

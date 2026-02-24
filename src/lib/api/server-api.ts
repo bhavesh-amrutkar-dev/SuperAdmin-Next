@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
 import { API_PY_URL, DEFAULT_COUNTRY_CODE, DEFAULT_LANGUAGE } from "../config";
-
 export async function getCommonServerHeaders() {
     const cookieStore = await cookies();
 
@@ -26,7 +25,10 @@ export async function getCommonServerHeaders() {
     return headers;
 }
 
-export async function serverFetch<T>(endpoint: string, options: RequestInit & { baseUrl?: string; timeout?: number } = {}): Promise<T> {
+export async function serverFetch<T>(
+    endpoint: string,
+    options: RequestInit & { baseUrl?: string; timeout?: number } = {}
+): Promise<{ data?: T; error?: { status?: number; message: string } }> {
     const headers = await getCommonServerHeaders();
 
     const config = {
@@ -49,15 +51,19 @@ export async function serverFetch<T>(endpoint: string, options: RequestInit & { 
         });
 
         if (!response.ok) {
-            console.warn(`API Error: ${response.status} ${response.statusText}`);
+            const errorText = await response.text().catch(() => "Unknown error");
+            return {
+                error: { status: response.status, message: errorText || "Something went wrong" },
+            };
         }
 
-        return await response.json();
-    } catch (error: any) {
-        if (error.name === 'AbortError' || error.message?.includes('aborted')) {
-            throw new Error(`Request timed out after ${timeout}ms`);
+        const data = await response.json();
+        return { data };
+    } catch (err: any) {
+        if (err.name === "AbortError") {
+            return { error: { message: `Request timed out after ${timeout}ms` } };
         }
-        throw error;
+        return { error: { message: err.message || "Something went wrong." } };
     } finally {
         clearTimeout(id);
     }

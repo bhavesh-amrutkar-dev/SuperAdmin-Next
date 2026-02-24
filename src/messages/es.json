@@ -521,5 +521,11 @@
     },
     "subscribeError": "No se pudo suscribir, por favor intente de nuevo",
     "newsletterSuccessTitle": "¡Gracias por suscribirte!",
-    "newsletterSuccessMessage": "Gracias por registrarte en nuestro boletín. Te enviaremos contenido muy interesante que esperamos que te encante."
+    "newsletterSuccessMessage": "Gracias por registrarte en nuestro boletín. Te enviaremos contenido muy interesante que esperamos que te encante.",
+    "serviceDown": "Lo sentimos, el servicio no está disponible actualmente. Por favor intente más tarde.",
+    "retry": "Reintentar",
+    "serviceDownTitle": "¡Ups! Los servicios no están disponibles",
+    "serviceDownMessage": "Nuestros servicios están temporalmente fuera de servicio. Por favor, inténtelo de nuevo más tarde.",
+    "pageNotFound": "¡Vaya! Página no encontrada.",
+    "goHome": "Ir a inicio"
 }
