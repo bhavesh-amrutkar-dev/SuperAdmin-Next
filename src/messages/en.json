@@ -503,5 +503,6 @@
     "paymentCancelledDescription": "Your payment was cancelled. No charges were made. You can try again or choose a different payment method.",
     "retryPayment": "Try Again",
     "chooseAnotherMethod": "Choose Another Method",
-    "messageRequired": "Message is required"
+    "messageRequired": "Message is required",
+    "messagePlaceholder": "Write your message here..."
 }

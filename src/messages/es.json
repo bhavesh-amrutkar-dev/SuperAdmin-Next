@@ -503,5 +503,6 @@
     "paymentCancelledDescription": "Tu pago fue cancelado. No se realizaron cargos. Puedes intentarlo nuevamente o elegir otro método de pago.",
     "retryPayment": "Intentar nuevamente",
     "chooseAnotherMethod": "Elegir otro método",
-    "messageRequired": "Se requiere mensaje"
+    "messageRequired": "Se requiere mensaje",
+    "messagePlaceholder": "Escribe tu mensaje aquí..."
 }
