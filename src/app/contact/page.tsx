@@ -15,6 +15,7 @@ import ErrorMessage from "@/src/components/ui/errorMessage";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { useProfile } from "@/src/lib/hooks/userProfile";
+import { toast } from "sonner";
 
 type ContactForm = {
     firstName: string;
@@ -100,7 +101,7 @@ export default function ContactPage() {
             // TODO: API call
             await new Promise((res) => setTimeout(res, 1000));
 
-            alert(t("messageSent"));
+            toast.success(t("messageSent"));
             setFormData({
                 firstName: "",
                 lastName: "",

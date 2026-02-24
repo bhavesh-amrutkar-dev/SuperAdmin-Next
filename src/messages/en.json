@@ -504,5 +504,20 @@
     "retryPayment": "Try Again",
     "chooseAnotherMethod": "Choose Another Method",
     "messageRequired": "Message is required",
-    "messagePlaceholder": "Write your message here..."
+    "messagePlaceholder": "Write your message here...",
+    "trackPurchases": "Track and manage your purchases",
+    "all": "All",
+    "noOrdersAvailable": "No orders available",
+    "failedToLoadOrders": "Failed to load orders",
+    "orderStatus": {
+        "processing": "Processing your payment…",
+        "new": "New",
+        "accepted": "Accepted",
+        "cancelled": "Cancelled",
+        "packed": "Packed",
+        "readyForPickup": "Ready for Pickup",
+        "inDispatch": "In Transit",
+        "completed": "Completed",
+        "unknown": "Status {status}"
+    }
 }
