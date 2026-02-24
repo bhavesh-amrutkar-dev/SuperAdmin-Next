@@ -207,7 +207,7 @@ export default function RafflesPage() {
             <div className="w-full">
                 <div className="text-center page-head-wrapper">
                     <h1
-                        className="pt-2 pb-2 text-lg md:text-2xl lg:text-3xl xl:text-4xl font-bold uppercase tracking-[1px] leading-[1.35] text-white overflow-hidden text-ellipsis"
+                        className="pt-2 pb-2 text-2xl lg:text-3xl xl:text-4xl font-bold uppercase tracking-[1px] leading-[1.35] text-white overflow-hidden text-ellipsis"
                     >
                         {t("allRaffles")}
                     </h1>
@@ -281,7 +281,7 @@ export default function RafflesPage() {
                                                 {t("buyDigitalFileAndParticipate")}
                                             </div>
                                             {name && (
-                                                <h2 className="text-2xl font-black text-[#2f2f2f]  tracking-tight line-clamp-2 min-h-[64px]">
+                                                <h2 className="text-xl md:text-2xl font-black text-[#2f2f2f]  tracking-tight line-clamp-2 md:min-h-[64px]">
                                                     {name}
                                                 </h2>
                                             )}
