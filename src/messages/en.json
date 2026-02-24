@@ -236,7 +236,6 @@
     "sendingPF": "Sending...",
     "invalidEmail": "Enter a valid email",
     "subscribeSuccess": "Subscribed successfully!",
-    "subscribeError": "Something went wrong. Try again.",
     "assistanceText": "For any assistance you can contact us via :",
     "whatsappLabel": "WhatsApp +1 (787) 302-3322",
     "assistanceTime": "(Monday to Saturday, 8AM to 10PM and Sunday, 10AM to 7PM)",
@@ -519,5 +518,8 @@
         "inDispatch": "In Transit",
         "completed": "Completed",
         "unknown": "Status {status}"
-    }
+    },
+    "subscribeError": "Failed to subscribe, please try again",
+    "newsletterSuccessTitle": "Thank you for subscribing!",
+    "newsletterSuccessMessage": "Thank you registering to our newsletter. We will send you some really interesting content which we hope you will love."
 }

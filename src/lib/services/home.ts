@@ -15,7 +15,7 @@ export const HomeService = {
 
   newsletter: (email: string) => {
     return pyApiClient.post<any>("/newsletter", {
-      email
+      emailAddress: email
     });
   },
 };

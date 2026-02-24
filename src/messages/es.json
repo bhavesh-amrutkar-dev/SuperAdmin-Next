@@ -236,7 +236,6 @@
     "sendingPF": "Enviando...",
     "invalidEmail": "Introduce un correo válido",
     "subscribeSuccess": "¡Suscripción exitosa!",
-    "subscribeError": "Algo salió mal. Inténtalo de nuevo.",
     "assistanceText": "Para cualquier asistencia puedes contactarnos vía :",
     "whatsappLabel": "WhatsApp +1 (787) 302-3322",
     "assistanceTime": "(Lunes a sábado, 8AM a 10PM y domingo, 10AM a 7PM)",
@@ -519,5 +518,8 @@
         "inDispatch": "En tránsito",
         "completed": "Completado",
         "unknown": "Estado {status}"
-    }
+    },
+    "subscribeError": "No se pudo suscribir, por favor intente de nuevo",
+    "newsletterSuccessTitle": "¡Gracias por suscribirte!",
+    "newsletterSuccessMessage": "Gracias por registrarte en nuestro boletín. Te enviaremos contenido muy interesante que esperamos que te encante."
 }

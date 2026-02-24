@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { HomeService } from "@/src/lib/services/home";
+import { ConfirmationModal } from "@/src/components/ui/confirmationModal";
 
 interface Props {
   mailIcon: string;
@@ -15,7 +16,7 @@ export default function NewsletterForm({ mailIcon }: Props) {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [successModalOpen, setSuccessModalOpen] = useState(false);
 
   const handleSubmit = async () => {
     if (!email || !email.includes("@")) {
@@ -26,13 +27,11 @@ export default function NewsletterForm({ mailIcon }: Props) {
     try {
       setLoading(true);
       setError("");
-      setSuccess("");
 
-      // Use HomeService instead of fetch
       await HomeService.newsletter(email);
 
-      setSuccess(t("subscribeSuccess"));
       setEmail("");
+      setSuccessModalOpen(true); // Show success modal
     } catch (err) {
       console.warn("Newsletter error:", err);
       setError(t("subscribeError"));
@@ -69,8 +68,22 @@ export default function NewsletterForm({ mailIcon }: Props) {
         </div>
 
         {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
-        {success && <p className="text-green-500 text-xs mt-2">{success}</p>}
       </div>
+
+      {/* Success Modal */}
+      <ConfirmationModal
+        open={successModalOpen}
+        onConfirm={() => setSuccessModalOpen(false)}
+        onCancel={() => setSuccessModalOpen(false)}
+        title={t("newsletterSuccessTitle") || "Thank you for subscribing!"}
+        message={
+          t("newsletterSuccessMessage") ||
+          "Thank you registering to our newsletter. We will send you some really interesting content which we hope you will love."
+        }
+        confirmText={t("close") || "CLOSE"}
+        variant="default"
+        disableOutsideClose={true} // force user to click close
+      />
     </div>
   );
 }
