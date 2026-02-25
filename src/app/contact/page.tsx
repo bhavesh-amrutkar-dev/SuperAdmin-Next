@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import Header from "@/src/components/layout/Header";
@@ -14,6 +14,8 @@ import { Input } from "@/src/components/ui/input";
 import ErrorMessage from "@/src/components/ui/errorMessage";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
+import { useProfile } from "@/src/lib/hooks/userProfile";
+import { toast } from "sonner";
 
 type ContactForm = {
     firstName: string;
@@ -28,6 +30,7 @@ type Errors = Partial<Record<keyof ContactForm, string>>;
 // Contact page component
 
 export default function ContactPage() {
+    
     const t = useTranslations();
     const [formData, setFormData] = useState<ContactForm>({
         firstName: "",
@@ -40,7 +43,20 @@ export default function ContactPage() {
 
     const [errors, setErrors] = useState<Errors>({});
     const [loading, setLoading] = useState(false);
+    const { user } = useProfile();
 
+    useEffect(() => {
+        if (user) {
+            setFormData((prev) => ({
+                ...prev,
+                firstName: user.firstName || "",
+                lastName: user.lastName || "",
+                email: user.email || "",
+                phone: user.mobile || user.number || "",
+                phoneCode: user.countryCode || "+1",
+            }));
+        }
+    }, [user]);
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
@@ -85,7 +101,7 @@ export default function ContactPage() {
             // TODO: API call
             await new Promise((res) => setTimeout(res, 1000));
 
-            alert(t("messageSent"));
+            toast.success(t("messageSent"));
             setFormData({
                 firstName: "",
                 lastName: "",
@@ -277,7 +293,11 @@ export default function ContactPage() {
                                                 // placeholder: t("mobilePlaceholder") || "Enter phone number",
                                             }}
                                             country="us"
-                                            value={`${formData.phoneCode}${formData.phone}`}
+                                            value={
+                                                formData.phone
+                                                    ? `${formData.phoneCode}${formData.phone}`
+                                                    : ""
+                                            }
                                             onChange={(value, country) => {
                                                 if (!("dialCode" in country)) return;
 

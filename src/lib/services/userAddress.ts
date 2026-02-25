@@ -1,26 +1,41 @@
 import { apiClient } from "../api/axios";
 
 export type UserAddress = {
-    _id?: string;
-    [key: string]: any;
+  _id?: string;
+  [key: string]: any;
 };
 
 export type UserAddressListResponse = {
-    data?: UserAddress[];
-    [key: string]: any;
+  data?: UserAddress[];
+  [key: string]: any;
 };
 
 export const UserAddressService = {
-    /**
-     * Get list of user addresses (same /address API as old project)
-     */
-    getAddresses: () => {
-        return apiClient.get("/address") as Promise<UserAddressListResponse>;
-    },
-    deleteAddress: (id: string) => apiClient.delete(`/address/${id}`),
-    updateAddress: (id: string, payload: any) =>
-        apiClient.put(`/address/${id}`, payload),
-    setDefaultAddress: (id: string) =>
-        apiClient.patch(`/address/${id}/default`),
+  /**
+   * Get list of user addresses
+   */
+  getAddresses: (): Promise<UserAddressListResponse> => {
+    return apiClient.get("/address");
+  },
 
+  /**
+   * Delete address by ID (using query param as per API)
+   */
+  deleteAddress: (id: string) => {
+    return apiClient.delete(`/address`, { params: { addressId: id } });
+  },
+
+  /**
+   * Update address
+   */
+  updateAddress: (id: string, payload: any) => {
+    return apiClient.put(`/address/${id}`, payload);
+  },
+
+  /**
+   * Set default address
+   */
+  setDefaultAddress: (id: string) => {
+    return apiClient.patch(`/address/${id}/default`);
+  },
 };

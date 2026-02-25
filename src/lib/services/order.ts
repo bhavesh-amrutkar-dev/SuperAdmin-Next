@@ -4,6 +4,7 @@ export type OrderStatus = {
     status: number;
     statusName?: string;
     updatedOnTimeStamp?: number;
+    statusText?: string;
 };
 
 export type OrderProduct = {
@@ -50,6 +51,7 @@ export type StoreOrder = {
             wallet?: number;
             rewardWallet?: number;
         };
+        unitPriceWithTax?: number;
     };
     storeRattingData?: {
         isRated?: boolean;
@@ -75,6 +77,7 @@ export type Order = {
     currencyCode?: string | { value?: string; unit?: string };
     currencySymbol?: string | { value?: string; unit?: string };
     accounting?: {
+        unitPriceWithTax?: number;
         finalTotal?: number;
         finalTotalMulti?: number;
         finalUnitPrice?: number;

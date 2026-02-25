@@ -41,6 +41,7 @@ const DEFAULT_COORDS = {
     longitude: 0.0,
 };
 
+
 export default function AddressPage() {
     const t = useTranslations();
     const router = useRouter();

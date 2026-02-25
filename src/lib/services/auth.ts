@@ -1,6 +1,6 @@
 import { IAPIResponse } from "@/src/models/api/response/common";
 import { apiClient } from "../api/axios";
-import { API_ROUTE_GET_CURRENT_USER } from "../api/routes";
+import { API_ROUTE_CONTACT_FIELDS, API_ROUTE_CONTACT_REQUEST, API_ROUTE_GET_CURRENT_USER } from "../api/routes";
 import { getDeviceInfo } from "../utils/device";
 import { APP_VERSION, DEVICE_TYPE_WEB } from "../config";
 
@@ -15,6 +15,7 @@ import {
 
 import { CountryCurrency, IMobileLoginResponse } from "@/src/models/api/response/auth";
 import { resolveIpAddress } from "../utils/ip-resolver";
+import { IContactRequestRM } from "@/src/models/api/request/contact";
 
 export const AuthService = {
   async login(
@@ -140,5 +141,24 @@ export const AuthService = {
       // ...device,
       ...payload,
     })
+  },
+  // ✅ Get Dynamic Contact Fields
+  async getContactFormFields(storeId: string = "0") {
+    return apiClient.get(
+      `${API_ROUTE_CONTACT_FIELDS}?storeId=${storeId}&limit=0&skip=0`
+    );
+  },
+
+  async createContactRequest(
+    payload: Omit<IContactRequestRM, "userIP">
+  ): Promise<IAPIResponse> {
+    const device = getDeviceInfo();
+    const ipAddress = await resolveIpAddress();
+
+    return apiClient.post(API_ROUTE_CONTACT_REQUEST, {
+      userIP: ipAddress,
+      ...device,
+      ...payload,
+    });
   }
 }
