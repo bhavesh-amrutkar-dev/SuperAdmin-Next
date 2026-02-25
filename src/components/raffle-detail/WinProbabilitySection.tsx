@@ -20,7 +20,6 @@ interface WinProbabilitySectionProps {
     lotteryItem: LegacyRaffleDetail;
 }
 
-// Circular Progress Bar Component
 const CircularProgressBar = ({ percentage }: { percentage: number }) => {
     const radius = 40;
     const circumference = 2 * Math.PI * radius;
@@ -28,127 +27,167 @@ const CircularProgressBar = ({ percentage }: { percentage: number }) => {
 
     return (
         <div className="relative w-24 h-24">
-            <svg className="transform -rotate-90 w-full h-full">
+            <svg className="w-full h-full -rotate-90">
+                <defs>
+                    <linearGradient id="themeGradient" gradientTransform="rotate(137)">
+                        <stop offset="0%" stopColor="#2F2F2F" />
+                        <stop offset="100%" stopColor="#FECB02" />
+                    </linearGradient>
+                </defs>
+
+                {/* Track */}
                 <circle
                     cx="50%"
                     cy="50%"
                     r={radius}
                     fill="none"
-                    stroke="#E5E7EB"
+                    stroke="#2F2F2F"
+                    strokeOpacity="0.12"
                     strokeWidth="8"
                 />
+
+                {/* Progress */}
                 <circle
                     cx="50%"
                     cy="50%"
                     r={radius}
                     fill="none"
-                    stroke="#FECB02"
+                    stroke="url(#themeGradient)"
                     strokeWidth="8"
                     strokeDasharray={circumference}
                     strokeDashoffset={offset}
                     strokeLinecap="round"
-                    className="transition-all duration-300"
+                    className="transition-all duration-700 ease-out"
                 />
             </svg>
+
             <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm font-bold text-[#2f2f2f]">{percentage}%</span>
+                <span className="text-sm font-bold text-[#2F2F2F]">
+                    {percentage}%
+                </span>
             </div>
         </div>
     );
 };
 
-export default function WinProbabilitySection({ lotteryItem }: WinProbabilitySectionProps) {
+export default function WinProbabilitySection({
+    lotteryItem,
+}: WinProbabilitySectionProps) {
     const t = useTranslations();
 
-    // Calculate probabilities - use API values if available, otherwise calculate
-    const totalEntries = lotteryItem.totalTicketsGenerated ?? lotteryItem.totalEntriesSold ?? 0;
-    // Paid probability: use API value or calculate
-    const paidProbability = lotteryItem.paidProbability !== undefined
-        ? Math.round(lotteryItem.paidProbability)
-        : totalEntries > 0
-            ? Math.round(((lotteryItem.paidEntries ?? lotteryItem.sold ?? 0) / totalEntries) * 100)
-            : 0;
-    // Free probability: use API value or calculate
-    const freeProbability = lotteryItem.freeProbability !== undefined
-        ? Math.round(lotteryItem.freeProbability)
-        : totalEntries > 0
-            ? Math.round(((lotteryItem.freeEntries ?? 0) / totalEntries) * 100)
-            : 0;
-    // My probability: use API value or calculate
-    const myTotalEntries = (lotteryItem.totalPaidTicketsGeneratedUser ?? 0) + (lotteryItem.totalFreeTicketsGeneratedUser ?? 0);
-    const myProbability = lotteryItem.myProbablity !== undefined
-        ? Math.round(lotteryItem.myProbablity)
-        : totalEntries > 0
-            ? Math.round((myTotalEntries / totalEntries) * 100)
-            : 0;
+    const totalEntries =
+        lotteryItem.totalTicketsGenerated ??
+        lotteryItem.totalEntriesSold ??
+        0;
+
+    const paidProbability =
+        lotteryItem.paidProbability !== undefined
+            ? Math.round(lotteryItem.paidProbability)
+            : totalEntries > 0
+                ? Math.round(
+                    ((lotteryItem.paidEntries ?? lotteryItem.sold ?? 0) /
+                        totalEntries) *
+                    100
+                )
+                : 0;
+
+    const freeProbability =
+        lotteryItem.freeProbability !== undefined
+            ? Math.round(lotteryItem.freeProbability)
+            : totalEntries > 0
+                ? Math.round(
+                    ((lotteryItem.freeEntries ?? 0) / totalEntries) * 100
+                )
+                : 0;
+
+    const myTotalEntries =
+        (lotteryItem.totalPaidTicketsGeneratedUser ?? 0) +
+        (lotteryItem.totalFreeTicketsGeneratedUser ?? 0);
+
+    const myProbability =
+        lotteryItem.myProbablity !== undefined
+            ? Math.round(lotteryItem.myProbablity)
+            : totalEntries > 0
+                ? Math.round((myTotalEntries / totalEntries) * 100)
+                : 0;
 
     return (
-        <div className="border border-gray-200 rounded-xl">
-            {/* Row 1: Title */}
-            <h2 className="p-3 md:p-4 bg-gray-200 text-lg md:text-xl font-bold text-[#2f2f2f] mb-6 uppercase text-center rounded-t-xl">
-                {t("winProbability")}
-            </h2>
+        <div className="border border-[#8f8f8f] rounded-2xl bg-gray-50 shadow-sm hover:shadow-md transition-all duration-300">
 
-            {/* Row 2: Statistics */}
-            <div className="mb-6">
-                <div className="flex flex-col md:flex-row md:justify-between gap-4 md:gap-6 px-4 sm:max-w-[80%] sm:mx-auto lg:max-w-full xl:max-w-[92%] 2xl:max-w-[80%]">
-                    <div className="text-center">
-                        <div className="text-sm md:text-base text-[#2f2f2f]">
-                            <span className="text-[#797979] text-sm font-semibold">{t("totalEntriesSold")}:</span>
-                            <br />
-                            <span className="text-[#2f2f2f] font-semibold">{totalEntries.toLocaleString()}</span>
-                        </div>
+            {/* Title */}
+            <div className="px-6 py-4 text-center  bg-gray-200 rounded-t-2xl">
+                <h2 className="text-xl font-semibold text-[#2F2F2F]">
+                    {t("winProbability")}
+                </h2>
+                {/* <div className="w-12 h-1 bg-yellow-400 mx-auto mt-2 rounded-full" /> */}
+            </div>
+
+            {/* Statistics */}
+            <div className="py-6 px-4">
+                <div className="flex flex-col md:flex-row md:justify-between gap-6 text-center">
+
+                    <div>
+                        <p className="text-sm font-semibold text-[#797979]">
+                            {t("totalEntriesSold")}
+                        </p>
+                        <p className="text-lg font-bold text-[#2F2F2F]">
+                            {totalEntries.toLocaleString()}
+                        </p>
                     </div>
-                    <div className="text-center">
-                        <div className="text-sm md:text-base text-[#2f2f2f]">
-                            <span className="text-[#797979] text-sm font-semibold">{t("myPaidEntries")}:</span>
-                            <br />
-                            <span className="text-[#2f2f2f] font-semibold">
-                                {(lotteryItem.totalPaidTicketsGeneratedUser ?? 0).toLocaleString()}
-                            </span>
-                        </div>
+
+                    <div>
+                        <p className="text-sm font-semibold text-[#797979]">
+                            {t("myPaidEntries")}
+                        </p>
+                        <p className="text-lg font-bold text-[#2F2F2F]">
+                            {(lotteryItem.totalPaidTicketsGeneratedUser ?? 0).toLocaleString()}
+                        </p>
                     </div>
-                    <div className="text-center">
-                        <div className="text-sm md:text-base text-[#2f2f2f]">
-                            <span className="text-[#797979] text-sm font-semibold">{t("myFreeEntries")}:</span>
-                            <br />
-                            <span className="text-[#2f2f2f] font-semibold">
-                                {(lotteryItem.totalFreeTicketsGeneratedUser ?? 0).toLocaleString()}
-                            </span>
-                        </div>
+
+                    <div>
+                        <p className="text-sm font-semibold text-[#797979]">
+                            {t("myFreeEntries")}
+                        </p>
+                        <p className="text-lg font-bold text-[#2F2F2F]">
+                            {(lotteryItem.totalFreeTicketsGeneratedUser ?? 0).toLocaleString()}
+                        </p>
                     </div>
+
                 </div>
             </div>
 
-            {/* Row 3: Progress Bars */}
-            <div className="mb-6">
-                <div className="flex flex-wrap justify-center gap-6 md:gap-8 px-4">
+            {/* Progress Bars */}
+            <div className="pb-6">
+                <div className="flex flex-wrap justify-center gap-10">
+
                     <div className="flex flex-col items-center">
                         <CircularProgressBar percentage={paidProbability} />
-                        <p className="SubProgress text-xs md:text-sm font-medium text-[#797979] mt-3 whitespace-nowrap">
+                        <p className="text-sm font-medium text-[#797979] mt-3">
                             {t("paid")}
                         </p>
                     </div>
+
                     <div className="flex flex-col items-center">
                         <CircularProgressBar percentage={freeProbability} />
-                        <p className="SubProgress text-xs md:text-sm font-medium text-[#797979] mt-3 whitespace-nowrap">
+                        <p className="text-sm font-medium text-[#797979] mt-3">
                             {t("free")}
                         </p>
                     </div>
+
                     <div className="flex flex-col items-center">
                         <CircularProgressBar percentage={myProbability} />
-                        <p className="SubProgress text-xs md:text-sm font-medium text-[#797979] mt-3 whitespace-nowrap">
+                        <p className="text-sm font-medium text-[#797979] mt-3">
                             {t("myProbability")}
                         </p>
                     </div>
+
                 </div>
             </div>
 
             {/* Disclaimer */}
-            <p className="text-xs md:text-sm text-[#797979] leading-relaxed text-center p-4">
+            <p className="text-xs text-[#797979] text-center px-6 pb-6">
                 {t("probabilityDisclaimer")}
             </p>
         </div>
     );
 }
-
