@@ -22,7 +22,8 @@ export default async function Winners() {
     try {
         const response = await WinnerServiceServer.getWinnersServer();
         if (response && response.data) {
-            winners = response.data.sort((a, b) => (b.drawDateTimeStemp || 0) - (a.drawDateTimeStemp || 0));
+            winners = response.data.data || response.data
+            winners = winners.sort((a, b) => (b.drawDateTimeStemp || 0) - (a.drawDateTimeStemp || 0));
         }
     } catch (error) {
         console.error("Failed to fetch winners:", error);
@@ -32,7 +33,6 @@ export default async function Winners() {
         <main className="min-h-screen bg-gray-50 flex flex-col">
             <Header />
             <div className="flex-grow">
-                {/* Header Section */}
                 {/* Header Section */}
                 <div className="bg-gray-900 text-white relative overflow-hidden">
                     {/* Decorative background elements */}

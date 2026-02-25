@@ -27,9 +27,10 @@ export default async function WinnerDetailPage({ params }: { params: Promise<{ i
     let campaign: WinnerItem | null = null;
     const t = await getTranslations();
     try {
+
         const response = await WinnerServiceServer.getWinnerDetailServer(id);
         if (response && response.data) {
-            winnerData = response.data;
+            winnerData = response.data.data || response.data;
             if (winnerData.campaignDetail && winnerData.campaignDetail.length > 0) {
                 campaign = winnerData.campaignDetail[0];
             }

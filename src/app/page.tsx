@@ -26,8 +26,14 @@ export default async function LandingPage() {
     // Parallel fetch
     const [res, raffleData] = await Promise.allSettled([bannerPromise, rafflePromise]);
 
-    if (res.status === 'fulfilled' && res.value?.banner_images) {
-      banners = mapBanners(res.value.banner_images, locale);
+    if (
+      res.status === "fulfilled" &&
+      res.value.data?.banner_images
+    ) {
+      banners = mapBanners(
+        res.value.data.banner_images,
+        locale
+      );
     } else if (res.status === 'rejected') {
       console.error("Home Banners Fetch Failed:", res.reason);
     }
