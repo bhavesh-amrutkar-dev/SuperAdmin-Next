@@ -111,15 +111,16 @@ export default function AddressesPage() {
       <div className="min-h-screen bg-gray-50">
         <Header />
 
-        <div className="mx-auto max-w-6xl px-4 py-10">
+        <div className="mx-auto w-full max-w-[1648px] px-4 md:px-6 py-10">
           {/* Header */}
-          <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold">{t("savedAddresses")}</h1>
               <p className="text-sm text-gray-500">{t("manageDeliveryAddresses")}</p>
             </div>
 
             <Button
+              className="btn-primary"
               variant="primary"
               size="default"
               onClick={() => {
@@ -139,9 +140,10 @@ export default function AddressesPage() {
             </div>
           ) : addresses.length === 0 ? (
             /* Empty */
-            <div className="rounded-2xl border bg-white p-12 text-center shadow-sm">
-              <p className="text-gray-500 mb-4">{t("noAddressFound")}</p>
-              <Button variant="primary" onClick={() => setOpenModal(true)}>
+            <div className="rounded-2xl border border-gray-200 bg-gray-100 p-12 text-center">
+              <p className="text-[#2f2f2f] mb-4 font-semibold">{t("noAddressFound")}</p>
+              <Button className="btn-primary" variant="primary" onClick={() => setOpenModal(true)}>
+                <Plus size={16} />
                 {t("addAddress")}
               </Button>
             </div>

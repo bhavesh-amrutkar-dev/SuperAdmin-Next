@@ -1078,7 +1078,7 @@ export default function SecureCheckoutPage() {
         <Header />
 
         {/* Progress Stepper */}
-        <div className="bg-white border-b border-gray-200 py-3 sm:py-4">
+        <div className="pt-14">
           <div className="container mx-auto px-2 sm:px-4">
             <div className="flex items-center justify-center gap-2 sm:gap-4 md:gap-8 max-w-3xl mx-auto">
               <div className="flex items-center gap-1 sm:gap-2">

@@ -173,16 +173,16 @@ export default function AddressForm({
     return (
         <form
             onSubmit={handleSubmit(onSubmit)}
-            className="space-y-8"
+            className="space-y-5"
         >
 
             {/* Personal Info */}
-            <section className="space-y-5">
-                <h2 className="text-sm font-semibold uppercase text-gray-600">
+            <section className="bg-gray-50 p-4 sm:p-5 rounded-2xl">
+                <h2 className="text-sm font-semibold uppercase text-gray-500 mb-3">
                     {t("personalInformation")}
                 </h2>
 
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 
                     {/* First Name */}
                     <div className="space-y-2">
@@ -217,16 +217,18 @@ export default function AddressForm({
                     {/* Mobile */}
                     <div className="md:col-span-2 space-y-2">
                         <Label required>{t("mobile")}</Label>
+                        <div className="phone-input">
                         <PhoneInput
                             country="us"
                             containerClass="!w-full"
-                            inputClass="!w-full !h-[44px] !rounded-lg !border !border-gray-300 !text-sm !pl-14 focus:!border-[#f3c200] focus:!ring-2 focus:!ring-yellow-200"
+                            inputClass="!w-full !h-[44px] !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200] !text-sm !pl-14"
                             onChange={(value, country: any) => {
                                 setValue("mobileNumber", value.replace(country.dialCode, ""));
                                 setValue("mobileNumberCode", country.dialCode);
                                 setValue("mobileNumberSortCode", country.countryCode);
                             }}
                         />
+                        </div>
                         <ErrorMessage message={errors.mobileNumber?.message} />
                     </div>
 
@@ -234,8 +236,8 @@ export default function AddressForm({
             </section>
 
             {/* Address */}
-            <section className="space-y-5">
-                <h2 className="text-sm font-semibold uppercase text-gray-600">
+            <section className="bg-gray-50 p-4 sm:p-5 rounded-2xl">
+                <h2 className="text-sm font-semibold uppercase text-gray-500 mb-3">
                     {t("paymentInformation")}
                 </h2>
 
@@ -248,6 +250,7 @@ export default function AddressForm({
                         </Label>
 
                         <Textarea
+                            className="!border-[#2f2f2f] focus:!border-[#f3c200] focus:outline-0 focus:ring-0"
                             rows={3}
                             placeholder={t("addressPlaceholder")}
                             error={!!errors.addLine1}
@@ -258,12 +261,14 @@ export default function AddressForm({
 
                         <ErrorMessage message={errors.addLine1?.message} />
                         <Button
+                            className="btn-primary"
                             type="button"
-                            variant="outline"
+                            variant="primary"
                             size="sm"
                             onClick={requestLocation}
                             disabled={loadingLocation}
                         >
+                            <svg className="w-3 h-3"  x="0" y="0" viewBox="0 0 512 512"><g><path d="M256 0C153.755 0 70.573 83.182 70.573 185.426c0 126.888 165.939 313.167 173.004 321.035 6.636 7.391 18.222 7.378 24.846 0 7.065-7.868 173.004-194.147 173.004-321.035C441.425 83.182 358.244 0 256 0zm0 278.719c-51.442 0-93.292-41.851-93.292-93.293S204.559 92.134 256 92.134s93.291 41.851 93.291 93.293-41.85 93.292-93.291 93.292z" fill="#fff" opacity="1" data-original="#000000"></path></g></svg>
                             {loadingLocation ? "detecting" : t("useCurrentLocation")}
                         </Button>
 
@@ -279,9 +284,10 @@ export default function AddressForm({
                             <select
                                 className={`
       w-full rounded-lg border bg-background
-      px-4 py-2 text-sm
+      px-3 py-3 text-sm
       transition-colors duration-200
-      focus:outline-none focus:ring-2 focus:ring-yellow-200 focus:border-[#f3c200]
+      focus:outline-none focus:ring-0 !border-[#2f2f2f] focus:!border-[#f3c200]
+      h-11
       ${errors.country
                                         ? "border-red-500 focus:ring-red-200 focus:border-red-500"
                                         : "border-gray-300 hover:border-gray-400"}
@@ -354,7 +360,7 @@ export default function AddressForm({
                         </div>
 
                         {/* Landmark */}
-                        <div className="space-y-2">
+                        <div className="space-y-2 sm:col-span-2">
                             <Label required error={!!errors.landmark}>
                                 {t("landmark")}
                             </Label>
@@ -377,14 +383,15 @@ export default function AddressForm({
 
 
             {/* Address Type */}
-            <section className="space-y-4">
-                <h2 className="text-sm font-semibold uppercase text-gray-600">
+            <section className="bg-gray-50 p-4 sm:p-5 rounded-2xl">
+                <h2 className="text-sm font-semibold uppercase text-gray-500 mb-3">
                     {t("addressType")}
                 </h2>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-3 mb-3">
                     {["Home", "Office", "Other"].map((key) => (
-                        <Button
+                        <Button 
+                            className="text-[#2f2f2f]"
                             key={key}
                             type="button"
                             variant={taggedAs === key ? "primary" : "outline"}
@@ -392,7 +399,7 @@ export default function AddressForm({
                             onClick={() =>
                                 setValue("taggedAs", key as AddressFormRM["taggedAs"])
                             }
-                        >
+                        > 
                             {t(`addressType${key}`)}
                         </Button>
                     ))}
@@ -414,7 +421,7 @@ export default function AddressForm({
 
             <Button
                 type="submit"
-                className="w-full"
+                className="btn-primary w-full h-11"
                 disabled={isSubmitting}
             >
                 {isSubmitting ? t("saving") : t("continue")}

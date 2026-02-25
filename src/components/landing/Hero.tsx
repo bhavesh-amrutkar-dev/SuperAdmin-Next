@@ -29,7 +29,7 @@ export default function HeroSlider({ banners, autoPlay = true }: Props) {
   return (
     <section className="w-full">
       <div className="w-full">
-        <div className="relative overflow-hidden">
+        <div className="relative overflow-hidden h-[250px] sm:h-[300px] md:h-[500px]">
           <picture className="w-full h-full block">
             {/* Desktop first in picture source */}
             <source className="w-full h-full"
