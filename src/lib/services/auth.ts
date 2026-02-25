@@ -54,14 +54,7 @@ export const AuthService = {
   ): Promise<IAPIResponse<IMobileLoginResponse>> {
     const device = getDeviceInfo();
 
-    let ipAddress = "0.0.0.0";
-    try {
-      const res = await fetch("https://ipapi.co/json/");
-      const data = await res.json();
-      ipAddress = data.ip;
-    } catch {
-      console.warn("Failed to resolve IP, using fallback");
-    }
+    const ipAddress = await resolveIpAddress();
 
     return apiClient.post("/signIn", {
       deviceId: `web_app_id_${Date.now()}`,

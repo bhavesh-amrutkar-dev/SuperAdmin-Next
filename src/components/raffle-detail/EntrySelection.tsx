@@ -64,40 +64,42 @@ export default function EntrySelection({
             <div className={`grid grid-cols-1 ${user ? "lg:grid-cols-1 xl:grid-cols-2" : "grid-cols-1"} gap-4 2xl:gap-6`}>
                 {/* Left Column: Tickets */}
                 <div className="space-y-4">
-                    <div className="grid sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-2 gap-3">
-                        {tickets && Array.isArray(tickets) && tickets.length > 0 ? (
-                            tickets.map((ticket: any, index: number) => {
-                                // Handle different ticket structures
-                                const ticketId = ticket.ticketId || ticket.id || ticket._id || index.toString();
-                                const ticketPrice = ticket.price || ticket.ticketPrice || 0;
-                                const numberOfTickets = ticket.numberOfTicket || ticket.numberOfTickets || ticket.quantity || 0;
+                    <div className="max-h-45 overflow-y-auto pr-2 custom-scroll">
+                        <div className="grid sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-2 gap-3">
+                            {tickets && Array.isArray(tickets) && tickets.length > 0 ? (
+                                tickets.map((ticket: any, index: number) => {
+                                    // Handle different ticket structures
+                                    const ticketId = ticket.ticketId || ticket.id || ticket._id || index.toString();
+                                    const ticketPrice = ticket.price || ticket.ticketPrice || 0;
+                                    const numberOfTickets = ticket.numberOfTicket || ticket.numberOfTickets || ticket.quantity || 0;
 
-                                return (
-                                    <button
-                                        key={ticketId}
-                                        onClick={() => onTicketSelect(ticketId)}
-                                        className={`p-4 lg:p-3 2xl:p-4 rounded-xl border-2 transition-all w-full cursor-pointer ${selectedTicket === ticketId
-                                            ? "border-[#FECB02] bg-[#fffbf3] ring-3 ring-[#FECB02]/20"
-                                            : "border-gray-200 hover:border-[#FECB02]/50 bg-white"
-                                            }`}
-                                    >
-                                        <div className="flex flex-row justify-between items-center gap-2 flex-wrap">
-                                            <span className="inline-flex items-center gap-2 text-base font-semibold text-[#2f2f2f]">
-                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-muted-foreground"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path><path d="M13 5v2"></path><path d="M13 17v2"></path><path d="M13 11v2"></path></svg>
-                                                {displayCurrency} {ticketPrice?.toFixed(2) || "0.00"}
-                                            </span>
-                                            <span className="text-xs text-[#797979] whitespace-nowrap font-medium">
-                                                ({numberOfTickets || 0} {t("tickets") || "Tickets"})
-                                            </span>
-                                        </div>
-                                    </button>
-                                );
-                            })
-                        ) : (
-                            <div className="text-sm text-[#797979] text-center py-4 col-span-2">
-                                {t("noTicketsAvailable") || "No tickets available"}
-                            </div>
-                        )}
+                                    return (
+                                        <button
+                                            key={ticketId}
+                                            onClick={() => onTicketSelect(ticketId)}
+                                            className={`p-4 lg:p-3 2xl:p-4 rounded-xl border-2 transition-all w-full cursor-pointer ${selectedTicket === ticketId
+                                                ? "border-[#FECB02] bg-[#fffbf3] ring-3 ring-[#FECB02]/20"
+                                                : "border-gray-200 hover:border-[#FECB02]/50 bg-white"
+                                                }`}
+                                        >
+                                            <div className="flex flex-row justify-between items-center gap-2 flex-wrap">
+                                                <span className="inline-flex items-center gap-2 text-base font-semibold text-[#2f2f2f]">
+                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-muted-foreground"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path><path d="M13 5v2"></path><path d="M13 17v2"></path><path d="M13 11v2"></path></svg>
+                                                    {displayCurrency} {ticketPrice?.toFixed(2) || "0.00"}
+                                                </span>
+                                                <span className="text-xs text-[#797979] whitespace-nowrap font-medium">
+                                                    ({numberOfTickets || 0} {t("tickets") || "Tickets"})
+                                                </span>
+                                            </div>
+                                        </button>
+                                    );
+                                })
+                            ) : (
+                                <div className="text-sm text-[#797979] text-center py-4 col-span-2">
+                                    {t("noTicketsAvailable") || "No tickets available"}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
