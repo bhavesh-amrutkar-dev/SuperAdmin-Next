@@ -56,8 +56,8 @@ const CountryCard = memo(function CountryCard({
       type="button"
       onClick={() => onSelect(country.code)}
       className={`group flex flex-col items-center rounded-xl border px-4 py-4 transition-all duration-150 w-[47%] sm:w-full ${isSelected
-          ? "border-[#FECB02] ring-2 ring-[#FECB02]/40 shadow-sm"
-          : "border-gray-200 hover:border-[#FECB02]/60 hover:shadow-sm hover:cursor-pointer"
+        ? "border-[#FECB02] ring-2 ring-[#FECB02]/40 shadow-sm"
+        : "border-gray-200 hover:border-[#FECB02]/60 hover:shadow-sm hover:cursor-pointer"
         }`}
     >
       <div
@@ -83,7 +83,7 @@ export default function CountrySelectorModal({ open, onClose, onCountryChange }:
   const [error, setError] = useState(false); // <-- new
 
   const { countries: contextCountries } = useCountry();
-
+  const { setSelectedCountryId } = useCountry();
   /* ---------------- Render List Animation ---------------- */
   useEffect(() => {
     if (!open) return;
@@ -158,7 +158,7 @@ export default function CountrySelectorModal({ open, onClose, onCountryChange }:
     setCookie(COUNTRY, selected.name || DEFAULT_COUNTRY, cookieOptions);
     setCookie("C_id", selected.id, cookieOptions);
 
-    window.dispatchEvent(new CustomEvent("countryChanged", { detail: { id: selected.id } }));
+    setSelectedCountryId(selected.id);
     onCountryChange?.(selected);
     onClose();
   };

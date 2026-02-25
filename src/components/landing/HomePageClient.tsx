@@ -23,6 +23,7 @@ import { FullScreenLoader } from "../fullScreenLoader";
 import { useAuth } from "@/src/context/authContext";
 import Loader from "../loader";
 import FallbackUI from "../common/FallBackUi";
+import { useCountry } from "@/src/context/countryContext";
 
 type LegacyRaffleItem = {
   _id?: string;
@@ -58,7 +59,6 @@ export default function HomePageClient({
   const [raffleSection, setRaffleSection] = useState<RaffleSection | null>(
     initialRaffles || null
   );
-  const [countryId, setCountryId] = useState<string | null>(null);
 
   // Global error if any API fails
   const [globalError, setGlobalError] = useState<string | null>(null);
@@ -67,11 +67,7 @@ export default function HomePageClient({
   /* -----------------------------
      Resolve Country ID
   ------------------------------ */
-  useEffect(() => {
-    const id = getCookie("C_id");
-    if (id) setCountryId(id as string);
-  }, []);
-
+  const { selectedCountryId } = useCountry();
   /* -----------------------------
      Fetch Home Banners
   ------------------------------ */
@@ -94,7 +90,7 @@ export default function HomePageClient({
      Fetch Raffles
   ------------------------------ */
   const fetchRaffles = useCallback(async () => {
-    if (!countryId) return;
+    if (!selectedCountryId) return;
 
     if (abortRef.current) abortRef.current.abort();
     const controller = new AbortController();
@@ -150,7 +146,7 @@ export default function HomePageClient({
     } finally {
       setLoadingRaffles(false);
     }
-  }, [countryId, t]);
+  }, [selectedCountryId, t]);
 
   /* -----------------------------
      Fetch All Data
@@ -164,8 +160,8 @@ export default function HomePageClient({
     } catch (err: any) {
       setGlobalError(
         err?.message ||
-          t("serviceDown") ||
-          "Oops! Our services are temporarily unavailable."
+        t("serviceDown") ||
+        "Oops! Our services are temporarily unavailable."
       );
     } finally {
       setLoading(false);
@@ -173,10 +169,18 @@ export default function HomePageClient({
   }, [fetchBanners, fetchRaffles, t]);
 
   useEffect(() => {
-    if (ready) fetchAll();
-    return () => abortRef.current?.abort();
-  }, [ready, fetchAll]);
+    if (!ready) return;
 
+    if (!selectedCountryId) {
+      // No country selected → stop loader
+      setLoading(false);
+      return;
+    }
+
+    fetchAll();
+
+    return () => abortRef.current?.abort();
+  }, [ready, selectedCountryId]);
   /* -----------------------------
      Render
   ------------------------------ */

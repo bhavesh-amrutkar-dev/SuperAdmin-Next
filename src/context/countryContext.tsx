@@ -1,28 +1,49 @@
 "use client";
 
-import { createContext, useContext, ReactNode } from "react";
+import { createContext, useContext, ReactNode, useState, useEffect } from "react";
 import { CountryApiItem } from "../lib/services/country";
+import { getCookie, setCookie } from "cookies-next";
 
 type CountryContextType = {
-    countries: CountryApiItem[];
+  countries: CountryApiItem[];
+  selectedCountryId: string | null;
+  setSelectedCountryId: (id: string) => void;
 };
 
 const CountryContext = createContext<CountryContextType>({
-    countries: [],
+  countries: [],
+  selectedCountryId: null,
+  setSelectedCountryId: () => {},
 });
 
 export const useCountry = () => useContext(CountryContext);
 
 export function CountryProvider({
-    children,
-    countries,
+  children,
+  countries,
 }: {
-    children: ReactNode;
-    countries: CountryApiItem[];
+  children: ReactNode;
+  countries: CountryApiItem[];
 }) {
-    return (
-        <CountryContext.Provider value={{ countries }}>
-            {children}
-        </CountryContext.Provider>
-    );
+  const [selectedCountryId, setSelectedCountryIdState] = useState<string | null>(null);
+
+  useEffect(() => {
+    const cookieId = getCookie("C_id");
+    if (cookieId) {
+      setSelectedCountryIdState(cookieId as string);
+    }
+  }, []);
+
+  const setSelectedCountryId = (id: string) => {
+    setCookie("C_id", id);
+    setSelectedCountryIdState(id);
+  };
+
+  return (
+    <CountryContext.Provider
+      value={{ countries, selectedCountryId, setSelectedCountryId }}
+    >
+      {children}
+    </CountryContext.Provider>
+  );
 }

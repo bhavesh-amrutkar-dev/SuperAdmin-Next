@@ -21,10 +21,10 @@ export default async function LandingPage() {
 
   try {
     const bannerPromise = HomeServiceServer.getHomePageServer(1);
-    const rafflePromise = RaffleServiceServer.getAllRafflesServer();
+    // const rafflePromise = RaffleServiceServer.getAllRafflesServer();
 
     // Parallel fetch
-    const [res, raffleData] = await Promise.allSettled([bannerPromise, rafflePromise]);
+    const [res] = await Promise.allSettled([bannerPromise]);
 
     if (
       res.status === "fulfilled" &&
@@ -38,37 +38,37 @@ export default async function LandingPage() {
       console.error("Home Banners Fetch Failed:", res.reason);
     }
 
-    if (raffleData.status === 'fulfilled') {
-      const payload: any = raffleData.value;
-      const items: any[] = Array.isArray(payload?.data) ? payload.data : [];
+    // if (raffleData.status === 'fulfilled') {
+    //   const payload: any = raffleData.value;
+    //   const items: any[] = Array.isArray(payload?.data) ? payload.data : [];
 
-      const raffleItems: RaffleItem[] = items
-        .map((raffle) => {
-          const campaignId = raffle.campaignId || raffle._id || raffle.childProductId;
-          if (!isObjectId(campaignId)) return null;
+    //   const raffleItems: RaffleItem[] = items
+    //     .map((raffle) => {
+    //       const campaignId = raffle.campaignId || raffle._id || raffle.childProductId;
+    //       if (!isObjectId(campaignId)) return null;
 
-          return {
-            id: campaignId,
-            name: raffle.campaignTitle || raffle.productName || "",
-            price: raffle.goalValue ?? raffle.ticketPrice ?? 0,
-            currencySymbol: raffle.currencySymbol || "$",
-            image: raffle.image?.[0]?.medium || raffle.mobileImage?.[0]?.medium || PRODUCT_CART,
-          };
-        })
-        .filter(Boolean) as RaffleItem[];
+    //       return {
+    //         id: campaignId,
+    //         name: raffle.campaignTitle || raffle.productName || "",
+    //         price: raffle.goalValue ?? raffle.ticketPrice ?? 0,
+    //         currencySymbol: raffle.currencySymbol || "$",
+    //         image: raffle.image?.[0]?.medium || raffle.mobileImage?.[0]?.medium || PRODUCT_CART,
+    //       };
+    //     })
+    //     .filter(Boolean) as RaffleItem[];
 
-      if (raffleItems.length > 0) {
-        raffleSection = {
-          id: "all-raffles",
-          title: t("allRaffles") ?? "ALL RAFFLES",
-          description: t("playAndWin") ?? "PLAY AND WIN!",
-          cellType: 1,
-          items: raffleItems,
-        };
-      }
-    } else if (raffleData.status === 'rejected') {
-      console.error("Raffles Fetch Failed:", raffleData.reason);
-    }
+    //   if (raffleItems.length > 0) {
+    //     raffleSection = {
+    //       id: "all-raffles",
+    //       title: t("allRaffles") ?? "ALL RAFFLES",
+    //       description: t("playAndWin") ?? "PLAY AND WIN!",
+    //       cellType: 1,
+    //       items: raffleItems,
+    //     };
+    //   }
+    // } else if (raffleData.status === 'rejected') {
+    //   console.error("Raffles Fetch Failed:", raffleData.reason);
+    // }
 
   } catch (error) {
     console.error("Unexpected error in home page data fetching", error);
@@ -77,7 +77,7 @@ export default async function LandingPage() {
   return (
     <main>
       <Header />
-      <HomePageShell initialBanners={banners} initialRaffles={raffleSection} />
+      <HomePageShell initialBanners={banners} />
       <PreFooterIconModule />
       <Footer />
     </main>

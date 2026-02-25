@@ -83,10 +83,10 @@ export default async function WinnerDetailPage({ params }: { params: Promise<{ i
                                         sizes="(max-width: 768px) 100vw, 70vw"
                                         priority
                                     />
-                                    <div className="absolute top-4 left-4 bg-yellow-400 text-black text-xs font-bold px-3 py-1.5 rounded-lg uppercase tracking-wide shadow-md flex items-center gap-1.5">
+                                    {/* <div className="absolute top-4 left-4 bg-yellow-400 text-black text-xs font-bold px-3 py-1.5 rounded-lg uppercase tracking-wide shadow-md flex items-center gap-1.5">
                                         <Image src={WINNER} alt="Winner" width={14} height={14} />
                                         {t("winnerDeclared")}
-                                    </div>
+                                    </div> */}
                                 </div>
 
                                 <div className="p-6 md:p-8">
