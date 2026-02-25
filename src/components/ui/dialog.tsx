@@ -65,13 +65,32 @@ const DialogContent = React.forwardRef<
           fixed z-50 bg-background shadow-xl duration-200
 
           /* Mobile: bottom sheet */
+
+          /* Desktop */
+          inset-auto
+          left-1/2
+          top-1/2
+          -translate-x-1/2
+          -translate-y-1/2
+          max-w-2xl
+          w-[95%]
+          rounded-2xl
+          p-4 sm:p-6
+
+          overflow-y-auto
+          `,
+          className
+        )}
+        {...props}
+      >
+        {/*  Mobile: bottom sheet 
           inset-x-0 bottom-0 top-auto
           rounded-t-2xl
           max-h-[90vh]
           w-full
           p-5
 
-          /* Desktop */
+           Desktop
           sm:inset-auto
           sm:left-1/2
           sm:top-1/2
@@ -82,17 +101,12 @@ const DialogContent = React.forwardRef<
           sm:rounded-2xl
           sm:p-6
 
-          overflow-y-auto
-          `,
-          className
-        )}
-        {...props}
-      >
+          overflow-y-auto */}
         {children}
 
         {showCloseButton && (
           <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100 focus:outline-none hover:cursor-pointer">
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
         )}
@@ -138,7 +152,7 @@ const DialogTitle = React.forwardRef<
   <DialogPrimitive.Title
     ref={ref}
     className={cn(
-      "text-lg font-semibold leading-normal tracking-tight",
+      "text-lg lg:text-xl font-semibold leading-normal tracking-tight text-start mb-4 border-b border-gray-200 pb-2",
       className
     )}
     {...props}

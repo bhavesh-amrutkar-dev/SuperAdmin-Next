@@ -10,16 +10,16 @@ import Avatar from "@/src/components/ui/avatar";
 import Loader from "@/src/components/loader";
 
 const InfoItem = ({ label, value, icon }: { label: string; value?: any; icon?: React.ReactNode }) => (
-  <div className="group relative p-4 rounded-xl border border-gray-200 bg-gradient-to-br from-white to-gray-50/50 hover:border-[#D4AF37]/30 hover:shadow-md transition-all duration-200">
-    <div className="flex items-start gap-4">
+  <div className="group relative p-3 lg:p-4 sm:min-h-[82px] rounded-xl border border-gray-200 bg-gradient-to-br from-white to-gray-50/50 hover:border-[#D4AF37]/30 hover:shadow-md transition-all duration-200 flex items-center">
+    <div className="flex items-center gap-4">
       {icon && (
-        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-[#D4AF37]/10 to-[#D4AF37]/5 flex items-center justify-center text-[#D4AF37] group-hover:scale-110 transition-transform">
+        <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-gradient-to-br from-[#D4AF37]/10 to-[#D4AF37]/5 flex items-center justify-center text-[#D4AF37] group-hover:scale-110 transition-transform">
           {icon}
         </div>
       )}
       <div className="flex-1 min-w-0">
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{label}</p>
-        <div className="text-sm font-bold text-gray-900 break-words">
+        <div className="text-sm font-semibold text-gray-900 break-words">
           {value || <span className="text-gray-400 font-normal">-</span>}
         </div>
       </div>
@@ -28,7 +28,7 @@ const InfoItem = ({ label, value, icon }: { label: string; value?: any; icon?: R
 );
 
 const StatusBadge = ({ children, variant = "default" }: { children: React.ReactNode; variant?: "success" | "default" }) => (
-  <span className={`px-4 py-2 text-xs font-bold rounded-lg shadow-sm ${variant === "success"
+  <span className={`px-3 sm:px-4 py-2 text-xs font-bold rounded-lg shadow-sm ${variant === "success"
     ? "bg-gradient-to-r from-green-500 to-green-600 text-white"
     : "bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 border border-gray-300"
     }`}>
@@ -73,7 +73,7 @@ export default function ProfileClient() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-50 to-gray-100">
       <Header />
-      <div className="mx-auto w-full max-w-[1648px] px-4 md:px-6 py-6 space-y-4 sm:space-y-6">
+      <div className="mx-auto w-full max-w-[1648px] px-4 md:px-6 py-6 md:py-8 space-y-4 sm:space-y-6">
 
         {/* ===== Profile Header Card ===== */}
         <div className="relative bg-gradient-to-br from-white via-white to-gray-50 rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-200/50 overflow-hidden">
@@ -90,7 +90,7 @@ export default function ProfileClient() {
                   firstName={user.firstName}
                   lastName={user.lastName}
                   size={80}
-                  className="shadow-lg w-20 h-20 sm:w-24 sm:h-24 ring-2 ring-white ring-offset-2 ring-offset-gray-50 w-full h-full !overflow-visible"
+                  className="btn-primary pointer-events-none shadow-lg w-20 h-20 sm:w-24 sm:h-24 ring-2 ring-white ring-offset-2 ring-offset-gray-50 w-full h-full !overflow-visible"
                 />
 
                 {/* <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div> */}
@@ -134,19 +134,19 @@ export default function ProfileClient() {
         </div>
 
         {/* ===== Grid Sections ===== */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
           {/* Contact Information Card */}
           <div className="relative bg-white rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-200/50 hover:shadow-2xl hover:border-[#D4AF37]/30 transition-all duration-300 overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#D4AF37]/5 to-transparent rounded-full blur-2xl"></div>
             <div className="relative">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center shadow-md">
+              <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-5 md:mb-6 flex items-center gap-3">
+                <div className="w-10 h-10 !rounded-xl btn-primary !border-none flex items-center justify-center shadow-md pointer-events-none">
                   <Mail className="w-5 h-5 text-white" />
                 </div>
                 <span>{t("contactInformation")}</span>
               </h2>
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
                 <InfoItem
                   label={t("email")}
                   value={user.email}
@@ -215,13 +215,13 @@ export default function ProfileClient() {
           <div className="relative bg-white rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-200/50 hover:shadow-2xl hover:border-[#D4AF37]/30 transition-all duration-300 overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#D4AF37]/5 to-transparent rounded-full blur-2xl"></div>
             <div className="relative">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center shadow-md">
+              <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-5 md:mb-6 flex items-center gap-3">
+                <div className="w-10 h-10 !rounded-xl btn-primary pointer-events-none !border-none flex items-center justify-center shadow-md">
                   <User className="w-5 h-5 text-white" />
                 </div>
                 <span>{t("accountDetails")}</span>
               </h2>
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
                 <InfoItem
                   label={t("gender")}
                   value={user.genderText}
@@ -240,9 +240,9 @@ export default function ProfileClient() {
                 <InfoItem
                   label={t("kycStatus")}
                   value={
-                    <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm ${user.isKYCStatusText?.toLowerCase() === "approved"
+                    <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold ${user.isKYCStatusText?.toLowerCase() === "approved"
                       ? "bg-gradient-to-r from-green-500 to-green-600 text-white"
-                      : "bg-gradient-to-r from-yellow-400 to-yellow-500 text-white"
+                      : "bg-gradient-to-r from-yellow-400 to-yellow-400 text-[#2f2f2f]"
                       }`}>
                       {user.isKYCStatusText}
                     </span>
@@ -267,13 +267,13 @@ export default function ProfileClient() {
           <div className="relative bg-white rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-200/50 hover:shadow-2xl hover:border-[#D4AF37]/30 transition-all duration-300 overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#D4AF37]/5 to-transparent rounded-full blur-2xl"></div>
             <div className="relative">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center shadow-md">
+              <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-5 md:mb-6 flex items-center gap-3">
+                <div className="w-10 h-10 !rounded-xl btn-primary pointer-events-none !border-none flex items-center justify-center shadow-md">
                   <Wallet className="w-5 h-5 text-white" />
                 </div>
                 <span>{t("walletVerification")}</span>
               </h2>
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
                 <InfoItem
                   label={t("walletBalance")}
                   value={
@@ -296,9 +296,9 @@ export default function ProfileClient() {
                 <InfoItem
                   label={t("kycApproved")}
                   value={
-                    <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm ${user.isKYCApproved
+                    <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold ${user.isKYCApproved
                       ? "bg-gradient-to-r from-green-500 to-green-600 text-white"
-                      : "bg-gradient-to-r from-yellow-400 to-yellow-500 text-white"
+                      : "bg-gradient-to-r from-yellow-400 to-yellow-400 text-[#2f2f2f]"
                       }`}>
                       {user.isKYCApproved ? t("approved") : t("pending")}
                     </span>
@@ -313,13 +313,13 @@ export default function ProfileClient() {
           <div className="relative bg-white rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-200/50 hover:shadow-2xl hover:border-[#D4AF37]/30 transition-all duration-300 overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#D4AF37]/5 to-transparent rounded-full blur-2xl"></div>
             <div className="relative">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center shadow-md">
+              <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-5 md:mb-6 flex items-center gap-3">
+                <div className="w-10 h-10 !rounded-xl btn-primary pointer-events-none !border-none flex items-center justify-center shadow-md">
                   <Activity className="w-5 h-5 text-white" />
                 </div>
                 <span>{t("activity")}</span>
               </h2>
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
                 <InfoItem
                   label={t("followers")}
                   value={

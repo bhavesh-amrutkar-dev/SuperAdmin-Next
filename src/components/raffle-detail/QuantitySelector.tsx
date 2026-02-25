@@ -28,16 +28,16 @@ export default function QuantitySelector({
     const t = useTranslations();
 
     return (
-        <div className="flex items-center gap-2 md:gap-4">
+        <div className="flex items-center gap-4 flex-col sm:flex-row">
             {/* Quantity Selector */}
             <div className="flex items-center gap-2">
                 <Button
                     type="button"
                     onClick={onDecrease}
                     disabled={applyingTicket || disabled}
-                    className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-gray-100 hover:bg-[#FECB02] hover:text-black disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-100 disabled:hover:text-[#797979] transition-all duration-200"
+                    className="btn-primary w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-100 disabled:hover:text-[#797979] transition-all duration-200"
                 >
-                    <Minus size={20} className="text-[#FECB02]" />
+                    <Minus size={20} />
                 </Button>
 
                 <input
@@ -52,22 +52,22 @@ export default function QuantitySelector({
                         const val = Math.max(1, parseInt(e.target.value) || 1);
                         onQuantityChange(val);
                     }}
-                    className="w-16 md:w-20 h-10 md:h-12 text-center text-lg md:text-xl font-bold text-[#797979] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FECB02] focus:ring-opacity-50 ticket-quantity bg-gray-50"
+                    className="w-16 md:w-20 h-10 md:h-12 text-center text-lg md:text-xl font-bold text-[#2f2f2f] rounded-lg focus:outline-none border !border-[#2f2f2f] ticket-quantity focus:!border-[#f3c200]"
                 />
 
                 <Button
                     type="button"
                     onClick={onIncrease}
                     disabled={applyingTicket || disabled}
-                    className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-gray-100 hover:bg-[#FECB02] hover:text-black transition-all duration-200"
+                    className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full btn-primary transition-all duration-200"
                 >
-                    <Plus size={20} className="text-[#FECB02]" />
+                    <Plus size={20} />
                 </Button>
             </div>
 
             {/* Continue Button */}
             <Button
-                className="flex-1 bg-gradient-to-r from-[#FECB02] to-[#FFD84D] hover:from-[#FFD84D] hover:to-[#FECB02] text-black font-bold h-10 md:h-12 px-6 md:px-8 rounded-lg transition-all shadow-lg uppercase text-sm md:text-base flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px]"
+                className="flex-1 bg-gradient-to-r from-[#FECB02] to-[#FFD84D] hover:from-[#FFD84D] hover:to-[#FECB02] text-black font-bold py-3 px-6 md:px-8 rounded-lg transition-all shadow-lg uppercase text-sm md:text-base flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px] btn-primary w-full md:h-12"
                 onClick={onContinue}
                 disabled={applyingTicket || continuing || disabled}
             >

@@ -281,16 +281,16 @@ export default function ShippingAddressPage() {
       <Header />
 
       {/* Progress */}
-      <div className="bg-white border-b border-gray-200 py-3 sm:py-4">
+      <div className="pt-14">
         <div className="container mx-auto px-2 sm:px-4">
           <div className="flex items-center justify-center gap-2 sm:gap-4 md:gap-8 max-w-3xl mx-auto">
             <div className="flex items-center gap-1 sm:gap-2">
-              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-white font-semibold text-xs sm:text-sm">1</div>
+              <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full btn-primary flex items-center justify-center text-white font-semibold text-xs sm:text-sm !border-0 pointer-events-none">1</div>
               <span className="font-semibold text-gray-600 text-xs sm:text-sm md:text-base">{t("bag")}</span>
             </div>
             <div className="flex-1 h-0.5 bg-[#D4AF37] hidden sm:block"></div>
             <div className="flex items-center gap-1 sm:gap-2">
-              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-white font-semibold text-xs sm:text-sm">2</div>
+              <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full btn-primary flex items-center justify-center text-white font-semibold text-xs sm:text-sm !border-0 pointer-events-none">2</div>
               <span className="font-semibold text-[#D4AF37] text-xs sm:text-sm md:text-base hidden sm:inline">{t("shippingDetails")}</span>
             </div>
             <div className="flex-1 h-0.5 bg-gray-300 hidden sm:block"></div>
