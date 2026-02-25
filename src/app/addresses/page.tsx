@@ -11,6 +11,8 @@ import { UserAddressService } from "@/src/lib/services/userAddress";
 import AddressFormModal from "../../components/AddressFormModal";
 import { Button } from "@/src/components/ui/button";
 import { ConfirmationModal } from "@/src/components/ui/confirmationModal";
+import { useProfile } from "@/src/lib/hooks/userProfile";
+import { useRouter } from "next/navigation";
 
 interface UserAddress {
   _id?: string;
@@ -35,11 +37,18 @@ export default function AddressesPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
-
+  const { user } = useProfile();
+  const router = useRouter();
   useEffect(() => {
     fetchAddresses();
   }, []);
+  useEffect(() => {
+    if (user === undefined) return; // still loading profile
 
+    if (!user) {
+      router.replace("/auth/login");
+    }
+  }, [user, router]);
   const fetchAddresses = async () => {
     try {
       setLoading(true);
@@ -153,11 +162,10 @@ export default function AddressesPage() {
               {addresses.map((address) => (
                 <div
                   key={address._id}
-                  className={`relative rounded-2xl border bg-white p-6 shadow-sm transition ${
-                    address.default
-                      ? "border-yellow-400 ring-2 ring-yellow-100"
-                      : "border-gray-200"
-                  }`}
+                  className={`relative rounded-2xl border bg-white p-6 shadow-sm transition ${address.default
+                    ? "border-yellow-400 ring-2 ring-yellow-100"
+                    : "border-gray-200"
+                    }`}
                 >
                   {address.default && (
                     <span className="absolute right-4 top-4 flex items-center gap-1 text-xs font-medium text-yellow-600">

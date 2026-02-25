@@ -241,6 +241,7 @@ export default function RafflesPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-8 mx-auto">
                             {raffles.map((raffle, index) => {
                                 const name = raffle.campaignTitle ?? raffle.productName ?? "";
+                                const productName = raffle.productName ?? "";
                                 const id = raffle._id ?? raffle.childProductId ?? "";
                                 const slug = name ? slugifyName(name) : id;
 
@@ -265,7 +266,7 @@ export default function RafflesPage() {
                                         href={id ? `/raffles/${slug}?pid=${id}&cpid=${raffle.childProductId ?? ""}` : "#"}
                                         className="bg-white rounded-4xl shadow-xl flex flex-col p-4 hover:shadow-2xl transition-shadow"
                                     >
-                                        
+
                                         <div className="aspect-video flex items-center justify-center w-full h-[250px] overflow-hidden rounded-4xl bg-white">
                                             <Image
                                                 src={imageSrc}
@@ -277,14 +278,25 @@ export default function RafflesPage() {
                                         </div>
 
                                         <div className="flex-grow mt-4 bg-gray-50 p-4 rounded-4xl flex flex-col">
-                                            <div className="flex items-center gap-2 text-[#f3c200] font-bold text-sm uppercase mb-2">
-                                                {t("buyDigitalFileAndParticipate")}
+                                            <div>
+                                                <div className="flex items-center gap-2 text-[#FECB02] font-bold text-sm uppercase mb-2">
+                                                    {t("buyDigitalFileAndParticipate")}
+                                                </div>
+
+                                                <div className="min-h-[80px] space-y-1">
+                                                    {name && (
+                                                        <h2 className="text-lg md:text-xl font-black text-[#2F2F2F] tracking-tight line-clamp-2">
+                                                            {name}
+                                                        </h2>
+                                                    )}
+
+                                                    {productName && (
+                                                        <p className="text-sm md:text-base font-medium text-[#797979] line-clamp-1">
+                                                            {productName}
+                                                        </p>
+                                                    )}
+                                                </div>
                                             </div>
-                                            {name && (
-                                                <h2 className="text-xl md:text-2xl font-black text-[#2f2f2f]  tracking-tight line-clamp-2 md:min-h-[64px]">
-                                                    {name}
-                                                </h2>
-                                            )}
 
                                             <div className="pt-3">
                                                 <div className="flex items-center gap-4 mb-4">
@@ -299,8 +311,8 @@ export default function RafflesPage() {
                                                     </span>
                                                 </div>
                                             </div>
-                                            
-                                        {endTime && <CountdownTimer endTime={endTime} />}
+
+                                            {endTime && <CountdownTimer endTime={endTime} />}
                                         </div>
 
 
