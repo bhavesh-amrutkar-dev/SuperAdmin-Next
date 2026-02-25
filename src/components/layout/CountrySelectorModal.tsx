@@ -44,12 +44,12 @@ const CountryCard = memo(function CountryCard({
   onSelect: (code: string) => void;
 }) {
   const isSelected = selectedCode === country.code;
-  const [showFlag, setShowFlag] = useState(false);
+  // const [showFlag, setShowFlag] = useState(false);
 
-  useEffect(() => {
-    const id = requestAnimationFrame(() => setShowFlag(true));
-    return () => cancelAnimationFrame(id);
-  }, []);
+  // useEffect(() => {
+  //   const id = requestAnimationFrame(() => setShowFlag(true));
+  //   return () => cancelAnimationFrame(id);
+  // }, []);
 
   return (
     <button
@@ -64,7 +64,8 @@ const CountryCard = memo(function CountryCard({
         className={`mb-3 flex h-14 w-14 items-center justify-center rounded-full transition ${isSelected ? "bg-[#FECB02]/20" : "bg-gray-100 group-hover:bg-[#FECB02]/10"
           }`}
       >
-        {showFlag ? <ReactCountryFlag countryCode={country.code} svg style={{ width: "2.2em", height: "2.2em" }} /> : <div style={{ width: "2.2em", height: "2.2em" }} />}
+        {/* {showFlag ? <ReactCountryFlag countryCode={country.code} svg style={{ width: "2.2em", height: "2.2em" }} /> : <div style={{ width: "2.2em", height: "2.2em" }} />} */}
+        <ReactCountryFlag countryCode={country.code} svg style={{ width: "2.2em", height: "2.2em" }} />
       </div>
       <span className="text-center text-sm font-medium text-gray-800">{country.name}</span>
     </button>
@@ -181,7 +182,7 @@ export default function CountrySelectorModal({ open, onClose, onCountryChange }:
         </DialogHeader>
 
         <div className="mt-6 max-h-[55vh] overflow-y-auto pr-1 text-center">
-          {loading || !renderList ? (
+          {loading ? (
             <Loader />
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-10 gap-4 text-gray-500">
