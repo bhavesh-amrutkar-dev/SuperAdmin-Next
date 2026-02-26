@@ -71,7 +71,7 @@ export const AuthService = {
 
   async verifyOtp(
     payload: IVerifyOtpRM
-  ): Promise<IAPIResponse> {
+  ): Promise<any> {
     return apiClient.post(
       "/customer/verifyOtp",
       payload
@@ -154,4 +154,39 @@ export const AuthService = {
       ...payload,
     });
   }
+  ,
+  async forgotPassword(payload: {
+    verifyType: 1 | 2;
+    email?: string;
+    mobile?: string;
+    countryCode?: string;
+  }): Promise<IAPIResponse<{
+    otpId: string;
+    otpExpiryTime: number;
+  }>> {
+    const device = getDeviceInfo();
+
+    return apiClient.post("/forgotPassword", {
+      deviceId: `web_app_id_${Date.now()}`,
+      deviceType: DEVICE_TYPE_WEB,
+      deviceMake: device.deviceMake,
+      deviceModel: device.deviceModel,
+      ...payload,
+    });
+  },
+
+  async verifyForgotOtp(payload: {
+    otpCode: string;
+    otpId: string;
+    verifyType: 1 | 2;
+  }): Promise<IAPIResponse<{ accessToken: string }>> {
+    return apiClient.post("/customer/verifyOtp", payload);
+  },
+
+  async resetPassword(payload: {
+    newPassword: string;
+    resetType: 1 | 3;
+  }): Promise<IAPIResponse> {
+    return apiClient.post("/resetPassword", payload);
+  },
 }

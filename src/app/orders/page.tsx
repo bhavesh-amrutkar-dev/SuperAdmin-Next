@@ -104,7 +104,22 @@ const getStatusIcon = (status?: number) => {
             return <Clock className="w-4 h-4" />;
     }
 };
+const getSourceLabel = (t: any, source?: string): string => {
+    if (!source) return "-";
 
+    switch (source) {
+        case "By_User":
+            return t("orderSource.byUser");
+        case "By_Admin":
+            return t("orderSource.byAdmin");
+        case "AMOE_Ticket":
+            return t("orderSource.amoeTicket");
+        case "CSV_Import":
+            return t("orderSource.csvImport");
+        default:
+            return source;
+    }
+};
 /* ===============================
    HELPERS
 ================================ */
@@ -333,7 +348,20 @@ export default function OrdersPage() {
             </main>
         );
     }
-
+    const getSourceColor = (source?: string) => {
+        switch (source) {
+            case "By_User":
+                return "bg-blue-100 text-blue-800";
+            case "By_Admin":
+                return "bg-purple-100 text-purple-800";
+            case "AMOE_Ticket":
+                return "bg-green-100 text-green-800";
+            case "CSV_Import":
+                return "bg-orange-100 text-orange-800";
+            default:
+                return "bg-gray-100 text-gray-800";
+        }
+    };
     return (
         <main>
             <Header />
@@ -414,6 +442,13 @@ export default function OrdersPage() {
                                                 <p className="text-sm text-[#797979] mt-1">
                                                     {formatDate(order.createdTimeStamp)}
                                                 </p>
+
+                                                {order.source && (
+                                                    <p className={`text-xs mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full uppercase font-semibold tracking-wide ${getSourceColor(order.source)}`}>
+                                                        <Info className="w-3 h-3" />
+                                                        {getSourceLabel(t, order.source)}
+                                                    </p>
+                                                )}
                                             </div>
 
                                             <div className="flex items-center gap-6">
@@ -422,7 +457,7 @@ export default function OrdersPage() {
                                                         {formatCurrency(total, currency)}
                                                     </div>
                                                     <div className="text-xs uppercase text-[#797979]">
-                                                      {t("total")}
+                                                        {t("total")}
                                                     </div>
                                                 </div>
 
@@ -466,7 +501,7 @@ export default function OrdersPage() {
                                                                 </h4>
 
                                                                 <div className="text-sm text-[#797979] mt-2 uppercase">
-                                                                   {t("quantity")}: {getNumericValue(product.quantity)}
+                                                                    {t("quantity")}: {getNumericValue(product.quantity)}
                                                                 </div>
                                                             </div>
 
@@ -488,7 +523,7 @@ export default function OrdersPage() {
                                                 href={`/orders/${order.orderId}`}
                                                 className="bg-[#2f2f2f] text-white px-6 py-3 rounded-2xl font-bold uppercase tracking-wide hover:bg-[#f3c200] hover:text-[#2f2f2f] transition-colors"
                                             >
-                                               {t("viewDetails")}
+                                                {t("viewDetails")}
                                             </Link>
                                         </div>
                                     </div>

@@ -8,7 +8,7 @@ export function mapAuthSession(apiData: any): AuthSession {
     profilePic: apiData.profilePic,
     roleType: apiData.roleType,
     isKYCApproved: apiData.isKYCApproved,
-    accessToken: apiData.token.accessToken,
+    accessToken: apiData.token.accessToken ,
     refreshToken: apiData.token.refreshToken,
     accessExpireAt: apiData.token.accessExpireAt,
   };

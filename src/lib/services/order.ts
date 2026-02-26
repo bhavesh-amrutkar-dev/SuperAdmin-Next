@@ -64,6 +64,11 @@ export type StoreOrder = {
     createdAt?: number;
     updatedAt?: number;
 };
+export type OrderSource =
+    | "By_User"
+    | "By_Admin"
+    | "AMOE_Ticket"
+    | "CSV_Import";
 
 export type Order = {
     orderId?: string;
@@ -93,6 +98,8 @@ export type Order = {
     createdAt?: number;
     updatedAt?: number;
     createdTimeStamp?: number;
+    source?: OrderSource
+
 };
 
 export type OrdersResponse = {

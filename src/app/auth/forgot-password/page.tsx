@@ -6,6 +6,8 @@ import { useState } from "react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { useTranslations } from "next-intl";
+import { AuthService } from "@/src/lib/services/auth";
+import { toast } from "sonner";
 
 type Method = "email" | "mobile" | "";
 
@@ -16,18 +18,40 @@ export default function ForgotPasswordPage() {
   const [method, setMethod] = useState<Method>("");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
+  const [countryCode, setCountryCode] = useState("+1"); // default country code
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!method) return;
+
     setLoading(true);
-
     try {
-      const value = method === "email" ? email : mobile;
+      if (method === "email") {
+        await AuthService.forgotPassword({
+          verifyType: 1,
+          email,
+        });
+        toast.success("Password reset link sent to your email.");
+        router.push("/auth/login");
+      }
 
-      router.push(
-        `/auth/verify-otp?method=${method}&value=${encodeURIComponent(value)}`
-      );
+      if (method === "mobile") {
+        const res = await AuthService.forgotPassword({
+          verifyType: 2,
+          mobile,
+          countryCode,
+        });
+
+        const otpId = res?.data?.otpId;
+        router.push(
+          `/auth/verify-otp?method=mobile&value=${encodeURIComponent(
+            `${countryCode}${mobile}`
+          )}&otpId=${otpId}&flow=forgotPassword`
+        );
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -53,6 +77,7 @@ export default function ForgotPasswordPage() {
           </label>
 
           <div className="flex gap-3">
+            {/* Email Button */}
             <button
               type="button"
               onClick={() => setMethod("email")}
@@ -62,10 +87,10 @@ export default function ForgotPasswordPage() {
                   : "border-transparent bg-gray-300"
                 }`}
             >
-              <svg className="w-5 h-5 leading-1" viewBox="0 0 640 640"><path d="M125.4 128C91.5 128 64 155.5 64 189.4C64 190.3 64 191.1 64.1 192L64 192L64 448C64 483.3 92.7 512 128 512L512 512C547.3 512 576 483.3 576 448L576 192L575.9 192C575.9 191.1 576 190.3 576 189.4C576 155.5 548.5 128 514.6 128L125.4 128zM528 256.3L528 448C528 456.8 520.8 464 512 464L128 464C119.2 464 112 456.8 112 448L112 256.3L266.8 373.7C298.2 397.6 341.7 397.6 373.2 373.7L528 256.3zM112 189.4C112 182 118 176 125.4 176L514.6 176C522 176 528 182 528 189.4C528 193.6 526 197.6 522.7 200.1L344.2 335.5C329.9 346.3 310.1 346.3 295.8 335.5L117.3 200.1C114 197.6 112 193.6 112 189.4z"/></svg>
               {t("email")}
             </button>
 
+            {/* Mobile Button */}
             <button
               type="button"
               onClick={() => setMethod("mobile")}
@@ -75,12 +100,12 @@ export default function ForgotPasswordPage() {
                   : "border-transparent bg-gray-300 cursor-pointer"
                 }`}
             >
-              <svg className="w-5 h-5 leading-1" x="0" y="0" viewBox="0 0 32 32"><g><path d="M22.56 30a5.16 5.16 0 0 1-2-.41A34.53 34.53 0 0 1 2.4 11.42a5 5 0 0 1 1.06-5.51l3-3a3 3 0 0 1 4.24 0l3.53 3.53a3 3 0 0 1 0 4.24l-1.63 1.65a12.54 12.54 0 0 0 7.07 7.07l1.68-1.67a3 3 0 0 1 4.24 0l3.53 3.53a3 3 0 0 1 0 4.24l-3 3a5 5 0 0 1-3.56 1.5zM8.62 4a1 1 0 0 0-.71.29l-3 3a3 3 0 0 0-.64 3.31 32.47 32.47 0 0 0 17.1 17.16 3 3 0 0 0 3.31-.64l3-3a1 1 0 0 0 0-1.42l-3.54-3.53a1 1 0 0 0-1.41 0l-2.12 2.12a1 1 0 0 1-1 .24 14.42 14.42 0 0 1-9.12-9.12 1 1 0 0 1 .24-1l2.12-2.12a1 1 0 0 0 .29-.71 1 1 0 0 0-.29-.7L9.33 4.29A1 1 0 0 0 8.62 4z" fill="#000000" opacity="1" data-original="#000000"></path></g></svg>
               {t("mobile")}
             </button>
           </div>
         </div>
 
+        {/* Email Input */}
         {method === "email" && (
           <div className="space-y-1">
             <label className="text-sm font-medium text-[#2f2f2f]">
@@ -98,31 +123,41 @@ export default function ForgotPasswordPage() {
           </div>
         )}
 
+        {/* Mobile Input */}
         {method === "mobile" && (
           <div className="space-y-1">
             <label className="text-sm font-medium text-[#2f2f2f]">
               {t("mobileNumber")}
             </label>
-            <div className="phone-input">
             <PhoneInput
               country="us"
-              value={mobile}
-              onChange={(phone) => setMobile(phone)}
-              inputClass="!bg-transparent !w-full !h-[46px] !text-sm !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200]"
+              value={`${countryCode.replace("+", "")}${mobile}`}
+              onChange={(value, data: any) => {
+                setCountryCode(`+${data.dialCode}`);
+                setMobile(value.slice(data.dialCode.length));
+              }}
+              inputClass="!bg-transparent !w-full !h-[44px] !text-sm !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200]"
+              buttonClass="!border-[#2f2f2f]"
+              containerClass="!w-full"
             />
-            </div>
           </div>
         )}
 
+        {/* Submit Button */}
         <button
           type="submit"
           disabled={!method || loading}
           className="auth-button w-full rounded-lg btn-primary py-3 font-semibold
             hover:bg-yellow-400 hover:text-black transition disabled:opacity-50"
         >
-          {loading ? t("sending") : t("sendOtp")}
+          {loading
+            ? t("sending")
+            : method === "email"
+            ? t("sendResetLink")
+            : t("sendOtp")}
         </button>
 
+        {/* Back to login */}
         <p className="text-center text-sm">
           <Link
             href="/auth/login"

@@ -262,6 +262,7 @@
     "emailAddress": "Dirección de correo",
     "mobileNumber": "Número de móvil",
     "backToLogin": "Volver a iniciar sesión",
+    "sendResetLink": "Enviar enlace de recuperación",
     "resetPasswordTitle": "Restablecer tu contraseña",
     "resetPasswordSubtitle": "Elige una contraseña segura que no hayas usado antes",
     "newPassword": "Nueva contraseña",
@@ -527,5 +528,18 @@
     "serviceDownTitle": "¡Ups! Los servicios no están disponibles",
     "serviceDownMessage": "Nuestros servicios están temporalmente fuera de servicio. Por favor, inténtelo de nuevo más tarde.",
     "pageNotFound": "¡Vaya! Página no encontrada.",
-    "goHome": "Ir a inicio"
+    "goHome": "Ir a inicio",
+    "orderSource": {
+        "byUser": "Usuario",
+        "byAdmin": "Administrador",
+        "amoeTicket": "Ticket AMOE",
+        "csvImport": "Importación CSV"
+    },
+    "enterNewPassword": "Introduce tu nueva contraseña",
+    "enterConfirmPassword": "Vuelve a introducir tu contraseña",
+    "resetPassword": "Restablecer contraseña",
+    "resetting": "Restableciendo...",
+    "passwordMismatch": "Las contraseñas no coinciden",
+    "passwordResetSuccess": "La contraseña se ha cambiado correctamente",
+    "passwordResetFailed": "No se pudo restablecer la contraseña"
 }

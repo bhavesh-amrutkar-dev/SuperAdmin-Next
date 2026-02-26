@@ -37,18 +37,19 @@ export default function AddressesPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
-  const { user } = useProfile();
+  // const { user } = useProfile();
   const router = useRouter();
   useEffect(() => {
     fetchAddresses();
   }, []);
-  useEffect(() => {
-    if (user === undefined) return; // still loading profile
-
-    if (!user) {
-      router.replace("/auth/login");
-    }
-  }, [user, router]);
+  // useEffect(() => {
+  //     console.log(user);
+  //   if (user === undefined) return; // still loading profile
+  //   console.log(user);
+  //   if (!user) {
+  //     router.replace("/auth/login");
+  //   }
+  // }, [user, router]);
   const fetchAddresses = async () => {
     try {
       setLoading(true);

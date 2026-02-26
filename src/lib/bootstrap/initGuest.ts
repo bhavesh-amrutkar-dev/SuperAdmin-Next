@@ -5,11 +5,12 @@ import { GuestService } from "../services/guest";
 
 export async function initGuest() {
   const token = getCookie("token");
-
-  if (token) return;
+  console.log("test 2");
+  // if (token) return;
 
   try {
     const res = await GuestService.initGuest();
+    console.log("test 3");
 
     const accessToken = res?.data?.token?.accessToken;
     const sid = res?.data?.sid;

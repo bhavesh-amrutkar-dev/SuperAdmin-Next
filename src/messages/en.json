@@ -262,6 +262,7 @@
     "emailAddress": "Email address",
     "mobileNumber": "Mobile number",
     "backToLogin": "Back to Login",
+    "sendResetLink": "Send reset link",
     "resetPasswordTitle": "Reset your password",
     "resetPasswordSubtitle": "Choose a strong password you haven’t used before",
     "newPassword": "New password",
@@ -527,5 +528,18 @@
     "serviceDownTitle": "Oops! Services are down",
     "serviceDownMessage": "Our backend services are temporarily unavailable. Please try again later.",
     "pageNotFound": "Oops! Page not found.",
-    "goHome": "Go Home"
+    "goHome": "Go Home",
+    "orderSource": {
+        "byUser": "User",
+        "byAdmin": "Admin",
+        "amoeTicket": "AMOE Ticket",
+        "csvImport": "CSV Import"
+    },
+    "enterNewPassword": "Enter your new password",
+    "enterConfirmPassword": "Re-enter your password",
+    "resetPassword": "Reset Password",
+    "resetting": "Resetting...",
+    "passwordMismatch": "Passwords do not match",
+    "passwordResetSuccess": "Password changed successfully",
+    "passwordResetFailed": "Failed to reset password"
 }

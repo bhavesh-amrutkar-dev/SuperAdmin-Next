@@ -51,13 +51,15 @@ export default function AddressPage() {
     const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
     const [loadingLocation, setLoadingLocation] = useState(false);
     const { user } = useProfile();
-    useEffect(() => {
-        if (user === undefined) return; // still loading profile
+    // useEffect(() => {
+    //     console.log(user);
+        
+    //     if (user === undefined) return; // still loading profile
 
-        if (!user) {
-            router.replace("/auth/login");
-        }
-    }, [user, router]);
+    //     if (!user) {
+    //         router.replace("/auth/login");
+    //     }
+    // }, [user, router]);
     const requestLocation = async () => {
         if (!("geolocation" in navigator)) {
             toast.error("Geolocation not supported by your browser");
