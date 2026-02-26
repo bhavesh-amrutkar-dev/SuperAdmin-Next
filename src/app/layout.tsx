@@ -25,6 +25,8 @@ export const metadata: Metadata = {
 };
 
 import { CountryService } from "../lib/services/country";
+import { cookies } from "next/headers";
+import { API_NY_URL, DEFAULT_COUNTRY_CODE, DEFAULT_LANGUAGE } from "../lib/config";
 
 export default async function RootLayout({
   children,
@@ -35,12 +37,39 @@ export default async function RootLayout({
   const messages = await getMessages();
 
   // Server-side fetch
-  let countries: any[] = [];
+
+  let countries: any = [];
+
   try {
-    const res: any = await CountryService.getCountries();
-    countries = res?.data || [];
-  } catch (error) {
-    console.warn("Failed to fetch countries on server", error);
+    const cookieStore = await cookies();
+
+    const language =
+      cookieStore.get("NEXT_LOCALE")?.value || DEFAULT_LANGUAGE;
+    const country =
+      cookieStore.get("C_code")?.value || DEFAULT_COUNTRY_CODE;
+    const response = await fetch(`${API_NY_URL}/country`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        currencycode: "USD",
+        currencysymbol: Buffer.from("$").toString("base64"),
+        language,
+        country,
+        platform: "3",
+      },
+      cache: "no-store", // always fresh
+    });
+
+    if (!response.ok) {
+      throw new Error(`Country API failed with status ${response.status}`);
+    }
+
+    const json = await response.json();
+    countries = json?.data ?? [];
+
+  } catch (error: any) {
+    console.warn("❌ Failed to fetch countries on server");
+    console.warn("Message:", error.message);
   }
 
   return (
