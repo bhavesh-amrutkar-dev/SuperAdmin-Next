@@ -1111,7 +1111,7 @@ export default function RafflesDetailPage() {
         return timeline;
     };
 
-    const displayName = lotteryItem.campaignTitle || lotteryItem.productName || lotteryItem.name || "";
+    const displayName =  lotteryItem.productName || lotteryItem.campaignTitle  || lotteryItem.name || "";
     const displayImage =
         lotteryItem.image?.[0]?.medium ?? PRODUCT_CART;
     const displayCurrency = lotteryItem.currencySymbol ?? "USD";
