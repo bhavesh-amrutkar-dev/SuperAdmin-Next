@@ -341,7 +341,7 @@ export default function OrdersPage() {
             {/* Page Header (same style as raffles) */}
             <div className="w-full">
                 <div className="text-center page-head-wrapper">
-                    <h1 className="pt-2 pb-2 text-lg md:text-2xl lg:text-3xl xl:text-4xl font-bold uppercase tracking-[1px] leading-[1.35] text-white">
+                    <h1 className="pt-2 pb-2 text-2xl lg:text-3xl xl:text-4xl font-bold uppercase tracking-[1px] leading-[1.35] text-white">
                         {t("myOrders")}
                     </h1>
                     <p className="text-[13px] md:text-[16px] uppercase text-white leading-relaxed mt-2">
@@ -350,10 +350,10 @@ export default function OrdersPage() {
                 </div>
 
                 {/* Content */}
-                <div className="mx-auto w-full max-w-[1648px] px-4 md:px-6 pt-10 lg:pt-[60px] pb-16">
+                <div className="mx-auto w-full max-w-[1648px] px-4 md:px-6 pt-10 pb-5 xl:pb-7">
 
                     {/* Search + Filter */}
-                    <div className="mb-8 border-b border-gray-300 pb-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div className="mb-6 border-b border-gray-300 pb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                         <h2 className="text-lg lg:text-2xl font-bold text-[#2f2f2f] uppercase tracking-tight flex items-center gap-2">
                             <span className="bg-[#f3c200] text-[#2f2f2f] py-1 px-3 text-lg rounded-lg leading-none">
                                 {orders.length}
@@ -361,18 +361,18 @@ export default function OrdersPage() {
                             {t("orders")}
                         </h2>
 
-                        <div className="flex gap-4 w-full lg:w-auto">
+                        <div className="flex gap-4 w-full md:w-auto">
                             <input
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder={t("searchOrders")}
-                                className="w-full lg:w-[300px] px-4 py-2 rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#f3c200]"
+                                className="w-full md:w-[300px] px-4 py-2 rounded-xl border !border-[#2f2f2f] focus:outline-none focus:!border-[#f3c200]"
                             />
 
                             <select
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(Number(e.target.value))}
-                                className="px-4 py-2 rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#f3c200]"
+                                className="px-4 py-2 rounded-xl border !border-[#2f2f2f] focus:outline-none focus:!border-[#f3c200]"
                             >
                                 <option value={0}>{t("all")}</option>
                                 <option value={7}>{t("completed")}</option>
@@ -392,7 +392,7 @@ export default function OrdersPage() {
                             <p className="text-lg text-[#797979]">No orders available</p>
                         </div>
                     ) : (
-                        <div className="space-y-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {orders.map((order) => {
                                 const total = getOrderTotal(order);
                                 const currency = normalizeCurrencySymbol(
@@ -402,13 +402,13 @@ export default function OrdersPage() {
                                 return (
                                     <div
                                         key={order.orderId}
-                                        className="bg-white rounded-4xl shadow-xl hover:shadow-2xl transition-shadow p-6"
+                                        className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-shadow p-3 sm:p-4 xl:p-6"
                                     >
                                         {/* Order Top */}
-                                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 border-b border-gray-200 pb-5 mb-5">
+                                        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3 xl:gap-6 border-b border-gray-200 pb-2 mb-4">
 
                                             <div>
-                                                <h3 className="text-xl font-black text-[#2f2f2f] tracking-tight">
+                                                <h3 className="text-lg font-semibold text-gray-700 tracking-tight">
                                                     {order.orderId}
                                                 </h3>
                                                 <p className="text-sm text-[#797979] mt-1">
@@ -416,9 +416,9 @@ export default function OrdersPage() {
                                                 </p>
                                             </div>
 
-                                            <div className="flex items-center gap-6">
-                                                <div className="text-right">
-                                                    <div className="text-2xl font-black text-[#2f2f2f]">
+                                            <div className="flex items-center justify-between xl:justify-end gap-4">
+                                                <div className="text-start xl:text-right">
+                                                    <div className="text-xl font-black text-[#2f2f2f]">
                                                         {formatCurrency(total, currency)}
                                                     </div>
                                                     <div className="text-xs uppercase text-[#797979]">
@@ -427,7 +427,7 @@ export default function OrdersPage() {
                                                 </div>
 
                                                 <span
-                                                    className={`px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide ${getStatusColor(
+                                                    className={`p-2 rounded-full text-xs font-semibold uppercase tracking-wide ${getStatusColor(
                                                         order.status?.status
                                                     )}`}
                                                 >
@@ -447,21 +447,21 @@ export default function OrdersPage() {
                                                     {storeOrder.products?.map((product, index) => (
                                                         <div
                                                             key={index}
-                                                            className="flex flex-col md:flex-row md:items-center gap-6 bg-gray-50 p-4 rounded-3xl"
+                                                            className="flex flex-col md:flex-row md:items-center gap-4 bg-gray-50 p-2 rounded-xl"
                                                         >
-                                                            <div className="w-full md:w-[140px] h-[140px] flex items-center justify-center bg-white rounded-3xl overflow-hidden">
+                                                            <div className="w-full md:w-[90px] h-[150px] md:h-[90px] flex items-center justify-center bg-white rounded-3xl overflow-hidden">
                                                                 <Image
                                                                     src={getProductImage(product)}
                                                                     alt={product.name ?? "Product image"}
-                                                                    width={140}
-                                                                    height={140}
-                                                                    className="object-contain w-full h-full"
+                                                                    width={90}
+                                                                    height={90}
+                                                                    className="p-1 object-contain w-full h-full"
                                                                     unoptimized
                                                                 />
                                                             </div>
 
                                                             <div className="flex-1">
-                                                                <h4 className="text-lg font-bold text-[#2f2f2f] line-clamp-2">
+                                                                <h4 className="text-lg font-semibold text-[#2f2f2f] line-clamp-2">
                                                                     {product.name}
                                                                 </h4>
 
@@ -483,10 +483,10 @@ export default function OrdersPage() {
                                         </div>
 
                                         {/* Bottom Button */}
-                                        <div className="mt-6 flex justify-end">
+                                        <div className="mt-4 flex justify-end">
                                             <Link
                                                 href={`/orders/${order.orderId}`}
-                                                className="bg-[#2f2f2f] text-white px-6 py-3 rounded-2xl font-bold uppercase tracking-wide hover:bg-[#f3c200] hover:text-[#2f2f2f] transition-colors"
+                                                className="btn-primary text-sm py-2 px-3 font-semibold uppercase tracking-wide transition-colors"
                                             >
                                                {t("viewDetails")}
                                             </Link>
