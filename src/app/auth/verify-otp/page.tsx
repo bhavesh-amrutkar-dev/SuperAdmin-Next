@@ -162,8 +162,9 @@ export default function VerifyOtpPage() {
   };
 
   return (
-    <div className="flex items-center justify-center px-4 py-8">
+    <div className="flex items-center justify-center">
       <div className="w-full max-w-md bg-background rounded-2xl shadow-xl p-6 sm:p-8">
+
         {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
@@ -198,16 +199,7 @@ export default function VerifyOtpPage() {
                   maxLength={1}
                   value={digit}
                   onChange={(e) => handleChange(e.target.value, i)}
-                  className="
-                    h-12 w-12 sm:h-14 sm:w-14
-                    rounded-xl border border-border
-                    bg-muted/30
-                    text-center text-lg font-semibold
-                    transition-all duration-200
-                    focus:outline-none 
-                    focus:ring-2 focus:ring-[#FECB02]/40 
-                    focus:border-[#FECB02]
-                  "
+                  className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl border border-border bg-muted/30 text-center text-lg font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#FECB02]/40 focus:border-[#FECB02]"
                 />
               ))}
             </div>
@@ -219,6 +211,23 @@ export default function VerifyOtpPage() {
             >
               {loading ? t("verifying") : t("verifyContinue")}
             </Button>
+
+            <div className="text-center text-sm text-muted-foreground">
+              {t("didntReceiveCode")}{" "}
+              {timer > 0 ? (
+                <span className="font-medium text-foreground">
+                  {t("resendIn", { time: timer })}
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={resendOtp}
+                  className="font-bold text-[#FECB02] hover:underline transition"
+                >
+                  {t("resendOtp")}
+                </button>
+              )}
+            </div>
           </form>
         )}
 
@@ -234,10 +243,9 @@ export default function VerifyOtpPage() {
 
               setLoading(true);
               try {
-
                 await AuthService.resetPassword({
                   newPassword: password,
-                  resetType: method === "mobile" ? 1 : 3,
+                  resetType: 1,
                 });
 
                 toast.success(t("passwordResetSuccess"));
@@ -250,11 +258,8 @@ export default function VerifyOtpPage() {
             }}
             className="space-y-5 mt-6"
           >
-            {/* New Password */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-foreground">
-                {t("newPassword")}
-              </Label>
+              <Label>{t("newPassword")}</Label>
               <Input
                 type="password"
                 placeholder={t("enterNewPassword")}
@@ -264,11 +269,8 @@ export default function VerifyOtpPage() {
               />
             </div>
 
-            {/* Confirm Password */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-foreground">
-                {t("confirmPassword")}
-              </Label>
+              <Label>{t("confirmPassword")}</Label>
               <Input
                 type="password"
                 placeholder={t("enterConfirmPassword")}
@@ -278,33 +280,12 @@ export default function VerifyOtpPage() {
               />
             </div>
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={loading}
-            >
+            <Button type="submit" className="w-full" disabled={loading}>
               {loading ? t("resetting") : t("resetPassword")}
             </Button>
           </form>
         )}
-        {/* Footer */}
-        {step === "otp" && (
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            {t("didntReceiveCode")}{" "}
-            {timer > 0 ? (
-              <span className="font-medium text-foreground">
-                {t("resendIn", { time: timer })}
-              </span>
-            ) : (
-              <button
-                onClick={resendOtp}
-                className="font-bold text-[#FECB02] hover:underline transition"
-              >
-                {t("resendOtp")}
-              </button>
-            )}
-          </div>
-        )}
+        
       </div>
     </div>
   );

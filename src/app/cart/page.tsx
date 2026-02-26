@@ -714,12 +714,12 @@ export default function CartPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Left Column - Shopping Bag */}
             <div className="lg:col-span-2">
-              <div className="rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] p-4 md:p-6">
+              <div className="rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] p-4 xl:p-6">
                 <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-800 mb-4 sm:mb-6">
                   {t("myShoppingBag")} ({itemCount} {itemCount === 1 ? t("cartItem") : t("cartItems")})
                 </h2>
 
-                <div className="space-y-4 sm:space-y-6">
+                <div className="space-y-4 sm:space-y-6 max-h-[1000px] overflow-auto px-[6px] cart-list">
                   {cartItems.map((item, index) => {
                     // Create a unique key - index ensures uniqueness within the list
                     const itemId = item.addToCartOnId || item._id || item.productId || item.centralProductId || '';
@@ -761,7 +761,7 @@ export default function CartPage() {
                       <div key={uniqueKey} className="border-b border-gray-300 pb-4 sm:pb-6 last:border-b-0">
                         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                           {/* Product Image */}
-                          <div className="w-full sm:w-24 md:w-44 h-45 sm:h-24 md:h-43 flex-shrink-0 bg-white rounded-lg overflow-hidden">
+                          <div className="w-full sm:w-44 h-45 sm:h-43 flex-shrink-0 bg-white rounded-lg overflow-hidden">
                             <Image
                               src={getProductImage(item)}
                               alt={item.productName || "Product"}
@@ -820,7 +820,7 @@ export default function CartPage() {
                                     updateQuantity(item, quantity - 1);
                                   }}
                                   disabled={isUpdating || quantity <= 1}
-                                  className="w-10 h-10 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg border-2 border-gray-300 btn-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+                                  className="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg border-2 border-gray-300 btn-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
                                   style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                                 >
                                   <Minus size={18} className="text-white pointer-events-none" />
@@ -835,7 +835,7 @@ export default function CartPage() {
                                     updateQuantity(item, val);
                                   }}
                                   disabled={isUpdating}
-                                  className="w-16 sm:w-20 h-10 sm:h-10 text-center text-sm sm:text-base font-semibold text-gray-800  rounded-lg focus:outline-none border !border-[#2f2f2f] ticket-quantity focus:!border-[#f3c200]"
+                                  className="w-20 h-10 md:h-10 text-center text-sm sm:text-base font-semibold text-gray-800  rounded-lg focus:outline-none border !border-[#2f2f2f] ticket-quantity focus:!border-[#f3c200]"
                                   style={{ touchAction: 'manipulation' }}
                                 />
 
@@ -852,7 +852,7 @@ export default function CartPage() {
                                     updateQuantity(item, quantity + 1);
                                   }}
                                   disabled={isUpdating}
-                                  className="w-10 h-10 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg border-2 border-gray-300 btn-primary hover:bg-gray-100 active:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+                                  className="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg border-2 border-gray-300 btn-primary hover:bg-gray-100 active:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
                                   style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                                 >
                                   <Plus size={18} className="pointer-events-none" />
@@ -885,7 +885,7 @@ export default function CartPage() {
 
             {/* Right Column - Payment Information */}
             <div className="lg:col-span-1">
-              <div className="rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] p-4 md:p-6 lg:sticky lg:top-24">
+              <div className="rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] p-4 xl:p-6 lg:sticky lg:top-24">
                 <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 sm:mb-6">{t("paymentInformation")}</h2>
 
                 <div className="space-y-2 sm:space-y-3">
@@ -1032,9 +1032,9 @@ export default function CartPage() {
           <div className="bg-white rounded-lg p-4 sm:p-6 md:p-8 max-w-md w-full mx-4 relative shadow-xl">
             <Button
               onClick={handleCancelRemove}
-              className="absolute top-2 right-2 sm:top-4 sm:right-4 text-gray-500 hover:text-gray-700"
+              className="absolute p-0 bg-transparent top-2 right-2 sm:top-4 sm:right-4 text-gray-500 hover:text-gray-700 !leading-none h-auto !shadow-none"
             >
-              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="!w-5 !h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </Button>
@@ -1049,7 +1049,7 @@ export default function CartPage() {
                 onClick={handleCancelRemove}
                 variant="outline"
                 size="default"
-                className="flex-1"
+                className="flex-1 border-[#2f2f2f] text-[#2f2f2f] hover:bg-[#2f2f2f] hover:text-white rounded-full"
               >
                 {t("cancel")}
               </Button>
@@ -1057,7 +1057,7 @@ export default function CartPage() {
                 onClick={handleConfirmRemove}
                 variant="primary"
                 size="default"
-                className="flex-1"
+                className="flex-1 btn-primary"
               >
                 {t("continue")}
               </Button>
