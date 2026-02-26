@@ -126,7 +126,7 @@ export default function VerifyOtpPage() {
   };
 
   return (
-    <div className="flex items-center justify-center px-4 py-8">
+    <div className="flex items-center justify-center">
 
       {/* Container */}
       <div className="w-full max-w-md bg-background rounded-2xl  shadow-xl p-6 sm:p-8">
@@ -175,7 +175,7 @@ export default function VerifyOtpPage() {
           {/* Submit Button */}
           <Button
             type="submit"
-            className="w-full h-12 text-base font-bold rounded-xl bg-gradient-to-r from-[#FECB02] to-[#FFD84D] hover:from-[#FFD84D] hover:to-[#FECB02] text-black shadow-lg transition-all transform hover:-translate-y-0.5 active:scale-[0.98]"
+            className="w-full h-12 text-base font-bold rounded-xl btn-primary text-black shadow-lg transition-all transform hover:-translate-y-0.5 active:scale-[0.98]"
             disabled={loading || otp.some((d) => !d)}
           >
             {loading ? t("verifying") : t("verifyContinue")}
