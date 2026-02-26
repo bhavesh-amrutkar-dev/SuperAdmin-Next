@@ -38,7 +38,7 @@ export default async function RootLayout({
 
   // Server-side fetch
 
-  let countries: any[] = [];
+  let countries: any = [];
 
   try {
     const cookieStore = await cookies();
@@ -52,7 +52,7 @@ export default async function RootLayout({
       headers: {
         "Content-Type": "application/json",
         currencycode: "USD",
-         currencysymbol: Buffer.from("$").toString("base64"),
+        currencysymbol: Buffer.from("$").toString("base64"),
         language,
         country,
         platform: "3",
@@ -64,7 +64,9 @@ export default async function RootLayout({
       throw new Error(`Country API failed with status ${response.status}`);
     }
 
-    countries = await response.json();
+    const json = await response.json();
+    countries = json?.data ?? [];
+
   } catch (error: any) {
     console.warn("❌ Failed to fetch countries on server");
     console.warn("Message:", error.message);
