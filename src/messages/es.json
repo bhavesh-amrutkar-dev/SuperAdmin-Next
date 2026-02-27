@@ -541,5 +541,6 @@
     "resetting": "Restableciendo...",
     "passwordMismatch": "Las contraseñas no coinciden",
     "passwordResetSuccess": "La contraseña se ha cambiado correctamente",
-    "passwordResetFailed": "No se pudo restablecer la contraseña"
+    "passwordResetFailed": "No se pudo restablecer la contraseña",
+    "aboutUsSubtitle": "Conoce más sobre nuestra historia y nuestro equipo"
 }

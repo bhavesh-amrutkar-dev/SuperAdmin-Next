@@ -75,6 +75,23 @@ body {
   border-color: #fff;
 }
 
+.btn-primary-static {
+  border: 2px solid #8f8f8f;
+  border-radius: 50px;
+  background: linear-gradient(137deg, #2F2F2F 30%, #FECB02);
+  color: #fff;
+  cursor: default;
+  /* not clickable */
+  background-size: 130% 100%;
+  transition: all 0.4s ease-in-out;
+}
+
+/* Remove hover effect completely */
+.btn-primary-static:hover {
+  background-position: initial;
+  border-color: #8f8f8f;
+}
+
 .section_title {
   background: linear-gradient(314deg, #ffd018 13.95%, #2f2f2f 95.43%);
   background-clip: text;
@@ -84,8 +101,8 @@ body {
   font-weight: bold;
 }
 
-@media (max-width:767px){
-  .section_title{
+@media (max-width:767px) {
+  .section_title {
     font-size: 26px;
   }
 }
@@ -269,44 +286,45 @@ html {
 }
 
 .phone-input .flag-dropdown {
-    border: none;
-    top: 2px !important;
-    left: 4px;
-    background-color: transparent !important;
-    background: transparent !important;
-    height: calc(100% - 4px);
-    border: none !important;
-}
-.phone-input .flag-dropdown ul.country-list {
-    border-radius: 4px;
-    padding: 8px;
+  border: none;
+  top: 2px !important;
+  left: 4px;
+  background-color: transparent !important;
+  background: transparent !important;
+  height: calc(100% - 4px);
+  border: none !important;
 }
 
-.phone-input .flag-dropdown ul.country-list li{
+.phone-input .flag-dropdown ul.country-list {
+  border-radius: 4px;
+  padding: 8px;
+}
+
+.phone-input .flag-dropdown ul.country-list li {
   margin: 4px 0px !important;
 }
 
 .phone-input .flag-dropdown ul.country-list li:hover {
-    background: #f3c2002e;
-    border-radius: 6px;
+  background: #f3c2002e;
+  border-radius: 6px;
 }
 
 .phone-input .flag-dropdown ul.country-list li.country.highlight {
-    background: #2f2f2f;
-    color: #fff;
-    border-radius: 6px;
+  background: #2f2f2f;
+  color: #fff;
+  border-radius: 6px;
 }
 
 .phone-input .flag-dropdown ul.country-list li.country.highlight .dial-code {
-    color: #fff;
+  color: #fff;
 }
 
-.phone-input .form-control{
+.phone-input .form-control {
   background: transparent !important;
 }
 
 .phone-input .flag-dropdown .selected-flag {
-    background: transparent !important;
+  background: transparent !important;
 }
 
 .phone-input .flag-dropdown ul.country-list::-webkit-scrollbar {
@@ -319,12 +337,12 @@ html {
 }
 
 .cart-list::-webkit-scrollbar,
-.custom-scroll::-webkit-scrollbar{
+.custom-scroll::-webkit-scrollbar {
   width: 6px;
 }
 
 .cart-list::-webkit-scrollbar-thumb,
-.custom-scroll::-webkit-scrollbar-thumb{
+.custom-scroll::-webkit-scrollbar-thumb {
   background: #d5d5d5;
   border-radius: 3px;
 }

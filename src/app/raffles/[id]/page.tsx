@@ -627,6 +627,7 @@ export default function RafflesDetailPage() {
     // Set default ticket on mount - MUST be before early returns
     useEffect(() => {
         if (lotteryItem?.tickets && lotteryItem.tickets.length > 0 && !selectedTicket) {
+            
             setSelectedTicket(lotteryItem.tickets[0].ticketId || null);
         }
     }, [lotteryItem, selectedTicket]);

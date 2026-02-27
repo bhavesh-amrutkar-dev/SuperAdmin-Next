@@ -8,6 +8,7 @@ import "react-phone-input-2/lib/style.css";
 import { useTranslations } from "next-intl";
 import { AuthService } from "@/src/lib/services/auth";
 import { toast } from "sonner";
+import { Input } from "@/src/components/ui/input";
 
 type Method = "email" | "mobile" | "";
 
@@ -15,23 +16,45 @@ export default function ForgotPasswordPage() {
   const router = useRouter();
   const t = useTranslations();
 
-  const [method, setMethod] = useState<Method>("");
+  const [method, setMethod] = useState<Method>("email");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
   const [countryCode, setCountryCode] = useState("+1"); // default country code
   const [loading, setLoading] = useState(false);
-
+  const isDisabled =
+    loading ||
+    (method === "email" && !email.trim()) ||
+    (method === "mobile" && !mobile.trim());
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!method) return;
+
+    if (method === "email") {
+      if (!email) {
+        toast.error(t("invalidEmail"));
+        return;
+      }
+    }
+
+    if (method === "mobile") {
+      if (!mobile || !countryCode) {
+        toast.error(t("invalidMobile"));
+        return;
+      }
+    }
 
     setLoading(true);
+
     try {
       if (method === "email") {
-        await AuthService.forgotPassword({
+        const res = await AuthService.forgotPassword({
           verifyType: 1,
           email,
         });
+
+        if (!res?.data) {
+          throw new Error("Invalid email response");
+        }
+
         toast.success("Password reset link sent to your email.");
         router.push("/auth/login");
       }
@@ -43,11 +66,16 @@ export default function ForgotPasswordPage() {
           countryCode,
         });
 
-        const otpId = res?.data?.otpId;
+        if (!res?.data?.otpId) {
+          throw new Error("Invalid OTP response");
+        }
+
+        const { otpId, otpExpiryTime } = res.data;
+
         router.push(
           `/auth/verify-otp?method=mobile&value=${encodeURIComponent(
             `${countryCode}${mobile}`
-          )}&otpId=${otpId}&flow=forgotPassword`
+          )}&otpId=${otpId}&expiry=${otpExpiryTime}&flow=forgotPassword`
         );
       }
     } catch (err: any) {
@@ -111,13 +139,16 @@ export default function ForgotPasswordPage() {
             <label className="text-sm font-medium text-[#2f2f2f]">
               {t("emailAddress")}
             </label>
-            <input
+            <Input
               type="email"
               placeholder={t("emailPlaceholder")}
               className="auth-input w-full rounded-lg border !border-[#2f2f2f] px-4 py-2.5
                 focus:outline-none focus:!border-[#f3c200]"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === " ") e.preventDefault();
+              }}
               required
             />
           </div>
@@ -146,15 +177,15 @@ export default function ForgotPasswordPage() {
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={!method || loading}
+          disabled={!method || loading || isDisabled}
           className="auth-button w-full rounded-lg btn-primary py-3 font-semibold
             hover:bg-yellow-400 hover:text-black transition disabled:opacity-50"
         >
           {loading
             ? t("sending")
             : method === "email"
-            ? t("sendResetLink")
-            : t("sendOtp")}
+              ? t("sendResetLink")
+              : t("sendOtp")}
         </button>
 
         {/* Back to login */}

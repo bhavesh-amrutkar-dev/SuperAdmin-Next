@@ -54,6 +54,9 @@ export default function NewsletterForm({ mailIcon }: Props) {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === " ") e.preventDefault();
+            }}
             placeholder={t("emailPlaceholderPF")}
             className="w-full bg-transparent border-b border-[#2f2f2f] py-2 text-sm outline-none focus:border-[#EFCE60]"
           />

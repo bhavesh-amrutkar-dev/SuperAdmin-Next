@@ -13,6 +13,8 @@ import { IEmailLoginRM } from "@/src/models/api/request/auth";
 import { mapAuthSession } from "@/src/lib/mappers/auth";
 import { persistAuthSession } from "@/src/lib/session/auth";
 import { useAuth } from "@/src/context/authContext";
+import { Label } from "../ui/label";
+import { Input } from "../ui/input";
 
 interface LoginModalProps {
     isOpen: boolean;
@@ -130,10 +132,10 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
                         {/* Email */}
                         <div className="space-y-1">
-                            <label className="text-xs sm:text-sm font-medium text-[#2f2f2f]">
+                            <Label>
                                 {t("email")}
-                            </label>
-                            <input
+                            </Label>
+                            <Input
                                 type="email"
                                 placeholder={t("emailPlaceholder")}
                                 className={`w-full rounded-lg border !border-[#2f2f2f] px-3 py-2 sm:px-4 sm:py-2.5 text-sm sm:text-base
@@ -142,20 +144,23 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                                 {...register("email", {
                                     required: t("emailRequired"),
                                     pattern: {
-                                        value: /\S+@\S+\.\S+/,
+                                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
                                         message: t("emailInvalid"),
                                     },
                                 })}
+                                onKeyDown={(e) => {
+                                    if (e.key === " ") e.preventDefault();
+                                }}
                             />
                             <ErrorMessage message={errors.email?.message} />
                         </div>
 
                         {/* Password */}
                         <div className="space-y-1">
-                            <label className="text-xs sm:text-sm font-medium text-[#2f2f2f]">
+                            <Label className="text-xs sm:text-sm font-medium text-[#2f2f2f]">
                                 {t("password")}
-                            </label>
-                            <input
+                            </Label>
+                            <Input
                                 type="password"
                                 placeholder={t("passwordPlaceholder")}
                                 className={`w-full rounded-lg border !border-[#2f2f2f] px-3 py-2 sm:px-4 sm:py-2.5 text-sm sm:text-base

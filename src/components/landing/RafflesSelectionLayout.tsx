@@ -31,6 +31,7 @@ export default function RaffleSectionLayout({
   const itemsToShow = hasMore
     ? section.items.slice(0, 5)
     : section.items ?? [];
+  const isSingle = itemsToShow.length === 1
 
   const isLoading = !section.items?.length;
 
@@ -54,65 +55,67 @@ export default function RaffleSectionLayout({
         </div>
 
         {/* Cards */}
-        <div className="
-          grid
-          grid-cols-1
-          sm:grid-cols-2
-          md:grid-cols-3
-          lg:grid-cols-4
-          xl:grid-cols-5
-          gap-3
-          sm:gap-4
-          md:gap-6
-        ">
+        <div
+          className={`
+    grid
+    ${isSingle ? "place-items-center" : ""}
+    grid-cols-1
+    sm:grid-cols-2
+    md:grid-cols-3
+    lg:grid-cols-4
+    xl:grid-cols-5
+    gap-3 sm:gap-4 md:gap-6
+     justify-center
+  `}
+        >
+          {/* <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-6"> */}
           {isLoading
             ? Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton
-                  key={i}
-                  className="w-full aspect-3/4 rounded-2xl"
-                />
-              ))
+              <Skeleton
+                key={i}
+                className="w-full aspect-3/4 rounded-2xl"
+              />
+            ))
             : itemsToShow.map((item) => {
-                if (!item?.id) return null;
+              if (!item?.id) return null;
 
-                const slug = item.name
-                  ? slugify(item.name)
-                  : item.id;
+              const slug = item.name
+                ? slugify(item.name)
+                : item.id;
 
-                const campaignId =
-                  (item as any).campaignId || item.id;
+              const campaignId =
+                (item as any).campaignId || item.id;
 
-                const childProductId =
-                  (item as any).childProductId || "";
+              const childProductId =
+                (item as any).childProductId || "";
 
-                const href = `/raffles/${slug}?pid=${campaignId}${
-                  childProductId
-                    ? `&cpid=${childProductId}`
-                    : ""
+              const href = `/raffles/${slug}?pid=${campaignId}${childProductId
+                ? `&cpid=${childProductId}`
+                : ""
                 }`;
 
-                return (
-                  <Link
-                    key={item.id}
-                    href={href}
-                    className="block"
-                    prefetch={false}
-                  >
-                    <div
-                      className="
+              return (
+                <Link
+                  key={item.id}
+                  href={href}
+                  className="block"
+                  prefetch={false}
+                >
+                  <div
+                    className="
                         rounded-4xl
                         transition-transform
                         duration-200
                       "
-                    >
-                      <RaffleCard
-                        item={item}
-                        cellType={section.cellType}
-                      />
-                    </div>
-                  </Link>
-                );
-              })}
+                  >
+                    <RaffleCard
+                      item={item}
+                      cellType={section.cellType}
+                    />
+                  </div>
+                </Link>
+              );
+            })}
         </div>
 
         {/* View More */}

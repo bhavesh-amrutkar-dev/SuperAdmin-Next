@@ -167,7 +167,28 @@ export default function HomePageClient({
       setLoading(false);
     }
   }, [fetchBanners, fetchRaffles, t]);
+  useEffect(() => {
+    if (loading) return;
 
+    const hash = window.location.hash;
+    if (!hash) return;
+
+    const element = document.querySelector(hash);
+    if (!element) return;
+
+    setTimeout(() => {
+      const headerOffset = 100; // adjust to your header height
+      const elementPosition =
+        element.getBoundingClientRect().top + window.pageYOffset;
+
+      const offsetPosition = elementPosition - headerOffset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      });
+    }, 500);
+  }, [loading]);
   useEffect(() => {
     if (!ready) return;
 
@@ -186,9 +207,9 @@ export default function HomePageClient({
   ------------------------------ */
   if (loading) return <FullScreenLoader />;
 
-  if (globalError) {
-    return <FallbackUI message={globalError} onRetry={fetchAll} />;
-  }
+  // if (globalError) {
+  //   return <FallbackUI message={globalError} onRetry={fetchAll} />;
+  // }
 
   return (
     <>

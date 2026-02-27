@@ -52,12 +52,21 @@ export default function EntrySelection({
     const displayCurrency = currencySymbol;
 
     // Check multiple possible ticket field names
-    const tickets =
+    const rawTickets =
         lotteryItem.tickets ||
         (lotteryItem as any).ticketPackages ||
         (lotteryItem as any).ticketOptions ||
         (lotteryItem as any).entryOptions ||
         [];
+
+    // Sort tickets by number of tickets (lowest first)
+    const tickets = Array.isArray(rawTickets)
+        ? [...rawTickets].sort((a: any, b: any) => {
+            const aCount = a.numberOfTicket || a.numberOfTickets || a.quantity || 0;
+            const bCount = b.numberOfTicket || b.numberOfTickets || b.quantity || 0;
+            return aCount - bCount; // ascending (lowest first)
+        })
+        : [];
 
     return (
         <div className="">

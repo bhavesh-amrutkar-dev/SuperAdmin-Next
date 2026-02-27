@@ -9,7 +9,8 @@ export default function HowItWorksSection() {
 
   return (
     <section
-      className="mx-auto w-full max-w-[1648px] px-2 md:px-6 pt-8 lg:pt-4 xl:pt-8 pb-7 lg:pb-9 xl:pb-10"
+   
+      className=" mx-auto w-full max-w-[1648px] px-2 md:px-6 pt-8 lg:pt-4 xl:pt-8 pb-7 lg:pb-9 xl:pb-10"
     >
       <div className="text-center mb-10 lg:mb-12">
         <div className="text-center section_heading min-w-[200px] lg:min-w-[400px] inline-block px-8 py-3">
@@ -27,7 +28,7 @@ export default function HowItWorksSection() {
         </div>
       </div>
 
-      <div className="relative w-full max-w-7xl mx-auto overflow-hidden">
+      <div  id="howItWorks" className="scroll-mt-24 relative w-full max-w-7xl mx-auto overflow-hidden">
         <Image
           src={HOW_IT_WORKS} 
           alt={t("howItWorks")}

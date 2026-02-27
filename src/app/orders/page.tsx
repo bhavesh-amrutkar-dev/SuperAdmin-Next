@@ -443,12 +443,12 @@ export default function OrdersPage() {
                                                     {formatDate(order.createdTimeStamp)}
                                                 </p>
 
-                                                {order.source && (
+                                                {/* {order.source && (
                                                     <p className={`text-xs mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full uppercase font-semibold tracking-wide ${getSourceColor(order.source)}`}>
                                                         <Info className="w-3 h-3" />
                                                         {getSourceLabel(t, order.source)}
                                                     </p>
-                                                )}
+                                                )} */}
                                             </div>
 
                                             <div className="flex items-center justify-between xl:justify-end gap-4">

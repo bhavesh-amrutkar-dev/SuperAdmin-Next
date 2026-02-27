@@ -30,7 +30,7 @@ type Errors = Partial<Record<keyof ContactForm, string>>;
 // Contact page component
 
 export default function ContactPage() {
-    
+
     const t = useTranslations();
     const [formData, setFormData] = useState<ContactForm>({
         firstName: "",
@@ -68,23 +68,28 @@ export default function ContactPage() {
     const validate = (): boolean => {
         const newErrors: Errors = {};
 
-        if (!formData.firstName.trim())
+        const firstName = formData.firstName.trim();
+        const lastName = formData.lastName.trim();
+        const email = formData.email.trim();
+        const query = formData.query.trim();
+        const phone = formData.phone.trim();
+
+        if (!firstName)
             newErrors.firstName = t("firstNameRequired");
 
-        if (!formData.lastName.trim())
+        if (!lastName)
             newErrors.lastName = t("lastNameRequired");
 
-        if (!formData.email) {
+        if (!email) {
             newErrors.email = t("emailRequired");
-        } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+        } else if (!/^\S+@\S+\.\S+$/.test(email)) {
             newErrors.email = t("emailInvalid");
         }
 
-        if (!formData.query.trim())
+        if (!query)
             newErrors.query = t("messageRequired");
 
-        // phone optional — validate only if filled
-        if (formData.phone && formData.phone.length < 6)
+        if (phone && phone.length < 6)
             newErrors.phone = t("invalidMobile");
 
         setErrors(newErrors);
@@ -98,7 +103,16 @@ export default function ContactPage() {
         setLoading(true);
 
         try {
-            // TODO: API call
+            const payload = {
+                ...formData,
+                firstName: formData.firstName.trim(),
+                lastName: formData.lastName.trim(),
+                email: formData.email.trim(),
+                query: formData.query.trim(),
+                phone: formData.phone.trim(),
+            };
+
+            // TODO: API call with payload
             await new Promise((res) => setTimeout(res, 1000));
 
             toast.success(t("messageSent"));
@@ -135,67 +149,67 @@ export default function ContactPage() {
 
                         {/* LEFT COLUMN */}
                         {/* Company Info Card */}
-                            <div className="rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] p-6 lg:p-8">
-                                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-                                    <div className="w-1 h-8 bg-[#FECB02] rounded-full"></div>
-                                    {t("companyInformation") || "COMPANY INFORMATION"}
-                                </h2>
+                        <div className="rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] p-6 lg:p-8">
+                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+                                <div className="w-1 h-8 bg-[#FECB02] rounded-full"></div>
+                                {t("companyInformation") || "COMPANY INFORMATION"}
+                            </h2>
 
-                                <div className="space-y-8 lg:space-y-10">
-                                    {/* Address */}
-                                    <div className="flex items-start gap-3 sm:gap-4 group">
-                                        <div className="w-12 h-12 rounded-full btn-primary flex items-center justify-center transition-all duration-300">
-                                            <MapPin className="w-5 h-5 transition-colors" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-gray-900 mb-1">
-                                                {t("address") || "Address"}
-                                            </h3>
-                                            <p className="text-gray-500 leading-relaxed text-sm">
-                                                1413 PR-25 4to piso, Puerto Rico<br />
-                                                25, DON RIFA LLC<br />
-                                                San Juan, 00918
-                                            </p>
-                                        </div>
+                            <div className="space-y-8 lg:space-y-10">
+                                {/* Address */}
+                                <div className="flex items-start gap-3 sm:gap-4 group">
+                                    <div className="w-12 h-12 rounded-full btn-primary-static flex items-center justify-center transition-all duration-300">
+                                        <MapPin className="w-5 h-5 transition-colors" />
                                     </div>
-
-                                    {/* Email */}
-                                    <div className="flex items-start gap-3 sm:gap-4 group">
-                                        <div className="w-12 h-12 rounded-full btn-primary flex items-center justify-center transition-all duration-300">
-                                            <Mail className="w-5 h-5 transition-colors" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-gray-900 mb-1">
-                                                {t("email") || "Email"}
-                                            </h3>
-                                            <a
-                                                href="mailto:service@donrifa.com"
-                                                className="text-gray-600 hover:text-[#FECB02] transition-colors font-medium text-sm"
-                                            >
-                                                service@donrifa.com
-                                            </a>
-                                        </div>
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900 mb-1">
+                                            {t("address") || "Address"}
+                                        </h3>
+                                        <p className="text-gray-500 leading-relaxed text-sm">
+                                            1413 PR-25 4to piso, Puerto Rico<br />
+                                            25, DON RIFA LLC<br />
+                                            San Juan, 00918
+                                        </p>
                                     </div>
+                                </div>
 
-                                    {/* Phone */}
-                                    <div className="flex items-start gap-3 sm:gap-4 group">
-                                        <div className="w-12 h-12 rounded-full btn-primary flex items-center justify-center transition-all duration-300">
-                                            <Phone className="w-5 h-5 transition-colors" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-gray-900 mb-1">
-                                                {t("phoneNumber") || "Phone"}
-                                            </h3>
-                                            <a
-                                                href="tel:434497151"
-                                                className="text-gray-600 hover:text-[#FECB02] transition-colors font-medium text-sm"
-                                            >
-                                                434 497 151
-                                            </a>
-                                        </div>
+                                {/* Email */}
+                                <div className="flex items-start gap-3 sm:gap-4 group">
+                                    <div className="w-12 h-12 rounded-full btn-primary-static flex items-center justify-center transition-all duration-300">
+                                        <Mail className="w-5 h-5 transition-colors" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900 mb-1">
+                                            {t("email") || "Email"}
+                                        </h3>
+                                        <a
+                                            href="mailto:service@donrifa.com"
+                                            className="text-gray-600 hover:text-[#FECB02] transition-colors font-medium text-sm"
+                                        >
+                                            service@donrifa.com
+                                        </a>
+                                    </div>
+                                </div>
+
+                                {/* Phone */}
+                                <div className="flex items-start gap-3 sm:gap-4 group">
+                                    <div className="w-12 h-12 rounded-full btn-primary-static flex items-center justify-center transition-all duration-300">
+                                        <Phone className="w-5 h-5 transition-colors" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900 mb-1">
+                                            {t("phoneNumber") || "Phone"}
+                                        </h3>
+                                        <a
+                                            href="tel:434497151"
+                                            className="text-gray-600 hover:text-[#FECB02] transition-colors font-medium text-sm"
+                                        >
+                                            434 497 151
+                                        </a>
                                     </div>
                                 </div>
                             </div>
+                        </div>
                         {/* <div className="flex items-center justify-center">
                             <div className="relative w-full max-w-md aspect-4/5 overflow-hidden rounded-3xl shadow-2xl">
                                 <Image
@@ -233,7 +247,7 @@ export default function ContactPage() {
                                             value={formData.firstName}
                                             error={!!errors.firstName}
                                             onChange={(e) => {
-                                                setFormData({ ...formData, firstName: e.target.value });
+                                                setFormData({ ...formData, firstName: e.target.value.replace(/^\s+/, "") });
                                                 setErrors({ ...errors, firstName: undefined });
                                             }}
                                         />
@@ -252,7 +266,7 @@ export default function ContactPage() {
                                             value={formData.lastName}
                                             error={!!errors.lastName}
                                             onChange={(e) => {
-                                                setFormData({ ...formData, lastName: e.target.value });
+                                                setFormData({ ...formData, lastName: e.target.value.replace(/^\s+/, "") });
                                                 setErrors({ ...errors, lastName: undefined });
                                             }}
                                         />
@@ -272,8 +286,11 @@ export default function ContactPage() {
                                             placeholder="you@example.com"
                                             value={formData.email}
                                             error={!!errors.email}
+                                            onKeyDown={(e) => {
+                                                if (e.key === " ") e.preventDefault();
+                                            }}
                                             onChange={(e) => {
-                                                setFormData({ ...formData, email: e.target.value });
+                                                setFormData({ ...formData, email: e.target.value.trim() });
                                                 setErrors({ ...errors, email: undefined });
                                             }}
                                         />
@@ -287,39 +304,39 @@ export default function ContactPage() {
                                             {t("phone")}
                                         </Label>
                                         <div className="phone-input">
-                                        <PhoneInput
-                                            inputProps={{
-                                                id: "phone",
-                                                // placeholder: t("mobilePlaceholder") || "Enter phone number",
-                                            }}
-                                            country="us"
-                                            value={
-                                                formData.phone
-                                                    ? `${formData.phoneCode}${formData.phone}`
-                                                    : ""
-                                            }
-                                            onChange={(value, country) => {
-                                                if (!("dialCode" in country)) return;
+                                            <PhoneInput
+                                                inputProps={{
+                                                    id: "phone",
+                                                    // placeholder: t("mobilePlaceholder") || "Enter phone number",
+                                                }}
+                                                country="us"
+                                                value={
+                                                    formData.phone
+                                                        ? `${formData.phoneCode}${formData.phone}`
+                                                        : ""
+                                                }
+                                                onChange={(value, country) => {
+                                                    if (!("dialCode" in country)) return;
 
-                                                const dialCode = `+${country.dialCode}`;
-                                                const mobile = value.slice(country.dialCode.length);
+                                                    const dialCode = `+${country.dialCode}`;
+                                                    const mobile = value.slice(country.dialCode.length);
 
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    phoneCode: dialCode,
-                                                    phone: mobile,
-                                                }));
+                                                    setFormData((prev) => ({
+                                                        ...prev,
+                                                        phoneCode: dialCode,
+                                                        phone: mobile,
+                                                    }));
 
-                                                setErrors((prev) => ({ ...prev, phone: undefined }));
-                                            }}
-                                            specialLabel=""
-                                            inputClass={`
+                                                    setErrors((prev) => ({ ...prev, phone: undefined }));
+                                                }}
+                                                specialLabel=""
+                                                inputClass={`
     !bg-transparent !w-full !h-[44px] !text-sm !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200]
     !border ${errors.phone ? "!border-red-500" : "!border-input"}
     !pl-14 !text-sm
     
   `}
-                                        />
+                                            />
                                         </div>
 
                                         <ErrorMessage message={errors.phone} />
@@ -336,7 +353,7 @@ export default function ContactPage() {
                                             value={formData.query}
                                             placeholder={t("messagePlaceholder")}
                                             onChange={(e) => {
-                                                setFormData({ ...formData, query: e.target.value });
+                                                setFormData({ ...formData, query: e.target.value.replace(/^\s+/, "") });
                                                 setErrors({ ...errors, query: undefined });
                                             }}
                                             className={`

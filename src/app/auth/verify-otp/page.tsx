@@ -131,31 +131,30 @@ export default function VerifyOtpPage() {
 
     try {
       let res;
-      if (method === "mobile") {
-        res = await AuthService.mobileLogin({ mobile, countryCode });
-      } else {
+
+      if (flow === "forgotPassword") {
         res = await AuthService.forgotPassword({
-          verifyType: 1,
-          email: value,
+          verifyType: method === "mobile" ? 2 : 1,
+          mobile,
+          countryCode,
+          email: method === "email" ? value : undefined,
         });
+      } else {
+        res = await AuthService.mobileLogin({ mobile, countryCode });
       }
 
-      if (!res?.data) throw new Error("Failed to resend OTP");
+      if (!res?.data?.otpId) throw new Error("Failed to resend OTP");
 
-      const { otpId: newOtpId, otpExpiryTime } = res.data || {};
+      const { otpId: newOtpId, otpExpiryTime } = res.data;
 
       setOtp(Array(4).fill(""));
       setTimer(otpExpiryTime || expiry);
 
-      if (method === "mobile") {
-        router.replace(
-          `/auth/verify-otp?method=mobile&value=${encodeURIComponent(
-            `${countryCode}${mobile}`
-          )}&otpId=${newOtpId}&expiry=${otpExpiryTime}`
-        );
-      } else {
-        toast.success("Password reset link sent again to your email.");
-      }
+      router.replace(
+        `/auth/verify-otp?method=${method}&value=${encodeURIComponent(
+          value
+        )}&otpId=${newOtpId}&expiry=${otpExpiryTime}&flow=${flow}`
+      );
     } catch {
       toast.error(t("otpInvalidGeneric"));
     }
@@ -285,7 +284,7 @@ export default function VerifyOtpPage() {
             </Button>
           </form>
         )}
-        
+
       </div>
     </div>
   );

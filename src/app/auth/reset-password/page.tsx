@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { Input } from "@/src/components/ui/input";
+import { Label } from "@/src/components/ui/label";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -68,11 +70,11 @@ export default function ResetPasswordPage() {
         <form onSubmit={onSubmit} className="space-y-6">
           {/* New Password */}
           <div>
-            <label className="text-sm font-medium text-gray-700">
+            <Label>
               {t("newPassword")}
-            </label>
+            </Label>
             <div className="relative mt-1">
-              <input
+              <Input
                 type={showPassword ? "text" : "password"}
                 className={`w-full rounded-xl border px-4 py-3 pr-14 text-sm
                   transition focus:outline-none focus:ring-2
@@ -82,8 +84,11 @@ export default function ResetPasswordPage() {
                   }`}
                 value={password}
                 onChange={(e) => {
-                  setPassword(e.target.value);
+                  setPassword(e.target.value.replace(/^\s+/, ""));
                   setError("");
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === " ") e.preventDefault();
                 }}
                 placeholder={t("passwordPlaceholder")}
               />
@@ -103,10 +108,10 @@ export default function ResetPasswordPage() {
 
           {/* Confirm Password */}
           <div>
-            <label className="text-sm font-medium text-gray-700">
+            <Label>
               {t("confirmPassword")}
-            </label>
-            <input
+            </Label>
+            <Input
               type={showPassword ? "text" : "password"}
               className={`mt-1 w-full rounded-xl border px-4 py-3 text-sm
                 transition focus:outline-none focus:ring-2
@@ -116,8 +121,11 @@ export default function ResetPasswordPage() {
                 }`}
               value={confirmPassword}
               onChange={(e) => {
-                setConfirmPassword(e.target.value);
+                setConfirmPassword(e.target.value.replace(/^\s+/, ""));
                 setError("");
+              }}
+              onKeyDown={(e) => {
+                if (e.key === " ") e.preventDefault();
               }}
               placeholder={t("confirmPasswordPlaceholder")}
             />

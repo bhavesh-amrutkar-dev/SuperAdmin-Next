@@ -60,12 +60,21 @@ export default function RegisterPage() {
   const sendOtp = async () => {
     setOtpLoading(true);
 
+    const cleanedForm = {
+      ...form,
+      firstName: form.firstName.trim(),
+      lastName: form.lastName.trim(),
+      email: form.email.trim(),
+      password: form.password.trim(),
+      mobile: form.mobile.trim(),
+    };
+
     try {
       const res = await AuthService.sendOtp({
         verifyType: 2,
-        countryCode: form.countryCode,
-        mobile: form.mobile,
-        email: form.email,
+        countryCode: cleanedForm.countryCode,
+        mobile: cleanedForm.mobile,
+        email: cleanedForm.email,
         triggeredBy: "Customer Signup Verification Code",
       });
 
@@ -74,16 +83,16 @@ export default function RegisterPage() {
       sessionStorage.setItem(
         "signup_payload",
         JSON.stringify({
-          email: form.email,
-          password: form.password,
-          firstName: form.firstName,
-          lastName: form.lastName,
-          dateOfBirth: form.dob,
+          email: cleanedForm.email,
+          password: cleanedForm.password,
+          firstName: cleanedForm.firstName,
+          lastName: cleanedForm.lastName,
+          dateOfBirth: cleanedForm.dob,
           gender: 1,
-          mobile: form.mobile,
-          countryCode: form.countryCode,
-          sortCountryCode: form.country.toLowerCase(),
-          nationality: form.country,
+          mobile: cleanedForm.mobile,
+          countryCode: cleanedForm.countryCode,
+          sortCountryCode: cleanedForm.country.toLowerCase(),
+          nationality: cleanedForm.country,
           termsAndCond: 1,
           userType: 1,
           signUpType: 1,
@@ -93,7 +102,7 @@ export default function RegisterPage() {
 
       router.push(
         `/auth/verify-otp?method=mobile&value=${encodeURIComponent(
-          `${form.countryCode}${form.mobile}`
+          `${cleanedForm.countryCode}${cleanedForm.mobile}`
         )}&otpId=${otpId}&expiry=${otpExpiryTime}&flow=signup`
       );
     } catch (err: any) {
@@ -102,46 +111,6 @@ export default function RegisterPage() {
       setOtpLoading(false);
     }
   };
-  // const verifyOtp = async () => {
-  //   setOtpLoading(true);
-  //   setOtpError(null);
-
-  //   try {
-  //     await AuthService.verifyOtp({
-  //       verifyType: 2,
-  //       otpCode: otp,     
-  //       otpId: otpId!,
-  //     });
-  //     setOtpVerified(true);
-  //     await completeSignup();
-  //   } catch (err: any) {
-  //     setOtpError(
-  //       err?.response?.data?.message || "Invalid OTP"
-  //     );
-  //   } finally {
-  //     setOtpLoading(false);
-  //   }
-  // };
-
-  // const completeSignup = async () => {
-  //   await AuthService.signUp({
-  //     email: form.email,
-  //     password: form.password,
-  //     firstName: form.firstName,
-  //     lastName: form.lastName,
-  //     dateOfBirth: form.dob,
-  //     gender: 1,
-  //     mobile: form.mobile,
-  //     countryCode: form.countryCode,
-  //     sortCountryCode: form.country.toLowerCase(),
-  //     nationality: form.country,
-  //     termsAndCond: 1,
-  //     userType: 1,
-  //     signUpType: 1,
-  //     customerType: 1,
-  //   });
-  // };
-
 
 
   useEffect(() => {
@@ -241,15 +210,21 @@ export default function RegisterPage() {
   const validate = (): boolean => {
     const newErrors: Errors = {};
 
-    if (!form.firstName.trim())
+    const firstName = form.firstName.trim();
+    const lastName = form.lastName.trim();
+    const email = form.email.trim();
+    const password = form.password.trim();
+    const mobile = form.mobile.trim();
+
+    if (!firstName)
       newErrors.firstName = t("firstNameRequired");
 
-    if (!form.lastName.trim())
+    if (!lastName)
       newErrors.lastName = t("lastNameRequired");
 
-    if (!form.email) {
+    if (!email) {
       newErrors.email = t("emailRequired");
-    } else if (!/^\S+@\S+\.\S+$/.test(form.email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       newErrors.email = t("emailInvalid");
     }
 
@@ -261,15 +236,15 @@ export default function RegisterPage() {
       if (age < 18) newErrors.dob = t("ageRestriction");
     }
 
-    if (!form.mobile)
+    if (!mobile)
       newErrors.mobile = t("mobileRequired");
 
     if (!form.country)
       newErrors.country = t("countryRequired");
 
-    if (!form.password) {
+    if (!password) {
       newErrors.password = t("passwordRequired");
-    } else if (form.password.length < 8) {
+    } else if (password.length < 8) {
       newErrors.password = t("passwordMinLength");
     }
 
@@ -287,18 +262,6 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
-
-  const inputClass = (error?: string) =>
-    `
-  w-full rounded-lg border bg-white px-4 py-3 text-sm
-  placeholder:text-gray-400
-  focus:!border-[#f3c200] focus:!ring-2 focus:!ring-yellow-200
-  transition-all duration-200
-  ${error
-      ? "border-red-500 focus:ring-red-200"
-      : "border-gray-300 hover:border-gray-400 focus:border-[#f3c200]"
-    }
-  `;
 
 
   return (
@@ -325,7 +288,7 @@ export default function RegisterPage() {
             value={form.firstName}
             error={!!errors.firstName}
             onChange={(e) => {
-              setForm({ ...form, firstName: e.target.value });
+              setForm({ ...form, firstName: e.target.value.replace(/^\s+/, "") });
               setErrors({ ...errors, firstName: undefined });
             }}
           />
@@ -347,7 +310,7 @@ export default function RegisterPage() {
             value={form.lastName}
             error={!!errors.lastName}
             onChange={(e) => {
-              setForm({ ...form, lastName: e.target.value });
+              setForm({ ...form, lastName: e.target.value.replace(/^\s+/, "") });
               setErrors({ ...errors, lastName: undefined });
             }}
           />
@@ -371,8 +334,11 @@ export default function RegisterPage() {
             value={form.email}
             error={!!errors.email}
             onChange={(e) => {
-              setForm({ ...form, email: e.target.value });
+              setForm({ ...form, email: e.target.value.trim() });
               setErrors({ ...errors, email: undefined });
+            }}
+            onKeyDown={(e) => {
+              if (e.key === " ") e.preventDefault();
             }}
           />
           {emailValidating && (
@@ -398,8 +364,11 @@ export default function RegisterPage() {
             placeholder={t("passwordPlaceholder")}
             value={form.password}
             error={!!errors.password}
+            // onKeyDown={(e) => {
+            //   if (e.key === " ") e.preventDefault();
+            // }}
             onChange={(e) => {
-              setForm({ ...form, password: e.target.value });
+              setForm({ ...form, password: e.target.value.replace(/^\s+/, "") });
               setErrors({ ...errors, password: undefined });
             }}
           />
@@ -416,30 +385,30 @@ export default function RegisterPage() {
             {t("mobile")}
           </Label>
           <div className="phone-input">
-          <PhoneInput
-            inputProps={{ id: "mobile" }}
-            country="us"
-            value={`${form.countryCode}${form.mobile}`}
-            onChange={(value, country) => {
-              if (!("dialCode" in country)) return;
+            <PhoneInput
+              inputProps={{ id: "mobile" }}
+              country="us"
+              value={`${form.countryCode}${form.mobile}`}
+              onChange={(value, country) => {
+                if (!("dialCode" in country)) return;
 
-              const dialCode = `+${country.dialCode}`;
-              const mobile = value.replace(country.dialCode, "");
+                const dialCode = `+${country.dialCode}`;
+                const mobile = value.replace(country.dialCode, "");
 
-              setForm((prev) => ({
-                ...prev,
-                countryCode: dialCode,
-                mobile,
-              }));
-              setErrors((prev) => ({ ...prev, mobile: undefined }));
-            }}
-            inputClass={`
+                setForm((prev) => ({
+                  ...prev,
+                  countryCode: dialCode,
+                  mobile,
+                }));
+                setErrors((prev) => ({ ...prev, mobile: undefined }));
+              }}
+              inputClass={`
         !bg-transparent !w-full !h-[44px] !text-sm !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200]
         !border ${errors.mobile ? "!border-red-500" : "!border-input"}
         !pl-14 !text-sm
         
       `}
-          />
+            />
           </div>
           {/* {errors.mobile && (
             <p className="text-xs text-red-500">{errors.mobile}</p>

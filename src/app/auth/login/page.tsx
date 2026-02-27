@@ -73,11 +73,15 @@ export default function LoginPage() {
                         id="email"
                         type="email"
                         placeholder={t("emailPlaceholder")}
+                        onKeyDown={(e) => {
+                            if (e.key === " ") e.preventDefault();
+                        }}
                         error={!!errors.email}
                         {...register("email", {
                             required: t("emailRequired"),
+                            setValueAs: (value) => value.trim(),
                             pattern: {
-                                value: /\S+@\S+\.\S+/,
+                                value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
                                 message: t("emailInvalid"),
                             },
                         })}
@@ -100,9 +104,15 @@ export default function LoginPage() {
                         id="password"
                         type="password"
                         placeholder={t("passwordPlaceholder")}
+                        onKeyDown={(e) => {
+                            if (e.key === " ") e.preventDefault();
+                        }}
                         error={!!errors.password}
                         {...register("password", {
                             required: t("passwordRequired"),
+                            setValueAs: (value) => value.trim(),
+                            validate: (value) =>
+                                value.trim().length > 0 || t("passwordRequired"),
                         })}
                     />
 
