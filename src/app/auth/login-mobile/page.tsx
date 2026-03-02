@@ -18,7 +18,6 @@ export default function LoginMobilePage() {
   const [mobile, setMobile] = useState("");
   const [countryCode, setCountryCode] = useState("");
   const [loading, setLoading] = useState(false);
-
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -27,20 +26,26 @@ export default function LoginMobilePage() {
       return;
     }
 
-    const payload: IMobileLoginRM = {
-      mobile,
-      countryCode,
-    };
-
     setLoading(true);
-    try {
-      const res = await AuthService.mobileLogin(payload);
 
-      if (!res?.data) {
-        throw new Error("Invalid OTP response");
+    try {
+      const res = await fetch("/api/login-mobile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mobile,
+          countryCode,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || t("otpSendFailed"));
       }
 
-      const { otpId, otpExpiryTime } = res.data;
+      const data = await res.json();
+
+      const { otpId, otpExpiryTime } = data.data;
 
       router.push(
         `/auth/verify-otp?method=mobile&value=${encodeURIComponent(
@@ -53,7 +58,6 @@ export default function LoginMobilePage() {
       setLoading(false);
     }
   };
-
   return (
     <div className="w-full max-w-md rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] border border-gray-200 p-6 sm:p-8">
       {/* Header */}
@@ -74,17 +78,17 @@ export default function LoginMobilePage() {
             {t("mobileNumberLabel")}
           </label>
           <div className="phone-input">
-          <PhoneInput
-            country="us"
-            value={`${countryCode.replace("+", "")}${mobile}`}
-            onChange={(value, data: any) => {
-              setCountryCode(`+${data.dialCode}`);
-              setMobile(value.slice(data.dialCode.length));
-            }}
-            inputClass="!bg-transparent !w-full !h-[44px] !text-sm !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200]"
-            buttonClass="!border-[#2f2f2f]"
-            containerClass="!w-full"
-          />
+            <PhoneInput
+              country="us"
+              value={`${countryCode.replace("+", "")}${mobile}`}
+              onChange={(value, data: any) => {
+                setCountryCode(`+${data.dialCode}`);
+                setMobile(value.slice(data.dialCode.length));
+              }}
+              inputClass="!bg-transparent !w-full !h-[44px] !text-sm !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200]"
+              buttonClass="!border-[#2f2f2f]"
+              containerClass="!w-full"
+            />
           </div>
         </div>
 

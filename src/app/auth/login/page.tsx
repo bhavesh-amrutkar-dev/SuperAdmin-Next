@@ -28,17 +28,27 @@ export default function LoginPage() {
 
     const onSubmit = async (payload: IEmailLoginRM) => {
         try {
+            const res = await fetch("/api/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: payload.email.trim(),
+                    password: payload.password.trim(),
+                }),
+            });
 
-            const res = await AuthService.login(payload);
-            if (res) {
-                const session = mapAuthSession(res.data);
-
-                persistAuthSession(session);
-                setUser(session); // context
-                router.replace("/");
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || t("loginFailed"));
             }
 
-            //   router.replace("/");
+            const data = await res.json();
+
+            const session = mapAuthSession(data.data);
+
+            persistAuthSession(session);
+            setUser(session);
+            router.replace("/");
         } catch (err: any) {
             toast.error(err?.message || t("loginFailed"));
         }

@@ -43,16 +43,20 @@ export default function ForgotPasswordPage() {
     }
 
     setLoading(true);
-
     try {
       if (method === "email") {
-        const res = await AuthService.forgotPassword({
-          verifyType: 1,
-          email,
+        const res = await fetch("/api/forgot-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            verifyType: 1,
+            email,
+          }),
         });
 
-        if (!res?.data) {
-          throw new Error("Invalid email response");
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.message);
         }
 
         toast.success("Password reset link sent to your email.");
@@ -60,17 +64,23 @@ export default function ForgotPasswordPage() {
       }
 
       if (method === "mobile") {
-        const res = await AuthService.forgotPassword({
-          verifyType: 2,
-          mobile,
-          countryCode,
+        const res = await fetch("/api/forgot-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            verifyType: 2,
+            mobile,
+            countryCode,
+          }),
         });
 
-        if (!res?.data?.otpId) {
-          throw new Error("Invalid OTP response");
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.message);
         }
 
-        const { otpId, otpExpiryTime } = res.data;
+        const data = await res.json();
+        const { otpId, otpExpiryTime } = data.data;
 
         router.push(
           `/auth/verify-otp?method=mobile&value=${encodeURIComponent(

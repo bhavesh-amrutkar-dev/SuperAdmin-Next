@@ -22,3 +22,24 @@ export const generateMk = (
     .update(value)
     .digest("hex");
 };
+
+export const generateEmailMk = (
+  email: string
+): string => {
+  const secretKey = process.env.NEXT_PUBLIC_WEB_AUTH_KEY;
+
+  if (!secretKey) {
+    throw new Error("Auth key not found in environment variables");
+  }
+
+  if (!email) {
+    throw new Error("Email is required");
+  }
+
+  const value = `${email}${secretKey}`;
+
+  return crypto
+    .createHash("sha256")
+    .update(value)
+    .digest("hex");
+};

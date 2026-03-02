@@ -16,6 +16,7 @@ import {
 import { CountryCurrency, IMobileLoginResponse } from "@/src/models/api/response/auth";
 import { resolveIpAddress } from "../utils/ip-resolver";
 import { IContactRequestRM } from "@/src/models/api/request/contact";
+import { generateEmailMk, generateMk } from "../security/generateMk";
 
 export const AuthService = {
   async login(
@@ -90,7 +91,7 @@ export const AuthService = {
   sendOtp(
     payload: ISendOtpPayload
   ): Promise<IAPIResponse<any>> {
-    
+
     return apiClient.post("/customer/sendOtp", payload);
   },
 
@@ -173,6 +174,7 @@ export const AuthService = {
       deviceMake: device.deviceMake,
       deviceModel: device.deviceModel,
       ...payload,
+      ...(payload.email && { mk: generateEmailMk(payload.email) }),
     });
   },
 
