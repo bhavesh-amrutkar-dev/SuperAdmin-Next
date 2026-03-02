@@ -9,10 +9,45 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { mapBanners } from "../lib/mappers/home";
 import { HomeBanner, RaffleSection, RaffleItem } from "../models/api/response/home";
 import { PRODUCT_CART } from "../lib/config";
+import { Metadata } from "next";
 
 const isObjectId = (id?: string) =>
   typeof id === "string" && /^[a-f0-9]{24}$/i.test(id);
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    const res = await HomeServiceServer.getHomePageServer(1);
+    const seo = res?.data?.homePageSeo;
 
+    if (!seo) {
+      return {
+        title: "DonRifa",
+        description: "There is always a chance to win.",
+      };
+    }
+
+    return {
+      title: seo.title || "DonRifa",
+      description: seo.metatagsdesc || "",
+      keywords: seo.metatags || "",
+      openGraph: {
+        title: seo.title || "DonRifa",
+        description: seo.metatagsdesc || "",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: seo.title || "DonRifa",
+        description: seo.metatagsdesc || "",
+      },
+    };
+  } catch (error) {
+    console.error("SEO metadata fetch failed", error);
+
+    return {
+      title: "DonRifa",
+      description: "There is always a chance to win.",
+    };
+  }
+}
 export default async function LandingPage() {
   const locale = await getLocale();
   const t = await getTranslations();
