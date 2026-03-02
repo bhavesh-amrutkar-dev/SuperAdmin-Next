@@ -41,7 +41,7 @@ export default function HeroSlider({ banners, autoPlay = true }: Props) {
             <Image
               src={banner.imageMobile}
               alt="Home banner"
-              className="w-full h-full object-cover object-left"
+              className="w-full h-full"
               loading={index === 0 ? "eager" : "lazy"}
               fetchPriority={index === 0 ? "high" : "auto"}
               width={800}
