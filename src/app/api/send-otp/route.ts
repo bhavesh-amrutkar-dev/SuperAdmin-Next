@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
       triggeredBy: "Customer Signup Verification Code",
       mk: generateMk(countryCode, mobile),
     };
+// console.log(payload);
 
     // console.log("========== SEND OTP REQUEST ==========");
     // console.log("URL:", `${API_NY_URL}/customer/sendOtp`);

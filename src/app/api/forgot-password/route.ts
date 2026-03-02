@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
             payload.mk = generateMk(countryCode.trim(), mobile.trim())
         }
 
-        const { data, error } = await serverFetch("/forgotPassword", {
+        const { data, error } = await serverFetch("/forgotPassword/V2", {
             method: "POST",
             body: JSON.stringify(payload),
             baseUrl: API_NY_URL,

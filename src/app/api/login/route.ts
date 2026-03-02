@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
             email: email.trim(),
             password: password.trim(),
         };
-        console.log(payload);
+        // console.log(payload);
 
         const { data, error } = await serverFetch("/signIn", {
             method: "POST",
