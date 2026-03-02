@@ -68,8 +68,8 @@ export default function FreeTicketConfirmationPage() {
     const [defaultAddressId, setDefaultAddressId] = useState<string>("");
 
     // Get ticket data from query params
-    const ticketId = searchParams.get("ticketId");
-    const quantity = parseInt(searchParams.get("quantity") || "0", 10);
+    const ticketId = searchParams?.get("ticketId");
+    const quantity = parseInt(searchParams?.get("quantity") || "0", 10);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -77,7 +77,7 @@ export default function FreeTicketConfirmationPage() {
                 setLoading(true);
 
                 // Fetch raffle data
-                const raffleResponse = await RaffleService.getRaffleDetails(params.id as string);
+                const raffleResponse = await RaffleService.getRaffleDetails(params?.id as string);
                 const raw = raffleResponse as any;
                 let data: LegacyRaffleDetail | undefined = raw?.data;
 
@@ -113,10 +113,10 @@ export default function FreeTicketConfirmationPage() {
             }
         };
 
-        if (params.id) {
+        if (params?.id) {
             fetchData();
         }
-    }, [params.id]);
+    }, [params?.id]);
 
     const handleConfirm = async () => {
         if (!lotteryItem || !ticketId || quantity <= 0 || applyingTicket) return;
@@ -129,7 +129,7 @@ export default function FreeTicketConfirmationPage() {
                 lotteryItem,
                 ticketId,
                 quantity,
-                productId: params.id as string,
+                productId: params?.id as string,
                 defaultAddressId,
             });
 
@@ -181,7 +181,7 @@ export default function FreeTicketConfirmationPage() {
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D4AF37] mx-auto"></div>
                     <p className="mt-4 text-gray-600">{t("loading") || "Loading..."}</p>
                 </div> */}
-                <Loader/>
+                <Loader />
             </div>
         );
     }

@@ -50,10 +50,10 @@ export default function LanguageSwitcher({ variant = "header" }: Props) {
       );
     }
 
-    const currentSearchParams = searchParams.toString();
+    const currentSearchParams = searchParams?.toString();
     const newUrl = currentSearchParams
-      ? `${pathname}?${currentSearchParams}`
-      : pathname;
+      ? `${pathname ?? "/"}?${currentSearchParams}`
+      : pathname ?? "/";
 
     router.replace(newUrl);
     router.refresh();

@@ -70,15 +70,25 @@ export default function RegisterPage() {
     };
 
     try {
-      const res = await AuthService.sendOtp({
-        verifyType: 2,
-        countryCode: cleanedForm.countryCode,
-        mobile: cleanedForm.mobile,
-        email: cleanedForm.email,
-        triggeredBy: "Customer Signup Verification Code",
+      // Call your server-side API route
+      const res = await fetch("/api/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          countryCode: cleanedForm.countryCode,
+          mobile: cleanedForm.mobile,
+          email: cleanedForm.email,
+          
+        }),
       });
 
-      const { otpId, otpExpiryTime } = res.data;
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "OTP send failed");
+      }
+
+      const data = await res.json();
+      const { otpId, otpExpiryTime } = data;
 
       sessionStorage.setItem(
         "signup_payload",
@@ -106,7 +116,7 @@ export default function RegisterPage() {
         )}&otpId=${otpId}&expiry=${otpExpiryTime}&flow=signup`
       );
     } catch (err: any) {
-      setOtpError(err?.response?.data?.message || t("otpSendFailed"));
+      setOtpError(err.message);
     } finally {
       setOtpLoading(false);
     }

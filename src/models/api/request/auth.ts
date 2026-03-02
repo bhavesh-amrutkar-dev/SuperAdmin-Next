@@ -33,6 +33,7 @@ export interface ISendOtpPayload {
   mobile?: string;
   countryCode?: string;
   triggeredBy: string;
+  mk: string;
 }
 
 export interface ISignUpPayload {

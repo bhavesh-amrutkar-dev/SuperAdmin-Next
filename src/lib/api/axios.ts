@@ -21,6 +21,14 @@ apiClient.interceptors.request.use(
     } else {
       config.headers = new AxiosHeaders(headers);
     }
+    // 🔥 FULL REQUEST DEBUG LOG
+    // console.log("========== OUTGOING API REQUEST ==========");
+    // console.log("URL:", `${config.baseURL}${config.url}`);
+    // console.log("Method:", config.method?.toUpperCase());
+    // console.log("Headers:", config.headers?.toJSON?.() || config.headers);
+    // console.log("Query Params:", config.params);
+    // console.log("Body:", config.data);
+    // console.log("==========================================");
 
     return config;
   },
@@ -43,7 +51,6 @@ apiClient.interceptors.response.use(
         // clear old tokens
         document.cookie = "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         document.cookie = "refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-console.log("test");
 
         // re-init guest
         await import("../bootstrap/initGuest").then(m => m.initGuest());

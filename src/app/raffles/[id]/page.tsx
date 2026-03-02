@@ -196,7 +196,7 @@ export default function RafflesDetailPage() {
     });
 
     // Extract pid from searchParams outside useEffect for stable dependency
-    const pid = searchParams.get("pid");
+    const pid = searchParams?.get("pid");
     // Number animation effect
     const animateNumber = useCallback((target: number, key: "paid" | "free" | "mine") => {
         try {
@@ -244,7 +244,7 @@ export default function RafflesDetailPage() {
             // If pid is a slug or invalid, log error
             console.warn("Invalid pid parameter - must be MongoDB ObjectId (24 hex chars):", {
                 pid,
-                paramsId: params.id,
+                paramsId: params?.id,
                 pidLength: pid?.length,
                 pidHasHyphens: pid?.includes("-")
             });
@@ -256,7 +256,7 @@ export default function RafflesDetailPage() {
         if (!lotteryId) {
             console.warn("No valid campaignId found in pid parameter. URL must include ?pid=<campaignId>:", {
                 pid,
-                paramsId: params.id,
+                paramsId: params?.id,
                 currentUrl: typeof window !== "undefined" ? window.location.href : "N/A"
             });
             setNotFound(true);
@@ -326,7 +326,7 @@ export default function RafflesDetailPage() {
                 setLoading(false);
                 fetchingRaffleRef.current = false;
             });
-    }, [params.id, pid, locale]); // Include locale to trigger refetch when language changes
+    }, [params?.id, pid, locale]); // Include locale to trigger refetch when language changes
 
     useEffect(() => {
         const handleScroll = () => setShowScrollTop(window.scrollY > 400);
@@ -459,7 +459,7 @@ export default function RafflesDetailPage() {
             const response = await QuestionService.getQuestions({
                 skip: 0,
                 limit: 10,
-                parentProductId: lotteryItem.childProductId || lotteryItem.productId || (params.id as string),
+                parentProductId: lotteryItem.childProductId || lotteryItem.productId || (params?.id as string),
                 trigger: triggerMap[qaSortBy] || 2,
                 searchName: qaSearchQuery || undefined,
                 raffleId: lotteryItem.campaignId,
@@ -491,7 +491,7 @@ export default function RafflesDetailPage() {
         } finally {
             setQuestionsLoading(false);
         }
-    }, [lotteryItem, qaSortBy, qaSearchQuery, params.id, t]);
+    }, [lotteryItem, qaSortBy, qaSearchQuery, params?.id, t]);
 
     // Fetch questions when filters change or lottery item loads
     useEffect(() => {
@@ -584,7 +584,7 @@ export default function RafflesDetailPage() {
         const fetchAllRaffles = async () => {
             if (!lotteryItem) return;
 
-            const currentId = lotteryItem?.campaignId || lotteryItem?.childProductId || lotteryItem?.productId || (typeof params.id === 'string' ? params.id : null);
+            const currentId = lotteryItem?.campaignId || lotteryItem?.childProductId || lotteryItem?.productId || (typeof params?.id === 'string' ? params?.id : null);
 
             // Prevent duplicate calls for the same lottery item
             if (fetchingAllRafflesRef.current || lastFetchedLotteryIdRef.current === currentId) {
@@ -622,12 +622,12 @@ export default function RafflesDetailPage() {
         };
 
         fetchAllRaffles();
-    }, [lotteryItem, params.id, locale]);
+    }, [lotteryItem, params?.id, locale]);
 
     // Set default ticket on mount - MUST be before early returns
     useEffect(() => {
         if (lotteryItem?.tickets && lotteryItem.tickets.length > 0 && !selectedTicket) {
-            
+
             setSelectedTicket(lotteryItem.tickets[0].ticketId || null);
         }
     }, [lotteryItem, selectedTicket]);
@@ -669,7 +669,7 @@ export default function RafflesDetailPage() {
 
                 const cartResponse = await CartService.getCart();
                 const cartData = (cartResponse as any)?.data?.data || (cartResponse as any)?.data;
-                const productId = lotteryItem.childProductId || lotteryItem.productId || (params.id as string);
+                const productId = lotteryItem.childProductId || lotteryItem.productId || (params?.id as string);
 
                 if (cartData && cartData.sellers) {
                     for (const seller of cartData.sellers) {
@@ -740,7 +740,7 @@ export default function RafflesDetailPage() {
         };
 
         // Only restore if we have lotteryItem and tickets, and haven't already restored for this product
-        const productId = lotteryItem?.childProductId || lotteryItem?.productId || (params.id as string);
+        const productId = lotteryItem?.childProductId || lotteryItem?.productId || (params?.id as string);
         if (lotteryItem && lotteryItem.tickets && lotteryItem.tickets.length > 0 && !hasRestoredFromCartRef.current) {
             hasRestoredFromCartRef.current = true;
             restoreFromCart();
@@ -750,7 +750,7 @@ export default function RafflesDetailPage() {
         return () => {
             hasRestoredFromCartRef.current = false;
         };
-    }, [lotteryItem, params.id]);
+    }, [lotteryItem, params?.id]);
 
 
     if (loading) {
@@ -860,7 +860,7 @@ export default function RafflesDetailPage() {
                 const cartData = (cartResponse as any)?.data?.data || (cartResponse as any)?.data;
 
                 if (cartData && cartData.sellers) {
-                    const productId = lotteryItem.childProductId || lotteryItem.productId || (params.id as string);
+                    const productId = lotteryItem.childProductId || lotteryItem.productId || (params?.id as string);
 
                     for (const seller of cartData.sellers) {
                         if (seller.products) {
@@ -892,8 +892,8 @@ export default function RafflesDetailPage() {
             const action = existingItemId ? 2 : 1; // 2 = update, 1 = add
 
             await CartService.addToCart({
-                centralProductId: lotteryItem.childProductId || lotteryItem.productId || (params.id as string),
-                productId: lotteryItem.childProductId || lotteryItem.productId || (params.id as string),
+                centralProductId: lotteryItem.childProductId || lotteryItem.productId || (params?.id as string),
+                productId: lotteryItem.childProductId || lotteryItem.productId || (params?.id as string),
                 unitId: lotteryItem.unitId || "",
                 userType: 1,
                 storeId: lotteryItem.storeId || "",
@@ -964,7 +964,7 @@ export default function RafflesDetailPage() {
                 const cartData = (cartResponse as any)?.data?.data || (cartResponse as any)?.data;
 
                 if (cartData && cartData.sellers) {
-                    const productId = lotteryItem.childProductId || lotteryItem.productId || (params.id as string);
+                    const productId = lotteryItem.childProductId || lotteryItem.productId || (params?.id as string);
 
                     for (const seller of cartData.sellers) {
                         if (seller.products) {
@@ -997,8 +997,8 @@ export default function RafflesDetailPage() {
 
             // Remove from cart using action: 3
             await CartService.addToCart({
-                centralProductId: lotteryItem.childProductId || lotteryItem.productId || (params.id as string),
-                productId: lotteryItem.childProductId || lotteryItem.productId || (params.id as string),
+                centralProductId: lotteryItem.childProductId || lotteryItem.productId || (params?.id as string),
+                productId: lotteryItem.childProductId || lotteryItem.productId || (params?.id as string),
                 unitId: lotteryItem.unitId || "",
                 userType: 1,
                 storeId: lotteryItem.storeId || "",
@@ -1112,7 +1112,7 @@ export default function RafflesDetailPage() {
         return timeline;
     };
 
-    const displayName =  lotteryItem.productName || lotteryItem.campaignTitle  || lotteryItem.name || "";
+    const displayName = lotteryItem.productName || lotteryItem.campaignTitle || lotteryItem.name || "";
     const displayImage =
         lotteryItem.image?.[0]?.medium ?? PRODUCT_CART;
     const displayCurrency = lotteryItem.currencySymbol ?? "USD";
@@ -1151,7 +1151,7 @@ export default function RafflesDetailPage() {
                 setSharing(true);
                 // console.log("Calling createProductDeepLink...");
                 const deepLink = await createProductDeepLink({
-                    id: typeof params.id === 'string' ? params.id : Array.isArray(params.id) ? params.id[0] : '',
+                    id: typeof params?.id === 'string' ? params?.id : Array.isArray(params?.id) ? params?.id[0] : '',
                     name: displayName || "Raffle",
                     description: stripHtml(lotteryItem.description || lotteryItem.detailDesc || ""),
                     image: displayImage || "",
@@ -1561,116 +1561,116 @@ export default function RafflesDetailPage() {
                 </div>
             </div>
 
-                {/* Scroll to Top Button */}
-                {
-                    showScrollTop && (
-                        <button
-                            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                            className="fixed bottom-8 right-8 w-12 h-12 bg-[#797979] hover:bg-[#5a5a5a] text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 z-50"
-                            aria-label={t("scrollToTop")}
-                        >
-                            <ChevronUp size={24} />
-                        </button>
-                    )
-                }
+            {/* Scroll to Top Button */}
+            {
+                showScrollTop && (
+                    <button
+                        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                        className="fixed bottom-8 right-8 w-12 h-12 bg-[#797979] hover:bg-[#5a5a5a] text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 z-50"
+                        aria-label={t("scrollToTop")}
+                    >
+                        <ChevronUp size={24} />
+                    </button>
+                )
+            }
 
-                {/* Login Modal */}
-                <LoginModal
-                    isOpen={showLoginModal}
-                    onClose={() => {
-                        setShowLoginModal(false);
-                        setPendingCartData(null);
-                    }}
-                    onLoginSuccess={handleLoginSuccess}
-                />
+            {/* Login Modal */}
+            <LoginModal
+                isOpen={showLoginModal}
+                onClose={() => {
+                    setShowLoginModal(false);
+                    setPendingCartData(null);
+                }}
+                onLoginSuccess={handleLoginSuccess}
+            />
 
-                {/* Free Ticket Confirmation Modal */}
-                {
-                    lotteryItem && (
-                        <FreeTicketConfirmationModal
-                            isOpen={showFreeTicketModal}
-                            onClose={() => {
-                                setShowFreeTicketModal(false);
-                                setPendingFreeTicket(null);
-                                setFreeTicketError(null);
-                            }}
-                            pendingFreeTicket={pendingFreeTicket}
-                            displayName={displayName}
-                            lotteryItem={lotteryItem}
-                            productId={params.id as string}
-                            defaultAddressId={defaultAddressId}
-                            onError={(error) => {
-                                setFreeTicketError(error);
-                            }}
-                        />
-                    )
-                }
+            {/* Free Ticket Confirmation Modal */}
+            {
+                lotteryItem && (
+                    <FreeTicketConfirmationModal
+                        isOpen={showFreeTicketModal}
+                        onClose={() => {
+                            setShowFreeTicketModal(false);
+                            setPendingFreeTicket(null);
+                            setFreeTicketError(null);
+                        }}
+                        pendingFreeTicket={pendingFreeTicket}
+                        displayName={displayName}
+                        lotteryItem={lotteryItem}
+                        productId={params?.id as string}
+                        defaultAddressId={defaultAddressId}
+                        onError={(error) => {
+                            setFreeTicketError(error);
+                        }}
+                    />
+                )
+            }
 
-                {/* Participate Rule Modal */}
-                {
-                    lotteryItem && showEmailEntryModal && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                            <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-[0px_2px_16px_0px_#f3c200b5] overflow-hidden animate-in fade-in zoom-in duration-200">
-                                {/* Modal Header */}
-                                <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-                                    <h2 className="text-lg font-black text-[#2f2f2f] uppercase tracking-wide">
-                                        {t("participateRule") || "Participate Rule"}
-                                    </h2>
-                                    <button
-                                        onClick={() => setShowEmailEntryModal(false)}
-                                        className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-black cursor-pointer"
-                                    >
-                                        <X size={20} />
-                                    </button>
-                                </div>
+            {/* Participate Rule Modal */}
+            {
+                lotteryItem && showEmailEntryModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                        <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-[0px_2px_16px_0px_#f3c200b5] overflow-hidden animate-in fade-in zoom-in duration-200">
+                            {/* Modal Header */}
+                            <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                                <h2 className="text-lg font-black text-[#2f2f2f] uppercase tracking-wide">
+                                    {t("participateRule") || "Participate Rule"}
+                                </h2>
+                                <button
+                                    onClick={() => setShowEmailEntryModal(false)}
+                                    className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-black cursor-pointer"
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
 
-                                {/* Modal Content */}
-                                <div className="p-6 overflow-y-auto custom-scrollbar">
-                                    <div
-                                        className="text-sm md:text-base text-[#4a4a4a] leading-relaxed space-y-4"
-                                        dangerouslySetInnerHTML={{
-                                            __html: typeof lotteryItem.raffleEmailEntryDesc === 'string'
-                                                ? lotteryItem.raffleEmailEntryDesc
-                                                : (lotteryItem.raffleEmailEntryDesc as any)?.[locale] || (lotteryItem.raffleEmailEntryDesc as any)?.["en"] || ""
-                                        }}
-                                    />
-                                </div>
+                            {/* Modal Content */}
+                            <div className="p-6 overflow-y-auto custom-scrollbar">
+                                <div
+                                    className="text-sm md:text-base text-[#4a4a4a] leading-relaxed space-y-4"
+                                    dangerouslySetInnerHTML={{
+                                        __html: typeof lotteryItem.raffleEmailEntryDesc === 'string'
+                                            ? lotteryItem.raffleEmailEntryDesc
+                                            : (lotteryItem.raffleEmailEntryDesc as any)?.[locale] || (lotteryItem.raffleEmailEntryDesc as any)?.["en"] || ""
+                                    }}
+                                />
+                            </div>
 
-                                {/* Modal Footer */}
-                                <div className="p-4 border-t border-gray-100 flex justify-end">
-                                    <Button
-                                        onClick={() => setShowEmailEntryModal(false)}
-                                        className="rounded-lg btn-primary py-3 px-6 font-semibold  hover:bg-yellow-400 hover:text-black transition disabled:opacity-50"
-                                    >
-                                        {t("close") || "Close"}
-                                    </Button>
-                                </div>
+                            {/* Modal Footer */}
+                            <div className="p-4 border-t border-gray-100 flex justify-end">
+                                <Button
+                                    onClick={() => setShowEmailEntryModal(false)}
+                                    className="rounded-lg btn-primary py-3 px-6 font-semibold  hover:bg-yellow-400 hover:text-black transition disabled:opacity-50"
+                                >
+                                    {t("close") || "Close"}
+                                </Button>
                             </div>
                         </div>
-                    )
-                }
+                    </div>
+                )
+            }
 
-                {/* Apply Ticket Confirmation Modal */}
-                <ApplyTicketConfirmationModal
-                    isOpen={showApplyConfirmationModal}
-                    onClose={() => {
-                        setShowApplyConfirmationModal(false);
-                    }}
-                    onConfirm={handleApplyTicketsConfirm}
-                    ticketQuantity={ticketQuantity}
-                    isApplying={applyingTicket}
-                />
+            {/* Apply Ticket Confirmation Modal */}
+            <ApplyTicketConfirmationModal
+                isOpen={showApplyConfirmationModal}
+                onClose={() => {
+                    setShowApplyConfirmationModal(false);
+                }}
+                onConfirm={handleApplyTicketsConfirm}
+                ticketQuantity={ticketQuantity}
+                isApplying={applyingTicket}
+            />
 
-                {/* Terms and Conditions Modal */}
-                <TermsAndConditionsModal
-                    isOpen={showTermsModal}
-                    onClose={() => setShowTermsModal(false)}
-                    termsAndConditions={lotteryItem.termsAndConditions}
-                />
+            {/* Terms and Conditions Modal */}
+            <TermsAndConditionsModal
+                isOpen={showTermsModal}
+                onClose={() => setShowTermsModal(false)}
+                termsAndConditions={lotteryItem.termsAndConditions}
+            />
 
-                <PreFooterIconModule />
-                <Footer />
-            
+            <PreFooterIconModule />
+            <Footer />
+
         </main>
     );
 }

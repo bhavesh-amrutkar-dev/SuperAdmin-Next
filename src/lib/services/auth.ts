@@ -90,6 +90,7 @@ export const AuthService = {
   sendOtp(
     payload: ISendOtpPayload
   ): Promise<IAPIResponse<any>> {
+    
     return apiClient.post("/customer/sendOtp", payload);
   },
 

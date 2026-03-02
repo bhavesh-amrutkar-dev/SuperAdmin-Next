@@ -18,15 +18,15 @@ export default function VerifyOtpPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const flow = searchParams.get("flow") || "login";
-  const method = searchParams.get("method") || "mobile"; // email or mobile
-  const value = searchParams.get("value") || "";
-  const otpId = searchParams.get("otpId");
+  const flow = searchParams?.get("flow") || "login";
+  const method = searchParams?.get("method") || "mobile"; // email or mobile
+  const value = searchParams?.get("value") || "";
+  const otpId = searchParams?.get("otpId");
 
   const [step, setStep] = useState<"otp" | "resetPassword">("otp");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const expiry = Number(searchParams.get("expiry") || 180);
+  const expiry = Number(searchParams?.get("expiry") || 180);
   const [timer, setTimer] = useState(expiry);
   const [otp, setOtp] = useState<string[]>(Array(4).fill(""));
   const [loading, setLoading] = useState(false);
@@ -103,7 +103,7 @@ export default function VerifyOtpPage() {
         return;
       }
       if (flow === "forgotPassword" && method === "mobile") {
-        console.log("OTP verified, opening reset form");
+        // console.log("OTP verified, opening reset form");
 
         // Save token directly for reset API
         localStorage.setItem("reset_token", res.data.accessToken);
