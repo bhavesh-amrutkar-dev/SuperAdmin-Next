@@ -55,6 +55,7 @@ type LegacyRaffleDetail = {
     currencySymbol?: string;
     ticketPrice?: number;
     price?: number;
+    cashAwardAmount?: number;
     goalValue?: number;
     ticketGoalAmount?: number;
     drawDateTimeStemp?: number; // Unix timestamp in seconds

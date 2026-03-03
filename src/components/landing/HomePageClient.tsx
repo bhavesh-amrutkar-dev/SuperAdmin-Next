@@ -36,6 +36,7 @@ type LegacyRaffleItem = {
   currencySymbol?: string;
   ticketPrice?: number;
   goalValue?: number;
+  cashAwardAmount?: number;
 };
 
 const isObjectId = (id?: string) =>
@@ -117,7 +118,7 @@ export default function HomePageClient({
           return {
             id: campaignId,
             name: raffle.campaignTitle || raffle.productName || "",
-            price: raffle.goalValue ?? raffle.ticketPrice ?? 0,
+            price: raffle.cashAwardAmount ?? raffle.goalValue ?? raffle.ticketPrice ?? 0,
             currencySymbol: raffle.currencySymbol || "$",
             image:
               raffle.image?.[0]?.medium ||
