@@ -749,7 +749,7 @@ export default function SecureCheckoutPage() {
       }
 
       const orderData = await response.json();
-
+      console.log("orderData", orderData);
       // Check if order API returned an error
       if (
         orderData?.message &&
@@ -812,6 +812,8 @@ export default function SecureCheckoutPage() {
         }
 
         // For other payment methods, check for checkout URL
+
+
         if (orderData?.checkoutProcessUrl) {
           // Open Place to Pay lightbox
           setPlaceToPayUrl(orderData.checkoutProcessUrl);
