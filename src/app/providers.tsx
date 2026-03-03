@@ -17,10 +17,24 @@ export default function ClientProviders({
   return (
     <AuthProvider>
       <CountryProvider countries={countries}>
-      {/* <CountryGuard> */}
-      <Toaster position="top-center" richColors closeButton />
-      {children}
-      {/* </CountryGuard> */}
+        {/* <CountryGuard> */}
+        <Toaster
+          position="top-right"
+          richColors
+          closeButton
+          expand
+          visibleToasts={4}
+          toastOptions={{
+            className:
+              "rounded-2xl shadow-2xl border border-gray-200 backdrop-blur-lg",
+            style: {
+              padding: "16px",
+              fontSize: "14px",
+            },
+          }}
+        />
+        {children}
+        {/* </CountryGuard> */}
       </CountryProvider>
     </AuthProvider>
   );

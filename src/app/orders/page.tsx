@@ -47,6 +47,14 @@ const getStatusLabel = (
     status?: number,
     statusText?: string
 ): string => {
+
+    // ✅ Force Purchased when completed (Delivered)
+    if (status === ORDER_STATUS.COMPLETED) {
+        return t("orderStatus.purchased");
+        // or return "Purchased" if not using translation
+    }
+
+    // fallback to backend statusText
     if (statusText?.trim()) return statusText;
 
     if (!status) return t("orderStatus.processing");
@@ -64,8 +72,6 @@ const getStatusLabel = (
             return t("orderStatus.readyForPickup");
         case ORDER_STATUS.IN_DISPATCH:
             return t("orderStatus.inDispatch");
-        case ORDER_STATUS.COMPLETED:
-            return t("orderStatus.completed");
         default:
             return t("orderStatus.unknown", { status });
     }
@@ -331,9 +337,43 @@ export default function OrdersPage() {
     const formatDate = (timestamp?: number) => {
         const ts = normalizeTimestamp(timestamp);
         if (!ts) return "";
-        return new Date(ts * 1000).toLocaleString(
-            locale === "es" ? "es-ES" : "en-US"
-        );
+
+        const date = new Date(ts * 1000);
+
+        const day = date.getDate();
+        const month = date.toLocaleString(locale === "es" ? "es-ES" : "en-US", {
+            month: "short",
+        });
+        const year = date.getFullYear();
+
+        const hours = date.getHours();
+        const minutes = date.getMinutes().toString().padStart(2, "0");
+
+        const formattedHours = hours % 12 || 12;
+        const ampm = hours >= 12 ? "pm" : "am";
+
+        const getOrdinal = (n: number) => {
+            if (n > 3 && n < 21) return "th";
+            switch (n % 10) {
+                case 1: return "st";
+                case 2: return "nd";
+                case 3: return "rd";
+                default: return "th";
+            }
+        };
+
+        return `${day}${getOrdinal(day)} ${month} ${year}, ${formattedHours}:${minutes} ${ampm}`;
+    };
+    const getTotalProductCount = (order: Order) => {
+        return order.storeOrders?.reduce((total, storeOrder) => {
+            return (
+                total +
+                (storeOrder.products?.reduce(
+                    (sum, p) => sum + getNumericValue(p.quantity),
+                    0
+                ) || 0)
+            );
+        }, 0) || 0;
     };
 
     if (loading && !orders.length) {
@@ -417,10 +457,10 @@ export default function OrdersPage() {
                         </div>
                     ) : orders.length === 0 ? (
                         <div className="flex items-center justify-center min-h-[40vh]">
-                            <p className="text-lg text-[#797979]">No orders available</p>
+                            <p className="text-lg text-[#797979]">{t("noOrderAvl")}</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1  gap-6">
                             {orders.map((order) => {
                                 const total = getOrderTotal(order);
                                 const currency = normalizeCurrencySymbol(
@@ -430,42 +470,66 @@ export default function OrdersPage() {
                                 return (
                                     <div
                                         key={order.orderId}
-                                        className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-shadow p-3 sm:p-4 xl:p-6"
+                                        className="group relative bg-white rounded-3xl border border-[#e5e5e5] shadow-sm hover:shadow-xl transition-all duration-300 p-5 sm:p-6"
                                     >
-                                        {/* Order Top */}
-                                        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3 xl:gap-6 border-b border-gray-200 pb-2 mb-4">
+                                        {/* Subtle Gold Accent */}
+                                        <div className="absolute inset-x-0 top-0 h-[3px] rounded-t-3xl bg-[#FECB02] shadow-[0_1px_6px_rgba(254,203,2,0.4)] p-2" />
 
-                                            <div>
-                                                <h3 className="text-lg font-semibold text-gray-700 tracking-tight">
-                                                    {order.orderId}
+                                        {/* Header */}
+
+                                        <div className="flex items-start justify-between gap-4 border-b border-gray-100 pb-5">
+
+                                            {/* LEFT */}
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="text-lg sm:text-xl font-semibold text-[#2F2F2F] tracking-tight truncate">
+                                                    #{order.orderId}
                                                 </h3>
-                                                <p className="text-sm text-[#797979] mt-1">
-                                                    {formatDate(order.createdTimeStamp)}
-                                                </p>
 
-                                                {/* {order.source && (
-                                                    <p className={`text-xs mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full uppercase font-semibold tracking-wide ${getSourceColor(order.source)}`}>
-                                                        <Info className="w-3 h-3" />
-                                                        {getSourceLabel(t, order.source)}
-                                                    </p>
-                                                )} */}
+                                                <div className="mt-1 text-xs sm:text-sm text-[#797979] flex flex-wrap items-center gap-2">
+                                                    <span>
+                                                        {t("orderedOn")} {formatDate(order.createdTimeStamp)}
+                                                    </span>
+
+                                                    <span className="w-1 h-1 bg-[#FECB02] rounded-full"></span>
+
+                                                    <span className="font-medium text-[#2F2F2F] whitespace-nowrap">
+                                                        {getTotalProductCount(order)}{" "}
+                                                        {getTotalProductCount(order) === 1 ? "Product" : "Products"}
+                                                    </span>
+                                                    {/* Mobile Status */}
+                                                    <span
+                                                        className={`sm:hidden mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wide w-fit ${getStatusColor(
+                                                            order.status?.status
+                                                        )}`}
+                                                    >
+                                                        {getStatusIcon(order.status?.status)}
+                                                        {getStatusLabel(
+                                                            t,
+                                                            order.status?.status,
+                                                            order.status?.statusText
+                                                        )}
+                                                    </span>
+                                                </div>
                                             </div>
 
-                                            <div className="flex items-center justify-between xl:justify-end gap-4">
-                                                <div className="text-start xl:text-right">
-                                                    <div className="text-xl font-black text-[#2f2f2f]">
+                                            {/* RIGHT */}
+                                            <div className="flex flex-col items-end gap-2 shrink-0">
+                                                <div className="text-right">
+                                                    <div className="text-lg sm:text-2xl font-bold text-[#2F2F2F]">
                                                         {formatCurrency(total, currency)}
                                                     </div>
-                                                    <div className="text-xs uppercase text-[#797979]">
+                                                    <div className="text-[10px] sm:text-xs uppercase tracking-wider text-[#797979]">
                                                         {t("total")}
                                                     </div>
                                                 </div>
 
+                                                {/* Desktop Status */}
                                                 <span
-                                                    className={`p-2 rounded-full text-xs font-semibold uppercase tracking-wide ${getStatusColor(
+                                                    className={`hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide ${getStatusColor(
                                                         order.status?.status
                                                     )}`}
                                                 >
+                                                    {getStatusIcon(order.status?.status)}
                                                     {getStatusLabel(
                                                         t,
                                                         order.status?.status,
@@ -473,39 +537,43 @@ export default function OrdersPage() {
                                                     )}
                                                 </span>
                                             </div>
+
                                         </div>
 
                                         {/* Products */}
-                                        <div className="space-y-6">
+                                        <div className="mt-6 space-y-4">
                                             {order.storeOrders?.map((storeOrder, i) => (
-                                                <div key={i} className="space-y-4">
+                                                <div key={i} className="space-y-3">
                                                     {storeOrder.products?.map((product, index) => (
                                                         <div
                                                             key={index}
-                                                            className="flex flex-col md:flex-row md:items-center gap-4 bg-gray-50 p-2 rounded-xl"
+                                                            className="flex flex-col md:flex-row md:items-center gap-5 bg-[#fafafa] hover:bg-[#f5f5f5] transition-colors p-4 rounded-2xl border border-transparent hover:border-[#FECB02]/40"
                                                         >
-                                                            <div className="w-full md:w-[90px] h-[150px] md:h-[90px] flex items-center justify-center bg-white rounded-3xl overflow-hidden">
+                                                            {/* Image */}
+                                                            <div className="w-full md:w-[90px] h-[150px] md:h-[90px] flex items-center justify-center bg-white rounded-xl border border-gray-100 overflow-hidden">
                                                                 <Image
                                                                     src={getProductImage(product)}
                                                                     alt={product.name ?? "Product image"}
                                                                     width={90}
                                                                     height={90}
-                                                                    className="p-1 object-contain w-full h-full"
+                                                                    className="p-2 object-contain w-full h-full"
                                                                     unoptimized
                                                                 />
                                                             </div>
 
+                                                            {/* Info */}
                                                             <div className="flex-1">
-                                                                <h4 className="text-lg font-semibold text-[#2f2f2f] line-clamp-2">
+                                                                <h4 className="text-base font-semibold text-[#2F2F2F] line-clamp-2">
                                                                     {product.name}
                                                                 </h4>
 
-                                                                <div className="text-sm text-[#797979] mt-2 uppercase">
+                                                                <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-white border border-gray-200 text-xs font-medium text-[#2F2F2F] uppercase tracking-wide">
                                                                     {t("quantity")}: {getNumericValue(product.quantity)}
                                                                 </div>
                                                             </div>
 
-                                                            <div className="text-xl font-black text-[#2f2f2f]">
+                                                            {/* Price */}
+                                                            <div className="text-lg font-semibold text-[#2F2F2F]">
                                                                 {formatCurrency(
                                                                     getProductTotal(product),
                                                                     currency
@@ -517,11 +585,11 @@ export default function OrdersPage() {
                                             ))}
                                         </div>
 
-                                        {/* Bottom Button */}
-                                        <div className="mt-4 flex justify-end">
+                                        {/* Footer */}
+                                        <div className="mt-6 flex justify-end">
                                             <Link
                                                 href={`/orders/${order.orderId}`}
-                                                className="btn-primary text-sm py-2 px-3 font-semibold uppercase tracking-wide transition-colors"
+                                                className="btn-primary text-sm py-2 px-6 font-semibold uppercase tracking-wide"
                                             >
                                                 {t("viewDetails")}
                                             </Link>

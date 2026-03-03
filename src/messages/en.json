@@ -518,7 +518,8 @@
         "readyForPickup": "Ready for Pickup",
         "inDispatch": "In Transit",
         "completed": "Completed",
-        "unknown": "Status {status}"
+        "unknown": "Status {status}",
+        "purchased": "Purchased"
     },
     "subscribeError": "Failed to subscribe, please try again",
     "newsletterSuccessTitle": "Thank you for subscribing!",
@@ -545,5 +546,8 @@
     "aboutUsSubtitle": "Learn more about our story and team",
     "CashWinningAmount": "Prize Cost",
     "blogServiceUnavailable": "Service Temporarily Unavailable",
-    "blogServiceMessage": "We’re having trouble connecting to our blog provider. Please try again in a moment."
+    "blogServiceMessage": "We’re having trouble connecting to our blog provider. Please try again in a moment.",
+    "noOrderAvl": "No orders available",
+    "noRflAvl": "No raffles available",
+    "checkBackLater": "New raffles will be available soon."
 }

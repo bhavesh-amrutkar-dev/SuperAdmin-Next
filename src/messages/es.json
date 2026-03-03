@@ -518,7 +518,8 @@
         "readyForPickup": "Listo para recoger",
         "inDispatch": "En tránsito",
         "completed": "Completado",
-        "unknown": "Estado {status}"
+        "unknown": "Estado {status}",
+        "purchased": "Comprado"
     },
     "subscribeError": "No se pudo suscribir, por favor intente de nuevo",
     "newsletterSuccessTitle": "¡Gracias por suscribirte!",
@@ -545,5 +546,8 @@
     "aboutUsSubtitle": "Conoce más sobre nuestra historia y nuestro equipo",
     "CashWinningAmount": "Costo del premio",
     "blogServiceUnavailable": "Servicio temporalmente no disponible",
-    "blogServiceMessage": "Estamos teniendo problemas para conectarnos con nuestro proveedor de blogs. Por favor, inténtalo de nuevo en unos momentos."
+    "blogServiceMessage": "Estamos teniendo problemas para conectarnos con nuestro proveedor de blogs. Por favor, inténtalo de nuevo en unos momentos.",
+    "noOrderAvl": "No hay pedidos disponibles",
+    "noRflAvl": "No hay rifas disponibles",
+    "checkBackLater": "Nuevos sorteos estarán disponibles pronto."
 }
