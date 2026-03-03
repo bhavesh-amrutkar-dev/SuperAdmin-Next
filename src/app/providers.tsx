@@ -19,7 +19,7 @@ export default function ClientProviders({
       <CountryProvider countries={countries}>
         {/* <CountryGuard> */}
         <Toaster
-          position="top-right"
+          position="top-center"
           richColors
           closeButton
           expand
