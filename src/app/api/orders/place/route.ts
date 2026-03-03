@@ -41,7 +41,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("ORDER BACKEND RESPONSE:", data);
 
     // ✅ Return flattened object
     return NextResponse.json(data.data);

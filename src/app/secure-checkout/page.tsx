@@ -742,7 +742,6 @@ export default function SecureCheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderPayload),
       });
-      console.log(response);
 
       if (!response.ok) {
         const err = await response.json();
@@ -750,7 +749,6 @@ export default function SecureCheckoutPage() {
       }
 
       const orderData = await response.json();
-      console.log("orderData", orderData);
       // Check if order API returned an error
       if (
         orderData?.message &&
