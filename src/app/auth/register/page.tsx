@@ -89,11 +89,6 @@ export default function RegisterPage() {
 
       const data = await res.json();
       const { otpId, otpExpiryTime } = data?.data;
-console.log("res", res);
-console.log("data", data);
-console.log("otpId", otpId);
-console.log("otpExpiryTime", otpExpiryTime);
-
       sessionStorage.setItem(
         "signup_payload",
         JSON.stringify({
