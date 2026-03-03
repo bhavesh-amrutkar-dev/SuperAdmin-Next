@@ -543,5 +543,7 @@
     "passwordResetSuccess": "Password changed successfully",
     "passwordResetFailed": "Failed to reset password",
     "aboutUsSubtitle": "Learn more about our story and team",
-    "CashWinningAmount" : "Prize Cost"
+    "CashWinningAmount": "Prize Cost",
+    "blogServiceUnavailable": "Service Temporarily Unavailable",
+    "blogServiceMessage": "We’re having trouble connecting to our blog provider. Please try again in a moment."
 }

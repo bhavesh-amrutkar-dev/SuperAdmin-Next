@@ -543,5 +543,7 @@
     "passwordResetSuccess": "La contraseña se ha cambiado correctamente",
     "passwordResetFailed": "No se pudo restablecer la contraseña",
     "aboutUsSubtitle": "Conoce más sobre nuestra historia y nuestro equipo",
-    "CashWinningAmount": "Costo del premio"
+    "CashWinningAmount": "Costo del premio",
+    "blogServiceUnavailable": "Servicio temporalmente no disponible",
+    "blogServiceMessage": "Estamos teniendo problemas para conectarnos con nuestro proveedor de blogs. Por favor, inténtalo de nuevo en unos momentos."
 }

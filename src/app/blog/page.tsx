@@ -10,6 +10,7 @@ import Footer from "@/src/components/layout/Footer";
 import PreFooterIconModule from "@/src/components/layout/PreFooterIconModule";
 import { BlogService, type BlogPost, type BlogPagination } from "@/src/lib/services/blog";
 import { PRODUCT_CART } from "@/src/lib/config";
+import { Button } from "@/src/components/ui/button";
 
 export default function BlogPage() {
     const t = useTranslations();
@@ -92,9 +93,27 @@ export default function BlogPage() {
         return (
             <main>
                 <Header />
-                <div className="flex items-center justify-center min-h-[60vh]">
-                    <div className="text-lg text-[#797979]">Loading...</div>
+
+                <div className="mx-auto w-full max-w-6xl px-4 md:px-6 py-12">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {Array.from({ length: 6 }).map((_, index) => (
+                            <div
+                                key={index}
+                                className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse"
+                            >
+                                <div className="w-full h-48 bg-gray-200" />
+                                <div className="p-6 space-y-4">
+                                    <div className="h-4 bg-gray-200 rounded w-1/3" />
+                                    <div className="h-6 bg-gray-200 rounded w-3/4" />
+                                    <div className="h-4 bg-gray-200 rounded w-full" />
+                                    <div className="h-4 bg-gray-200 rounded w-5/6" />
+                                    <div className="h-4 bg-gray-200 rounded w-1/2" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
+
                 <PreFooterIconModule />
                 <Footer />
             </main>
@@ -119,8 +138,28 @@ export default function BlogPage() {
                 {/* Main Content */}
                 <div className="mx-auto w-full max-w-6xl px-4 md:px-6 py-12">
                     {error ? (
-                        <div className="flex items-center justify-center min-h-[40vh]">
-                            <div className="text-lg text-red-600">Error: {error}</div>
+                        <div className="flex items-center justify-center min-h-[50vh]">
+                            <div className="bg-white shadow-xl rounded-2xl p-10 max-w-md w-full text-center border border-red-100">
+                                <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-50 flex items-center justify-center">
+                                    <span className="text-2xl">⚠️</span>
+                                </div>
+
+                                <h2 className="text-xl font-bold text-[#2f2f2f] mb-3">
+                                    {t("blogServiceUnavailable") || "Service Temporarily Unavailable"}
+                                </h2>
+
+                                <p className="text-[#797979] text-sm mb-6">
+                                    {t("blogServiceMessage") ||
+                                        "We’re having trouble connecting to our blog provider. Please try again in a moment."}
+                                </p>
+
+                                <Button
+                                    onClick={() => fetchBlogs(currentPage)}
+                                    className="px-6 py-3 bg-[#2f2f2f] text-white rounded-xl hover:bg-[#f3c200] hover:text-[#2f2f2f] transition-all font-semibold"
+                                >
+                                    {t("retry") || "Retry"}
+                                </Button>
+                            </div>
                         </div>
                     ) : posts.length === 0 ? (
                         <div className="flex items-center justify-center min-h-[40vh]">
@@ -130,6 +169,12 @@ export default function BlogPage() {
                         </div>
                     ) : (
                         <>
+                            {loading && (
+                                <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center z-10">
+                                    <div className="w-10 h-10 border-4 border-gray-300 border-t-[#f3c200] rounded-full animate-spin" />
+                                </div>
+                            )}
+
                             {/* Blog Posts Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
                                 {posts.map((post) => (

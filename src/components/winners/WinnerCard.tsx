@@ -6,7 +6,7 @@ import { WinnerItem } from "@/src/models/api/response/winners";
 import Image from "next/image";
 import { useState } from "react";
 import WinnerVideoModal from "../modals/WinnerVideoModal";
-import { PROFILE_PLACE_HOLDER, WINNER } from "@/src/lib/config";
+import { PRODUCT_PLACE_HOLDER, PROFILE_PLACE_HOLDER, WINNER } from "@/src/lib/config";
 import { Play } from "lucide-react";
 import { Button } from "../ui/button";
 import { useTranslations } from "next-intl";
@@ -23,7 +23,7 @@ export default function WinnerCard({ item, customDrawDate }: WinnerCardProps) {
     const videoUrl = item.winnersVideo && item.winnersVideo.length > 0 ? item.winnersVideo[0].videoUrl : null;
 
     // Use medium image if available, receive image array
-    const productImage = item.image && item.image.length > 0 ? item.image[0].medium : "/images/placeholder.png";
+    const productImage = item.image && item.image.length > 0 ? item.image[0].medium : PRODUCT_PLACE_HOLDER;
 
     // Format Date - Use prop if available, otherwise fallback (which might cause hydration issue if not handled)
     // Server should pass customDrawDate to avoid hydration mismatch
