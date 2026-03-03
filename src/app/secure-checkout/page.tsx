@@ -742,6 +742,7 @@ export default function SecureCheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderPayload),
       });
+      console.log(response);
 
       if (!response.ok) {
         const err = await response.json();
