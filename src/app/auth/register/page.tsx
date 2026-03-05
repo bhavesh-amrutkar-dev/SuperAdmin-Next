@@ -112,11 +112,11 @@ export default function RegisterPage() {
         })
       );
 
-      // router.push(
-      //   `/auth/verify-otp?method=mobile&value=${encodeURIComponent(
-      //     `${cleanedForm.countryCode}${cleanedForm.mobile}`
-      //   )}&otpId=${otpId}&expiry=${otpExpiryTime}&flow=signup`
-      // );
+      router.push(
+        `/auth/verify-otp?method=mobile&value=${encodeURIComponent(
+          `${cleanedForm.countryCode}${cleanedForm.mobile}`
+        )}&otpId=${otpId}&expiry=${otpExpiryTime}&flow=signup`
+      );
     } catch (err: any) {
       toast.error(err?.message)
       setOtpError(err?.message || "Something went wrong");
