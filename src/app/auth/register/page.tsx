@@ -73,7 +73,6 @@ export default function RegisterPage() {
 
     try {
       // Call your server-side API route
-      console.log("init");
 
       const res = await fetch("/api/send-otp", {
         method: "POST",
@@ -85,7 +84,6 @@ export default function RegisterPage() {
 
         }),
       });
-      console.log(res);
 
       if (!res.ok) {
         const errorData = await res.json();
@@ -120,7 +118,6 @@ export default function RegisterPage() {
       //   )}&otpId=${otpId}&expiry=${otpExpiryTime}&flow=signup`
       // );
     } catch (err: any) {
-      console.log("err", err?.message);
       toast.error(err?.message)
       setOtpError(err?.message || "Something went wrong");
     } finally {

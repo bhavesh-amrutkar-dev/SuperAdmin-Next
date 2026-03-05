@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("OTP Response:", data);
+    // console.log("OTP Response:", data);
 
     return NextResponse.json(data);
   } catch (err: any) {
