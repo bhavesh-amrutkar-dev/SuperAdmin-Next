@@ -13,6 +13,8 @@ import { useTranslations } from "next-intl";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import ErrorMessage from "@/src/components/ui/errorMessage";
+import CountrySelect from "@/src/components/common/CountrySelect";
+import { toast } from "sonner";
 type RegisterForm = {
   firstName: string;
   lastName: string;
@@ -71,6 +73,8 @@ export default function RegisterPage() {
 
     try {
       // Call your server-side API route
+      console.log("init");
+
       const res = await fetch("/api/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -78,9 +82,10 @@ export default function RegisterPage() {
           countryCode: cleanedForm.countryCode,
           mobile: cleanedForm.mobile,
           email: cleanedForm.email,
-          
+
         }),
       });
+      console.log(res);
 
       if (!res.ok) {
         const errorData = await res.json();
@@ -109,13 +114,15 @@ export default function RegisterPage() {
         })
       );
 
-      router.push(
-        `/auth/verify-otp?method=mobile&value=${encodeURIComponent(
-          `${cleanedForm.countryCode}${cleanedForm.mobile}`
-        )}&otpId=${otpId}&expiry=${otpExpiryTime}&flow=signup`
-      );
+      // router.push(
+      //   `/auth/verify-otp?method=mobile&value=${encodeURIComponent(
+      //     `${cleanedForm.countryCode}${cleanedForm.mobile}`
+      //   )}&otpId=${otpId}&expiry=${otpExpiryTime}&flow=signup`
+      // );
     } catch (err: any) {
-      setOtpError(err.message);
+      console.log("err", err?.message);
+      toast.error(err?.message)
+      setOtpError(err?.message || "Something went wrong");
     } finally {
       setOtpLoading(false);
     }
@@ -448,45 +455,24 @@ export default function RegisterPage() {
         </div>
 
         {/* Country */}
+
         <div className="space-y-2">
-          <Label
-            htmlFor="country"
-            error={!!errors.country}
-            required
-          >
+          <Label htmlFor="country" error={!!errors.country} required>
             {t("country")}
           </Label>
-          <select
-            id="country"
-            className={`
-        w-full h-[44px] rounded-lg border
-        px-3 text-sm
-        transition-all duration-200
-        focus:outline-none focus:ring-0 focus:border-ring focus:!border-[#f3c200]
-        ${errors.country
-                ? "border-red-500 focus:ring-red-200 focus:border-red-500"
-                : "border-input hover:border-muted-foreground/40"
-              }
-      `}
+
+          <CountrySelect
+            countries={countries}
             value={form.country}
-            onChange={(e) => {
-              setForm({ ...form, country: e.target.value });
+            onChange={(value) => {
+              setForm({ ...form, country: value });
               setErrors({ ...errors, country: undefined });
             }}
-          >
-            <option value="">{t("selectCountry")}</option>
-            {countries.map((c) => (
-              <option key={c._id} value={c.countryCode}>
-                {c.emoji} {c.name}
-              </option>
-            ))}
-          </select>
-          {/* {errors.country && (
-            <p className="text-xs text-red-500">{errors.country}</p>
-          )} */}
+            placeholder={t("selectCountry")}
+          />
+
           <ErrorMessage message={errors.country} />
         </div>
-
         {/* Button */}
         <button
           disabled={loading}

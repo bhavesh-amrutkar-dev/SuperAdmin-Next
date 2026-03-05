@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       triggeredBy: "Customer Signup Verification Code",
       mk: generateMk(countryCode, mobile),
     };
-// console.log(payload);
+    // console.log(payload);
 
     // console.log("========== SEND OTP REQUEST ==========");
     // console.log("URL:", `${API_NY_URL}/customer/sendOtp`);
@@ -42,13 +42,16 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error("OTP Error:", error);
+      // let err1 = JSON.parse(error.message);
+      // console.log("err1", err1);
+      
       return NextResponse.json(
-        { message: error.message },
+          { message: error.message },
         { status: error.status || 500 }
       );
     }
 
-    // console.log("OTP Response:", data);
+    console.log("OTP Response:", data);
 
     return NextResponse.json(data);
   } catch (err: any) {
