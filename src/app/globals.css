@@ -347,8 +347,8 @@ html {
   border-radius: 3px;
 }
 
-@keyframes shimmer {
+/* @keyframes shimmer {
   100% {
     transform: translateX(100%);
   }
-}
+} */

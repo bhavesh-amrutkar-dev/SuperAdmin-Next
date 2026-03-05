@@ -103,6 +103,7 @@ import { toast } from "sonner";
 import { stripHtml } from "@/src/lib/utils/HtmltoText";
 import { Button } from "../../../components/ui/button";
 import ImageMagnify from "@/src/lib/utils/imageMagnify";
+import RaffleDetailSkeleton from "@/src/components/raffle-detail/RaffleDetailSkeleton";
 
 
 export default function RafflesDetailPage() {
@@ -1208,359 +1209,409 @@ export default function RafflesDetailPage() {
     };
 
     return (
+
         <main className="bg-gray-50 min-h-screen">
             <Header />
+            {!lotteryItem ? (
+                <div className="mx-auto w-full max-w-[1648px] px-4 md:px-6 py-4 md:py-10 animate-pulse">
+                    <div className="flex flex-col lg:flex-row gap-6">
 
-            <div className="mx-auto w-full max-w-[1648px] px-4 md:px-6 py-4 md:py-10 pb-0 md:pb-10">
-                {/* Full Width Header Title Section */}
+                        {/* LEFT IMAGE SKELETON */}
+                        <div className="w-full lg:w-1/2 space-y-6">
+                            <div className="bg-white rounded-xl shadow-lg p-4 h-[450px] flex items-center justify-center">
+                                <div className="w-full h-full rounded-xl bg-gray-200"></div>
+                            </div>
+                        </div>
+
+                        {/* RIGHT SIDE SKELETON */}
+                        <div className="w-full lg:w-1/2 space-y-6 bg-gray-100 p-6 rounded-xl">
+
+                            {/* Title */}
+                            <div className="h-6 w-3/4 bg-gray-200 rounded"></div>
+
+                            {/* Share button */}
+                            <div className="h-10 w-32 bg-gray-200 rounded-full"></div>
+
+                            {/* Countdown */}
+                            <div className="h-20 bg-gray-200 rounded"></div>
+
+                            {/* Timeline */}
+                            <div className="h-16 bg-gray-200 rounded"></div>
+
+                            {/* Price */}
+                            <div className="h-24 bg-gray-200 rounded"></div>
+
+                            {/* Highlights */}
+                            <div className="bg-white rounded-xl p-6 space-y-4">
+                                <div className="h-4 w-40 bg-gray-200 rounded"></div>
+                                <div className="h-4 w-full bg-gray-200 rounded"></div>
+                                <div className="h-4 w-5/6 bg-gray-200 rounded"></div>
+                                <div className="h-4 w-4/6 bg-gray-200 rounded"></div>
+                            </div>
+
+                            {/* Participate button */}
+                            <div className="h-12 bg-gray-200 rounded"></div>
+                        </div>
+                    </div>
+
+                    {/* Accordion skeleton */}
+                    <div className="bg-white rounded-xl mt-8 p-6 space-y-4">
+                        <div className="h-5 w-48 bg-gray-200 rounded"></div>
+                        <div className="h-4 w-full bg-gray-200 rounded"></div>
+                        <div className="h-4 w-5/6 bg-gray-200 rounded"></div>
+                    </div>
+                </div>
+            ) : (
+                <div className="mx-auto w-full max-w-[1648px] px-4 md:px-6 py-4 md:py-10 pb-0 md:pb-10">
+                    {/* Full Width Header Title Section */}
 
 
-                {/* Main Content Layout */}
-                <div className="flex flex-col lg:flex-row gap-6 mb-6 mx-auto items-start">
-                    {/* Left Column - Product Image and Win Probability */}
-                    <div className="w-full lg:w-1/2 space-y-6 relative lg:sticky lg:top-[100px] xl:me-3">
-                        {/* Product Image Area */}
-                        <div className="bg-white rounded-xl shadow-lg p-3 md:p-4 min-h-[250px] md:h-[500px] lg:h-[calc(100vh-150px)] flex items-center justify-center">
-                            {/* Participate Rule Button - Moved to Left Column per User request */}
-                            {lotteryItem?.raffleEmailEntry && (
-                                <div className="flex justify-start">
+                    {/* Main Content Layout */}
+                    <div className="flex flex-col lg:flex-row gap-6 mb-6 mx-auto items-start">
+                        {/* Left Column - Product Image and Win Probability */}
+                        <div className="w-full lg:w-1/2 space-y-6 relative lg:sticky lg:top-[100px] xl:me-3">
+                            {/* Product Image Area */}
+                            <div className="bg-white rounded-xl shadow-lg p-3 md:p-4 min-h-[250px] md:h-[500px] lg:h-[calc(100vh-150px)] flex items-center justify-center">
+                                {/* Participate Rule Button - Moved to Left Column per User request */}
+                                {lotteryItem?.raffleEmailEntry && (
+                                    <div className="flex justify-start">
+                                        <Button
+                                            onClick={() => setShowEmailEntryModal(true)}
+                                            className="bg-gray-100 font-bold h-8 w-8 rounded-full transition-all flex items-center justify-center gap-2 tracking-wider absolute top-5 right-5 z-10" title="Participate Rule"
+                                        >
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="!w-[18px] !h-[18px] text-muted-foreground"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+                                        </Button>
+                                    </div>
+                                )}
+                                <div className="relative w-full aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden flex items-center justify-center shadow-inner min-h-[250px] md:h-[500px] lg:h-[calc(100vh-150px)]">
+                                    <ImageMagnify
+                                        largeImage={displayImage}
+                                        product={{
+                                            images: [
+                                                {
+                                                    altText: displayName,
+                                                },
+                                            ],
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right Column - Selection and Call-to-Action */}
+                        <div className="w-full lg:w-1/2 space-y-6 bg-gray-100 p-4 2xl:p-6 rounded-xl">
+                            <div className="mx-auto mb-6">
+                                <div className="flex items-center justify-between gap-2">
+                                    <h1 className="text-lg md:text-xl font-black text-[#2f2f2f] uppercase">
+                                        {lotteryItem.productName || lotteryItem.name || lotteryItem.campaignTitle}
+                                    </h1>
+
                                     <Button
-                                        onClick={() => setShowEmailEntryModal(true)}
-                                        className="bg-gray-100 font-bold h-8 w-8 rounded-full transition-all flex items-center justify-center gap-2 tracking-wider absolute top-5 right-5 z-10" title="Participate Rule"
+                                        onClick={handleShare}
+                                        disabled={sharing}
+                                        className="relative -mr-px flex items-center justify-center rounded-full transition-colors duration-300 ease-in-out border border-gray-300 bg-white font-semibold transition-all hover:scale-102 hover:border-[#FECB02] px-3 sm:px-4"
                                     >
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="!w-[18px] !h-[18px] text-muted-foreground"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+                                        <Share2 size={18} />
+                                        {sharing ? "..." : t("share") || "Share"}
                                     </Button>
                                 </div>
-                            )}
-                            <div className="relative w-full aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden flex items-center justify-center shadow-inner min-h-[250px] md:h-[500px] lg:h-[calc(100vh-150px)]">
-                                <ImageMagnify
-                                    largeImage={displayImage}
-                                    product={{
-                                        images: [
-                                            {
-                                                altText: displayName,
-                                            },
-                                        ],
-                                    }}
-                                />
                             </div>
-                        </div>
-                    </div>
+                            {/* Countdown Timer */}
+                            <CountdownTimerDisplay countdown={countdown} />
 
-                    {/* Right Column - Selection and Call-to-Action */}
-                    <div className="w-full lg:w-1/2 space-y-6 bg-gray-100 p-4 2xl:p-6 rounded-xl">
-                        <div className="mx-auto mb-6">
-                            <div className="flex items-center justify-between gap-2">
-                                <h1 className="text-lg md:text-xl font-black text-[#2f2f2f] uppercase">
-                                    {lotteryItem.productName || lotteryItem.name || lotteryItem.campaignTitle}
-                                </h1>
+                            {/* Timeline */}
+                            <Timeline timelineData={timelineData} />
 
-                                <Button
-                                    onClick={handleShare}
-                                    disabled={sharing}
-                                    className="relative -mr-px flex items-center justify-center rounded-full transition-colors duration-300 ease-in-out border border-gray-300 bg-white font-semibold transition-all hover:scale-102 hover:border-[#FECB02] px-3 sm:px-4"
-                                >
-                                    <Share2 size={18} />
-                                    {sharing ? "..." : t("share") || "Share"}
-                                </Button>
-                            </div>
-                        </div>
-                        {/* Countdown Timer */}
-                        <CountdownTimerDisplay countdown={countdown} />
+                            {/* Price and Progress Bar */}
+                            <PriceProgressBar lotteryItem={lotteryItem} />
 
-                        {/* Timeline */}
-                        <Timeline timelineData={timelineData} />
-
-                        {/* Price and Progress Bar */}
-                        <PriceProgressBar lotteryItem={lotteryItem} />
-
-                        {/* Titles and Highlights Card */}
-                        {lotteryItem.highlights && lotteryItem.highlights.length > 0 && (
-                            <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 border border-gray-50">
-                                <div className="space-y-5">
-                                    {/* Campaign Title */}
-                                    {lotteryItem.campaignTitle && (
-                                        <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
-                                            <div className="w-8 h-8 rounded-lg bg-[#FECB02]/10 flex items-center justify-center flex-shrink-0">
-                                                <span className="text-sm">🏆</span>
+                            {/* Titles and Highlights Card */}
+                            {lotteryItem.highlights && lotteryItem.highlights.length > 0 && (
+                                <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 border border-gray-50">
+                                    <div className="space-y-5">
+                                        {/* Campaign Title */}
+                                        {lotteryItem.campaignTitle && (
+                                            <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
+                                                <div className="w-8 h-8 rounded-lg bg-[#FECB02]/10 flex items-center justify-center flex-shrink-0">
+                                                    <span className="text-sm">🏆</span>
+                                                </div>
+                                                <h3 className="text-lg md:text-xl font-black text-[#2f2f2f] uppercase tracking-wider leading-tight">
+                                                    {lotteryItem.campaignTitle}
+                                                </h3>
                                             </div>
-                                            <h3 className="text-lg md:text-xl font-black text-[#2f2f2f] uppercase tracking-wider leading-tight">
-                                                {lotteryItem.campaignTitle}
-                                            </h3>
-                                        </div>
-                                    )}
+                                        )}
 
-                                    {/* Highlights Content */}
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <div className="h-4 w-1 bg-[#FECB02] rounded-full"></div>
-                                            <h4 className="text-xs md:text-sm font-black text-amber-600 uppercase tracking-[0.1em]">
-                                                {t("highlights") || "HIGHLIGHTS"}
-                                            </h4>
-                                        </div>
+                                        {/* Highlights Content */}
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <div className="h-4 w-1 bg-[#FECB02] rounded-full"></div>
+                                                <h4 className="text-xs md:text-sm font-black text-amber-600 uppercase tracking-[0.1em]">
+                                                    {t("highlights") || "HIGHLIGHTS"}
+                                                </h4>
+                                            </div>
 
-                                        <ul className="space-y-4">
-                                            {(() => {
-                                                const fullText = lotteryItem.highlights
-                                                    .join('\n')
-                                                    .replace(/\uFFFD/g, '')
-                                                    .trim();
+                                            <ul className="space-y-4">
+                                                {(() => {
+                                                    const fullText = lotteryItem.highlights
+                                                        .join('\n')
+                                                        .replace(/\uFFFD/g, '')
+                                                        .trim();
 
-                                                if (!fullText) return [];
+                                                    if (!fullText) return [];
 
-                                                const fragments = fullText
-                                                    .split(/\n/g)
-                                                    .map(f => f.trim())
-                                                    .filter(f => f.length > 0);
+                                                    const fragments = fullText
+                                                        .split(/\n/g)
+                                                        .map(f => f.trim())
+                                                        .filter(f => f.length > 0);
 
-                                                // 3. Process fragments to ensure icons are attached to content
-                                                const processedRows: string[] = [];
-                                                for (let i = 0; i < fragments.length; i++) {
-                                                    const current = fragments[i];
-                                                    const isIconOnly = current.length <= 4 && /[📌📁⚠️🏆]/.test(current);
+                                                    // 3. Process fragments to ensure icons are attached to content
+                                                    const processedRows: string[] = [];
+                                                    for (let i = 0; i < fragments.length; i++) {
+                                                        const current = fragments[i];
+                                                        const isIconOnly = current.length <= 4 && /[📌📁⚠️🏆]/.test(current);
 
-                                                    if (isIconOnly && i + 1 < fragments.length) {
-                                                        processedRows.push(current + " " + fragments[i + 1]);
-                                                        i++; // Skip merged text
-                                                    } else {
-                                                        processedRows.push(current);
+                                                        if (isIconOnly && i + 1 < fragments.length) {
+                                                            processedRows.push(current + " " + fragments[i + 1]);
+                                                            i++; // Skip merged text
+                                                        } else {
+                                                            processedRows.push(current);
+                                                        }
                                                     }
-                                                }
-                                                return processedRows;
-                                            })().map((highlight: string, index: number) => {
-                                                const hasEmoji = /[📌📁⚠️🏆]/.test(highlight.charAt(0));
-                                                return (
-                                                    <li key={index} className="flex items-start gap-3 group">
-                                                        {!hasEmoji && (
-                                                            <div className="mt-1.5 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#FECB02] group-hover:scale-125 transition-transform shadow-[0_0_8px_rgba(254,203,2,0.4)]" />
-                                                        )}
-                                                        <span className={`text-sm md:text-base text-[#4a4a4a] font-medium leading-[1.6] ${hasEmoji ? 'pl-0' : ''}`}>
-                                                            {highlight}
-                                                        </span>
-                                                    </li>
-                                                );
-                                            })}
-                                        </ul>
+                                                    return processedRows;
+                                                })().map((highlight: string, index: number) => {
+                                                    const hasEmoji = /[📌📁⚠️🏆]/.test(highlight.charAt(0));
+                                                    return (
+                                                        <li key={index} className="flex items-start gap-3 group">
+                                                            {!hasEmoji && (
+                                                                <div className="mt-1.5 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#FECB02] group-hover:scale-125 transition-transform shadow-[0_0_8px_rgba(254,203,2,0.4)]" />
+                                                            )}
+                                                            <span className={`text-sm md:text-base text-[#4a4a4a] font-medium leading-[1.6] ${hasEmoji ? 'pl-0' : ''}`}>
+                                                                {highlight}
+                                                            </span>
+                                                        </li>
+                                                    );
+                                                })}
+                                            </ul>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        <EntrySelection
-                            lotteryItem={lotteryItem}
-                            selectedTicket={selectedTicket}
-                            onTicketSelect={setSelectedTicket}
-                            currencySymbol={displayCurrency}
-                            freeTicketError={freeTicketError}
-                            userTickets={userTickets}
-                            ticketQuantity={ticketQuantity}
-                            onTicketQuantityChange={setTicketQuantity}
-                            onApplyClick={() => {
-                                if (ticketQuantity <= 0 || ticketQuantity > userTickets || !lotteryItem) {
-                                    return;
-                                }
-                                setShowApplyConfirmationModal(true);
-                            }}
-                            applyingTicket={applyingTicket}
-                        />
+                            <EntrySelection
+                                lotteryItem={lotteryItem}
+                                selectedTicket={selectedTicket}
+                                onTicketSelect={setSelectedTicket}
+                                currencySymbol={displayCurrency}
+                                freeTicketError={freeTicketError}
+                                userTickets={userTickets}
+                                ticketQuantity={ticketQuantity}
+                                onTicketQuantityChange={setTicketQuantity}
+                                onApplyClick={() => {
+                                    if (ticketQuantity <= 0 || ticketQuantity > userTickets || !lotteryItem) {
+                                        return;
+                                    }
+                                    setShowApplyConfirmationModal(true);
+                                }}
+                                applyingTicket={applyingTicket}
+                            />
 
-                        {/* Participate Action Area - Sticky for conversion */}
-                        <div className="mt-4 md:mt-6 z-40 border-t border-gray-100/50">
-                            {showQuantitySelector ? (
-                                <QuantitySelector
-                                    selectedQuantity={selectedQuantity}
-                                    onQuantityChange={setSelectedQuantity}
-                                    onDecrease={async () => {
-                                        const currentQty = Number(selectedQuantity) || 1;
-                                        if (!applyingTicket && selectedTicket) {
-                                            if (currentQty > 1) {
-                                                const newQty = currentQty - 1;
-                                                setSelectedQuantity(newQty);
+                            {/* Participate Action Area - Sticky for conversion */}
+                            <div className="mt-4 md:mt-6 z-40 border-t border-gray-100/50">
+                                {showQuantitySelector ? (
+                                    <QuantitySelector
+                                        selectedQuantity={selectedQuantity}
+                                        onQuantityChange={setSelectedQuantity}
+                                        onDecrease={async () => {
+                                            const currentQty = Number(selectedQuantity) || 1;
+                                            if (!applyingTicket && selectedTicket) {
+                                                if (currentQty > 1) {
+                                                    const newQty = currentQty - 1;
+                                                    setSelectedQuantity(newQty);
+                                                    await handleAddToCart(selectedTicket, newQty, false, true);
+                                                } else if (currentQty === 1) {
+                                                    await handleRemoveFromCart(selectedTicket);
+                                                }
+                                            }
+                                        }}
+                                        onIncrease={async () => {
+                                            const currentQty = Number(selectedQuantity) || 1;
+                                            const newQty = currentQty + 1;
+                                            setSelectedQuantity(newQty);
+                                            if (!applyingTicket && selectedTicket) {
                                                 await handleAddToCart(selectedTicket, newQty, false, true);
-                                            } else if (currentQty === 1) {
-                                                await handleRemoveFromCart(selectedTicket);
                                             }
-                                        }
-                                    }}
-                                    onIncrease={async () => {
-                                        const currentQty = Number(selectedQuantity) || 1;
-                                        const newQty = currentQty + 1;
-                                        setSelectedQuantity(newQty);
-                                        if (!applyingTicket && selectedTicket) {
-                                            await handleAddToCart(selectedTicket, newQty, false, true);
-                                        }
-                                    }}
-                                    onContinue={async () => {
-                                        if (continuing || applyingTicket || !selectedTicket) return;
-                                        setContinuing(true);
-                                        try {
-                                            await handleAddToCart(selectedTicket, selectedQuantity, false, true);
-                                            await new Promise(resolve => setTimeout(resolve, 100));
-                                        } catch (error) {
-                                            console.warn("Error updating cart before redirect:", error);
-                                        } finally {
-                                            router.push("/cart");
-                                        }
-                                    }}
-                                    applyingTicket={applyingTicket}
-                                    continuing={continuing}
-                                />
-                            ) : (
-                                <Button
-                                    className="w-full btn-primary  disabled:opacity-50 disabled:cursor-not-allowed h-12 transition-all shadow-lg flex items-center justify-center gap-2 text-sm md:text-base transform hover:-translate-y-1 uppercase"
-                                    onClick={() => {
-                                        if (!lotteryItem || !selectedTicket || participating || applyingTicket) return;
-
-                                        const ticketsSource: any[] =
-                                            lotteryItem.tickets ||
-                                            (lotteryItem as any).ticketPackages ||
-                                            (lotteryItem as any).ticketOptions ||
-                                            (lotteryItem as any).entryOptions ||
-                                            [];
-
-                                        let selectedTicketData: any = null;
-
-                                        ticketsSource.forEach((ticket: any, index: number) => {
-                                            const ticketId = ticket.ticketId || ticket.id || ticket._id || index.toString();
-                                            if (selectedTicket && ticketId === selectedTicket) {
-                                                const ticketPrice = ticket.price || ticket.ticketPrice || 0;
-                                                const numberOfTickets = ticket.numberOfTicket || ticket.numberOfTickets || ticket.quantity || 0;
-                                                selectedTicketData = {
-                                                    id: ticketId,
-                                                    price: ticketPrice,
-                                                    quantity: numberOfTickets || 0,
-                                                };
+                                        }}
+                                        onContinue={async () => {
+                                            if (continuing || applyingTicket || !selectedTicket) return;
+                                            setContinuing(true);
+                                            try {
+                                                await handleAddToCart(selectedTicket, selectedQuantity, false, true);
+                                                await new Promise(resolve => setTimeout(resolve, 100));
+                                            } catch (error) {
+                                                console.warn("Error updating cart before redirect:", error);
+                                            } finally {
+                                                router.push("/cart");
                                             }
-                                        });
+                                        }}
+                                        applyingTicket={applyingTicket}
+                                        continuing={continuing}
+                                    />
+                                ) : (
+                                    <Button
+                                        className="w-full btn-primary  disabled:opacity-50 disabled:cursor-not-allowed h-12 transition-all shadow-lg flex items-center justify-center gap-2 text-sm md:text-base transform hover:-translate-y-1 uppercase"
+                                        onClick={() => {
+                                            if (!lotteryItem || !selectedTicket || participating || applyingTicket) return;
 
-                                        if (selectedTicketData && selectedTicketData.price === 0) {
-                                            if (!user) {
-                                                setShowLoginModal(true);
+                                            const ticketsSource: any[] =
+                                                lotteryItem.tickets ||
+                                                (lotteryItem as any).ticketPackages ||
+                                                (lotteryItem as any).ticketOptions ||
+                                                (lotteryItem as any).entryOptions ||
+                                                [];
+
+                                            let selectedTicketData: any = null;
+
+                                            ticketsSource.forEach((ticket: any, index: number) => {
+                                                const ticketId = ticket.ticketId || ticket.id || ticket._id || index.toString();
+                                                if (selectedTicket && ticketId === selectedTicket) {
+                                                    const ticketPrice = ticket.price || ticket.ticketPrice || 0;
+                                                    const numberOfTickets = ticket.numberOfTicket || ticket.numberOfTickets || ticket.quantity || 0;
+                                                    selectedTicketData = {
+                                                        id: ticketId,
+                                                        price: ticketPrice,
+                                                        quantity: numberOfTickets || 0,
+                                                    };
+                                                }
+                                            });
+
+                                            if (selectedTicketData && selectedTicketData.price === 0) {
+                                                if (!user) {
+                                                    setShowLoginModal(true);
+                                                    return;
+                                                }
+                                                setPendingFreeTicket({
+                                                    id: selectedTicketData.id,
+                                                    quantity: selectedTicketData.quantity || 1,
+                                                });
+                                                setShowFreeTicketModal(true);
                                                 return;
                                             }
-                                            setPendingFreeTicket({
-                                                id: selectedTicketData.id,
-                                                quantity: selectedTicketData.quantity || 1,
-                                            });
-                                            setShowFreeTicketModal(true);
-                                            return;
-                                        }
 
-                                        if (selectedTicketData && selectedTicketData.price > 0) {
-                                            handleParticipateClick(selectedTicketData.id, 1);
-                                            return;
-                                        }
-                                    }}
-                                    disabled={participating || applyingTicket || !selectedTicket}
-                                >
-                                    {participating || applyingTicket ? (
-                                        <>
-                                            <Loader2 size={20} className="animate-spin" />
-                                            <span>{t("processing") || "Processing..."}</span>
-                                        </>
-                                    ) : (
-                                        <span>{t("participate") || "PARTICIPATE"}</span>
-                                    )}
-                                </Button>
-                            )}
+                                            if (selectedTicketData && selectedTicketData.price > 0) {
+                                                handleParticipateClick(selectedTicketData.id, 1);
+                                                return;
+                                            }
+                                        }}
+                                        disabled={participating || applyingTicket || !selectedTicket}
+                                    >
+                                        {participating || applyingTicket ? (
+                                            <>
+                                                <Loader2 size={20} className="animate-spin" />
+                                                <span>{t("processing") || "Processing..."}</span>
+                                            </>
+                                        ) : (
+                                            <span>{t("participate") || "PARTICIPATE"}</span>
+                                        )}
+                                    </Button>
+                                )}
+                            </div>
+
+                            {/* Win Probability Section */}
+                            <WinProbabilitySection lotteryItem={lotteryItem} />
+
                         </div>
-
-                        {/* Win Probability Section */}
-                        <WinProbabilitySection lotteryItem={lotteryItem} />
-
                     </div>
-                </div>
 
-                {/* Additional Information Sections - Now properly at the bottom */}
-                <div className="border border-gray-200 bg-white rounded-xl mt-6 lg:mt-8 overflow-hidden">
-                    {/* Product Description Section */}
-                    <AccordionSection
-                        title={t("productDescription")}
-                        isOpen={openSections.productDescription}
-                        onToggle={() => toggleSection("productDescription")}
-                    >
-                        <div className="text-sm md:text-base text-[#797979] leading-relaxed">
-                            {lotteryItem.detailDesc || lotteryItem.description ? (
-                                <div
-                                    className="accordion-content"
-                                    dangerouslySetInnerHTML={{
-                                        __html: lotteryItem.detailDesc || lotteryItem.description || ""
-                                    }}
-                                />
-                            ) : (
-                                <p className="text-sm text-[#797979]">{t("noDataAvailable")}</p>
-                            )}
-                        </div>
-                    </AccordionSection>
+                    {/* Additional Information Sections - Now properly at the bottom */}
+                    <div className="border border-gray-200 bg-white rounded-xl mt-6 lg:mt-8 overflow-hidden">
+                        {/* Product Description Section */}
+                        <AccordionSection
+                            title={t("productDescription")}
+                            isOpen={openSections.productDescription}
+                            onToggle={() => toggleSection("productDescription")}
+                        >
+                            <div className="text-sm md:text-base text-[#797979] leading-relaxed">
+                                {lotteryItem.detailDesc || lotteryItem.description ? (
+                                    <div
+                                        className="accordion-content"
+                                        dangerouslySetInnerHTML={{
+                                            __html: lotteryItem.detailDesc || lotteryItem.description || ""
+                                        }}
+                                    />
+                                ) : (
+                                    <p className="text-sm text-[#797979]">{t("noDataAvailable")}</p>
+                                )}
+                            </div>
+                        </AccordionSection>
 
-                    {/* Rules of the Draw Section */}
-                    <AccordionSection
-                        title={t("rulesOfTheDraw")}
-                        isOpen={openSections.rulesOfDraw}
-                        onToggle={() => toggleSection("rulesOfDraw")}
-                    >
-                        <div className="text-sm md:text-base text-[#797979] mb-3 leading-relaxed">
-                            {lotteryItem.raffleRules ? (
-                                <div
-                                    className="accordion-content"
-                                    dangerouslySetInnerHTML={{ __html: lotteryItem.raffleRules }}
-                                />
-                            ) : (
-                                <p className="text-sm text-[#797979]">{t("noDataAvailable")}</p>
-                            )}
-                        </div>
-                    </AccordionSection>
+                        {/* Rules of the Draw Section */}
+                        <AccordionSection
+                            title={t("rulesOfTheDraw")}
+                            isOpen={openSections.rulesOfDraw}
+                            onToggle={() => toggleSection("rulesOfDraw")}
+                        >
+                            <div className="text-sm md:text-base text-[#797979] mb-3 leading-relaxed">
+                                {lotteryItem.raffleRules ? (
+                                    <div
+                                        className="accordion-content"
+                                        dangerouslySetInnerHTML={{ __html: lotteryItem.raffleRules }}
+                                    />
+                                ) : (
+                                    <p className="text-sm text-[#797979]">{t("noDataAvailable")}</p>
+                                )}
+                            </div>
+                        </AccordionSection>
 
-                    {/* Terms and Conditions Section */}
-                    <AccordionSection
-                        title={t("termsAndConditions")}
-                        isOpen={openSections.termsConditions}
-                        onToggle={() => toggleSection("termsConditions")}
-                    >
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm text-[#797979]">-</span>
-                            <button
-                                onClick={() => setShowTermsModal(true)}
-                                className="text-xs md:text-sm font-bold text-[#D4AF37] hover:text-[#B8860B] transition-colors uppercase"
-                            >
-                                {t("allDetails")}
-                            </button>
-                        </div>
-                    </AccordionSection>
+                        {/* Terms and Conditions Section */}
+                        <AccordionSection
+                            title={t("termsAndConditions")}
+                            isOpen={openSections.termsConditions}
+                            onToggle={() => toggleSection("termsConditions")}
+                        >
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm text-[#797979]">-</span>
+                                <button
+                                    onClick={() => setShowTermsModal(true)}
+                                    className="text-xs md:text-sm font-bold text-[#D4AF37] hover:text-[#B8860B] transition-colors uppercase"
+                                >
+                                    {t("allDetails")}
+                                </button>
+                            </div>
+                        </AccordionSection>
 
-                    {/* Questions & Answers Section */}
-                    <AccordionSection
-                        title={`${t("questionsAndAnswers")} (${questionsCount})`}
-                        isOpen={openSections.questionsAnswers}
-                        onToggle={() => toggleSection("questionsAnswers")}
-                    >
-                        <div className="border-t border-gray-200 mt-2"></div>
-                        <QuestionsSection
-                            questions={questions}
-                            questionsLoading={questionsLoading}
-                            questionsCount={questionsCount}
-                            getRelativeTime={getRelativeTime}
-                        />
-                    </AccordionSection>
+                        {/* Questions & Answers Section */}
+                        <AccordionSection
+                            title={`${t("questionsAndAnswers")} (${questionsCount})`}
+                            isOpen={openSections.questionsAnswers}
+                            onToggle={() => toggleSection("questionsAnswers")}
+                        >
+                            <div className="border-t border-gray-200 mt-2"></div>
+                            <QuestionsSection
+                                questions={questions}
+                                questionsLoading={questionsLoading}
+                                questionsCount={questionsCount}
+                                getRelativeTime={getRelativeTime}
+                            />
+                        </AccordionSection>
 
-                    {/* Seller Information Section */}
-                    <AccordionSection
-                        title={t("sellerInformation").toUpperCase()}
-                        isOpen={openSections.sellerInfo}
-                        onToggle={() => toggleSection("sellerInfo")}
-                    >
-                        <div className="text-sm md:text-base text-[#797979] leading-relaxed">
-                            {lotteryItem.sellerInfo || lotteryItem.sellerName ? (
-                                <p className="text-sm text-[#797979]">
-                                    {lotteryItem.sellerInfo || lotteryItem.sellerName || t("noDataAvailable")}
-                                </p>
-                            ) : (
-                                <p className="text-sm text-[#797979]">{t("noDataAvailable")}</p>
-                            )}
-                        </div>
-                    </AccordionSection>
-                </div>
-            </div>
+                        {/* Seller Information Section */}
+                        <AccordionSection
+                            title={t("sellerInformation").toUpperCase()}
+                            isOpen={openSections.sellerInfo}
+                            onToggle={() => toggleSection("sellerInfo")}
+                        >
+                            <div className="text-sm md:text-base text-[#797979] leading-relaxed">
+                                {lotteryItem.sellerInfo || lotteryItem.sellerName ? (
+                                    <p className="text-sm text-[#797979]">
+                                        {lotteryItem.sellerInfo || lotteryItem.sellerName || t("noDataAvailable")}
+                                    </p>
+                                ) : (
+                                    <p className="text-sm text-[#797979]">{t("noDataAvailable")}</p>
+                                )}
+                            </div>
+                        </AccordionSection>
+                    </div>
+                </div>)}
 
             {/* Scroll to Top Button */}
             {
