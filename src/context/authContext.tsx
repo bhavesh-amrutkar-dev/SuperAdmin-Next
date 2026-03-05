@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
     };
   }, []);
-
+  if (!ready) return null;
   return (
     <AuthContext.Provider value={{ user, setUser, ready }}>
       {children}

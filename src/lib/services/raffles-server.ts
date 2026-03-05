@@ -2,7 +2,7 @@ import { API_NY_URL, DEFAULT_COUNTRY_CODE } from "../config";
 import { serverFetch } from "../api/server-api";
 import { cookies } from "next/headers";
 
-const DEFAULT_COUNTRY_ID = "633a6c3dd17f0000ea00102e";
+const DEFAULT_COUNTRY_ID = "634fb20fc536ea86850a81d4";
 
 async function getCountryId() {
     const cookieStore = await cookies();

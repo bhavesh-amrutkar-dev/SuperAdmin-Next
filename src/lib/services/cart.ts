@@ -2,7 +2,7 @@ import { apiClient } from "../api/axios";
 import { getCookie } from "cookies-next";
 import { STORE_CATEGORY_ID } from "@/src/lib/config";
 
-const DEFAULT_COUNTRY_ID = "633a6c3dd17f0000ea00102e";
+const DEFAULT_COUNTRY_ID = "634fb20fc536ea86850a81d4";
 const DEFAULT_STORE_CATEGORY_ID = STORE_CATEGORY_ID as string;
 
 const getCountryId = (): string => {

@@ -900,7 +900,7 @@ export default function RafflesDetailPage() {
                 storeId: lotteryItem.storeId || "",
                 ticketId: ticketId || null,
                 campaignId: lotteryItem.campaignId,
-                countryId: (getCookie("C_id") as string) || "633a6c3dd17f0000ea00102e",
+                countryId: (getCookie("C_id") as string) || "634fb20fc536ea86850a81d4",
                 newQuantity: finalQuantity,
                 action: action,
                 cartType: 2,
@@ -1005,7 +1005,7 @@ export default function RafflesDetailPage() {
                 storeId: lotteryItem.storeId || "",
                 ticketId: ticketId || null,
                 campaignId: lotteryItem.campaignId,
-                countryId: (getCookie("C_id") as string) || "633a6c3dd17f0000ea00102e",
+                countryId: (getCookie("C_id") as string) || "634fb20fc536ea86850a81d4",
                 newQuantity: 0,
                 action: 3, // 3 = delete
                 cartType: 2,

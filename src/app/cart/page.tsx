@@ -372,7 +372,7 @@ export default function CartPage() {
         storeId: item.storeId || (item as any).storeId || "",
         ticketId: (item as any).ticketDetails?.ticketId || item.ticketId || null,
         campaignId: (item as any).campaignId || "",
-        countryId: getCookie("C_id") as string || "633a6c3dd17f0000ea00102e",
+        countryId: getCookie("C_id") as string || "634fb20fc536ea86850a81d4",
         newQuantity: newQuantity,
         action: 2, // 2 = update
         storeTypeId: 1,
@@ -495,7 +495,7 @@ export default function CartPage() {
         storeId: itemToRemove.storeId || (itemToRemove as any).storeId || "",
         ticketId: (itemToRemove as any).ticketDetails?.ticketId || itemToRemove.ticketId || null,
         campaignId: (itemToRemove as any).campaignId || "",
-        countryId: getCookie("C_id") as string || "633a6c3dd17f0000ea00102e",
+        countryId: getCookie("C_id") as string || "634fb20fc536ea86850a81d4",
         newQuantity: 0,
         action: 3, // 3 = delete
         cartType: 2,

@@ -84,7 +84,7 @@ export type PurchaseFreeTicketParams = {
     defaultAddressId?: string;
 };
 
-const DEFAULT_COUNTRY_ID = "633a6c3dd17f0000ea00102e";
+const DEFAULT_COUNTRY_ID = "634fb20fc536ea86850a81d4";
 
 const getCountryId = (): string => {
     const cookieCountryId = getCookie("C_id") as string | undefined;
