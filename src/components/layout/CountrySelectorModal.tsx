@@ -55,7 +55,7 @@ const CountryCard = memo(function CountryCard({
     <button
       type="button"
       onClick={() => onSelect(country.code)}
-      className={`group flex flex-col items-center rounded-xl border px-4 py-4 transition-all duration-150 w-[47%] sm:w-full ${isSelected
+      className={`group flex flex-col items-center rounded-xl border px-4 py-4 transition-all duration-150 w-[47%] sm:w-full focus:outline-none ${isSelected
         ? "border-[#FECB02] ring-2 ring-[#FECB02]/40 shadow-sm"
         : "border-gray-200 hover:border-[#FECB02]/60 hover:shadow-sm hover:cursor-pointer"
         }`}
@@ -150,7 +150,7 @@ export default function CountrySelectorModal({ open, onClose, onCountryChange }:
   const handleContinue = () => {
     if (error) return; // cannot continue if error
 
-    const selected = countries.find((c) => c.code === selectedCode) ?? countries[0];
+    const selected = countries.find((c) => c.code === selectedCode);
     if (!selected) return;
 
     const cookieOptions = { maxAge: 60 * 60 * 24 * 365 };

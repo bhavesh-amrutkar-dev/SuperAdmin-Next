@@ -23,8 +23,9 @@ export default function ClientProviders({
           richColors
           closeButton
           expand
-          visibleToasts={4}
+          visibleToasts={2}
           toastOptions={{
+            duration: 1500,
             className:
               "rounded-2xl shadow-2xl border border-gray-200 backdrop-blur-lg",
             style: {
