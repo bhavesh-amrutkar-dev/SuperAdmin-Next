@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
         };
         // console.log(payload);
 
-        const { data, error } = await serverFetch("/signIn", {
+        const { data, error } = await serverFetch("/signIn/V2", {
             method: "POST",
             body: JSON.stringify(payload),
             baseUrl: API_NY_URL,

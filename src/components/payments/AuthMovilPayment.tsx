@@ -65,32 +65,37 @@ export default function AthMovilPayment({
         };
 
 
-        // 3️⃣ Remove old SDK if exists (important)
+        // 3️⃣ Check if SDK exists to avoid SyntaxError on re-injection
         const oldScript = document.getElementById("athmovil-sdk");
         if (oldScript) {
-            oldScript.remove();
-        }
-
-        // 4️⃣ Load SDK
-        const script = document.createElement("script");
-        script.src = "https://payments.athmovil.com/api/js/athmovil_base.js";
-        script.id = "athmovil-sdk";
-
-        script.onload = () => {
-
+            // If already loaded, just re-trigger the necessary events
             setTimeout(() => {
                 document.dispatchEvent(
                     new Event("DOMContentLoaded", { bubbles: true })
                 );
                 window.dispatchEvent(new Event("load", { bubbles: true }));
             }, 300);
-        };
+        } else {
+            // 4️⃣ Load SDK
+            const script = document.createElement("script");
+            script.src = "https://payments.athmovil.com/api/js/athmovil_base.js";
+            script.id = "athmovil-sdk";
 
-        script.onerror = () => {
-            console.error("❌ Failed to load ATH SDK");
-        };
+            script.onload = () => {
+                setTimeout(() => {
+                    document.dispatchEvent(
+                        new Event("DOMContentLoaded", { bubbles: true })
+                    );
+                    window.dispatchEvent(new Event("load", { bubbles: true }));
+                }, 300);
+            };
 
-        document.head.appendChild(script);
+            script.onerror = () => {
+                console.error("❌ Failed to load ATH SDK");
+            };
+
+            document.head.appendChild(script);
+        }
 
         return () => {
 

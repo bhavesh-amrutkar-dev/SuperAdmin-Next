@@ -194,14 +194,8 @@ export default function SecureCheckoutPage() {
     fetchAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://payments.athmovil.com/api/js/athmovil_base.js";
-    script.async = true;
-    script.id = "athmovil-sdk";
-
-    document.head.appendChild(script);
-  }, []);
+  // Removed initial ATH SDK load to prevent ReferenceErrors
+  // It will be loaded conditionally in AuthMovilPayment.tsx
 
   useEffect(() => {
     // Get selected address from cookie
