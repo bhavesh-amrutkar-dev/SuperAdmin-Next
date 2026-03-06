@@ -561,5 +561,7 @@
     "blogServiceMessage": "We’re having trouble connecting to our blog provider. Please try again in a moment.",
     "noOrderAvl": "No orders available",
     "noRflAvl": "No raffles available",
-    "checkBackLater": "New raffles will be available soon."
+    "checkBackLater": "New raffles will be available soon.",
+    "enterField": "Enter {field}",
+    "fieldRequired": "This field is required"
 }

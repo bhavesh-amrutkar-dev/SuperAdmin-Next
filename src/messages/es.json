@@ -561,5 +561,7 @@
     "blogServiceMessage": "Estamos teniendo problemas para conectarnos con nuestro proveedor de blogs. Por favor, inténtalo de nuevo en unos momentos.",
     "noOrderAvl": "No hay pedidos disponibles",
     "noRflAvl": "No hay rifas disponibles",
-    "checkBackLater": "Nuevos sorteos estarán disponibles pronto."
+    "checkBackLater": "Nuevos sorteos estarán disponibles pronto.",
+    "enterField": "Ingrese {field}",
+    "fieldRequired": "Este campo es obligatorio"
 }

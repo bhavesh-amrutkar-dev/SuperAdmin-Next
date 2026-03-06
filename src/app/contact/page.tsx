@@ -1,7 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+type ContactField = {
+    _id: string;
+    type: number;
+    mandatory: boolean;
+    title: string;
+    titleLan: {
+        en?: string;
+        es?: string;
+    };
+    dropDownData: string[];
+    sequence: number;
+};
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import Image from "next/image";
 import Header from "@/src/components/layout/Header";
 import Footer from "@/src/components/layout/Footer";
@@ -16,6 +28,8 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { useProfile } from "@/src/lib/hooks/userProfile";
 import { toast } from "sonner";
+import { ContactService } from "@/src/lib/services/contact";
+import { resolveIpAddress } from "@/src/lib/utils/ip-resolver";
 
 type ContactForm = {
     firstName: string;
@@ -30,7 +44,7 @@ type Errors = Partial<Record<keyof ContactForm, string>>;
 // Contact page component
 
 export default function ContactPage() {
-
+    const locale = useLocale();
     const t = useTranslations();
     const [formData, setFormData] = useState<ContactForm>({
         firstName: "",
@@ -44,6 +58,10 @@ export default function ContactPage() {
     const [errors, setErrors] = useState<Errors>({});
     const [loading, setLoading] = useState(false);
     const { user } = useProfile();
+    const [fields, setFields] = useState<ContactField[]>([]);
+    const [formValues, setFormValues] = useState<Record<string, string>>({});
+    const [submitting, setSubmitting] = useState(false);
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
         if (user) {
@@ -57,78 +75,152 @@ export default function ContactPage() {
             }));
         }
     }, [user]);
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+    const fetchingFieldsRef = useRef(false);
+
+    const fetchContactFields = useCallback(() => {
+        if (fetchingFieldsRef.current) {
+            return;
+        }
+
+        fetchingFieldsRef.current = true;
+        setLoading(true);
+
+        ContactService.getContactFields()
+            .then((payload) => {
+                const items = (payload as any)?.data ?? [];
+
+                const sorted = items.sort(
+                    (a: ContactField, b: ContactField) => a.sequence - b.sequence
+                );
+
+                setFields(sorted);
+            })
+            .catch((err) => {
+                try {
+                    let errorMessage = "Unknown error";
+
+                    if (err instanceof Error) {
+                        errorMessage = err.message || err.toString();
+                    } else if (err && typeof err === "object") {
+                        if ("message" in err && typeof err.message === "string") {
+                            errorMessage = err.message;
+
+                            if ("status" in err && err.status) {
+                                errorMessage = `[${err.status}] ${errorMessage}`;
+                            }
+                        } else {
+                            try {
+                                const serialized = JSON.stringify(err, null, 2);
+                                errorMessage =
+                                    serialized.length > 200
+                                        ? serialized.substring(0, 200) + "..."
+                                        : serialized;
+                            } catch {
+                                errorMessage = "Error object could not be serialized";
+                            }
+                        }
+                    } else {
+                        errorMessage = String(err);
+                    }
+
+                    console.warn("Error fetching contact fields:", errorMessage);
+                } catch {
+                    console.warn("Error fetching contact fields: Unknown error");
+                }
+
+                setFields([]);
+            })
+            .finally(() => {
+                setLoading(false);
+                fetchingFieldsRef.current = false;
+            });
+    }, []);
+    useEffect(() => {
+        fetchContactFields();
+    }, [fetchContactFields]);
+    const handleChange = (id: string, value: string) => {
+        const sanitized = value.replace(/^\s+/, "");
+
+        setFormValues((prev) => ({
+            ...prev,
+            [id]: sanitized,
+        }));
+
+        setFieldErrors((prev) => ({
+            ...prev,
+            [id]: "",
+        }));
     };
 
     const handlePhoneCodeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         setFormData((prev) => ({ ...prev, phoneCode: e.target.value }));
     };
-    const validate = (): boolean => {
-        const newErrors: Errors = {};
+    const validateDynamicFields = () => {
+        const newErrors: Record<string, string> = {};
 
-        const firstName = formData.firstName.trim();
-        const lastName = formData.lastName.trim();
-        const email = formData.email.trim();
-        const query = formData.query.trim();
-        const phone = formData.phone.trim();
+        fields.forEach((field) => {
+            const value = (formValues[field._id] || "").trim();
 
-        if (!firstName)
-            newErrors.firstName = t("firstNameRequired");
+            if (field.mandatory && !value) {
+                newErrors[field._id] = t("fieldRequired");
+                return;
+            }
 
-        if (!lastName)
-            newErrors.lastName = t("lastNameRequired");
+            if (field.type === 2 && value) {
+                if (!/^\S+@\S+\.\S+$/.test(value)) {
+                    newErrors[field._id] = t("emailInvalid");
+                }
+            }
 
-        if (!email) {
-            newErrors.email = t("emailRequired");
-        } else if (!/^\S+@\S+\.\S+$/.test(email)) {
-            newErrors.email = t("emailInvalid");
-        }
+            if (field.type === 1 && value) {
+                if (value.length < 6) {
+                    newErrors[field._id] = t("invalidMobile");
+                }
+            }
+        });
 
-        if (!query)
-            newErrors.query = t("messageRequired");
+        setFieldErrors(newErrors);
 
-        if (phone && phone.length < 6)
-            newErrors.phone = t("invalidMobile");
-
-        setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!validate()) return;
-
-        setLoading(true);
+        if (!validateDynamicFields()) return;
 
         try {
+            setSubmitting(true);
+
+            const ipAddress = await resolveIpAddress();
+
             const payload = {
-                ...formData,
-                firstName: formData.firstName.trim(),
-                lastName: formData.lastName.trim(),
-                email: formData.email.trim(),
-                query: formData.query.trim(),
-                phone: formData.phone.trim(),
+                userIP: ipAddress,
+                storeId: "0",
+                form: fields.map((field) => ({
+                    fieldId: field._id,
+                    title: field.title,
+                    value: formValues[field._id] || "",
+                    titleLan: {
+                        en: field.titleLan?.en || field.title,
+                    },
+                })),
             };
 
-            // TODO: API call with payload
-            await new Promise((res) => setTimeout(res, 1000));
+            await ContactService.submitContactForm(payload);
 
             toast.success(t("messageSent"));
-            setFormData({
-                firstName: "",
-                lastName: "",
-                email: "",
-                phone: "",
-                phoneCode: "+1",
-                query: "",
-            });
-            setErrors({});
+
+            const reset: Record<string, string> = {};
+            fields.forEach((f) => (reset[f._id] = ""));
+            setFormValues(reset);
+
+        } catch (err: any) {
+            toast.error(err?.message || t("sendFailed"));
         } finally {
-            setLoading(false);
+            setSubmitting(false);
         }
     };
+
 
     return (
         <main>
@@ -221,11 +313,10 @@ export default function ContactPage() {
                                 />
                             </div>
                         </div> */}
-
                         {/* RIGHT COLUMN */}
                         <div className="flex flex-col gap-8">
-
                             <div className="rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] p-6 lg:p-8">
+
                                 <div className="mb-6 text-center">
                                     <h2 className="text-xl sm:text-2xl font-bold section_title">
                                         {t("sendMessage")}
@@ -234,149 +325,113 @@ export default function ContactPage() {
 
                                 <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                           
-                                    <div className="space-y-2">
-                                        <Label htmlFor="firstName" error={!!errors.firstName} required>
-                                            {t("firstName")}
-                                        </Label>
+                                    {fields.map((field) => {
+                                        const label =
+                                            locale === "es"
+                                                ? field.titleLan?.es || field.title
+                                                : field.titleLan?.en || field.title;
 
-                                        <Input
-                                            id="firstName"
-                                            placeholder={t("firstNamePlaceholder")}
-                                            value={formData.firstName}
-                                            error={!!errors.firstName}
-                                            onChange={(e) => {
-                                                setFormData({ ...formData, firstName: e.target.value.replace(/^\s+/, "") });
-                                                setErrors({ ...errors, firstName: undefined });
-                                            }}
-                                        />
+                                        // TEXT INPUT (First / Last Name)
+                                        if (field.type === 6) {
+                                            return (
+                                                <div key={field._id} className="space-y-2 md:col-span-1">
+                                                    <Label required={field.mandatory} error={!!fieldErrors[field._id]}>
+                                                        {label}
+                                                    </Label>
 
-                                        <ErrorMessage message={errors.firstName} />
-                                    </div>
+                                                    <Input
+                                                       placeholder={t("enterField", { field: label })}
+                                                        value={formValues[field._id] || ""}
+                                                        error={!!fieldErrors[field._id]}
+                                                        onChange={(e) => handleChange(field._id, e.target.value)}
+                                                    />
 
-                              
-                                    <div className="space-y-2">
-                                        <Label htmlFor="lastName" error={!!errors.lastName} required>
-                                            {t("lastName")}
-                                        </Label>
-                                        <Input
-                                            id="lastName"
-                                            placeholder={t("lastNamePlaceholder")}
-                                            value={formData.lastName}
-                                            error={!!errors.lastName}
-                                            onChange={(e) => {
-                                                setFormData({ ...formData, lastName: e.target.value.replace(/^\s+/, "") });
-                                                setErrors({ ...errors, lastName: undefined });
-                                            }}
-                                        />
+                                                    <ErrorMessage message={fieldErrors[field._id]} />
+                                                </div>
+                                            );
+                                        }
 
-                                        <ErrorMessage message={errors.lastName} />
-                                    </div>
+                                        // EMAIL
+                                        if (field.type === 2) {
+                                            return (
+                                                <div key={field._id} className="space-y-2 md:col-span-2">
+                                                    <Label required={field.mandatory} error={!!fieldErrors[field._id]}>
+                                                        {label}
+                                                    </Label>
 
-                                    <div className="md:col-span-2 space-y-2">
-                                        <Label htmlFor="email" error={!!errors.email} required>
-                                            {t("email")}
-                                        </Label>
+                                                    <Input
+                                                        type="email"
+                                                        placeholder="you@example.com"
+                                                        value={formValues[field._id] || ""}
+                                                        error={!!fieldErrors[field._id]}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === " ") e.preventDefault();
+                                                        }}
+                                                        onChange={(e) => handleChange(field._id, e.target.value)}
+                                                    />
 
-                                        <Input
-                                            id="email"
-                                            type="email"
-                                            placeholder="you@example.com"
-                                            value={formData.email}
-                                            error={!!errors.email}
-                                            onKeyDown={(e) => {
-                                                if (e.key === " ") e.preventDefault();
-                                            }}
-                                            onChange={(e) => {
-                                                setFormData({ ...formData, email: e.target.value.trim() });
-                                                setErrors({ ...errors, email: undefined });
-                                            }}
-                                        />
+                                                    <ErrorMessage message={fieldErrors[field._id]} />
+                                                </div>
+                                            );
+                                        }
 
-                                        <ErrorMessage message={errors.email} />
-                                    </div>
+                                        // PHONE INPUT
+                                        if (field.type === 1) {
+                                            return (
+                                                <div key={field._id} className="md:col-span-2 space-y-2">
+                                                    <Label required={field.mandatory} error={!!fieldErrors[field._id]}>
+                                                        {label}
+                                                    </Label>
 
-                                    <div className="md:col-span-2 space-y-2">
-                                        <Label htmlFor="phone">
-                                            {t("phone")}
-                                        </Label>
-                                        <div className="phone-input">
-                                            <PhoneInput
-                                                inputProps={{
-                                                    id: "phone",
-                                                  
-                                                }}
-                                                country="us"
-                                                value={
-                                                    formData.phone
-                                                        ? `${formData.phoneCode}${formData.phone}`
-                                                        : ""
-                                                }
-                                                onChange={(value, country) => {
-                                                    if (!("dialCode" in country)) return;
+                                                    <PhoneInput
+                                                        country="us"
+                                                        value={formValues[field._id] || ""}
+                                                        onChange={(value) => handleChange(field._id, value)}
+                                                        inputClass={`
+            !bg-transparent !w-full !h-[44px] !text-sm !rounded-lg
+            ${fieldErrors[field._id] ? "!border-red-500" : "!border-input"}
+          `}
+                                                    />
 
-                                                    const dialCode = `+${country.dialCode}`;
-                                                    const mobile = value.slice(country.dialCode.length);
+                                                    <ErrorMessage message={fieldErrors[field._id]} />
+                                                </div>
+                                            );
+                                        }
 
-                                                    setFormData((prev) => ({
-                                                        ...prev,
-                                                        phoneCode: dialCode,
-                                                        phone: mobile,
-                                                    }));
+                                        // TEXTAREA (Query)
+                                        if (field.type === 5) {
+                                            return (
+                                                <div key={field._id} className="space-y-2 md:col-span-2">
+                                                    <Label required={field.mandatory} error={!!fieldErrors[field._id]}>
+                                                        {label}
+                                                    </Label>
 
-                                                    setErrors((prev) => ({ ...prev, phone: undefined }));
-                                                }}
-                                                specialLabel=""
-                                                inputClass={`
-    !bg-transparent !w-full !h-[44px] !text-sm !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200]
-    !border ${errors.phone ? "!border-red-500" : "!border-input"}
-    !pl-14 !text-sm
-    
-  `}
-                                            />
-                                        </div>
+                                                    <textarea
+                                                      placeholder={t("enterField", { field: label })}
+                                                        value={formValues[field._id] || ""}
+                                                        onChange={(e) => handleChange(field._id, e.target.value)}
+                                                        className={`
+            w-full rounded-lg px-4 py-3 text-sm
+            ${fieldErrors[field._id]
+                                                                ? "border border-red-500"
+                                                                : "border focus:border-[#f3c200]"
+                                                            }
+          `}
+                                                    />
 
-                                        <ErrorMessage message={errors.phone} />
-                                    </div>
+                                                    <ErrorMessage message={fieldErrors[field._id]} />
+                                                </div>
+                                            );
+                                        }
 
-                  
-                                    <div className="md:col-span-2 space-y-2">
-                                        <Label htmlFor="query" error={!!errors.query} required>
-                                            {t("message")}
-                                        </Label>
-
-                                        <textarea
-                                            id="query"
-                                            value={formData.query}
-                                            placeholder={t("messagePlaceholder")}
-                                            onChange={(e) => {
-                                                setFormData({ ...formData, query: e.target.value.replace(/^\s+/, "") });
-                                                setErrors({ ...errors, query: undefined });
-                                            }}
-                                            className={`
-    w-full rounded-lg px-4 py-3 text-sm
-    transition-all duration-200
-    ${errors.query
-                                                    ? "border border-red-500 focus:ring-red-200"
-                                                    : "border focus:border-[#f3c200] ring-0 outline-0"}
-  `}
-                                        />
-
-                                        <ErrorMessage message={errors.query} />
-                                    </div>
-
-                     
+                                        return null;
+                                    })}
                                     <button
-                                        disabled={loading}
-                                        className="
-        md:col-span-2 w-full rounded-lg btn-primary py-3 font-semibold
-        hover:bg-yellow-400 hover:text-black transition
-        disabled:opacity-50 mt-3
-      "
+                                        disabled={loading || submitting}
+                                        className="md:col-span-2 w-full rounded-lg btn-primary py-3 font-semibold disabled:opacity-50 mt-3"
                                     >
-                                        {loading ? t("sending") : t("send")}
+                                        {(loading || submitting) ? t("sending") : t("send")}
                                     </button>
-
                                 </form>
                             </div>
                         </div>
