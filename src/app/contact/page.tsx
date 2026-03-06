@@ -204,7 +204,7 @@ export default function ContactPage() {
                                             href="tel:434497151"
                                             className="text-gray-600 hover:text-[#FECB02] transition-colors font-medium text-sm"
                                         >
-                                            434 497 151
+                                            787-302-3322
                                         </a>
                                     </div>
                                 </div>
@@ -225,7 +225,6 @@ export default function ContactPage() {
                         {/* RIGHT COLUMN */}
                         <div className="flex flex-col gap-8">
 
-                            {/* Contact Form Card */}
                             <div className="rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] p-6 lg:p-8">
                                 <div className="mb-6 text-center">
                                     <h2 className="text-xl sm:text-2xl font-bold section_title">
@@ -235,7 +234,7 @@ export default function ContactPage() {
 
                                 <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                                    {/* First Name */}
+                           
                                     <div className="space-y-2">
                                         <Label htmlFor="firstName" error={!!errors.firstName} required>
                                             {t("firstName")}
@@ -255,7 +254,7 @@ export default function ContactPage() {
                                         <ErrorMessage message={errors.firstName} />
                                     </div>
 
-                                    {/* Last Name */}
+                              
                                     <div className="space-y-2">
                                         <Label htmlFor="lastName" error={!!errors.lastName} required>
                                             {t("lastName")}
@@ -274,7 +273,6 @@ export default function ContactPage() {
                                         <ErrorMessage message={errors.lastName} />
                                     </div>
 
-                                    {/* Email */}
                                     <div className="md:col-span-2 space-y-2">
                                         <Label htmlFor="email" error={!!errors.email} required>
                                             {t("email")}
@@ -298,7 +296,6 @@ export default function ContactPage() {
                                         <ErrorMessage message={errors.email} />
                                     </div>
 
-                                    {/* Phone */}
                                     <div className="md:col-span-2 space-y-2">
                                         <Label htmlFor="phone">
                                             {t("phone")}
@@ -307,7 +304,7 @@ export default function ContactPage() {
                                             <PhoneInput
                                                 inputProps={{
                                                     id: "phone",
-                                                    // placeholder: t("mobilePlaceholder") || "Enter phone number",
+                                                  
                                                 }}
                                                 country="us"
                                                 value={
@@ -342,7 +339,7 @@ export default function ContactPage() {
                                         <ErrorMessage message={errors.phone} />
                                     </div>
 
-                                    {/* Message */}
+                  
                                     <div className="md:col-span-2 space-y-2">
                                         <Label htmlFor="query" error={!!errors.query} required>
                                             {t("message")}
@@ -368,7 +365,7 @@ export default function ContactPage() {
                                         <ErrorMessage message={errors.query} />
                                     </div>
 
-                                    {/* Button */}
+                     
                                     <button
                                         disabled={loading}
                                         className="

@@ -15,6 +15,7 @@ import { Label } from "@/src/components/ui/label";
 import ErrorMessage from "@/src/components/ui/errorMessage";
 import CountrySelect from "@/src/components/common/CountrySelect";
 import { toast } from "sonner";
+import { Eye, EyeOff } from "lucide-react";
 type RegisterForm = {
   firstName: string;
   lastName: string;
@@ -33,6 +34,7 @@ export default function RegisterPage() {
   const [countriesLoading, setCountriesLoading] = useState(false);
   const [countriesError, setCountriesError] = useState<string | null>(null);
   const t = useTranslations();
+  const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState<RegisterForm>({
     firstName: "",
     lastName: "",
@@ -364,27 +366,33 @@ export default function RegisterPage() {
 
         {/* Password */}
         <div className="sm:col-span-2 space-y-2">
-          <Label
-            htmlFor="password"
-            error={!!errors.password}
-            required
-          >
+          <Label htmlFor="password" error={!!errors.password} required>
             {t("password")}
           </Label>
-          <Input
-            id="password"
-            type="password"
-            placeholder={t("passwordPlaceholder")}
-            value={form.password}
-            error={!!errors.password}
-            // onKeyDown={(e) => {
-            //   if (e.key === " ") e.preventDefault();
-            // }}
-            onChange={(e) => {
-              setForm({ ...form, password: e.target.value.replace(/^\s+/, "") });
-              setErrors({ ...errors, password: undefined });
-            }}
-          />
+
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              placeholder={t("passwordPlaceholder")}
+              value={form.password}
+              className="pr-10"
+              error={!!errors.password}
+              onChange={(e) => {
+                setForm({ ...form, password: e.target.value.replace(/^\s+/, "") });
+                setErrors({ ...errors, password: undefined });
+              }}
+            />
+
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 cursor-pointer"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+
           <ErrorMessage message={errors.password} />
         </div>
 

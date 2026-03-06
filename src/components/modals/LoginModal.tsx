@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
-import { X } from "lucide-react";
+import { Eye, EyeOff, X } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 
@@ -25,7 +25,7 @@ interface LoginModalProps {
 export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps) {
     const t = useTranslations();
     const { setUser } = useAuth();
-
+    const [showPassword, setShowPassword] = useState(false);
     const {
         register,
         handleSubmit,
@@ -160,16 +160,31 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                             <Label className="text-xs sm:text-sm font-medium text-[#2f2f2f]">
                                 {t("password")}
                             </Label>
-                            <Input
-                                type="password"
-                                placeholder={t("passwordPlaceholder")}
-                                className={`w-full rounded-lg border !border-[#2f2f2f] px-3 py-2 sm:px-4 sm:py-2.5 text-sm sm:text-base
-                  focus:outline-none focus:!border-[#f3c200]
-                  ${errors.password ? "border-red-400" : "border-gray-300"}`}
-                                {...register("password", {
-                                    required: t("passwordRequired"),
-                                })}
-                            />
+
+                            <div className="relative">
+                                <Input
+                                    type={showPassword ? "text" : "password"}
+                                    placeholder={t("passwordPlaceholder")}
+                                    className={`w-full rounded-lg border !border-[#2f2f2f] px-3 py-2 sm:px-4 sm:py-2.5 pr-10 text-sm sm:text-base
+      focus:outline-none focus:!border-[#f3c200]
+      ${errors.password ? "border-red-400" : "border-gray-300"}`}
+                                    {...register("password", {
+                                        required: t("passwordRequired"),
+                                    })}
+                                    onKeyDown={(e) => {
+                                        if (e.key === " ") e.preventDefault();
+                                    }}
+                                />
+
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword((prev) => !prev)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
+                            </div>
+
                             <ErrorMessage message={errors.password?.message} />
                         </div>
 

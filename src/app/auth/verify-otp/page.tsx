@@ -12,6 +12,7 @@ import { apiClient } from "@/src/lib/api/axios";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { setCookie } from "cookies-next";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function VerifyOtpPage() {
   const t = useTranslations();
@@ -30,7 +31,8 @@ export default function VerifyOtpPage() {
   const [timer, setTimer] = useState(expiry);
   const [otp, setOtp] = useState<string[]>(Array(4).fill(""));
   const [loading, setLoading] = useState(false);
-
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   // Extract countryCode and mobile if method is mobile
   const { countryCode, mobile } = useMemo(() => {
     if (!value) return { countryCode: "", mobile: "" };
@@ -259,24 +261,46 @@ export default function VerifyOtpPage() {
           >
             <div className="space-y-2">
               <Label>{t("newPassword")}</Label>
-              <Input
-                type="password"
-                placeholder={t("enterNewPassword")}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder={t("enterNewPassword")}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="pr-10"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((s) => !s)}
+                  className="hover:cursor-pointer absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             <div className="space-y-2">
               <Label>{t("confirmPassword")}</Label>
-              <Input
-                type="password"
-                placeholder={t("enterConfirmPassword")}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <Input
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder={t("enterConfirmPassword")}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  className="pr-10"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((s) => !s)}
+                  className="hover:cursor-pointer absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>

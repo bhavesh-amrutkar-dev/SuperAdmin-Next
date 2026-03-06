@@ -14,6 +14,8 @@ import { persistAuthSession } from "@/src/lib/session/auth";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
 import { useAuth } from "@/src/context/authContext";
+import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
     const t = useTranslations();
@@ -25,7 +27,7 @@ export default function LoginPage() {
         formState: { errors, isSubmitting },
     } = useForm<IEmailLoginRM>({
     });
-
+    const [showPassword, setShowPassword] = useState(false);
     const onSubmit = async (payload: IEmailLoginRM) => {
         try {
             const res = await fetch("/api/login", {
@@ -102,33 +104,39 @@ export default function LoginPage() {
 
                 {/* Password */}
                 <div className="space-y-2">
-                    <Label
-                        htmlFor="password"
-                        error={!!errors.password}
-                        required
-                    >
+                    <Label htmlFor="password" error={!!errors.password} required>
                         {t("password")}
                     </Label>
 
-                    <Input
-                        id="password"
-                        type="password"
-                        placeholder={t("passwordPlaceholder")}
-                        onKeyDown={(e) => {
-                            if (e.key === " ") e.preventDefault();
-                        }}
-                        error={!!errors.password}
-                        {...register("password", {
-                            required: t("passwordRequired"),
-                            setValueAs: (value) => value.trim(),
-                            validate: (value) =>
-                                value.trim().length > 0 || t("passwordRequired"),
-                        })}
-                    />
+                    <div className="relative">
+                        <Input
+                            id="password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder={t("passwordPlaceholder")}
+                            onKeyDown={(e) => {
+                                if (e.key === " ") e.preventDefault();
+                            }}
+                            error={!!errors.password}
+                            className="pr-10"
+                            {...register("password", {
+                                required: t("passwordRequired"),
+                                setValueAs: (value) => value.trim(),
+                                validate: (value) =>
+                                    value.trim().length > 0 || t("passwordRequired"),
+                            })}
+                        />
+
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword((prev) => !prev)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 hover:cursor-pointer"
+                        >
+                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                    </div>
 
                     <ErrorMessage message={errors.password?.message} />
                 </div>
-
                 {/* Forgot Password */}
                 <div className="flex justify-end">
                     <Link

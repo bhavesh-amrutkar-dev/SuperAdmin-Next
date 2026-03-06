@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -15,7 +16,7 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const validate = () => {
     if (password.length < 8) {
       return t("passwordMinError");
@@ -67,18 +68,16 @@ export default function ResetPasswordPage() {
           </p>
         </div>
 
-        <form onSubmit={onSubmit} className="space-y-6">
+        <form onSubmit={onSubmit} className="space-y-6 relative">
           {/* New Password */}
           <div>
-            <Label>
-              {t("newPassword")}
-            </Label>
+            <Label>{t("newPassword")}</Label>
+
             <div className="relative mt-1">
               <Input
                 type={showPassword ? "text" : "password"}
-                className={`w-full rounded-xl border px-4 py-3 pr-14 text-sm
-                  transition focus:outline-none focus:ring-2
-                  ${error
+                className={`w-full rounded-xl border px-4 py-3 pr-12 text-sm
+      ${error
                     ? "border-red-400 focus:ring-red-200"
                     : "border-gray-300 focus:border-yellow-400 focus:ring-yellow-200"
                   }`}
@@ -92,12 +91,13 @@ export default function ResetPasswordPage() {
                 }}
                 placeholder={t("passwordPlaceholder")}
               />
+
               <button
                 type="button"
                 onClick={() => setShowPassword((s) => !s)}
-                className="absolute inset-y-0 right-4 text-xs font-medium text-gray-500 hover:text-gray-800"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
               >
-                {showPassword ? t("hide") : t("show")}
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
 
@@ -107,15 +107,11 @@ export default function ResetPasswordPage() {
           </div>
 
           {/* Confirm Password */}
-          <div>
-            <Label>
-              {t("confirmPassword")}
-            </Label>
+          <div className="relative mt-1">
             <Input
-              type={showPassword ? "text" : "password"}
-              className={`mt-1 w-full rounded-xl border px-4 py-3 text-sm
-                transition focus:outline-none focus:ring-2
-                ${error
+              type={showConfirmPassword ? "text" : "password"}
+              className={`w-full rounded-xl border px-4 py-3 pr-12 text-sm
+    ${error
                   ? "border-red-400 focus:ring-red-200"
                   : "border-gray-300 focus:border-yellow-400 focus:ring-yellow-200"
                 }`}
@@ -129,8 +125,15 @@ export default function ResetPasswordPage() {
               }}
               placeholder={t("confirmPasswordPlaceholder")}
             />
-          </div>
 
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword((s) => !s)}
+              className=" absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            >
+              {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
           {/* Error */}
           {error && (
             <div className="rounded-lg bg-red-50 px-4 py-2 text-center">
