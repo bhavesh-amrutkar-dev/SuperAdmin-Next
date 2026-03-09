@@ -4,7 +4,6 @@ import { setCookie, deleteCookie } from "cookies-next";
 
 export function persistAuthSession(session: AuthSession) {
   if (!session?.accessToken) return;
-console.log("deleting cookies");
 
   deleteCookie("token", { path: "/" });
   deleteCookie("access_token", { path: "/" });
