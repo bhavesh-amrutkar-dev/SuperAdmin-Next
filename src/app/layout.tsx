@@ -81,7 +81,10 @@ export default async function RootLayout({
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#ededed]`}
       >
-
+        {/* <Script
+          src="https://payments.athmovil.com/api/js/athmovil_base.js"
+          strategy="beforeInteractive"
+        /> */}
 
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ClientProviders countries={countries}>

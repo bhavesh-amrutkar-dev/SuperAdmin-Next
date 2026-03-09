@@ -24,6 +24,7 @@ import Loader from "@/src/components/loader";
 import AthMovilPayment from "@/src/components/payments/AuthMovilPayment";
 import { ConfirmationModal } from "@/src/components/ui/confirmationModal";
 import { getMyIP } from "@/src/lib/utils/getIp";
+import AthMovilCheckout from "@/src/components/checkout/authMovilCheckout";
 
 type TaxItem = {
   taxName?: string;
@@ -1607,6 +1608,14 @@ export default function SecureCheckoutPage() {
                             onSuccess={handleAthSuccess}
                             onCancel={handleAthCancel}
                           />
+                          // <AthMovilCheckout
+                          //   total={orderTotal || grandTotal}
+                          //   publicToken={athToken}
+                          //   orderId={athOrderId}
+                          //   userId={(getCookie("uid") as string) || ""}
+                          //   onSuccess={handleAthSuccess}
+                          //   onCancel={handleAthCancel}
+                          // />
                         )}
                       </>
                     )}

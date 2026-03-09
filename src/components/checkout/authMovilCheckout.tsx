@@ -1,119 +1,93 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
-interface AthMovilCheckoutProps {
-    userProfileData: any;
-    myCart: any;
-    handleATHmovilePayments?: (data: any) => Promise<void>;
+interface Props {
+  total: number;
+  publicToken: string;
+  orderId: string;
+  userId: string;
+  onSuccess: (res: any) => Promise<void>;
+  onCancel: () => Promise<void>;
 }
 
 export default function AthMovilCheckout({
-    userProfileData,
-    myCart,
-    handleATHmovilePayments,
-}: AthMovilCheckoutProps) {
-    const [responses, setResponses] = useState<string[]>([]);
+  total,
+  publicToken,
+  orderId,
+  userId,
+  onSuccess,
+  onCancel,
+}: Props) {
+  useEffect(() => {
+    if (!total || !publicToken || !orderId) return;
 
-    const addResponse = (res: any) => {
-        setResponses((prev) => [...prev, typeof res === "string" ? res : JSON.stringify(res)]);
+    if (typeof window === "undefined") return;
+
+    // Prevent duplicate initialization (Next.js strict mode fix)
+    if ((window as any).ATHM_Checkout) return;
+
+    // Global callbacks required by ATH SDK
+    (window as any).authorizationATHM = async (res: any) => {
+      await onSuccess(res);
     };
 
-    const cancelATHM = async () => {
-        addResponse("Payment cancelled.");
+    (window as any).cancelATHM = async () => {
+      await onCancel();
     };
 
-    const authorizationATHM = async () => {
-        addResponse("Authorization triggered.");
+    (window as any).expiredATHM = async () => {
+      await onCancel();
     };
 
-    const expiredATHM = async () => {
-        addResponse("Payment expired.");
+    // ATH configuration
+    (window as any).ATHM_Checkout = {
+      env: "production",
+      publicToken,
+      timeout: 600,
+      theme: "btn-dark",
+      lang: "en",
+
+      total: Number(total),
+      tax: 0,
+      subtotal: Number(total),
+
+      ecommerceId: orderId,
+      metadata1: orderId,
+      metadata2: userId,
+
+      items: [
+        {
+          name: "Order",
+          description: "Order Payment",
+          quantity: "1",
+          price: String(total),
+          tax: "0",
+          metadata: orderId,
+        },
+      ],
     };
 
-    useEffect(() => {
-        if (!myCart || !userProfileData) return;
+    // Load ATH SDK
+    if (!document.getElementById("athmovil-sdk")) {
+      const script = document.createElement("script");
+      script.src = "https://payments.athmovil.com/api/js/athmovil_base.js";
+      script.id = "athmovil-sdk";
+      script.async = true;
 
-        if (typeof window === "undefined") return;
-
-        window.ATHM_Checkout = {
-            env: "production",
-            publicToken: document.cookie
-                .split("; ")
-                .find((row) => row.startsWith("ATHPtoken="))
-                ?.split("=")[1],
-            timeout: 600,
-            theme: "btn-dark",
-            lang: "en",
-            callbackUrl: `${process.env.NEXT_PUBLIC_APP_WEBSITE}/thank-you`,
-            cancelUrl: `${process.env.NEXT_PUBLIC_APP_WEBSITE}/secure-checkout`,
-            total: myCart?.accounting?.finalTotal,
-            tax: 0,
-            subtotal: myCart?.accounting?.finalTotal,
-            items: [
-                {
-                    name: "amount",
-                    quantity: "1",
-                    price: "1",
-                    tax: "0",
-                    metadata: myCart?.accounting?.finalTotal,
-                },
-            ],
-            onCompletedPayment: async (res: any) => {
-                addResponse(res);
-                if (handleATHmovilePayments) {
-                    await handleATHmovilePayments(res);
-                }
-            },
-            onCancelledPayment: async (res: any) => {
-                addResponse(res || "Cancelled by user");
-            },
-            onExpiredPayment: async (res: any) => {
-                addResponse(res);
-            },
-            cancelATHM,
-            authorizationATHM,
-            expiredATHM,
-        };
-
-        if (!document.getElementById("athmovil-sdk")) {
-            const script = document.createElement("script");
-            script.src = "https://payments.athmovil.com/api/js/athmovil_base.js";
-            script.id = "athmovil-sdk";
-            document.head.appendChild(script);
-        }
-    }, [myCart, userProfileData]);
-
-    if (!myCart || !userProfileData) {
-        return <div>Loading payment data...</div>;
+      document.body.appendChild(script);
     }
 
-    return (
-        <>
-            <div className="ATH_Movil">
-                <div id="ATHMovil_Checkout_Button_payment" />
-            </div>
+    return () => {
+      (window as any).authorizationATHM = () => {};
+      (window as any).cancelATHM = () => {};
+      (window as any).expiredATHM = () => {};
+    };
+  }, [total, publicToken, orderId, userId, onSuccess, onCancel]);
 
-            <div
-                style={{
-                    background: "#f8f9fa",
-                    borderRadius: "8px",
-                    padding: "15px",
-                    marginTop: "10px",
-                    maxHeight: "300px",
-                    overflowY: "auto",
-                }}
-            >
-                {responses.length === 0 ? (
-                    <p>No responses yet.</p>
-                ) : (
-                    responses.map((res, idx) => (
-                        <div key={idx} style={{ marginBottom: "10px" }}>
-                            <code>{res}</code>
-                        </div>
-                    ))
-                )}
-            </div>
-        </>
-    );
+  return (
+    <div className="ATH_Movil">
+      <div id="ATHMovil_Checkout_Button"></div>
+    </div>
+  );
 }
