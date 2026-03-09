@@ -624,7 +624,6 @@ export default function SecureCheckoutPage() {
     // Check if user is authenticated
     const token = getCookie("access_token");
     let uid = getCookie("uid") as string | undefined;
-    console.log("Step 1");
 
     // If access_token exists but uid doesn't, try to get user ID from API
     if (token && !uid) {
