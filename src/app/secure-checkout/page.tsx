@@ -929,7 +929,7 @@ export default function SecureCheckoutPage() {
     }
 
     // Optional: keep user on checkout instead of redirect
-    router.push("/checkout");
+    router.push("/thank-you");
   };
   const handleManualPaymentSelect = () => {
     setPaymentMethod("manual");

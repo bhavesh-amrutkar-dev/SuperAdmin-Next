@@ -3,81 +3,80 @@
 import { useEffect, useRef } from "react";
 
 type PlaceToPayPopupProps = {
-    url: string;
-    onSuccess?: () => void;
-    onError?: () => void;
-    onClose?: () => void;
+  url: string;
+  onSuccess?: () => void;
+  onError?: () => void;
+  onClose?: () => void;
 };
 
 export default function PlaceToPayPopup({
-    url,
-    onSuccess,
-    onError,
-    onClose,
+  url,
+  onSuccess,
+  onError,
+  onClose,
 }: PlaceToPayPopupProps) {
-    const popupRef = useRef<Window | null>(null);
+  const popupRef = useRef<Window | null>(null);
+  const successRef = useRef(false);
 
-    useEffect(() => {
-        if (!url) return;
+  useEffect(() => {
+    if (!url) return;
 
-        const width = 600;
-        const height = 800;
+    const width = 600;
+    const height = 800;
 
-        const left = window.screenX + (window.outerWidth - width) / 2;
-        const top = window.screenY + (window.outerHeight - height) / 2;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
 
-        popupRef.current = window.open(
-            url,
-            "placetopay-checkout",
-            `width=${width},height=${height},left=${left},top=${top}`
-        );
+    popupRef.current = window.open(
+      url,
+      "placetopay-checkout",
+      `width=${width},height=${height},left=${left},top=${top}`
+    );
 
-        if (!popupRef.current) {
-            console.error("Popup blocked");
-            return;
+    if (!popupRef.current) {
+      console.error("Popup blocked");
+      return;
+    }
+
+    const timer = setInterval(() => {
+      if (popupRef.current?.closed) {
+        clearInterval(timer);
+
+        // 🔥 Only treat as close if success not triggered
+        if (!successRef.current) {
+          onClose?.();
         }
+      }
+    }, 500);
 
-        const timer = setInterval(() => {
-            if (popupRef.current?.closed) {
-                clearInterval(timer);
-                onClose?.();
-            }
-        }, 500);
+    return () => clearInterval(timer);
+  }, [url, onClose]);
 
-        return () => clearInterval(timer);
-    }, [url, onClose]);
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (
+        event.origin !== window.location.origin &&
+        !event.origin.includes("placetopay.com")
+      ) {
+        return;
+      }
 
-    useEffect(() => {
-        const handleMessage = (event: MessageEvent) => {
-            console.log(
-                "window.location.origin",
-                window.location.origin,
-                "event.origin",
-                event.origin
-            );
+      const { status } = event.data || {};
 
-            if (
-                event.origin !== window.location.origin &&
-                !event.origin.includes("placetopay.com")
-            ) {
-                return;
-            }
+      if (status === "APPROVED") {
+        successRef.current = true;
+        popupRef.current?.close();
+        onSuccess?.();
+      } else if (status === "REJECTED") {
+        popupRef.current?.close();
+        onError?.();
+      }
+    };
 
-            const { status } = event.data || {};
+    window.addEventListener("message", handleMessage);
 
-            if (status === "APPROVED") {
-                onSuccess?.();
-            } else if (status === "REJECTED") {
-                onError?.();
-            } else {
-                onClose?.();
-            }
-        };
+    return () => window.removeEventListener("message", handleMessage);
+  }, [onSuccess, onError]);
 
-        window.addEventListener("message", handleMessage);
-
-        return () => window.removeEventListener("message", handleMessage);
-    }, [onSuccess, onError, onClose]);
-
-    return null;
+  return null;
 }
