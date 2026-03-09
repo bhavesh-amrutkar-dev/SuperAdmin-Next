@@ -16,6 +16,7 @@ import { Textarea } from "./ui/textarea";
 import { useProfile } from "../lib/hooks/userProfile";
 
 export type AddressFormRM = {
+    name: string;
     firstName: string;
     lastName: string;
     addLine1: string;
@@ -172,7 +173,12 @@ export default function AddressForm({
 
     return (
         <form
-            onSubmit={handleSubmit(onSubmit)}
+            onSubmit={handleSubmit(async (data) => {
+                await onSubmit({
+                    ...data,
+                    name: `${data.firstName} ${data.lastName}`,
+                });
+            })}
             className="space-y-5"
         >
 
@@ -218,16 +224,16 @@ export default function AddressForm({
                     <div className="md:col-span-2 space-y-2">
                         <Label required>{t("mobile")}</Label>
                         <div className="phone-input">
-                        <PhoneInput
-                            country="us"
-                            containerClass="!w-full"
-                            inputClass="!w-full !h-[44px] !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200] !text-sm !pl-14"
-                            onChange={(value, country: any) => {
-                                setValue("mobileNumber", value.replace(country.dialCode, ""));
-                                setValue("mobileNumberCode", country.dialCode);
-                                setValue("mobileNumberSortCode", country.countryCode);
-                            }}
-                        />
+                            <PhoneInput
+                                country="us"
+                                containerClass="!w-full"
+                                inputClass="!w-full !h-[44px] !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200] !text-sm !pl-14"
+                                onChange={(value, country: any) => {
+                                    setValue("mobileNumber", value.replace(country.dialCode, ""));
+                                    setValue("mobileNumberCode", country.dialCode);
+                                    setValue("mobileNumberSortCode", country.countryCode);
+                                }}
+                            />
                         </div>
                         <ErrorMessage message={errors.mobileNumber?.message} />
                     </div>
@@ -268,7 +274,7 @@ export default function AddressForm({
                             onClick={requestLocation}
                             disabled={loadingLocation}
                         >
-                            <svg className="w-3 h-3"  x="0" y="0" viewBox="0 0 512 512"><g><path d="M256 0C153.755 0 70.573 83.182 70.573 185.426c0 126.888 165.939 313.167 173.004 321.035 6.636 7.391 18.222 7.378 24.846 0 7.065-7.868 173.004-194.147 173.004-321.035C441.425 83.182 358.244 0 256 0zm0 278.719c-51.442 0-93.292-41.851-93.292-93.293S204.559 92.134 256 92.134s93.291 41.851 93.291 93.293-41.85 93.292-93.291 93.292z" fill="#fff" opacity="1" data-original="#000000"></path></g></svg>
+                            <svg className="w-3 h-3" x="0" y="0" viewBox="0 0 512 512"><g><path d="M256 0C153.755 0 70.573 83.182 70.573 185.426c0 126.888 165.939 313.167 173.004 321.035 6.636 7.391 18.222 7.378 24.846 0 7.065-7.868 173.004-194.147 173.004-321.035C441.425 83.182 358.244 0 256 0zm0 278.719c-51.442 0-93.292-41.851-93.292-93.293S204.559 92.134 256 92.134s93.291 41.851 93.291 93.293-41.85 93.292-93.291 93.292z" fill="#fff" opacity="1" data-original="#000000"></path></g></svg>
                             {loadingLocation ? "detecting" : t("useCurrentLocation")}
                         </Button>
 
@@ -390,7 +396,7 @@ export default function AddressForm({
 
                 <div className="grid grid-cols-3 gap-3 mb-3">
                     {["Home", "Office", "Other"].map((key) => (
-                        <Button 
+                        <Button
                             className="text-[#2f2f2f]"
                             key={key}
                             type="button"
@@ -399,7 +405,7 @@ export default function AddressForm({
                             onClick={() =>
                                 setValue("taggedAs", key as AddressFormRM["taggedAs"])
                             }
-                        > 
+                        >
                             {t(`addressType${key}`)}
                         </Button>
                     ))}

@@ -563,5 +563,6 @@
     "noRflAvl": "No hay rifas disponibles",
     "checkBackLater": "Nuevos sorteos estarán disponibles pronto.",
     "enterField": "Ingrese {field}",
-    "fieldRequired": "Este campo es obligatorio"
+    "fieldRequired": "Este campo es obligatorio",
+    "cannotDeleteLastAddress": "No puedes eliminar tu última dirección guardada."
 }

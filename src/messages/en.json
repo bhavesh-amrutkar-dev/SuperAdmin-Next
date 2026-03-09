@@ -563,5 +563,6 @@
     "noRflAvl": "No raffles available",
     "checkBackLater": "New raffles will be available soon.",
     "enterField": "Enter {field}",
-    "fieldRequired": "This field is required"
+    "fieldRequired": "This field is required",
+    "cannotDeleteLastAddress": "You cannot delete your last saved address."
 }

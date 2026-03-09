@@ -69,8 +69,24 @@ export default function AddressesPage() {
 
     try {
       setConfirmLoading(true);
+
       await UserAddressService.deleteAddress(selectedId);
-      setAddresses((prev) => prev.filter((a) => a._id !== selectedId));
+
+      const updated = addresses.filter((a) => a._id !== selectedId);
+
+      // check if any default address exists
+      const hasDefault = updated.some((a) => a.default);
+
+      if (!hasDefault && updated.length > 0) {
+        await UserAddressService.setDefaultAddress1({
+          addressId: updated[0]._id,
+        });
+
+        updated[0].default = true;
+      }
+
+      setAddresses(updated);
+
       toast.success(t("addressDeleted"));
       setConfirmOpen(false);
       setSelectedId(null);
@@ -80,14 +96,16 @@ export default function AddressesPage() {
       setConfirmLoading(false);
     }
   };
-
   /* ---------------- Set Default ---------------- */
   const handleSetDefault = async (id?: string) => {
     if (!id) return;
 
     try {
-      await UserAddressService.setDefaultAddress(id);
-
+      // await UserAddressService.setDefaultAddress(id);
+      const data = {
+        addressId: id,
+      }
+      await UserAddressService.setDefaultAddress1(data)
       setAddresses((prev) =>
         prev.map((a) => ({
           ...a,
@@ -212,7 +230,13 @@ export default function AddressesPage() {
                     <Button
                       variant="destructiveOutline"
                       size="sm"
+                      // disabled={addresses.length === 1}
                       onClick={() => {
+                        if (addresses.length === 1) {
+                          toast.error(t("cannotDeleteLastAddress"));
+                          return;
+                        }
+
                         setSelectedId(address._id || null);
                         setConfirmOpen(true);
                       }}

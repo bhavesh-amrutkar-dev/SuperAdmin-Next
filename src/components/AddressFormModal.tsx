@@ -21,7 +21,7 @@ export default function AddressFormModal({
   const handleSubmit = async (data: any) => {
     try {
       if (editing?._id) {
-        await UserAddressService.updateAddress(editing._id, data);
+        await UserAddressService.updateAddress(data);
         toast.success("Address updated");
       } else {
         await AuthService.createAddress(data);

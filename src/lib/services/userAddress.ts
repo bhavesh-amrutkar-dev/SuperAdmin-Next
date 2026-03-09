@@ -28,8 +28,8 @@ export const UserAddressService = {
   /**
    * Update address
    */
-  updateAddress: (id: string, payload: any) => {
-    return apiClient.put(`/address/${id}`, payload);
+  updateAddress: (payload: any) => {
+    return apiClient.patch(`/address`, payload);
   },
 
   /**
@@ -37,5 +37,9 @@ export const UserAddressService = {
    */
   setDefaultAddress: (id: string) => {
     return apiClient.patch(`/address/${id}/default`);
+  },
+
+  setDefaultAddress1: (data: any) => {
+    return apiClient.patch(`/defaultAddress`, data);
   },
 };
