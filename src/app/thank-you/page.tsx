@@ -49,7 +49,24 @@ export default function ThankYouPage() {
             console.warn("Order status update failed:", err);
         }
     };
+    useEffect(() => {
+        if (typeof window === "undefined") return;
 
+        const payment = searchParams?.get("payment");
+
+        // If this page was opened inside popup
+        if (window.opener && payment === "placetopay") {
+            window.opener.postMessage(
+                { status: "APPROVED" },
+                window.location.origin
+            );
+
+            // Close popup after notifying parent
+            setTimeout(() => {
+                window.close();
+            }, 500);
+        }
+    }, [searchParams]);
     useEffect(() => {
         // Update order status to completed (statusId = 3) when order is completed
         const handleOrderCompletion = async () => {

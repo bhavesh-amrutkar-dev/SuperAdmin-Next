@@ -25,6 +25,7 @@ import AthMovilPayment from "@/src/components/payments/AuthMovilPayment";
 import { ConfirmationModal } from "@/src/components/ui/confirmationModal";
 import { getMyIP } from "@/src/lib/utils/getIp";
 import AthMovilCheckout from "@/src/components/checkout/authMovilCheckout";
+import PlaceToPayPopup from "@/src/components/checkout/PlaceToPayPopup";
 
 type TaxItem = {
   taxName?: string;
@@ -623,7 +624,7 @@ export default function SecureCheckoutPage() {
     // Check if user is authenticated
     const token = getCookie("access_token");
     let uid = getCookie("uid") as string | undefined;
-console.log("Step 1");
+    console.log("Step 1");
 
     // If access_token exists but uid doesn't, try to get user ID from API
     if (token && !uid) {
@@ -738,7 +739,7 @@ console.log("Step 1");
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderPayload),
       });
-console.log("order placed");
+      console.log("order placed");
 
       if (!response.ok) {
         const err = await response.json();
@@ -882,59 +883,54 @@ console.log("order placed");
     setPlaceToPayUrl(null);
     setPlacingOrder(false);
 
-    // Update order status to approved (statusId = 2) when Place to Pay payment is successful
-    if (typeof window !== "undefined") {
-      const orderId = localStorage.getItem("orderId");
-      const cartId = localStorage.getItem("cartId");
+    try {
+      if (typeof window !== "undefined") {
+        const orderId = localStorage.getItem("orderId");
 
-      if (orderId) {
-        try {
+        if (orderId) {
           await fetch("/api/orders/status-update", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               orderId,
-              paymentMethod: 18
+              paymentMethod: 18,
             }),
           });
-        } catch (error) {
-          console.warn("Failed to update order status:", error);
-          // Continue with redirect even if status update fails
         }
       }
+    } catch (error) {
+      console.warn("Failed to update order status:", error);
     }
-
-    // Redirect to thank-you page with payment parameter
+    // const returnUrl= `${process.env.NEXT_PUBLIC_APP_WEBSITE}/payment-response`
     router.push("/thank-you?payment=placetopay");
+    // router.push(returnUrl);
   };
 
   const handlePlaceToPayError = async () => {
     setPlaceToPayUrl(null);
     setPlacingOrder(false);
 
-    // Call cart API when payment is not completed
     try {
       await fetchCart();
     } catch (error) {
       console.warn("Error fetching cart after payment error:", error);
     }
-  };
 
+    router.push("/checkout?payment=failed");
+  };
   const handlePlaceToPayClose = async () => {
     setPlaceToPayUrl(null);
     setPlacingOrder(false);
 
-    // Call cart API when payment modal is closed
     try {
       await fetchCart();
     } catch (error) {
-      console.warn("Error fetching cart after closing payment modal:", error);
+      console.warn("Error fetching cart after closing payment:", error);
     }
 
-    // Redirect to thank you page when X button is clicked
-    router.push("/thank-you");
+    // Optional: keep user on checkout instead of redirect
+    router.push("/checkout");
   };
-
   const handleManualPaymentSelect = () => {
     setPaymentMethod("manual");
     setShowBankDetails(true);
@@ -1650,15 +1646,24 @@ console.log("order placed");
         </div>
 
         {/* Place to Pay Lightbox */}
-        {placeToPayUrl && (
+        {/* {placeToPayUrl && (
           <PlaceToPayLightbox
             url={placeToPayUrl}
             onSuccess={handlePlaceToPaySuccess}
             onError={handlePlaceToPayError}
             onClose={handlePlaceToPayClose}
           />
-        )}
+        )} */}
 
+        {/* Place to Pay Popup */}
+        {placeToPayUrl && (
+          <PlaceToPayPopup
+            url={placeToPayUrl}
+            onSuccess={handlePlaceToPaySuccess}
+            onError={handlePlaceToPayError}
+            onClose={handlePlaceToPayClose}
+          />
+        )}
         {/* Coming Soon Modal */}
         <ComingSoonModal
           isOpen={showComingSoonModal}
