@@ -358,11 +358,11 @@ export default function SecureCheckoutPage() {
 
   const handleAthSuccess = async () => {
     if (!athOrderId) return;
-
+    console.log("Ath movil payment success log from handleAth success")
     try {
-      setPlacingOrder(true);
+      setPlacingOrder(false);
 
-      await fetch("/api/orders/status-update", {
+       fetch("/api/orders/status-update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
