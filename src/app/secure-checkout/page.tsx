@@ -623,6 +623,7 @@ export default function SecureCheckoutPage() {
     // Check if user is authenticated
     const token = getCookie("access_token");
     let uid = getCookie("uid") as string | undefined;
+console.log("Step 1");
 
     // If access_token exists but uid doesn't, try to get user ID from API
     if (token && !uid) {
@@ -737,6 +738,7 @@ export default function SecureCheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderPayload),
       });
+console.log("order placed");
 
       if (!response.ok) {
         const err = await response.json();
