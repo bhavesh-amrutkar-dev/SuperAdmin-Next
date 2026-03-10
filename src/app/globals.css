@@ -352,3 +352,130 @@ html {
     transform: translateX(100%);
   }
 } */
+
+.policy-content {
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+/* headings */
+.policy-content strong {
+  font-weight: 700;
+  color: #222;
+}
+
+/* paragraphs */
+.policy-content p {
+  margin-bottom: 18px;
+}
+
+/* lists */
+.policy-content ul {
+  list-style: disc;
+  padding-left: 22px;
+  margin-bottom: 18px;
+}
+
+.policy-content li {
+  margin-bottom: 8px;
+}
+
+/* links */
+.policy-content a {
+  color: #f3c200;
+  font-weight: 500;
+  text-decoration: underline;
+}
+
+/* section titles */
+.policy-content p strong:first-child {
+  font-size: 18px;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.faq-answer p {
+  margin-bottom: 10px;
+}
+
+.faq-content a {
+  color: #f3c200;
+  text-decoration: underline;
+}
+
+.privacy-content h1,
+.privacy-content h2,
+.privacy-content h3,
+.privacy-content strong {
+  font-weight: 700;
+  margin-top: 24px;
+  margin-bottom: 12px;
+}
+
+.privacy-content p {
+  margin-bottom: 16px;
+  line-height: 1.7;
+}
+
+.privacy-content ul {
+  padding-left: 20px;
+  list-style: disc;
+  margin-bottom: 16px;
+}
+
+.privacy-content li {
+  margin-bottom: 6px;
+}
+
+.privacy-content a {
+  color: #f3c200;
+  text-decoration: underline;
+}
+
+.payment-content h1,
+.payment-content h2,
+.payment-content h3,
+.payment-content strong {
+  font-weight: 700;
+  margin-top: 24px;
+  margin-bottom: 12px;
+}
+
+.payment-content p {
+  margin-bottom: 16px;
+  line-height: 1.7;
+}
+
+.payment-content ul {
+  padding-left: 20px;
+  list-style: disc;
+  margin-bottom: 16px;
+}
+
+.payment-content li {
+  margin-bottom: 6px;
+}
+
+.payment-content a {
+  color: #f3c200;
+  text-decoration: underline;
+}
+
+.orders-content h1,
+.orders-content h2,
+.orders-content h3,
+.orders-content strong {
+  font-weight: 700;
+  margin-top: 24px;
+  margin-bottom: 12px;
+}
+
+.orders-content p {
+  margin-bottom: 16px;
+  line-height: 1.7;
+}
+
+.orders-content a {
+  color: #f3c200;
+  text-decoration: underline;
+}

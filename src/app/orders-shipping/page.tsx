@@ -1,104 +1,88 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import Header from "@/src/components/layout/Header";
 import Footer from "@/src/components/layout/Footer";
 import PreFooterIconModule from "@/src/components/layout/PreFooterIconModule";
-import { Package, Truck, Clock, MapPin } from "lucide-react";
-import ComingSoonPage from "@/src/components/commingSoon";
+import { WebPageService } from "@/src/lib/services/webpage.service";
+
+type OrdersData = {
+    ordersObj: string;
+    ordersBannerImages?: {
+        webUrl?: string;
+        mobileUrl?: string;
+    };
+};
 
 export default function OrdersShippingPage() {
     const t = useTranslations();
+    const locale = useLocale();
+
+    const [data, setData] = useState<OrdersData | null>(null);
+
+    useEffect(() => {
+        const controller = new AbortController();
+
+        WebPageService.getOrdersPage({ signal: controller.signal })
+            .then((res: any) => {
+                setData(res?.data || null);
+            })
+            .catch(console.warn);
+
+        return () => controller.abort();
+    }, [locale]);
 
     return (
-        <>
-            <ComingSoonPage />
-            {/* <main>
+        <main>
             <Header />
 
             <div className="w-full">
-                <div className="text-center page-head-wrapper">
-                    <h1 className="pt-2 pb-2 text-lg md:text-2xl lg:text-3xl xl:text-4xl font-bold uppercase tracking-[1px] leading-[1.35] text-white overflow-hidden text-ellipsis">
-                        {t("ordersShipping") || "Orders & Shipping"}
-                    </h1>
-                    <p className="text-[13px] md:text-[16px] uppercase text-white leading-relaxed mt-2">
-                        {t("ordersShippingSubtitle") || "Everything You Need to Know"}
-                    </p>
+
+                {/* Banner */}
+                <div
+                    className="relative text-center py-16 md:py-24 bg-cover bg-center"
+                    style={{
+                        backgroundImage: `url(${data?.ordersBannerImages?.webUrl || ""})`,
+                    }}
+                >
+                    {/* <div className="absolute inset-0 bg-black/60" /> */}
+
+                    {/* <div className="relative z-10 max-w-4xl mx-auto px-4">
+            <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold uppercase text-white">
+              {t("shippingPolicy") || "Shipping Policy"}
+            </h1>
+
+            <p className="text-sm md:text-lg uppercase text-gray-200 mt-3">
+              {t("shippingSubtitle") ||
+                "Everything You Need to Know About Shipping"}
+            </p>
+          </div> */}
                 </div>
 
+                {/* Content */}
                 <div className="mx-auto w-full max-w-4xl px-4 md:px-6 py-12">
-                    <div className="space-y-8">
-                        <section>
-                            <div className="flex items-center gap-3 mb-4">
-                                <Package className="w-8 h-8 text-[#f3c200]" />
-                                <h2 className="text-2xl font-bold text-[#2f2f2f] uppercase">
-                                    {t("orderProcessing") || "Order Processing"}
-                                </h2>
-                            </div>
-                            <p className="text-[#797979] leading-relaxed mb-4">
-                                {t("orderProcessingText") || "Once your order is confirmed, we process it within 1-2 business days. You will receive an email confirmation with your order details and tracking information."}
-                            </p>
-                        </section>
+                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 md:p-10">
 
-                        <section>
-                            <div className="flex items-center gap-3 mb-4">
-                                <Truck className="w-8 h-8 text-[#f3c200]" />
-                                <h2 className="text-2xl font-bold text-[#2f2f2f] uppercase">
-                                    {t("shippingOptions") || "Shipping Options"}
-                                </h2>
-                            </div>
-                            <div className="space-y-4">
-                                <div className="bg-gray-50 p-4 rounded-lg">
-                                    <h3 className="font-semibold text-[#2f2f2f] mb-2">
-                                        {t("standardShipping") || "Standard Shipping"}
-                                    </h3>
-                                    <p className="text-[#797979] text-sm">
-                                        {t("standardShippingText") || "5-7 business days - Free on orders over $50"}
-                                    </p>
-                                </div>
-                                <div className="bg-gray-50 p-4 rounded-lg">
-                                    <h3 className="font-semibold text-[#2f2f2f] mb-2">
-                                        {t("expressShipping") || "Express Shipping"}
-                                    </h3>
-                                    <p className="text-[#797979] text-sm">
-                                        {t("expressShippingText") || "2-3 business days - Additional charges apply"}
-                                    </p>
-                                </div>
-                            </div>
-                        </section>
-
-                        <section>
-                            <div className="flex items-center gap-3 mb-4">
-                                <Clock className="w-8 h-8 text-[#f3c200]" />
-                                <h2 className="text-2xl font-bold text-[#2f2f2f] uppercase">
-                                    {t("deliveryTime") || "Delivery Time"}
-                                </h2>
-                            </div>
-                            <p className="text-[#797979] leading-relaxed">
-                                {t("deliveryTimeText") || "Delivery times vary by location and shipping method selected. You can track your order in real-time using the tracking number provided in your confirmation email."}
+                        {data?.ordersObj ? (
+                            <div
+                                className="orders-content text-[#4a4a4a]"
+                                dangerouslySetInnerHTML={{
+                                    __html: data.ordersObj,
+                                }}
+                            />
+                        ) : (
+                            <p className="text-center text-gray-400">
+                                Loading content...
                             </p>
-                        </section>
+                        )}
 
-                        <section>
-                            <div className="flex items-center gap-3 mb-4">
-                                <MapPin className="w-8 h-8 text-[#f3c200]" />
-                                <h2 className="text-2xl font-bold text-[#2f2f2f] uppercase">
-                                    {t("shippingLocations") || "Shipping Locations"}
-                                </h2>
-                            </div>
-                            <p className="text-[#797979] leading-relaxed">
-                                {t("shippingLocationsText") || "We currently ship to the United States, Mexico, Dominican Republic, and Puerto Rico. Additional countries will be added soon."}
-                            </p>
-                        </section>
                     </div>
                 </div>
             </div>
 
             <PreFooterIconModule />
             <Footer />
-        </main> */}
-        </>
-
+        </main>
     );
 }
-
