@@ -49,9 +49,16 @@ export default function VerifyOtpPage() {
   const handleChange = (val: string, index: number) => {
     if (!/^\d*$/.test(val)) return;
 
+    // Handle paste of full OTP
     if (val.length > 1) {
       const digits = val.slice(0, otp.length).split("");
-      setOtp(digits);
+      const newOtp = [...otp];
+
+      digits.forEach((d, i) => {
+        if (i < newOtp.length) newOtp[i] = d;
+      });
+
+      setOtp(newOtp);
       return;
     }
 
@@ -63,6 +70,7 @@ export default function VerifyOtpPage() {
       document.getElementById(`otp-${index + 1}`)?.focus();
     }
   };
+  
   useEffect(() => {
     if (!("OTPCredential" in window)) return;
 
