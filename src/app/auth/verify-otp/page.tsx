@@ -47,15 +47,45 @@ export default function VerifyOtpPage() {
   }, [value, method]);
 
   const handleChange = (val: string, index: number) => {
-    if (!/^\d?$/.test(val)) return;
+    if (!/^\d*$/.test(val)) return;
+
+    if (val.length > 1) {
+      const digits = val.slice(0, otp.length).split("");
+      setOtp(digits);
+      return;
+    }
+
     const next = [...otp];
     next[index] = val;
     setOtp(next);
+
     if (val && index < otp.length - 1) {
       document.getElementById(`otp-${index + 1}`)?.focus();
     }
   };
+  useEffect(() => {
+    if (!("OTPCredential" in window)) return;
 
+    const ac = new AbortController();
+
+    navigator.credentials
+      .get({
+        otp: { transport: ["sms"] },
+        signal: ac.signal,
+      } as any)
+      .then((otp: any) => {
+        if (!otp?.code) return;
+
+        const code = otp.code.split("");
+        setOtp(code);
+
+        // Auto submit
+        document.querySelector("form")?.requestSubmit();
+      })
+      .catch(() => { });
+
+    return () => ac.abort();
+  }, []);
   useEffect(() => {
     if (timer <= 0) return;
     const tId = setTimeout(() => setTimer((s) => s - 1), 1000);
@@ -197,6 +227,7 @@ export default function VerifyOtpPage() {
                   id={`otp-${i}`}
                   type="text"
                   inputMode="numeric"
+                  autoComplete={i === 0 ? "one-time-code" : "off"}
                   maxLength={1}
                   value={digit}
                   onChange={(e) => handleChange(e.target.value, i)}
