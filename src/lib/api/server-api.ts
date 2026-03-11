@@ -40,7 +40,7 @@ export async function serverFetch<T>(
     };
 
     const baseUrl = options.baseUrl || API_PY_URL;
-    const timeout = options.timeout || 30000;
+    const timeout = options.timeout || 60000;
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
 

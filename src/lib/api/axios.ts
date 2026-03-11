@@ -4,7 +4,7 @@ import { API_NY_URL, API_PY_URL } from "../config";
 
 export const apiClient = axios.create({
   baseURL: API_NY_URL,
-  timeout: 30000,
+  timeout: 60000,
 });
 
 /* ---------------- Request Interceptor ---------------- */
