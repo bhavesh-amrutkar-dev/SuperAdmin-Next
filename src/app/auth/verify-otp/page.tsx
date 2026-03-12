@@ -70,7 +70,7 @@ export default function VerifyOtpPage() {
       document.getElementById(`otp-${index + 1}`)?.focus();
     }
   };
-  
+
   useEffect(() => {
     if (!("OTPCredential" in window)) return;
 
@@ -167,36 +167,80 @@ export default function VerifyOtpPage() {
   };
 
   const resendOtp = async () => {
-    if (method === "mobile" && (!mobile || !countryCode)) return;
+    if (method === "mobile" && (!mobile || !countryCode)) {
+      toast.error(t("invalidMobile"));
+      return;
+    }
 
     try {
-      let res;
+      setLoading(true);
 
+      let res;
+      let data;
+
+      // Forgot password flow
       if (flow === "forgotPassword") {
-        res = await AuthService.forgotPassword({
-          verifyType: method === "mobile" ? 2 : 1,
-          mobile,
-          countryCode,
-          email: method === "email" ? value : undefined,
+        res = await fetch("/api/forgot-password", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            verifyType: method === "mobile" ? 2 : 1,
+            mobile,
+            countryCode,
+            email: method === "email" ? value : undefined,
+          }),
         });
-      } else {
-        res = await AuthService.mobileLogin({ mobile, countryCode });
+
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData?.message || t("otpSendFailed"));
+        }
+
+        data = await res.json();
+      }
+      // Login / signup flow
+      else {
+        res = await fetch("/api/login-mobile", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            mobile,
+            countryCode,
+          }),
+        });
+
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData?.message || t("otpSendFailed"));
+        }
+
+        data = await res.json();
       }
 
-      if (!res?.data?.otpId) throw new Error("Failed to resend OTP");
+      const { otpId: newOtpId, otpExpiryTime } = data.data;
 
-      const { otpId: newOtpId, otpExpiryTime } = res.data;
-
+      // reset otp inputs
       setOtp(Array(4).fill(""));
-      setTimer(otpExpiryTime || expiry);
 
+      // reset timer
+      setTimer(otpExpiryTime ?? 180);
+
+      // update URL with new otpId
       router.replace(
         `/auth/verify-otp?method=${method}&value=${encodeURIComponent(
           value
         )}&otpId=${newOtpId}&expiry=${otpExpiryTime}&flow=${flow}`
       );
-    } catch {
-      toast.error(t("otpInvalidGeneric"));
+
+      toast.success(t("otpResent"));
+    } catch (err: any) {
+      toast.error(err?.message || t("otpSendFailed"));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -262,7 +306,8 @@ export default function VerifyOtpPage() {
                 <button
                   type="button"
                   onClick={resendOtp}
-                  className="font-bold text-[#FECB02] hover:underline transition"
+                  disabled={loading}
+                  className="font-bold text-[#FECB02] hover:underline transition disabled:opacity-50"
                 >
                   {t("resendOtp")}
                 </button>

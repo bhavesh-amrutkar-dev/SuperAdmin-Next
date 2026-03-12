@@ -8,31 +8,40 @@ import PreFooterIconModule from "@/src/components/layout/PreFooterIconModule";
 import { getTranslations } from "next-intl/server";
 import Image from "next/image";
 import { WINNER } from "@/src/lib/config";
+import WinnerFilter from "@/src/components/winners/winnerFilter";
 
 // Metadata for SEO
 export const metadata = {
-    title: "Winners | DonRifa",
+    title: "Winners",
     description: "Check out the lucky winners of our recent raffles and giveaways!",
 };
 
-export default async function Winners() {
+export default async function Winners({
+    searchParams,
+}: {
+    searchParams: Promise<{ year?: string; month?: string }>;
+}) {
     const t = await getTranslations();
     let winners: WinnerItem[] = [];
 
+    const params = await searchParams;
+
+    const year = params?.year ? Number(params.year) : undefined;
+    const month = params?.month ? Number(params.month) : undefined;
+
     try {
-        const response = await WinnerServiceServer.getWinnersServer();
+        const response = await WinnerServiceServer.getWinnersServer(year, month);
         if (response && response.data) {
-            winners = response.data.data || response.data
+            winners = response.data.data || response.data;
             winners = winners.sort((a, b) => (b.drawDateTimeStemp || 0) - (a.drawDateTimeStemp || 0));
         }
     } catch (error) {
         console.error("Failed to fetch winners:", error);
     }
-
     return (
         <main className="min-h-screen bg-gray-50 flex flex-col">
             <Header />
-            <div className="flex-grow">
+            <div className="grow">
                 {/* Header Section */}
                 <div className="bg-gray-900 text-white relative overflow-hidden">
                     {/* Decorative background elements */}
@@ -56,7 +65,11 @@ export default async function Winners() {
                 </div>
 
                 {/* Main Content */}
-                <div className="mx-auto w-full max-w-[1648px] px-4 md:px-6 pt-10 lg:pt-[60px] pb-4 md:pb-6">
+                <div className="mx-auto w-full max-w-412 px-4 md:px-6 pt-10 lg:pt-15 pb-4 md:pb-6">
+
+
+                    <WinnerFilter />
+
                     {winners.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
                             {winners.map((winner) => {
