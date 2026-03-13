@@ -1162,3 +1162,5 @@ export const right = "/icons/dark2.svg";
 
 export const CurrencySymbol = "$";
 export const CurrencyCode = "USD";
+
+export const ENABLE_PLACE_TO_PAY = false;

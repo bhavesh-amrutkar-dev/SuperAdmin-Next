@@ -25,7 +25,7 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_NODE_DMS_API: process.env.NEXT_PUBLIC_NODE_DMS_API,
     NEXT_PUBLIC_PYTHON_API: process.env.NEXT_PUBLIC_PYTHON_API,
   },
-
+  reactStrictMode: false,
   async headers() {
     return [
       {

@@ -34,7 +34,7 @@ export default function WinnerFilter() {
     );
 
     const applyFilter = () => {
-        setOpen(false); // close dialog
+        setOpen(false);
         router.push(`/winners?year=${year}&month=${month}`);
     };
 

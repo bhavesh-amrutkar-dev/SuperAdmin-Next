@@ -16,7 +16,7 @@ import PlaceToPayLightbox from "@/src/components/checkout/PlaceToPayLightbox";
 import ComingSoonModal from "@/src/components/modals/ComingSoonModal";
 import { Copy, Check, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { DEFAULT_COUNTRY_CODE, COUNTRY_CODE, BASE_URL } from "@/src/lib/config";
+import { DEFAULT_COUNTRY_CODE, COUNTRY_CODE, BASE_URL, ENABLE_PLACE_TO_PAY } from "@/src/lib/config";
 import { getCommonHeaders } from "@/src/lib/api/headers";
 import axios from "axios";
 import { Button } from "../../components/ui/button";
@@ -26,6 +26,9 @@ import { ConfirmationModal } from "@/src/components/ui/confirmationModal";
 import { getMyIP } from "@/src/lib/utils/getIp";
 import AthMovilCheckout from "@/src/components/checkout/authMovilCheckout";
 import PlaceToPayPopup from "@/src/components/checkout/PlaceToPayPopup";
+import Script from "next/script";
+import SquarePayment from "@/src/components/payments/SquarePayment";
+import SquareScript from "@/src/components/payments/SqaureScript";
 
 type TaxItem = {
   taxName?: string;
@@ -159,7 +162,8 @@ export default function SecureCheckoutPage() {
   const [showComingSoonModal, setShowComingSoonModal] = useState(false);
   const [athResponses, setAthResponses] = useState<string[]>([]);
   const [isLoadingAth, setIsLoadingAth] = useState(false);
-
+  const [squareOrderId, setSquareOrderId] = useState<string | null>(null);
+  const [showSquarePayment, setShowSquarePayment] = useState(false);
   const currency = cartData?.currencySymbol || "$";
   const accounting = cartData?.accounting || {};
   const [athOrderId, setAthOrderId] = useState<string | null>(null);
@@ -362,7 +366,7 @@ export default function SecureCheckoutPage() {
     try {
       setPlacingOrder(false);
 
-       fetch("/api/orders/status-update", {
+      fetch("/api/orders/status-update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -681,8 +685,12 @@ export default function SecureCheckoutPage() {
       let onlinePaymentMethod = 18;
       if (paymentMethod === "creditCard") {
         onlinePaymentMethod = 18;
-      } else if (paymentMethod === "manual") {
+      }
+      else if (paymentMethod === "manual") {
         onlinePaymentMethod = 12;
+      }
+      else if (paymentMethod === "square") {
+        onlinePaymentMethod = 21;
       }
 
       // Get address ID
@@ -758,6 +766,13 @@ export default function SecureCheckoutPage() {
 
       // Check if order was placed successfully
       if (orderData?.orderId) {
+
+        if (paymentMethod === "square") {
+          setSquareOrderId(orderData.orderId);
+          setShowSquarePayment(true);
+          setPlacingOrder(false);
+          return;
+        }
         // Store order ID for later use
         if (typeof window !== "undefined") {
           localStorage.setItem("orderId", orderData.orderId);
@@ -952,7 +967,9 @@ export default function SecureCheckoutPage() {
     } else {
       setShowBankDetails(true);
     }
-
+    if (method === "square") {
+      setPaymentMethod("square");
+    }
     if (method === "athMovil") {
       try {
         const tokenResponse = await PaymentService.ATHMovileToken();
@@ -1075,6 +1092,7 @@ export default function SecureCheckoutPage() {
 
   return (
     <>
+      <SquareScript />
       <ConfirmationModal
         open={confirmOpen}
         onCancel={() => setConfirmOpen(false)}
@@ -1225,14 +1243,23 @@ export default function SecureCheckoutPage() {
                         value: "athMovil",
                         label: t("payWithATHMovil"),
                       },
-                      {
-                        value: "creditCard",
-                        label: t("payWithCreditCard"),
-                        icons: true,
-                      },
+                      ...(ENABLE_PLACE_TO_PAY
+                        ? [
+                          {
+                            value: "creditCard",
+                            label: t("payWithCreditCard"),
+                            icons: true,
+                          },
+                        ]
+                        : []),
                       {
                         value: "manual",
                         label: t("manualPaymentMethods"),
+                      },
+                      {
+                        value: "square",
+                        label: "Credit / Debit Card",
+                        icons: true,
                       },
                     ].map((method) => {
                       const isSelected = paymentMethod === method.value;
@@ -1241,7 +1268,7 @@ export default function SecureCheckoutPage() {
                       return (
                         <label
                           key={method.value}
-                          className={`relative flex-1 min-w-[180px] cursor-pointer`}
+                          className={`relative flex-1 min-w-45 cursor-pointer`}
                         >
                           <input
                             type="radio"
@@ -1480,6 +1507,20 @@ export default function SecureCheckoutPage() {
                   )}
                 </div>
               )}
+
+              {paymentMethod === "square" && showSquarePayment && squareOrderId && (
+                <SquarePayment
+                  orderId={squareOrderId}
+                  amount={Math.round(grandTotal * 100)}
+                  onSuccess={() => {
+                    router.push("/thank-you?payment=square");
+                  }}
+                  onError={() => {
+                    fetchCart();
+                    setShowSquarePayment(false);
+                  }}
+                />
+              )}
             </div>
 
             {/* RIGHT COLUMN */}
@@ -1589,9 +1630,11 @@ export default function SecureCheckoutPage() {
                                 ? t("placeOrder") || "PLACE ORDER"
                                 : paymentMethod === "athMovil"
                                   ? t("payWithATHMovil") || "PAY WITH ATH MÓVIL"
-                                  : paymentMethod === "creditCard"
-                                    ? t("payWithPlaceToPay") || "PAY WITH PLACE TO PAY"
-                                    : t("pay") || "PAY"}
+                                  : paymentMethod === "square"
+                                    ? "PAY WITH CARD"
+                                    : paymentMethod === "creditCard" && ENABLE_PLACE_TO_PAY
+                                      ? t("payWithPlaceToPay") || "PAY WITH PLACE TO PAY"
+                                      : t("pay") || "PAY"}
                           </Button>
                         )}
 
@@ -1655,7 +1698,7 @@ export default function SecureCheckoutPage() {
         )} */}
 
         {/* Place to Pay Popup */}
-        {placeToPayUrl && (
+        {ENABLE_PLACE_TO_PAY && placeToPayUrl && (
           <PlaceToPayPopup
             url={placeToPayUrl}
             onSuccess={handlePlaceToPaySuccess}
@@ -1669,7 +1712,6 @@ export default function SecureCheckoutPage() {
           onClose={() => setShowComingSoonModal(false)}
           paymentMethod={paymentMethod}
         />
-
 
         <Footer />
       </div>
