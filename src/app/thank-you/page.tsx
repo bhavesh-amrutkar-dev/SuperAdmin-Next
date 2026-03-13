@@ -8,7 +8,6 @@ import Link from "next/link";
 import Header from "@/src/components/layout/Header";
 import Footer from "@/src/components/layout/Footer";
 import PreFooterIconModule from "@/src/components/layout/PreFooterIconModule";
-import { OrderService } from "@/src/lib/services/order";
 import { getCookie } from "cookies-next";
 import { DEFAULT_LANGUAGE } from "@/src/lib/config";
 
@@ -49,8 +48,7 @@ export default function ThankYouPage() {
     };
 
     try {
-      // const res = await OrderService.orderStatusUpdate(orderStatusPayload);
-      // console.log("Order status updated:", res);
+      // await OrderService.orderStatusUpdate(orderStatusPayload);
 
       if (!updateTicketWalletFlag) {
         localStorage.removeItem("orderId");
@@ -61,7 +59,7 @@ export default function ThankYouPage() {
   };
 
   /**
-   * Handle popup communication
+   * Handle popup communication (PlaceToPay only)
    */
   useEffect(() => {
     if (popupHandledRef.current) return;
@@ -90,10 +88,13 @@ export default function ThankYouPage() {
       orderHandledRef.current = true;
 
       if (payment === "placetopay") {
-        await orderStatusUpdateFn(2); // Approved
+        await orderStatusUpdateFn(2);
+        await orderStatusUpdateFn(3);
+      } else if (payment === "square") {
+        await orderStatusUpdateFn(3);
+      } else {
+        await orderStatusUpdateFn(3);
       }
-
-      await orderStatusUpdateFn(3); // Completed
     };
 
     handleOrderCompletion();
@@ -118,34 +119,61 @@ export default function ThankYouPage() {
     <main>
       <Header />
 
-      <div className="min-h-[60vh] flex items-center justify-center py-12 px-4">
-        <div className="max-w-2xl w-full text-center">
+      <div className="min-h-[70vh] flex items-center justify-center bg-[#FAFAFA] py-16 px-4">
+        <div className="max-w-xl w-full bg-white shadow-xl rounded-2xl p-10 text-center">
 
-          <div className="flex justify-center mb-6">
-            <div className="relative">
-              <div className="absolute inset-0 bg-[#FECB02] rounded-full opacity-20 animate-ping"></div>
-              <div className="relative bg-[#FECB02] rounded-full p-4">
-                <CheckCircle2 className="w-16 h-16 text-[#2F2F2F]" strokeWidth={2.5} />
-              </div>
+          {/* Success Icon */}
+          <div className="relative flex justify-center mb-8">
+            <div className="absolute w-24 h-24 bg-[#FECB02]/20 rounded-full animate-pulse"></div>
+
+            <div className="relative bg-[#FECB02] rounded-full p-5 shadow-lg">
+              <CheckCircle2
+                className="w-14 h-14 text-[#2F2F2F]"
+                strokeWidth={2.5}
+              />
             </div>
           </div>
 
-          <h1 className="text-2xl md:text-4xl font-bold text-[#2F2F2F] mb-4">
+          {/* Title */}
+          <h1 className="text-3xl font-bold text-[#2F2F2F] mb-3">
             {t("thankYouTitle")}
           </h1>
 
-          <p className="text-md text-[#797979] mb-2">
+          {/* Message */}
+          <p className="text-md text-[#6B6B6B] mb-4">
             {t("thankYouMessage")}
           </p>
 
-          <p className="text-sm text-[#999] mb-8">
+          {/* Confirmation box */}
+          <div className="bg-[#FAFAFA] rounded-lg p-4 mb-6 text-sm text-[#555]">
+            <p className="font-semibold mb-1">
+              {t("orderConfirmed")}
+            </p>
+
+            <p>
+              {t("orderEmailConfirmation")}
+            </p>
+          </div>
+
+          {/* Redirect countdown */}
+          <p className="text-sm text-[#777] mb-3">
             {t("thankYouRedirect", { seconds: countdown })}
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          {/* Progress bar */}
+          <div className="w-full bg-gray-200 rounded-full h-1 mb-8">
+            <div
+              className="bg-[#FECB02] h-1 rounded-full transition-all"
+              style={{ width: `${(countdown / 5) * 100}%` }}
+            />
+          </div>
+
+          {/* Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+
             <Link
               href="/orders"
-              className="inline-flex items-center gap-2 bg-[#FECB02] text-[#2F2F2F] px-8 py-3 rounded-md font-semibold uppercase tracking-wide hover:bg-[#FECB02]/90 transition-colors"
+              className="flex items-center justify-center gap-2 bg-[#FECB02] text-[#2F2F2F] px-6 py-3 rounded-lg font-semibold shadow hover:shadow-md transition"
             >
               <Package className="w-5 h-5" />
               {t("viewOrders")}
@@ -153,18 +181,19 @@ export default function ThankYouPage() {
 
             <Link
               href="/"
-              className="inline-flex items-center gap-2 bg-white border-2 border-[#2F2F2F] text-[#2F2F2F] px-8 py-3 rounded-md font-semibold uppercase tracking-wide hover:bg-[#2F2F2F] hover:text-white transition-colors"
+              className="flex items-center justify-center gap-2 border border-[#2F2F2F] px-6 py-3 rounded-lg font-semibold hover:bg-[#2F2F2F] hover:text-white transition"
             >
               <Home className="w-5 h-5" />
               {t("continueToHomepage")}
             </Link>
+
           </div>
 
-          <div className="mt-12 pt-8 border-t border-[#E5E5E5]">
-            <p className="text-sm text-[#797979]">
-              {t("thankYouAdditionalInfo")}
-            </p>
+          {/* Footer message */}
+          <div className="mt-10 text-xs text-[#999]">
+            {t("thankYouAdditionalInfo")}
           </div>
+
         </div>
       </div>
 
@@ -173,3 +202,4 @@ export default function ThankYouPage() {
     </main>
   );
 }
+

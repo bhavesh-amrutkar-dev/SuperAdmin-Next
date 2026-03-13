@@ -1,136 +1,71 @@
 "use client";
 
 import { getSquareConfig } from "@/src/lib/config/square";
-import { useEffect, useRef, useState } from "react";
+import {
+  PaymentForm,
+  CreditCard,
+  ApplePay,
+  GooglePay,
+  CashAppPay
+} from "react-square-web-payments-sdk";
 
-type SquarePaymentProps = {
-  amount: number;
-  orderId: string;
-  onSuccess?: () => void;
-  onError?: (error: any) => void;
-};
-
-declare global {
-  interface Window {
-    Square: any;
-  }
-}
 
 export default function SquarePayment({
   amount,
   orderId,
   onSuccess,
   onError
-}: SquarePaymentProps) {
-  const cardRef = useRef<any>(null);
-  const [loading, setLoading] = useState(false);
+}: any) {
 
-  useEffect(() => {
-    console.log("SquarePayment mounted for order:", orderId);
+  const { appId, locationId } = getSquareConfig();
 
-    const initSquare = async () => {
-      if (!window.Square) {
-        console.error("Square SDK not loaded");
-        return;
-      }
-      const { appId, locationId } = getSquareConfig();
-
-      console.log("Square Config:", { appId, locationId });
-
-      try {
-        const payments = window.Square.payments(
-          appId,
-          locationId
-        );
-
-        const card = await payments.card();
-
-        await card.attach("#square-card-container");
-
-        cardRef.current = card;
-
-        console.log("Square card attached successfully");
-      } catch (err) {
-        console.error("Square initialization failed:", err);
-      }
-    };
-
-    initSquare();
-  }, [orderId]);
-
-  const handlePayment = async () => {
-    console.log("Square payment started");
-
-    if (!cardRef.current) {
-      console.error("Card not initialized");
-      return;
-    }
-
-    setLoading(true);
-
+  const handleToken = async (token: any) => {
     try {
-      const result = await cardRef.current.tokenize();
+      console.log(token);
 
-      console.log("Tokenization result:", result);
-
-      if (result.status !== "OK") {
-        throw new Error("Card tokenization failed");
-      }
-
-      const token = result.token;
-
-      console.log("Sending payment request:", {
-        tokenExists: !!token,
-        orderId,
-        amount
-      });
-
-      const res = await fetch("/api/square-pay", {
+      const res = await fetch("/api/pay", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          token,
+          token: token.token,
           orderId,
-          amount
         })
       });
 
       const data = await res.json();
 
-      console.log("Square API response:", data);
-
       if (!res.ok) {
-        throw new Error(data.message || "Payment failed");
+        throw new Error(data.message);
       }
-
-      console.log("Square payment successful");
 
       onSuccess?.();
 
-    } catch (err: any) {
-      console.error("Square payment error:", err);
-
-      onError?.(err);
-
-      alert(err?.message || "Payment failed");
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      onError?.(error);
     }
   };
 
   return (
-    <div className="mt-6">
-      <div id="square-card-container" className="border p-3 rounded"></div>
+    <PaymentForm
+      applicationId={appId!}
+      locationId={locationId!}
+      cardTokenizeResponseReceived={handleToken}
+    >
 
-      <button
-        onClick={handlePayment}
-        disabled={loading}
-        className="mt-4 w-full bg-black text-white px-4 py-2 rounded disabled:opacity-50"
-      >
-        {loading ? "Processing..." : "Pay with Card"}
-      </button>
-    </div>
+      {/* Card */}
+      <CreditCard />
+
+      {/* Apple Pay */}
+      {/* <ApplePay /> */}
+
+      {/* Google Pay */}
+      {/* <GooglePay /> */}
+
+      {/* Cash App Pay */}
+      {/* <CashAppPay /> */}
+
+    </PaymentForm>
   );
 }

@@ -1092,7 +1092,7 @@ export default function SecureCheckoutPage() {
 
   return (
     <>
-      <SquareScript />
+      {/* <SquareScript /> */}
       <ConfirmationModal
         open={confirmOpen}
         onCancel={() => setConfirmOpen(false)}

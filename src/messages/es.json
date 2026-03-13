@@ -579,5 +579,7 @@
         "11": "Noviembre",
         "12": "Diciembre"
     },
-    "selectMonthYear": "Seleccionar mes y año"
+    "selectMonthYear": "Seleccionar mes y año",
+    "orderConfirmed": "Tu pedido ha sido realizado con éxito.",
+    "orderEmailConfirmation": "Se ha enviado un correo electrónico de confirmación con los detalles de tu pedido a tu dirección de correo registrada."
 }

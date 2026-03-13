@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     console.log("Forwarding payload to backend:", payload);
 
     const { data, error } = await serverFetch(
-      "/payments/square",
+      "/create/SquarePayment",
       {
         method: "POST",
         body: JSON.stringify(payload),

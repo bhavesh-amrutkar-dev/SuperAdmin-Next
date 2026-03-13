@@ -2,7 +2,11 @@ import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin();
-
+import withTM from "next-transpile-modules";
+const withSquareTranspile = withTM([
+  "@square/web-sdk",
+  "react-square-web-payments-sdk"
+]);
 /** @type {NextConfig} */
 const nextConfig: NextConfig = {
   devIndicators: false,
@@ -44,6 +48,7 @@ const nextConfig: NextConfig = {
     scrollRestoration: true,
   },
 
+
   async redirects() {
     return [
       {
@@ -60,4 +65,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+export default withSquareTranspile(withNextIntl(nextConfig));
