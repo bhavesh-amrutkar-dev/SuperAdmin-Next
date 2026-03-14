@@ -326,7 +326,7 @@ export default function SecureCheckoutPage() {
       }
     );
 
-    // fetchCart();
+    fetchCart();
     setShowSquarePayment(false);
   };
   const fetchAddresses = async () => {
