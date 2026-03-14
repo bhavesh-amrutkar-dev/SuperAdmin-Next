@@ -22,28 +22,28 @@ export default function AthMovilPayment({
 
   useEffect(() => {
 
-    console.log("────────────────────────────────────────");
-    console.log("🚀 ATH MÓVIL INITIALIZATION STARTED");
-    console.log("────────────────────────────────────────");
+    // console.log("────────────────────────────────────────");
+    // console.log("🚀 ATH MÓVIL INITIALIZATION STARTED");
+    // console.log("────────────────────────────────────────");
 
-    console.log("1️⃣ Incoming Props");
-    console.log({
-      total,
-      publicToken,
-      orderId,
-      userId
-    });
+    // console.log("1️⃣ Incoming Props");
+    // console.log({
+    //   total,
+    //   publicToken,
+    //   orderId,
+    //   userId
+    // });
 
     if (!total || !publicToken || !orderId) {
       console.error("❌ Missing required ATH Móvil parameters");
       return;
     }
 
-    console.log("2️⃣ Defining global callbacks");
+    // console.log("2️⃣ Defining global callbacks");
 
     (globalThis as any).authorizationATHM = async (res: any) => {
-      console.log("🟢 authorizationATHM CALLBACK TRIGGERED");
-      console.log("Response from ATH:", res);
+      // console.log("🟢 authorizationATHM CALLBACK TRIGGERED");
+      // console.log("Response from ATH:", res);
 
       try {
         await onSuccess(res);
@@ -53,8 +53,8 @@ export default function AthMovilPayment({
     };
 
     (globalThis as any).cancelATHM = async (res?: any) => {
-      console.log("🟡 cancelATHM CALLBACK TRIGGERED");
-      console.log("Cancel payload:", res);
+      // console.log("🟡 cancelATHM CALLBACK TRIGGERED");
+      // console.log("Cancel payload:", res);
 
       try {
         await onCancel();
@@ -64,8 +64,8 @@ export default function AthMovilPayment({
     };
 
     (globalThis as any).expiredATHM = async (res?: any) => {
-      console.log("🔴 expiredATHM CALLBACK TRIGGERED");
-      console.log("Expired payload:", res);
+      // console.log("🔴 expiredATHM CALLBACK TRIGGERED");
+      // console.log("Expired payload:", res);
 
       try {
         await onCancel();
@@ -74,7 +74,7 @@ export default function AthMovilPayment({
       }
     };
 
-    console.log("3️⃣ Creating ATHM_Checkout configuration");
+    // console.log("3️⃣ Creating ATHM_Checkout configuration");
 
     const checkoutConfig = {
       env: "production",
@@ -106,23 +106,23 @@ export default function AthMovilPayment({
       ],
     };
 
-    console.log("📦 ATHM_Checkout Config:");
-    console.log(checkoutConfig);
+    // console.log("📦 ATHM_Checkout Config:");
+    // console.log(checkoutConfig);
 
     (globalThis as any).ATHM_Checkout = checkoutConfig;
 
-    console.log("4️⃣ Verifying globals before SDK load");
+    // console.log("4️⃣ Verifying globals before SDK load");
 
-    console.log("authorizationATHM:", (globalThis as any).authorizationATHM);
-    console.log("cancelATHM:", (globalThis as any).cancelATHM);
-    console.log("expiredATHM:", (globalThis as any).expiredATHM);
-    console.log("ATHM_Checkout:", (globalThis as any).ATHM_Checkout);
+    // console.log("authorizationATHM:", (globalThis as any).authorizationATHM);
+    // console.log("cancelATHM:", (globalThis as any).cancelATHM);
+    // console.log("expiredATHM:", (globalThis as any).expiredATHM);
+    // console.log("ATHM_Checkout:", (globalThis as any).ATHM_Checkout);
 
-    console.log("5️⃣ Checking if SDK already exists");
+    // console.log("5️⃣ Checking if SDK already exists");
 
     if (!document.getElementById("athmovil-sdk")) {
 
-      console.log("📥 SDK not found. Loading ATH Móvil SDK...");
+      // console.log("📥 SDK not found. Loading ATH Móvil SDK...");
 
       const script = document.createElement("script");
 
@@ -131,9 +131,9 @@ export default function AthMovilPayment({
       script.async = true;
 
       script.onload = () => {
-        console.log("✅ ATH Móvil SDK successfully loaded");
+        // console.log("✅ ATH Móvil SDK successfully loaded");
 
-        console.log("6️⃣ Triggering DOM lifecycle events for SDK");
+        // console.log("6️⃣ Triggering DOM lifecycle events for SDK");
 
         setTimeout(() => {
           document.dispatchEvent(
@@ -144,7 +144,7 @@ export default function AthMovilPayment({
             new Event("load", { bubbles: true })
           );
 
-          console.log("✅ DOM events dispatched");
+          // console.log("✅ DOM events dispatched");
         }, 300);
       };
 
@@ -157,7 +157,7 @@ export default function AthMovilPayment({
 
     } else {
 
-      console.log("ℹ️ SDK already loaded. Re-triggering initialization");
+      // console.log("ℹ️ SDK already loaded. Re-triggering initialization");
 
       setTimeout(() => {
         document.dispatchEvent(
@@ -168,14 +168,14 @@ export default function AthMovilPayment({
           new Event("load", { bubbles: true })
         );
 
-        console.log("✅ DOM events re-triggered");
+        // console.log("✅ DOM events re-triggered");
       }, 300);
 
     }
 
-    console.log("────────────────────────────────────────");
-    console.log("🚀 ATH MÓVIL INITIALIZATION COMPLETE");
-    console.log("────────────────────────────────────────");
+    // console.log("────────────────────────────────────────");
+    // console.log("🚀 ATH MÓVIL INITIALIZATION COMPLETE");
+    // console.log("────────────────────────────────────────");
 
   }, [total, publicToken, orderId, userId]);
 
