@@ -391,7 +391,7 @@ export default function SecureCheckoutPage() {
 
   const handleAthSuccess = async () => {
     if (!athOrderId) return;
-    console.log("Ath movil payment success log from handleAth success")
+    // console.log("Ath movil payment success log from handleAth success")
     try {
       setPlacingOrder(false);
 
@@ -775,7 +775,7 @@ export default function SecureCheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderPayload),
       });
-      console.log("order placed");
+      // console.log("order placed");
 
       if (!response.ok) {
         const err = await response.json();

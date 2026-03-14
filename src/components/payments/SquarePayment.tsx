@@ -21,7 +21,7 @@ export default function SquarePayment({
 
   const handleToken = async (token: any) => {
     try {
-      console.log(token);
+      // console.log(token);
 
       const res = await fetch("/api/pay", {
         method: "POST",

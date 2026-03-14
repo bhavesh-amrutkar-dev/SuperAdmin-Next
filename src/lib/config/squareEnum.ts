@@ -22,7 +22,7 @@ export const getSquareErrorMessage = (err: any, t: any) => {
 
   const upper = `${code || ""} ${message || ""}`.toUpperCase();
 
-  console.log("Square error normalized:", upper);
+//   console.log("Square error normalized:", upper);
 
   /**
    * Rule based matching

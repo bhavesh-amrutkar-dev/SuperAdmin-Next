@@ -1,7 +1,7 @@
 export const getSquareConfig = () => {
   const isProd = process.env.APP_ENV === "production";
 
-  console.log("APP_ENV", process.env.APP_ENV);
+  // console.log("APP_ENV", process.env.APP_ENV);
 
   return {
     appId: isProd

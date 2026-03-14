@@ -8,10 +8,10 @@ export async function POST(request: NextRequest) {
 
     const { token, orderId } = body;
 
-    console.log("Square payment request received:", {
-      orderId,
-      tokenExists: !!token,
-    });
+    // console.log("Square payment request received:", {
+    //   orderId,
+    //   tokenExists: !!token,
+    // });
 
     if (!token || !orderId) {
       return NextResponse.json(
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       orderId,
     };
 
-    console.log("Forwarding payload to backend:", payload);
+    // console.log("Forwarding payload to backend:", payload);
 
     const { data, error } = await serverFetch(
       "/create/SquarePayment",
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("Square payment success response:", data);
+    // console.log("Square payment success response:", data);
 
     return NextResponse.json(data);
   } catch (err: any) {
