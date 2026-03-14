@@ -29,6 +29,7 @@ import PlaceToPayPopup from "@/src/components/checkout/PlaceToPayPopup";
 import Script from "next/script";
 import SquarePayment from "@/src/components/payments/SquarePayment";
 import SquareScript from "@/src/components/payments/SqaureScript";
+import { getSquareErrorMessage } from "@/src/lib/config/squareEnum";
 
 type TaxItem = {
   taxName?: string;
@@ -299,7 +300,35 @@ export default function SecureCheckoutPage() {
       });
     }
   };
+  const handleSquareSuccess = () => {
+    toast.success(
+      t("paymentSuccess") || "Payment Successful",
+      {
+        description:
+          t("redirecting") || "Redirecting to order confirmation...",
+      }
+    );
 
+    setTimeout(() => {
+      router.push("/thank-you?payment=square");
+    }, 1200);
+  };
+
+  const handleSquareError = (err: any) => {
+    console.warn("Square payment failed:", err);
+
+    const message = getSquareErrorMessage(err, t);
+
+    toast.error(
+      t("paymentErrorTitle") || "Payment Failed",
+      {
+        description: message,
+      }
+    );
+
+    // fetchCart();
+    // setShowSquarePayment(false);
+  };
   const fetchAddresses = async () => {
     try {
       const response = await UserAddressService.getAddresses();
@@ -322,7 +351,7 @@ export default function SecureCheckoutPage() {
       }
       addAthResponse(responseCancel);
     } catch (err) {
-      console.error(err);
+      console.warn(err);
       addAthResponse("Error cancelling payment");
     }
   };
@@ -336,7 +365,7 @@ export default function SecureCheckoutPage() {
         router.push("/thank-you?payment=athmovil");
       }
     } catch (err) {
-      console.error(err);
+      console.warn(err);
       addAthResponse("Error authorizing payment");
     }
   };
@@ -346,7 +375,7 @@ export default function SecureCheckoutPage() {
       const responseExpired = await (window as any).findPaymentATHM?.();
       addAthResponse(responseExpired);
     } catch (err) {
-      console.error(err);
+      console.warn(err);
       addAthResponse("Error: payment expired");
     }
   };
@@ -377,7 +406,7 @@ export default function SecureCheckoutPage() {
 
       router.push("/thank-you?payment=athmovil");
     } catch (error: any) {
-      console.error("ATH Móvil success handler error:", error);
+      console.warn("ATH Móvil success handler error:", error);
 
       setModalConfig({
         title: t("athPaymentConfirmationError"),
@@ -424,7 +453,7 @@ export default function SecureCheckoutPage() {
         paymentMethod: 10,
       }),
     }).catch((error) => {
-      console.error("ATH cancel background update failed:", error);
+      console.warn("ATH cancel background update failed:", error);
     });
     fetchCart()
   };
@@ -445,7 +474,7 @@ export default function SecureCheckoutPage() {
       //   (freshCartData as any)?.cartId;
       const cartId = (cartData as any)?._id;
       if (!cartId) {
-        console.error("❌ Cart ID not found");
+        console.warn("❌ Cart ID not found");
         throw new Error("Cart ID not found");
       }
 
@@ -771,6 +800,11 @@ export default function SecureCheckoutPage() {
           setSquareOrderId(orderData.orderId);
           setShowSquarePayment(true);
           setPlacingOrder(false);
+
+          // router.push(
+          //   `/square-payment?orderId=${orderData.orderId}&amount=${grandTotal}`
+          // );
+
           return;
         }
         // Store order ID for later use
@@ -981,7 +1015,7 @@ export default function SecureCheckoutPage() {
           setAthToken(publicToken);
         }
       } catch (err) {
-        console.error("Token preload failed", err);
+        console.warn("Token preload failed", err);
       }
     }
   };
@@ -1507,18 +1541,12 @@ export default function SecureCheckoutPage() {
                   )}
                 </div>
               )}
-
               {paymentMethod === "square" && showSquarePayment && squareOrderId && (
                 <SquarePayment
                   orderId={squareOrderId}
                   amount={Math.round(grandTotal * 100)}
-                  onSuccess={() => {
-                    router.push("/thank-you?payment=square");
-                  }}
-                  onError={() => {
-                    fetchCart();
-                    setShowSquarePayment(false);
-                  }}
+                  onSuccess={handleSquareSuccess}
+                  onError={handleSquareError}
                 />
               )}
             </div>

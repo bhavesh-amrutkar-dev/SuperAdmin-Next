@@ -1,4 +1,5 @@
 "use client"
+
 import { useTheme } from "next-themes"
 import { Toaster as Sonner, toast } from "sonner"
 import { useEffect, useState } from "react"
@@ -13,17 +14,23 @@ const Toaster = ({ ...props }: ToasterProps) => {
     setMounted(true)
   }, [])
 
-  if (!mounted) return null // don't render on server
+  // Prevent hydration mismatch
+  if (!mounted) return null
 
   return (
     <Sonner
       theme={theme as ToasterProps["theme"]}
+      position="top-right"
+      richColors
+      closeButton
+      duration={4000}
       className="toaster group"
       toastOptions={{
         classNames: {
           toast:
-            "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
-          description: "group-[.toast]:text-muted-foreground",
+            "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg rounded-lg",
+          description:
+            "group-[.toast]:text-muted-foreground text-sm",
           actionButton:
             "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
           cancelButton:
