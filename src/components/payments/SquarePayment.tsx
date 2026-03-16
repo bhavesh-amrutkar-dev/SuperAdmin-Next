@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getSquareConfig } from "@/src/lib/config/square";
 import {
   PaymentForm,
@@ -27,7 +27,23 @@ export default function SquarePayment({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [applePaySupported, setApplePaySupported] = useState(false);
+  const [googlePaySupported, setGooglePaySupported] = useState(false);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+
+      // Apple Pay detection
+      if ((window as any).ApplePaySession) {
+        setApplePaySupported(true);
+      }
+
+      // Google Pay detection
+      if (window.PaymentRequest) {
+        setGooglePaySupported(true);
+      }
+    }
+  }, []);
   const createPaymentRequest = () => ({
     countryCode: "US",
     currencyCode: "USD",
@@ -93,26 +109,30 @@ export default function SquarePayment({
           createPaymentRequest={createPaymentRequest}
         >
 
+          {/* Credit Card always available */}
           <CreditCard />
 
-          <div className="flex items-center gap-3 my-4">
-            <div className="flex-1 border-t"></div>
-            <span className="text-xs text-gray-400">OR</span>
-            <div className="flex-1 border-t"></div>
-          </div>
+          {(applePaySupported || googlePaySupported) && (
+            <>
+              <div className="flex items-center gap-3 my-4">
+                <div className="flex-1 border-t"></div>
+                <span className="text-xs text-gray-400">OR</span>
+                <div className="flex-1 border-t"></div>
+              </div>
+            </>
+          )}
 
-
-
-          <ApplePay
-          />
+          {/* Apple Pay */}
+          {applePaySupported && <ApplePay />}
 
           {/* Google Pay */}
-          <GooglePay
-            buttonType="long"
-            buttonColor="black"
-            buttonSizeMode="fill"
-          />
-
+          {googlePaySupported && (
+            <GooglePay
+              buttonType="long"
+              buttonColor="black"
+              buttonSizeMode="fill"
+            />
+          )}
 
         </PaymentForm>
 
