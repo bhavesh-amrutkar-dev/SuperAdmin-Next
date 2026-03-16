@@ -300,6 +300,29 @@ export default function SecureCheckoutPage() {
       });
     }
   };
+  useEffect(() => {
+    const handlePaymentMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+
+      const { status, orderId } = event.data || {};
+
+      if (!status) return;
+
+      if (status === "SUCCESS") {
+        handleSquareSuccess();
+      }
+
+      if (status === "FAILED") {
+        handleSquareError(event.data);
+      }
+    };
+
+    window.addEventListener("message", handlePaymentMessage);
+
+    return () => {
+      window.removeEventListener("message", handlePaymentMessage);
+    };
+  }, []);
   const handleSquareSuccess = () => {
     toast.success(
       t("paymentSuccess") || "Payment Successful",
@@ -798,13 +821,17 @@ export default function SecureCheckoutPage() {
 
         if (paymentMethod === "square") {
           setSquareOrderId(orderData.orderId);
-          setShowSquarePayment(true);
+          // setShowSquarePayment(true);
           setPlacingOrder(false);
 
-          // router.push(
-          //   `/square-payment?orderId=${orderData.orderId}&amount=${grandTotal}`
-          // );
-
+          const popup = window.open(
+            `/square-payment?orderId=${orderData.orderId}&amount=${grandTotal}`,
+            "squarePayment",
+            "width=500,height=700"
+          );
+          if (!popup) {
+            router.push(`/square-payment?orderId=${orderData.orderId}&amount=${grandTotal}`);
+          }
           return;
         }
         // Store order ID for later use
@@ -1541,14 +1568,14 @@ export default function SecureCheckoutPage() {
                   )}
                 </div>
               )}
-              {paymentMethod === "square" && showSquarePayment && squareOrderId && (
+              {/* {paymentMethod === "square" && showSquarePayment && squareOrderId && (
                 <SquarePayment
                   orderId={squareOrderId}
                   amount={Math.round(grandTotal * 100)}
                   onSuccess={handleSquareSuccess}
                   onError={handleSquareError}
                 />
-              )}
+              )} */}
             </div>
 
             {/* RIGHT COLUMN */}

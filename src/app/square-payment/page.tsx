@@ -7,15 +7,13 @@ export default function SquarePaymentPage() {
   const searchParams = useSearchParams();
 
   const orderId = searchParams?.get("orderId");
-  const amount = searchParams?.get("amount");
+  const amount = Number(searchParams?.get("amount"));
 
   return (
     <div className="flex items-center justify-center min-h-screen p-6 bg-gray-50">
-      <div className="w-full max-w-md bg-white shadow-xl rounded-xl p-6">
-        <h2 className="text-xl font-semibold mb-4 text-center">
-          Secure Payment
-        </h2>
 
+
+      {orderId && amount && (
         <SquarePayment
           orderId={orderId}
           amount={amount}
@@ -26,14 +24,17 @@ export default function SquarePaymentPage() {
             );
             window.close();
           }}
-          onError={() => {
+
+          onError={(err) => {
             window.opener?.postMessage(
-              { status: "FAILED", orderId },
+              { status: "FAILED", orderId, error: err },
               window.location.origin
             );
+            window.close();
           }}
         />
-      </div>
+      )}
     </div>
+
   );
 }
