@@ -21,7 +21,16 @@ export default async function SquarePaymentPage({ searchParams }: any) {
 
   const { orderId, amount, accessToken } = data;
   if (Date.now() > data.exp) {
-    throw new Error("Token expired");
+    return (
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
+        window.opener?.postMessage({status:"EXPIRED"}, window.location.origin);
+        window.close();
+      `,
+        }}
+      />
+    );
   }
   return (
     <SquarePaymentClient
