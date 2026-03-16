@@ -95,18 +95,19 @@ export default function SquarePayment({
 
         {/* Digital Wallets */}
         <div className="space-y-3">
-          <GooglePay />
+          <CreditCard />
+
         </div>
 
         {/* Divider */}
         <div className="flex items-center gap-3 my-4">
           <div className="flex-1 border-t"></div>
-          <span className="text-xs text-gray-400">OR PAY WITH CARD</span>
+          <span className="text-xs text-gray-400">OR</span>
           <div className="flex-1 border-t"></div>
         </div>
 
         {/* Card Payment */}
-        <CreditCard />
+        <GooglePay />
 
       </PaymentForm>
 

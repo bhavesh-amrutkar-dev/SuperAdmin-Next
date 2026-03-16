@@ -1,40 +1,33 @@
-"use client";
 
-import SquarePayment from "@/src/components/payments/SquarePayment";
-import { useSearchParams } from "next/navigation";
+import { decryptPaymentToken } from "@/src/lib/security/paymentToken";
+import SquarePaymentClient from "./squarePaymentClient";
 
-export default function SquarePaymentPage() {
-  const searchParams = useSearchParams();
+export default async function SquarePaymentPage({ searchParams }: any) {
 
-  const orderId = searchParams?.get("orderId");
-  const amount = Number(searchParams?.get("amount"));
+  const params = await searchParams;
+  const token = params?.t;
 
+  if (!token) {
+    return <div className="p-6 text-center">Invalid payment link</div>;
+  }
+
+  let data;
+
+  try {
+    data = decryptPaymentToken(token);
+  } catch {
+    return <div className="p-6 text-center">Invalid or expired payment link</div>;
+  }
+
+  const { orderId, amount, accessToken } = data;
+  if (Date.now() > data.exp) {
+    throw new Error("Token expired");
+  }
   return (
-    <div className="flex items-center justify-center min-h-screen p-6 bg-gray-50">
-
-
-      {orderId && amount && (
-        <SquarePayment
-          orderId={orderId}
-          amount={amount}
-          onSuccess={() => {
-            window.opener?.postMessage(
-              { status: "SUCCESS", orderId },
-              window.location.origin
-            );
-            window.close();
-          }}
-
-          onError={(err) => {
-            window.opener?.postMessage(
-              { status: "FAILED", orderId, error: err },
-              window.location.origin
-            );
-            window.close();
-          }}
-        />
-      )}
-    </div>
-
+    <SquarePaymentClient
+      orderId={orderId}
+      amount={amount}
+      accessToken={accessToken}
+    />
   );
 }

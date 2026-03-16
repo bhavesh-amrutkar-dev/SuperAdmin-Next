@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { getCookie, setCookie } from "cookies-next";
-
+import { SiSquare } from "react-icons/si";
 import Header from "@/src/components/layout/Header";
 import Footer from "@/src/components/layout/Footer";
 import { CartService } from "@/src/lib/services/cart";
@@ -823,15 +823,46 @@ export default function SecureCheckoutPage() {
           setSquareOrderId(orderData.orderId);
           // setShowSquarePayment(true);
           setPlacingOrder(false);
+          try {
+            const res = await fetch("/api/create-token", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                orderId: orderData.orderId,
+                amount: grandTotal,
+              }),
+            });
 
-          const popup = window.open(
-            `/square-payment?orderId=${orderData.orderId}&amount=${grandTotal}`,
-            "squarePayment",
-            "width=500,height=700"
-          );
-          if (!popup) {
-            router.push(`/square-payment?orderId=${orderData.orderId}&amount=${grandTotal}`);
+            if (!res.ok) {
+              throw new Error("Failed to create payment session");
+            }
+
+            const { token } = await res.json();
+
+            if (!token) {
+              throw new Error("Invalid payment session");
+            }
+
+            const url = `/square-payment?t=${encodeURIComponent(token)}`;
+
+            const popup = window.open(
+              url,
+              "squarePayment",
+              "width=500,height=700,scrollbars=yes,resizable=yes"
+            );
+
+            // fallback if popup blocked
+            if (!popup) {
+              router.push(url);
+            }
+
+          } catch (err) {
+            console.error("Square payment session error:", err);
+
+            toast.error("Unable to start payment. Please try again.");
+            setPlacingOrder(false);
           }
+
           return;
         }
         // Store order ID for later use
@@ -1319,9 +1350,9 @@ export default function SecureCheckoutPage() {
                       },
                       {
                         value: "square",
-                        label: "Credit / Debit Card",
-                        icons: true,
-                      },
+                        label: "Pay with Square",
+                        square: true
+                      }
                     ].map((method) => {
                       const isSelected = paymentMethod === method.value;
                       const isDisabled = grandTotal <= 0;
@@ -1355,6 +1386,9 @@ export default function SecureCheckoutPage() {
           `}
                           >
                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-wrap">
+                              {method.square && (
+                                <SiSquare className="h-5 w-5 text-black" />
+                              )}
                               <span className="text-[13px] text-gray-800 font-semibold">
                                 {method.label}
                               </span>
