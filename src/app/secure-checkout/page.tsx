@@ -1643,9 +1643,8 @@ export default function SecureCheckoutPage() {
                       </svg>
                       <p className="text-[10px] sm:text-xs text-gray-600">{t("taxInfoMessage")}</p>
                     </div>
-                    {paymentMethod !== "" && (
+                    {paymentMethod !== "" && !(paymentMethod === "square" && showSquarePayment) && (
                       <>
-                        {/* BEFORE ORDER CREATION */}
                         {!(paymentMethod === "athMovil" && isAthReady) && (
                           <Button
                             onClick={handlePlaceOrder}
@@ -1665,6 +1664,7 @@ export default function SecureCheckoutPage() {
                                       : t("pay") || "PAY"}
                           </Button>
                         )}
+
 
                         {/* AFTER ORDER CREATION — SHOW REAL ATH BUTTON */}
                         {paymentMethod === "athMovil" && isAthReady && athToken && athOrderId && (
