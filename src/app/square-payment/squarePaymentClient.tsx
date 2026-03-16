@@ -25,8 +25,11 @@ export default function SquarePaymentClient({
         { status: "SUCCESS", orderId },
         window.location.origin
       );
-      window.close();
     }
+
+    setTimeout(() => {
+      window.close();
+    }, 500);
   };
 
   const handleError = (err: any) => {

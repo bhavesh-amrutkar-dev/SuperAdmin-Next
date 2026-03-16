@@ -6,6 +6,7 @@ import {
   PaymentForm,
   CreditCard,
   GooglePay,
+  ApplePay,
 } from "react-square-web-payments-sdk";
 
 interface SquarePaymentProps {
@@ -69,61 +70,65 @@ export default function SquarePayment({
   };
 
   return (
-    <div className="max-w-md mx-auto bg-white rounded-xl shadow-md p-6 space-y-6">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-6">
 
-      {/* Header */}
-      <div className="text-center">
-        <h2 className="text-xl font-semibold">Complete Payment</h2>
-        <p className="text-gray-500 text-sm">
-          Secure payment powered by Square
-        </p>
-      </div>
+      <div className="w-full max-w-sm bg-white rounded-2xl shadow-lg p-5 space-y-5">
 
-      {/* Amount */}
-      <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg">
-        <span className="text-gray-600">Total Amount</span>
-        <span className="text-lg font-semibold">${amount}</span>
-      </div>
+        <div className="text-center space-y-1">
+          <h2 className="text-lg font-semibold">Complete Payment</h2>
+          <p className="text-xs text-gray-500">
+            Secure checkout powered by Square
+          </p>
+        </div>
 
-      {/* Payment Form */}
-      <PaymentForm
-        applicationId={appId!}
-        locationId={locationId!}
-        cardTokenizeResponseReceived={handleToken}
-        createPaymentRequest={createPaymentRequest}
-      >
+        <div className="flex justify-between items-center bg-gray-100 px-4 py-3 rounded-xl">
+          <span className="text-gray-600 text-sm">Total Amount</span>
+          <span className="text-xl font-bold">${amount}</span>
+        </div>
 
-        {/* Digital Wallets */}
-        <div className="space-y-3">
+        <PaymentForm
+          applicationId={appId!}
+          locationId={locationId!}
+          cardTokenizeResponseReceived={handleToken}
+          createPaymentRequest={createPaymentRequest}
+        >
+
           <CreditCard />
 
-        </div>
+          <div className="flex items-center gap-3 my-4">
+            <div className="flex-1 border-t"></div>
+            <span className="text-xs text-gray-400">OR</span>
+            <div className="flex-1 border-t"></div>
+          </div>
 
-        {/* Divider */}
-        <div className="flex items-center gap-3 my-4">
-          <div className="flex-1 border-t"></div>
-          <span className="text-xs text-gray-400">OR</span>
-          <div className="flex-1 border-t"></div>
-        </div>
 
-        {/* Card Payment */}
-        <GooglePay />
 
-      </PaymentForm>
+          <ApplePay
+          />
 
-      {/* Loading */}
-      {loading && (
-        <p className="text-sm text-gray-500 text-center">
-          Processing payment...
-        </p>
-      )}
+          {/* Google Pay */}
+          <GooglePay
+            buttonType="long"
+            buttonColor="black"
+            buttonSizeMode="fill"
+          />
 
-      {/* Error */}
-      {error && (
-        <p className="text-sm text-red-500 text-center">
-          {error}
-        </p>
-      )}
+
+        </PaymentForm>
+
+        {loading && (
+          <div className="text-center text-sm text-gray-500">
+            Processing payment...
+          </div>
+        )}
+
+        {error && (
+          <div className="text-center text-sm text-red-500">
+            {error}
+          </div>
+        )}
+
+      </div>
 
     </div>
   );

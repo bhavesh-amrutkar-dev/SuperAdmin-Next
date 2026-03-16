@@ -844,11 +844,10 @@ export default function SecureCheckoutPage() {
             }
 
             const url = `/square-payment?t=${encodeURIComponent(token)}`;
-
             const popup = window.open(
               url,
               "squarePayment",
-              "width=500,height=700,scrollbars=yes,resizable=yes"
+              "width=420,height=720,scrollbars=yes,resizable=yes"
             );
 
             // fallback if popup blocked
