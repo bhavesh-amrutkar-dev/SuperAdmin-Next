@@ -619,5 +619,7 @@
         "temporary": "Ocurrió un error temporal.",
         "paymentFailed": "El pago falló",
         "sessionFailed": "No se pudo crear la sesión de pago"
-    }
+    },
+    "paySqr": "PAGA CON SQUARE",
+    "paymentConnectionLost": "Conexión perdida"
 }

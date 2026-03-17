@@ -1725,7 +1725,7 @@ export default function SecureCheckoutPage() {
                                 : paymentMethod === "athMovil"
                                   ? t("payWithATHMovil") || "PAY WITH ATH MÓVIL"
                                   : paymentMethod === "square"
-                                    ? "PAY WITH CARD"
+                                    ? t("paySqr")
                                     : paymentMethod === "creditCard" && ENABLE_PLACE_TO_PAY
                                       ? t("payWithPlaceToPay") || "PAY WITH PLACE TO PAY"
                                       : t("pay") || "PAY"}
