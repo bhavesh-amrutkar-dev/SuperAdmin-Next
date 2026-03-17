@@ -29,7 +29,7 @@ export default function SquarePaymentClient({
 
     setTimeout(() => {
       window.close();
-    }, 500);
+    }, 300);
   };
 
   const handleError = (err: any) => {
