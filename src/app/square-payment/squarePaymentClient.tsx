@@ -46,6 +46,7 @@ export default function SquarePaymentClient({
     <SquarePayment
       orderId={orderId}
       amount={amount}
+      authToken={accessToken}
       onSuccess={handleSuccess}
       onError={handleError}
     />

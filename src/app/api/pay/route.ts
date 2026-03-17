@@ -6,14 +6,14 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const { token, orderId } = body;
+    const { token, orderId, authToken } = body;
 
     // console.log("Square payment request received:", {
     //   orderId,
     //   tokenExists: !!token,
     // });
 
-    if (!token || !orderId) {
+    if (!token || !orderId || !authToken) {
       return NextResponse.json(
         { message: "Missing required fields (token, orderId)" },
         { status: 400 }
@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
         method: "POST",
         body: JSON.stringify(payload),
         baseUrl: API_NY_URL,
+        overrideAuthToken: authToken,
       }
     );
 

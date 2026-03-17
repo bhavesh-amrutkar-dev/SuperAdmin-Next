@@ -1,12 +1,13 @@
 import { cookies } from "next/headers";
 import { API_PY_URL, DEFAULT_COUNTRY_CODE, DEFAULT_LANGUAGE } from "../config";
-export async function getCommonServerHeaders() {
+
+export async function getCommonServerHeaders(overrideAuthToken?: string) {
     const cookieStore = await cookies();
 
     const currencyCode = cookieStore.get("currencyCode")?.value || "USD";
     const currencySymbol = cookieStore.get("currencySymbol")?.value || "$";
     const language = cookieStore.get("NEXT_LOCALE")?.value || DEFAULT_LANGUAGE;
-    const token = cookieStore.get("token")?.value;
+    const cookieToken = cookieStore.get("token")?.value;
     const country = cookieStore.get("C_code")?.value || DEFAULT_COUNTRY_CODE;
 
     const headers: Record<string, string> = {
@@ -18,8 +19,11 @@ export async function getCommonServerHeaders() {
         country,
     };
 
-    if (token) {
-        headers["Authorization"] = token;
+    // ✅ Priority: override token > cookie token
+    const finalToken = overrideAuthToken || cookieToken;
+
+    if (finalToken) {
+        headers["Authorization"] = finalToken;
     }
 
     return headers;
@@ -27,9 +31,14 @@ export async function getCommonServerHeaders() {
 
 export async function serverFetch<T>(
     endpoint: string,
-    options: RequestInit & { baseUrl?: string; timeout?: number } = {}
+    options: RequestInit & {
+        baseUrl?: string;
+        timeout?: number;
+        overrideAuthToken?: string; // 👈 used for payment flow
+    } = {}
 ): Promise<{ data?: T; error?: { status?: number; message: string } }> {
-    const headers = await getCommonServerHeaders();
+
+    const headers = await getCommonServerHeaders(options.overrideAuthToken);
 
     const config = {
         ...options,
@@ -53,18 +62,23 @@ export async function serverFetch<T>(
         if (!response.ok) {
             const errorText = await response.text().catch(() => "Unknown error");
             return {
-                error: { status: response.status, message: errorText || "Something went wrong" },
+                error: {
+                    status: response.status,
+                    message: errorText || "Something went wrong"
+                },
             };
         }
 
         const data = await response.json();
         return { data };
+
     } catch (err: any) {
         if (err.name === "AbortError") {
             return { error: { message: `Request timed out after ${timeout}ms` } };
         }
         return { error: { message: err.message || "Something went wrong." } };
+
     } finally {
         clearTimeout(id);
     }
-}   
+}

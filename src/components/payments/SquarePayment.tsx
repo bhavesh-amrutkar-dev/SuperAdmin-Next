@@ -12,6 +12,7 @@ import {
 interface SquarePaymentProps {
   amount: number;
   orderId: string;
+  authToken: string;
   onSuccess?: () => void;
   onError?: (error: any) => void;
 }
@@ -19,6 +20,7 @@ interface SquarePaymentProps {
 export default function SquarePayment({
   amount,
   orderId,
+  authToken,
   onSuccess,
   onError
 }: SquarePaymentProps) {
@@ -65,7 +67,9 @@ export default function SquarePayment({
         },
         body: JSON.stringify({
           token: token.token,
-          orderId
+          orderId,
+          authToken
+
         })
       });
 
