@@ -1,7 +1,6 @@
 import { decryptPaymentToken } from "@/src/lib/security/paymentToken";
 import SquarePaymentClient from "./squarePaymentClient";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
 
 function ErrorScreen({
   title,
@@ -10,7 +9,6 @@ function ErrorScreen({
   title: string;
   description: string;
 }) {
-  const t = useTranslations();
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="max-w-sm w-full bg-white rounded-2xl shadow-lg p-6 text-center space-y-4">
@@ -25,14 +23,14 @@ function ErrorScreen({
             href="/"
             className="block w-full bg-black text-white py-2 rounded-lg text-sm font-medium"
           >
-            {t("goHome")}
+            Go Home
           </Link>
 
           <Link
             href="/checkout"
             className="block w-full border py-2 rounded-lg text-sm"
           >
-            {t("tryAgain")}
+            Try Again
           </Link>
         </div>
       </div>
@@ -41,20 +39,20 @@ function ErrorScreen({
 }
 
 export default async function SquarePaymentPage({ searchParams }: any) {
-  const params = await searchParams;
+  const params = searchParams; // ✅ FIXED
   const token = params?.t;
-  const t = useTranslations();
+
   // ❌ Missing token
   if (!token) {
     return (
       <ErrorScreen
-        title={t("invalidLink")}
-        description={t("invalidLinkDesc")}
+        title="Invalid Link"
+        description="This payment link is not valid. Please try again."
       />
     );
   }
 
-  let data;
+  let data: any;
 
   try {
     data = decryptPaymentToken(token);
@@ -64,11 +62,20 @@ export default async function SquarePaymentPage({ searchParams }: any) {
       error: error instanceof Error ? error.message : error,
     });
 
-    // ❌ Invalid token
     return (
       <ErrorScreen
-        title={t("corruptedLink")}
-        description={t("corruptedLinkDesc")}
+        title="Invalid or Corrupted Link"
+        description="This payment link is broken or has already been used."
+      />
+    );
+  }
+
+  // ✅ extra safety
+  if (!data) {
+    return (
+      <ErrorScreen
+        title="Invalid Link"
+        description="Unable to process this payment link."
       />
     );
   }
@@ -79,7 +86,6 @@ export default async function SquarePaymentPage({ searchParams }: any) {
   if (Date.now() > exp) {
     return (
       <>
-        {/* ✅ Notify parent (popup case) */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -91,10 +97,9 @@ export default async function SquarePaymentPage({ searchParams }: any) {
           }}
         />
 
-        {/* ✅ Fallback UI (mobile / direct open) */}
         <ErrorScreen
-          title={t("expired")}
-          description={t("expiredDesc")}
+          title="Session Expired"
+          description="Your payment session has expired. Please restart your checkout."
         />
       </>
     );
