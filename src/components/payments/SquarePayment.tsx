@@ -122,7 +122,8 @@ export default function SquarePayment({
             </>
           )}
 
-          {/* Apple Pay */}
+         <div className="space-y-2">
+           {/* Apple Pay */}
           {applePaySupported && <ApplePay />}
 
           {/* Google Pay */}
@@ -133,6 +134,7 @@ export default function SquarePayment({
               buttonSizeMode="fill"
             />
           )}
+         </div>
 
         </PaymentForm>
 

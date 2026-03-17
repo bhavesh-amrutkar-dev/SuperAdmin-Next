@@ -6,12 +6,12 @@ export async function POST(req: Request) {
 
   const cookieStore = await cookies();
 
-  cookieStore.set("token", token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-    path: "/",
-  });
+  // cookieStore.set("token", token, {
+  //   httpOnly: true,
+  //   secure: true,
+  //   sameSite: "lax",
+  //   path: "/",
+  // });
 
   return NextResponse.json({ success: true });
 }
