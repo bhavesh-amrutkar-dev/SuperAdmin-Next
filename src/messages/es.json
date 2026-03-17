@@ -621,5 +621,11 @@
         "sessionFailed": "No se pudo crear la sesión de pago"
     },
     "paySqr": "PAGA CON SQUARE",
-    "paymentConnectionLost": "Conexión perdida"
+    "paymentConnectionLost": "Conexión perdida",
+    "invalidLink": "Enlace inválido",
+    "invalidLinkDesc": "Este enlace de pago no es válido. Inténtalo de nuevo.",
+    "corruptedLink": "Enlace inválido o dañado",
+    "corruptedLinkDesc": "Este enlace de pago está roto o ya ha sido utilizado.",
+    "expired": "Sesión expirada",
+    "expiredDesc": "Tu sesión de pago ha expirado. Por favor, inicia el proceso nuevamente."
 }
