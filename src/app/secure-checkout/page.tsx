@@ -834,7 +834,7 @@ export default function SecureCheckoutPage() {
             });
 
             if (!res.ok) {
-              throw new Error("Failed to create payment session");
+              throw new Error(t("errors.sessionFailed"));
             }
 
             const { token } = await res.json();
@@ -855,7 +855,7 @@ export default function SecureCheckoutPage() {
               "squarePayment",
               `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
             );
-            
+
 
             // fallback if popup blocked
             if (!popup) {

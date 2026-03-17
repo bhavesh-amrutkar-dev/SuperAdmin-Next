@@ -607,5 +607,17 @@
     "squareVerifyCvv": "Verifica el código de seguridad de la tarjeta.",
     "squareApplePayNotSupported": "Apple Pay no es compatible.",
     "squareGooglePayNotSupported": "Google Pay no es compatible.",
-    "squareTemporaryError": "Ocurrió un error temporal."    
+    "squareTemporaryError": "Ocurrió un error temporal.",
+    "payment": {
+        "title": "Completar pago",
+        "subtitle": "Pago seguro con Square",
+        "totalAmount": "Cantidad total",
+        "processing": "Procesando pago...",
+        "or": "O"
+    },
+    "errors": {
+        "temporary": "Ocurrió un error temporal.",
+        "paymentFailed": "El pago falló",
+        "sessionFailed": "No se pudo crear la sesión de pago"
+    }
 }

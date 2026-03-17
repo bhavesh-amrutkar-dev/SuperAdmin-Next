@@ -607,5 +607,17 @@
     "squareVerifyCvv": "Please verify the card security code.",
     "squareApplePayNotSupported": "Apple Pay is not supported for this payment.",
     "squareGooglePayNotSupported": "Google Pay is not supported for this payment.",
-    "squareTemporaryError": "A temporary error occurred. Please try again."
+    "squareTemporaryError": "A temporary error occurred. Please try again.",
+    "payment": {
+        "title": "Complete Payment",
+        "subtitle": "Secure checkout powered by Square",
+        "totalAmount": "Total Amount",
+        "processing": "Processing payment...",
+        "or": "OR"
+    },
+    "errors": {
+        "temporary": "A temporary error occurred. Please try again.",
+        "paymentFailed": "Payment failed",
+        "sessionFailed": "Failed to create payment session"
+    }
 }
