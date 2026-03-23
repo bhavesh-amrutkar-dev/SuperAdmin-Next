@@ -276,23 +276,31 @@ export default function SecureCheckoutPage() {
     }
   };
   useEffect(() => {
+    // 1. Existing postMessage (NO CHANGE)
     const handlePaymentMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
 
       const { status, orderId } = event.data || {};
-
       if (!status) return;
 
-      if (status === "SUCCESS") {
-        handleSquareSuccess();
-      }
-
-      if (status === "FAILED") {
-        handleSquareError(event.data);
-      }
+      if (status === "SUCCESS") handleSquareSuccess();
+      if (status === "FAILED") handleSquareError(event.data);
     };
 
     window.addEventListener("message", handlePaymentMessage);
+
+    // 2. NEW: Handle redirect fallback
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("status");
+    const orderId = params.get("orderId");
+
+    if (status === "SUCCESS") {
+      handleSquareSuccess();
+    }
+
+    if (status === "FAILED") {
+      handleSquareError({ orderId });
+    }
 
     return () => {
       window.removeEventListener("message", handlePaymentMessage);
@@ -808,7 +816,12 @@ export default function SecureCheckoutPage() {
             "squarePayment",
             `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
           );
-          if (!popup) router.push(url);
+
+          if (!popup || popup.closed || typeof popup.closed === "undefined") {
+            // Popup blocked → fallback
+            router.push(url);
+            return;
+          }
 
           setPlacingOrder(false);
           return;
@@ -1184,7 +1197,7 @@ export default function SecureCheckoutPage() {
                   )}
                 </div>
               </div>
-//#region Payment methods
+              {/* //#region Payment methods */}
               {/* PAYMENT METHOD */}
               <div className="rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] p-4 xl:p-6">
                 <div className="pb-3 sm:pb-4 border-b border-gray-300">
@@ -1292,7 +1305,7 @@ export default function SecureCheckoutPage() {
 
                 </div>
               </div>
-//#endregion
+              {/* //#endregion */}
               {/* Manual Payment Bank Details Section */}
               {paymentMethod === "manual" && (
                 <div className="mt-4 rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] p-4 md:p-6">
@@ -1565,7 +1578,7 @@ export default function SecureCheckoutPage() {
                       </svg>
                       <p className="text-[10px] sm:text-xs text-gray-600">{t("taxInfoMessage")}</p>
                     </div>
-                    //#region Place Order
+                    {/* //#region Place Order */}
                     {paymentMethod !== "" && !(paymentMethod === "square" && showSquarePayment) && (
                       <>
                         {!(paymentMethod === "athMovil" && isAthReady) && (
@@ -1588,7 +1601,7 @@ export default function SecureCheckoutPage() {
                           </Button>
                         )}
 
-//#endregion
+                        {/* #endregion */}
                         {/* AFTER ORDER CREATION — SHOW REAL ATH BUTTON */}
                         {paymentMethod === "athMovil" && isAthReady && athToken && athOrderId && (
                           <AthMovilPayment

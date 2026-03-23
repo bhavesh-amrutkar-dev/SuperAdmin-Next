@@ -21,15 +21,13 @@ export default function SquarePaymentClient({
 
   const handleSuccess = () => {
     if (window.opener) {
-      window.opener.postMessage(
-        { status: "SUCCESS", orderId },
-        window.location.origin
-      );
-    }
-
-    setTimeout(() => {
+      // existing popup flow
+      window.opener.postMessage({ status: "SUCCESS", orderId }, window.location.origin);
       window.close();
-    }, 600);
+    } else {
+      // NEW: universal fallback
+      window.location.href = `/payment-result?status=SUCCESS&orderId=${orderId}`;
+    }
   };
 
   const handleError = (err: any) => {
