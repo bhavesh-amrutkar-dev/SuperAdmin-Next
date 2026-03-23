@@ -18,5 +18,7 @@ export async function POST(req: Request) {
         exp: Date.now() + 10 * 60 * 1000
     });
 
+    
+
     return Response.json({ token });
 }

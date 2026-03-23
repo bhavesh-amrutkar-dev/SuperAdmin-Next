@@ -620,7 +620,7 @@
         "paymentFailed": "Payment failed",
         "sessionFailed": "Failed to create payment session"
     },
-    "paySqr": "PAY WITH SQUARE",
+    "paySqr": "Pay with Credit/Debit Card",
     "paymentConnectionLost": "Connection lost",
     "invalidLink": "Invalid Link",
     "invalidLinkDesc": "This payment link is not valid. Please try again.",
