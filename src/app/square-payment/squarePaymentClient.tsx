@@ -18,35 +18,60 @@ export default function SquarePaymentClient({
       body: JSON.stringify({ token: accessToken }),
     });
   }, [accessToken]);
+  const sendPaymentEvent = (payload: any) => {
+    let sent = false;
 
+    try {
+      if (window.opener) {
+        window.opener.postMessage(payload, window.location.origin);
+        sent = true;
+      }
+
+      // 🔥 Critical for mobile/webview
+      window.postMessage(payload, window.location.origin);
+      sent = true;
+
+    } catch (e) {
+      console.warn("Event dispatch failed", e);
+    }
+
+    return sent;
+  };
   const handleSuccess = () => {
+    const payload = { status: "SUCCESS", orderId };
+
+    const sent = sendPaymentEvent(payload);
+
     if (window.opener) {
-      // existing popup flow
-      window.opener.postMessage({ status: "SUCCESS", orderId }, window.location.origin);
       window.close();
-    } else {
-      // NEW: universal fallback
+      return;
+    }
+
+    // fallback
+    if (!sent) {
       window.location.href = `/payment-result?status=SUCCESS&orderId=${orderId}`;
     }
   };
 
   const handleError = (err: any) => {
-    if (window.opener) {
-      // Popup flow (unchanged)
-      window.opener.postMessage(
-        { status: "FAILED", orderId, error: err },
-        window.location.origin
-      );
-      window.close();
-    } else {
-      // ✅ NEW: redirect fallback (same as success)
-      const encodedError = encodeURIComponent(
-        JSON.stringify({
-          message: err?.message || "Payment failed",
-        })
-      );
+    const payload = {
+      status: "FAILED",
+      orderId,
+      error: {
+        message: err?.message || "Payment failed",
+      },
+    };
 
-      window.location.href = `/payment-result?status=FAILED&orderId=${orderId}&error=${encodedError}`;
+    const sent = sendPaymentEvent(payload);
+
+    if (window.opener) {
+      window.close();
+      return;
+    }
+
+    // fallback for blocked popup
+    if (!sent) {
+      window.location.href = `/payment-result?status=FAILED&orderId=${orderId}`;
     }
   };
 

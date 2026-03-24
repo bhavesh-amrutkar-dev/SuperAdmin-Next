@@ -276,30 +276,55 @@ export default function SecureCheckoutPage() {
     }
   };
   useEffect(() => {
-    // 1. Existing postMessage (NO CHANGE)
+    let handled = false; // 🔥 prevent duplicate triggers
+
     const handlePaymentMessage = (event: MessageEvent) => {
+      if (handled) return;
       if (event.origin !== window.location.origin) return;
 
-      const { status, orderId } = event.data || {};
+      const { status, orderId, error } = event.data || {};
       if (!status) return;
 
-      if (status === "SUCCESS") handleSquareSuccess();
-      if (status === "FAILED") handleSquareError(event.data);
+      handled = true;
+
+      if (status === "SUCCESS") {
+        handleSquareSuccess();
+      }
+
+      if (status === "FAILED") {
+        handleSquareError(error || { orderId });
+      }
+
+      // ✅ clean URL if any params exist
+      window.history.replaceState({}, "", window.location.pathname);
     };
 
     window.addEventListener("message", handlePaymentMessage);
 
-    // 2. NEW: Handle redirect fallback
+    // ✅ Redirect fallback handling
     const params = new URLSearchParams(window.location.search);
     const status = params.get("status");
     const orderId = params.get("orderId");
+    const message = params.get("message");
 
-    if (status === "SUCCESS") {
+    if (!handled && status === "SUCCESS") {
+      handled = true;
       handleSquareSuccess();
+
+      // clean URL
+      router.replace("/secure-checkout", { scroll: false });
     }
 
-    if (status === "FAILED") {
-      handleSquareError({ orderId });
+    if (!handled && status === "FAILED") {
+      handled = true;
+
+      handleSquareError({
+        orderId,
+        message,
+      });
+
+      // clean URL
+      router.replace("/secure-checkout", { scroll: false });
     }
 
     return () => {

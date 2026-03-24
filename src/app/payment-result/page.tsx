@@ -2,16 +2,17 @@
 
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 export default function PaymentResultPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useTranslations();
 
   useEffect(() => {
     const status = searchParams?.get("status");
     const orderId = searchParams?.get("orderId");
     const errorParam = searchParams?.get("error");
-
     let error = null;
     try {
       if (errorParam) error = JSON.parse(decodeURIComponent(errorParam));
@@ -22,20 +23,21 @@ export default function PaymentResultPage() {
       return;
     }
 
-    // still notify opener if exists
+    // ✅ PUT IT HERE
+    const payload = { status, orderId, error };
+
     if (window.opener) {
-      window.opener.postMessage(
-        { status, orderId, error },
-        window.location.origin
-      );
+      window.opener.postMessage(payload, window.location.origin);
     }
 
+    window.postMessage(payload, window.location.origin);
+
+    // existing redirects
     if (status === "SUCCESS") {
       router.replace(`/thank-you?payment=square&orderId=${orderId}`);
     } else {
-      // ✅ preserve error context
       router.replace(
-        `/checkout?paymentError=true&message=${encodeURIComponent(
+        `/secure-checkout?status=FAILED&orderId=${orderId}&message=${encodeURIComponent(
           error?.message || "Payment failed"
         )}`
       );
@@ -43,7 +45,7 @@ export default function PaymentResultPage() {
   }, [searchParams, router]);
   return (
     <div className="flex items-center justify-center min-h-screen">
-      Processing payment...
+      {t("payment.processing")}
     </div>
   );
 }
