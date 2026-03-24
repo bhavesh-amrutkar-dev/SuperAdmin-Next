@@ -817,42 +817,22 @@ export default function SecureCheckoutPage() {
       // 🔵 Square
       if (paymentMethod === "square") {
         try {
-          const res = await fetch("/api/create-token", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              orderId: orderData.orderId,
-              amount: grandTotal,
-            }),
-          });
+          const redirectUrl = orderData?.checkoutProcessUrl;
 
-          const { token } = await res.json();
-
-          if (!token) throw new Error("Invalid token");
-          const url = `/square-payment?t=${encodeURIComponent(token)}`;
-          const width = 420;
-          const height = 720;
-
-          const left = window.screenX + (window.outerWidth - width) / 2;
-          const top = window.screenY + (window.outerHeight - height) / 2;
-
-          const popup = window.open(
-            url,
-            "squarePayment",
-            `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
-          );
-
-          if (!popup || popup.closed || typeof popup.closed === "undefined") {
-            // Popup blocked → fallback
-            router.push(url);
-            return;
+          if (!redirectUrl) {
+            throw new Error("Missing checkout URL");
           }
 
-          setPlacingOrder(false);
+          console.log("➡️ Redirecting to Square:", redirectUrl);
+
+          // ✅ Universal flow (works for web + mobile + no popup issues)
+          window.location.href = redirectUrl;
+
           return;
         } catch (err) {
-          console.error("Square error:", err);
-          toast.error("Payment failed. Try again.");
+          console.error("Square redirect error:", err);
+
+          toast.error("Payment initialization failed. Try again.");
           setPlacingOrder(false);
           return;
         }

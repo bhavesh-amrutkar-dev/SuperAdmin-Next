@@ -18,7 +18,7 @@ export default async function SquarePaymentPage({ searchParams }: any) {
     console.error("[SquarePaymentPage] Token decryption failed", {
       error: err?.message,
       stack: err?.stack,
-      tokenPreview: token?.slice(0, 10) + "...", // avoid logging full token
+      tokenPreview: token?.slice(0, 10) + "...", 
     });
 
     return (

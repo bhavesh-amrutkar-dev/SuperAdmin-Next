@@ -9,15 +9,15 @@ export default function SquarePaymentClient({
   accessToken,
 }: any) {
 
-  useEffect(() => {
-    fetch("/api/payment/session", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ token: accessToken }),
-    });
-  }, [accessToken]);
+  // useEffect(() => {
+  //   fetch("/api/payment/session", {
+  //     method: "POST",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //     },
+  //     body: JSON.stringify({ token: accessToken }),
+  //   });
+  // }, [accessToken]);
   const sendPaymentEvent = (payload: any) => {
     let sent = false;
 
