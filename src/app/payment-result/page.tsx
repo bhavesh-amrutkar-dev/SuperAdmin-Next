@@ -10,16 +10,22 @@ export default function PaymentResultPage() {
   useEffect(() => {
     const status = searchParams?.get("status");
     const orderId = searchParams?.get("orderId");
+    const errorParam = searchParams?.get("error");
+
+    let error = null;
+    try {
+      if (errorParam) error = JSON.parse(decodeURIComponent(errorParam));
+    } catch { }
 
     if (!status) {
       router.replace("/");
       return;
     }
 
-    // Optional: notify opener if exists (hybrid safety)
+    // still notify opener if exists
     if (window.opener) {
       window.opener.postMessage(
-        { status, orderId },
+        { status, orderId, error },
         window.location.origin
       );
     }
@@ -27,10 +33,14 @@ export default function PaymentResultPage() {
     if (status === "SUCCESS") {
       router.replace(`/thank-you?payment=square&orderId=${orderId}`);
     } else {
-      router.replace(`/checkout?paymentError=true`);
+      // ✅ preserve error context
+      router.replace(
+        `/checkout?paymentError=true&message=${encodeURIComponent(
+          error?.message || "Payment failed"
+        )}`
+      );
     }
   }, [searchParams, router]);
-
   return (
     <div className="flex items-center justify-center min-h-screen">
       Processing payment...

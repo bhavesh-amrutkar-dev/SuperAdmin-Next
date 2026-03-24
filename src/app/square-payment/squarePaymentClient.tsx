@@ -32,11 +32,21 @@ export default function SquarePaymentClient({
 
   const handleError = (err: any) => {
     if (window.opener) {
+      // Popup flow (unchanged)
       window.opener.postMessage(
         { status: "FAILED", orderId, error: err },
         window.location.origin
       );
       window.close();
+    } else {
+      // ✅ NEW: redirect fallback (same as success)
+      const encodedError = encodeURIComponent(
+        JSON.stringify({
+          message: err?.message || "Payment failed",
+        })
+      );
+
+      window.location.href = `/payment-result?status=FAILED&orderId=${orderId}&error=${encodedError}`;
     }
   };
 
