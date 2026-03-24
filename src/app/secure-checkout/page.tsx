@@ -420,10 +420,11 @@ export default function SecureCheckoutPage() {
   };
 
 
-  const handleAthSuccess = async () => {
+  const handleAthSuccess = async (res?: any) => {
     if (!athOrderId) return;
     // console.log("Ath movil payment success log from handleAth success")
     try {
+      setIsAthReady(false);
       setPlacingOrder(false);
 
       fetch("/api/orders/status-update", {
