@@ -1164,3 +1164,4 @@ export const CurrencySymbol = "$";
 export const CurrencyCode = "USD";
 
 export const ENABLE_PLACE_TO_PAY = false;
+export const ENABLE_SQUARE_PAY = false;

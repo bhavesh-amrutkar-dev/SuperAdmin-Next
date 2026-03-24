@@ -16,7 +16,7 @@ import PlaceToPayLightbox from "@/src/components/checkout/PlaceToPayLightbox";
 import ComingSoonModal from "@/src/components/modals/ComingSoonModal";
 import { Copy, Check, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { DEFAULT_COUNTRY_CODE, COUNTRY_CODE, BASE_URL, ENABLE_PLACE_TO_PAY, CDN_IMAGE } from "@/src/lib/config";
+import { DEFAULT_COUNTRY_CODE, COUNTRY_CODE, BASE_URL, ENABLE_PLACE_TO_PAY, CDN_IMAGE, ENABLE_SQUARE_PAY } from "@/src/lib/config";
 import { getCommonHeaders } from "@/src/lib/api/headers";
 import axios from "axios";
 import { Button } from "../../components/ui/button";
@@ -1230,11 +1230,15 @@ export default function SecureCheckoutPage() {
                         value: "manual",
                         label: t("manualPaymentMethods"),
                       },
-                      {
-                        value: "square",
-                        label: t("paySqr"),
-                        icons: true,
-                      }
+                      ...(ENABLE_SQUARE_PAY
+                        ? [
+                          {
+                            value: "square",
+                            label: t("paySqr"),
+                            icons: true,
+                          },
+                        ]
+                        : []),
                     ].map((method) => {
                       const isSelected = paymentMethod === method.value;
                       const isDisabled = grandTotal <= 0;
@@ -1599,7 +1603,7 @@ export default function SecureCheckoutPage() {
                                 ? t("placeOrder") || "PLACE ORDER"
                                 : paymentMethod === "athMovil"
                                   ? t("payWithATHMovil") || "PAY WITH ATH MÓVIL"
-                                  : paymentMethod === "square"
+                                  : paymentMethod === "square" && ENABLE_SQUARE_PAY
                                     ? t("paySqr")
                                     : paymentMethod === "creditCard" && ENABLE_PLACE_TO_PAY
                                       ? t("payWithPlaceToPay") || "PAY WITH PLACE TO PAY"
