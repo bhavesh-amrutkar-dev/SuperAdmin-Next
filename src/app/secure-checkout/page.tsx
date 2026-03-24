@@ -1161,7 +1161,7 @@ export default function SecureCheckoutPage() {
                       type="checkbox"
                       checked={billingSameAsShipping}
                       onChange={(e) => setBillingSameAsShipping(e.target.checked)}
-                      className="w-4 h-4 text-[#D4AF37] border-gray-300 rounded focus:ring-[#D4AF37] shrink-0"
+                      className="w-4 h-4 accent-[#f3c200] hover:cursor-pointer border-gray-300 rounded focus:ring-[#D4AF37] shrink-0"
                     />
                     <span className="text-xs sm:text-sm text-gray-800">{t("sameAsDeliveryAddress")}</span>
                   </label>
