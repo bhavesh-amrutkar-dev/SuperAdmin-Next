@@ -48,9 +48,9 @@ export default function SquarePaymentClient({
     }
 
     // fallback
-    if (!sent) {
+    // if (!sent) {
       window.location.href = `/payment-result?status=SUCCESS&orderId=${orderId}`;
-    }
+    // }
   };
 
   const handleError = (err: any) => {
@@ -70,9 +70,9 @@ export default function SquarePaymentClient({
     }
 
     // fallback for blocked popup
-    if (!sent) {
+    // if (!sent) {
       window.location.href = `/payment-result?status=FAILED&orderId=${orderId}`;
-    }
+    // }
   };
 
   return (
