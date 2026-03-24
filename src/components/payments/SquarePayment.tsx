@@ -25,7 +25,6 @@ export default function SquarePayment({
   onSuccess,
   onError,
 }: SquarePaymentProps) {
-
   const { appId, locationId } = getSquareConfig();
   const t = useTranslations();
 
@@ -35,21 +34,83 @@ export default function SquarePayment({
   const [googlePaySupported, setGooglePaySupported] = useState(false);
   const [cashAppReady, setCashAppReady] = useState(false);
 
-
+  // ✅ Detect wallets
   useEffect(() => {
     if (typeof window !== "undefined") {
-
-      // Apple Pay detection
-      if ((window as any).ApplePaySession) {
-        setApplePaySupported(true);
-      }
-
-      // Google Pay detection
-      if (window.PaymentRequest) {
-        setGooglePaySupported(true);
-      }
+      if ((window as any).ApplePaySession) setApplePaySupported(true);
+      if (window.PaymentRequest) setGooglePaySupported(true);
     }
   }, []);
+
+  // ✅ Load Square.js for Cash App
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://sandbox.web.squarecdn.com/v1/square.js";
+    script.async = true;
+    script.onload = initCashApp;
+
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  // ✅ Normalize error
+  const normalizeError = (err: any) => {
+    if (!err) return t("errors.paymentFailed");
+
+    if (err?.errors?.length) {
+      return err.errors.map((e: any) => e.detail).join(", ");
+    }
+
+    if (err?.message) return err.message;
+
+    return t("errors.paymentFailed");
+  };
+
+  // ✅ Cash App init
+  const initCashApp = async () => {
+    try {
+      if (!(window as any).Square) return;
+
+      const payments = (window as any).Square.payments(appId, locationId);
+
+      const paymentRequest = payments.paymentRequest({
+        countryCode: "US",
+        currencyCode: "USD",
+        total: {
+          amount: amount.toString(),
+          label: "Total",
+        },
+      });
+
+      const cashAppPay = await payments.cashAppPay(paymentRequest, {
+        redirectURL: window.location.href,
+        referenceId: orderId,
+      });
+
+      await cashAppPay.attach("#cash-app-pay", {
+        shape: "semiround",
+        width: "full",
+      });
+
+      setCashAppReady(true);
+
+      cashAppPay.addEventListener("ontokenization", async (event: any) => {
+        const { tokenResult } = event.detail;
+
+        if (tokenResult.status === "OK") {
+          await handleToken({ token: tokenResult.token });
+        } else {
+          setError("Cash App Pay failed");
+        }
+      });
+    } catch (err) {
+      console.error("Cash App Pay init failed", err);
+    }
+  };
+
   const createPaymentRequest = () => ({
     countryCode: "US",
     currencyCode: "USD",
@@ -59,6 +120,7 @@ export default function SquarePayment({
     },
   });
 
+  // ✅ Handle token
   const handleToken = async (token: any) => {
     try {
       setLoading(true);
@@ -84,8 +146,9 @@ export default function SquarePayment({
 
       onSuccess?.();
     } catch (err: any) {
-      setError(err.message);
-      onError?.(err);
+      const message = normalizeError(err);
+      setError(message);
+      onError?.({ ...err, message });
     } finally {
       setLoading(false);
     }
@@ -93,8 +156,16 @@ export default function SquarePayment({
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-6">
+      <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-lg p-5 space-y-5">
 
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-lg p-5 space-y-5">
+        {/* ✅ Loading Overlay */}
+        {loading && (
+          <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-2xl z-10">
+            <div className="text-sm text-gray-600 animate-pulse">
+              {t("payment.processing")}
+            </div>
+          </div>
+        )}
 
         <div className="text-center space-y-1">
           <h2 className="text-lg font-semibold">{t("payment.title")}</h2>
@@ -104,60 +175,70 @@ export default function SquarePayment({
         </div>
 
         <div className="flex justify-between items-center bg-gray-100 px-4 py-3 rounded-xl">
-          <span className="text-gray-600 text-sm">  {t("payment.totalAmount")}</span>
+          <span className="text-gray-600 text-sm">
+            {t("payment.totalAmount")}
+          </span>
           <span className="text-xl font-bold">${amount}</span>
         </div>
 
-        <PaymentForm
-          applicationId={appId!}
-          locationId={locationId!}
-          cardTokenizeResponseReceived={handleToken}
-          createPaymentRequest={createPaymentRequest}
-        >
+        {/* ✅ Disable interaction while loading */}
+        <div className={loading ? "pointer-events-none opacity-60" : ""}>
+          <PaymentForm
+            applicationId={appId!}
+            locationId={locationId!}
+            cardTokenizeResponseReceived={handleToken}
+            createPaymentRequest={createPaymentRequest}
+          >
+            <CreditCard />
 
-          {/* Credit Card always available */}
-          <CreditCard />
-
-          {(applePaySupported || googlePaySupported) && (
-            <>
+            {(applePaySupported || googlePaySupported) && (
               <div className="flex items-center gap-3 my-4">
                 <div className="flex-1 border-t"></div>
                 <span className="text-xs text-gray-400">OR</span>
                 <div className="flex-1 border-t"></div>
               </div>
-            </>
-          )}
-
-          <div className="space-y-2">
-            {/* Apple Pay */}
-            {applePaySupported && <ApplePay />}
-
-            {/* Google Pay */}
-            {googlePaySupported && (
-              <GooglePay
-                buttonType="long"
-                buttonColor="black"
-                buttonSizeMode="fill"
-              />
             )}
-          </div>
 
-        </PaymentForm>
+            <div className="space-y-2">
+              {applePaySupported && (
+                <div className="h-[48px] rounded-xl overflow-hidden">
+                  <ApplePay />
+                </div>
+              )}
 
-        {loading && (
-          <div className="text-center text-sm text-gray-500">
-           {t("payment.processing")}
-          </div>
+              {googlePaySupported && (
+                <div className="h-[48px] rounded-xl overflow-hidden">
+                  <GooglePay
+                    buttonType="long"
+                    buttonColor="black"
+                    buttonSizeMode="fill"
+                  />
+                </div>
+              )}
+            </div>
+          </PaymentForm>
+        </div>
+
+        {/* ✅ Cash App */}
+        {cashAppReady && (
+          <>
+            <div className="flex items-center gap-3 my-4">
+              <div className="flex-1 border-t"></div>
+              <span className="text-xs text-gray-400">OR</span>
+              <div className="flex-1 border-t"></div>
+            </div>
+
+            <div id="cash-app-pay" className="h-[48px]" />
+          </>
         )}
 
+        {/* ✅ Error */}
         {error && (
           <div className="text-center text-sm text-red-500">
             {error}
           </div>
         )}
-
       </div>
-
     </div>
   );
 }
