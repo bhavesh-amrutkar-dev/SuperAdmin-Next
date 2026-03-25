@@ -627,5 +627,6 @@
     "corruptedLink": "Invalid or Corrupted Link",
     "corruptedLinkDesc": "This payment link is broken or has already been used.",
     "expired": "Session Expired",
-    "expiredDesc": "Your payment session has expired. Please restart your checkout."
+    "expiredDesc": "Your payment session has expired. Please restart your checkout.",
+    "processingPayment": "Processing your payment..."
 }
