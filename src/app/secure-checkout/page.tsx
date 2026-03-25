@@ -138,7 +138,7 @@ function formatAddress(address: UserAddress): string {
 export default function SecureCheckoutPage() {
   const t = useTranslations();
   const router = useRouter();
-
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [cartData, setCartData] = useState<CartData | null>(null);
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<UserAddress | null>(null);
@@ -418,6 +418,7 @@ export default function SecureCheckoutPage() {
     try {
       setIsAthReady(false);
       setPlacingOrder(false);
+      setIsUpdatingStatus(true);
 
       await fetch("/api/orders/status-update", {
         method: "POST",
@@ -446,6 +447,8 @@ export default function SecureCheckoutPage() {
     } finally {
       fetchCart()
       setPlacingOrder(false);
+      setIsUpdatingStatus(false);
+
     }
   };
 
@@ -469,6 +472,7 @@ export default function SecureCheckoutPage() {
     setConfirmOpen(true);
 
     // 2️⃣ Background backend update (non-blocking)
+    setIsUpdatingStatus(true);
     await fetch("/api/orders/status-update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -479,6 +483,8 @@ export default function SecureCheckoutPage() {
     }).catch((error) => {
       console.warn("ATH cancel background update failed:", error);
     });
+    setIsUpdatingStatus(false);
+
     fetchCart()
   };
   const handleAuthMovil = async () => {
@@ -1183,6 +1189,21 @@ export default function SecureCheckoutPage() {
               {t("backToCart") || "Back to Cart"}
             </Button>
           </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (isUpdatingStatus) {
+    return (
+      <div className="min-h-screen bg-[#ededed]">
+        <Header />
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+          <Loader />
+          <p className="text-sm text-gray-600">
+            {t("processingPayment") || "Processing your payment..."}
+          </p>
         </div>
         <Footer />
       </div>
