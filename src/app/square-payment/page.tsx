@@ -15,18 +15,19 @@ export default async function SquarePaymentPage({ searchParams }: any) {
   try {
     data = decryptPaymentToken(token);
   } catch (err: any) {
-    console.error("[SquarePaymentPage] Token decryption failed", {
-      error: err?.message,
-      stack: err?.stack,
-      tokenPreview: token?.slice(0, 10) + "...", 
-    });
+  console.error("[SquarePaymentPage] Token decryption failed", {
+    error: err?.message,
+    stack: err?.stack,
+    tokenPreview: token?.slice(0, 10) + "...",
+    fullTokenLength: token?.length,
+  });
 
-    return (
-      <div className="p-6 text-center">
-        Invalid or expired payment link
-      </div>
-    );
-  }
+  return (
+    <div className="p-6 text-center">
+      Invalid or expired payment link
+    </div>
+  );
+}
 
   const { orderId, amount, accessToken } = data;
 
