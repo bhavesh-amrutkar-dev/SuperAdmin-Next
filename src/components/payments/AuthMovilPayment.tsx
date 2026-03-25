@@ -8,7 +8,7 @@ interface Props {
   orderId: string;
   userId: string;
   onSuccess: (res: any) => Promise<void>;
-  onCancel: () => Promise<void>;
+  onCancel: (res?: any) => Promise<void>;
 }
 
 export default function AthMovilPayment({
@@ -41,23 +41,44 @@ export default function AthMovilPayment({
 
     // console.log("2️⃣ Defining global callbacks");
 
-    (globalThis as any).authorizationATHM = async (res: any) => {
+    (globalThis as any).authorizationATHM = async () => {
       // console.log("🟢 authorizationATHM CALLBACK TRIGGERED");
       // console.log("Response from ATH:", res);
 
       try {
-        await onSuccess(res);
+        const authFn = (globalThis as any).authorization;
+
+        if (typeof authFn !== "function") {
+          throw new Error("authorization() not available");
+        }
+
+        const response = await authFn();
+
+        console.log("✅ ATH Authorization Response:", response);
+
+        await onSuccess(response);
+
       } catch (err) {
         console.error("❌ Error in success handler:", err);
       }
     };
 
-    (globalThis as any).cancelATHM = async (res?: any) => {
+
+    (globalThis as any).cancelATHM = async () => {
       // console.log("🟡 cancelATHM CALLBACK TRIGGERED");
       // console.log("Cancel payload:", res);
-
       try {
-        await onCancel();
+        const findFn = (globalThis as any).findPaymentATHM;
+
+        let response = null;
+
+        if (typeof findFn === "function") {
+          response = await findFn();
+          console.log("⚠️ ATH Cancel Response:", response);
+        }
+
+        await onCancel(response);
+
       } catch (err) {
         console.error("❌ Error in cancel handler:", err);
       }
@@ -66,9 +87,18 @@ export default function AthMovilPayment({
     (globalThis as any).expiredATHM = async (res?: any) => {
       // console.log("🔴 expiredATHM CALLBACK TRIGGERED");
       // console.log("Expired payload:", res);
-
       try {
-        await onCancel();
+        const findFn = (globalThis as any).findPaymentATHM;
+
+        let response = null;
+
+        if (typeof findFn === "function") {
+          response = await findFn();
+          console.log("⏳ ATH Expired Response:", response);
+        }
+
+        await onCancel(response);
+
       } catch (err) {
         console.error("❌ Error in expired handler:", err);
       }
