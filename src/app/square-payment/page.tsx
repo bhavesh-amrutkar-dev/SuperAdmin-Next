@@ -3,7 +3,7 @@ import SquarePaymentClient from "./squarePaymentClient";
 
 export default async function SquarePaymentPage({ searchParams }: any) {
   const params = await searchParams;
-  const token = params?.t;
+  const token = decodeURIComponent(params?.t);
 
   if (!token) {
     console.warn("[SquarePaymentPage] Missing token in query params");
@@ -13,21 +13,26 @@ export default async function SquarePaymentPage({ searchParams }: any) {
   let data;
 
   try {
+    console.log("[SquarePaymentPage] Raw token check", {
+      hasSpace: token.includes(" "),
+      hasPlus: token.includes("+"),
+      length: token.length,
+    });
     data = decryptPaymentToken(token);
   } catch (err: any) {
-  console.error("[SquarePaymentPage] Token decryption failed", {
-    error: err?.message,
-    stack: err?.stack,
-    tokenPreview: token?.slice(0, 10) + "...",
-    fullTokenLength: token?.length,
-  });
+    console.error("[SquarePaymentPage] Token decryption failed", {
+      error: err?.message,
+      stack: err?.stack,
+      tokenPreview: token?.slice(0, 10) + "...",
+      fullTokenLength: token?.length,
+    });
 
-  return (
-    <div className="p-6 text-center">
-      Invalid or expired payment link
-    </div>
-  );
-}
+    return (
+      <div className="p-6 text-center">
+        Invalid or expired payment link
+      </div>
+    );
+  }
 
   const { orderId, amount, accessToken } = data;
 
