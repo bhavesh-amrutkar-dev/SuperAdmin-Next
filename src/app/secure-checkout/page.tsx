@@ -138,7 +138,7 @@ function formatAddress(address: UserAddress): string {
 export default function SecureCheckoutPage() {
   const t = useTranslations();
   const router = useRouter();
-
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [cartData, setCartData] = useState<CartData | null>(null);
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<UserAddress | null>(null);
@@ -426,8 +426,9 @@ export default function SecureCheckoutPage() {
     try {
       setIsAthReady(false);
       setPlacingOrder(false);
+      setIsUpdatingStatus(true);
 
-      fetch("/api/orders/status-update", {
+      await fetch("/api/orders/status-update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -454,6 +455,8 @@ export default function SecureCheckoutPage() {
     } finally {
       fetchCart()
       setPlacingOrder(false);
+      setIsUpdatingStatus(false);
+
     }
   };
 
@@ -477,7 +480,8 @@ export default function SecureCheckoutPage() {
     setConfirmOpen(true);
 
     // 2️⃣ Background backend update (non-blocking)
-    fetch("/api/orders/status-update", {
+    setIsUpdatingStatus(true);
+    await fetch("/api/orders/status-update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -487,9 +491,10 @@ export default function SecureCheckoutPage() {
     }).catch((error) => {
       console.warn("ATH cancel background update failed:", error);
     });
+    setIsUpdatingStatus(false);
+
     fetchCart()
-  };
-  const handleAuthMovil = async () => {
+  }; const handleAuthMovil = async () => {
     try {
       if (!selectedAddress) return;
 
@@ -1063,7 +1068,20 @@ export default function SecureCheckoutPage() {
       </div>
     );
   }
-
+  if (isUpdatingStatus) {
+    return (
+      <div className="min-h-screen bg-[#ededed]">
+        <Header />
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+          <Loader />
+          <p className="text-sm text-gray-600">
+            {t("processingPayment") || "Processing your payment..."}
+          </p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
   return (
     <>
       {/* <SquareScript /> */}
