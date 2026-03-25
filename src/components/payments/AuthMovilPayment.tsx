@@ -85,7 +85,7 @@ export default function AthMovilPayment({
     };
 
     (globalThis as any).expiredATHM = async (res?: any) => {
-      // console.log("🔴 expiredATHM CALLBACK TRIGGERED");
+      // console.log(" expiredATHM CALLBACK TRIGGERED");
       // console.log("Expired payload:", res);
       try {
         const findFn = (globalThis as any).findPaymentATHM;
