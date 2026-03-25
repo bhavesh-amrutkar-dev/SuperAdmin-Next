@@ -419,7 +419,7 @@ export default function SecureCheckoutPage() {
       setIsAthReady(false);
       setPlacingOrder(false);
 
-      fetch("/api/orders/status-update", {
+      await fetch("/api/orders/status-update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -469,7 +469,7 @@ export default function SecureCheckoutPage() {
     setConfirmOpen(true);
 
     // 2️⃣ Background backend update (non-blocking)
-    fetch("/api/orders/status-update", {
+    await fetch("/api/orders/status-update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
