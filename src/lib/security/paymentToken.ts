@@ -3,6 +3,8 @@ import crypto from "crypto";
 const SECRET = process.env.PAYMENT_TOKEN_SECRET!;
 
 function getKey() {
+    console.log("Secret>>", SECRET);
+
     return crypto.createHash("sha256").update(SECRET).digest();
 }
 
@@ -97,66 +99,67 @@ export function encryptPaymentToken(data: any) {
 // }
 
 export function decryptPaymentToken(token: string) {
-  try {
-    console.log("[decryptPaymentToken] Incoming token", {
-      length: token?.length,
-      preview: token?.slice(0, 15) + "...",
-    });
+    try {
+        console.log("[decryptPaymentToken] Incoming token", {
+            length: token?.length,
+            preview: token?.slice(0, 15) + "...",
+        });
 
-    const parts = token.split(":");
+        const parts = token.split(":");
 
-    if (parts.length !== 2) {
-      console.error("[decryptPaymentToken] Invalid token format", {
-        token,
-      });
-      throw new Error("Invalid token format");
+        if (parts.length !== 2) {
+            console.error("[decryptPaymentToken] Invalid token format", {
+                token,
+            });
+            throw new Error("Invalid token format");
+        }
+
+        const [ivHex, encrypted] = parts;
+
+        console.log("[decryptPaymentToken] Parsed token", {
+            ivHexLength: ivHex?.length,
+            encryptedLength: encrypted?.length,
+        });
+
+        const iv = Buffer.from(ivHex, "hex");
+
+        console.log("[decryptPaymentToken] IV buffer", {
+            ivLength: iv.length,
+        });
+
+        const key = getKey();
+        console.log("key", key);
+
+        console.log("[decryptPaymentToken] Key info", {
+            keyLength: key.length,
+        });
+
+        const decipher = crypto.createDecipheriv(
+            "aes-256-cbc",
+            key,
+            iv
+        );
+
+        let decrypted = decipher.update(encrypted, "hex", "utf8");
+        decrypted += decipher.final("utf8");
+
+        console.log("[decryptPaymentToken] Decrypted string", {
+            preview: decrypted?.slice(0, 50),
+        });
+
+        const parsed = JSON.parse(decrypted);
+
+        console.log("[decryptPaymentToken] Parsed JSON", parsed);
+
+        return parsed;
+
+    } catch (error: any) {
+        console.error("[decryptPaymentToken] Failed", {
+            message: error?.message,
+            stack: error?.stack,
+            tokenPreview: token?.slice(0, 20) + "...",
+        });
+
+        throw error; // rethrow so outer catch still works
     }
-
-    const [ivHex, encrypted] = parts;
-
-    console.log("[decryptPaymentToken] Parsed token", {
-      ivHexLength: ivHex?.length,
-      encryptedLength: encrypted?.length,
-    });
-
-    const iv = Buffer.from(ivHex, "hex");
-
-    console.log("[decryptPaymentToken] IV buffer", {
-      ivLength: iv.length,
-    });
-
-    const key = getKey();
-
-    console.log("[decryptPaymentToken] Key info", {
-      keyLength: key.length,
-    });
-
-    const decipher = crypto.createDecipheriv(
-      "aes-256-cbc",
-      key,
-      iv
-    );
-
-    let decrypted = decipher.update(encrypted, "hex", "utf8");
-    decrypted += decipher.final("utf8");
-
-    console.log("[decryptPaymentToken] Decrypted string", {
-      preview: decrypted?.slice(0, 50),
-    });
-
-    const parsed = JSON.parse(decrypted);
-
-    console.log("[decryptPaymentToken] Parsed JSON", parsed);
-
-    return parsed;
-
-  } catch (error: any) {
-    console.error("[decryptPaymentToken] Failed", {
-      message: error?.message,
-      stack: error?.stack,
-      tokenPreview: token?.slice(0, 20) + "...",
-    });
-
-    throw error; // rethrow so outer catch still works
-  }
 }
