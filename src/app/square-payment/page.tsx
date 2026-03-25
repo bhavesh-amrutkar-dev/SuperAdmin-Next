@@ -13,11 +13,6 @@ export default async function SquarePaymentPage({ searchParams }: any) {
   let data;
 
   try {
-    console.log("[SquarePaymentPage] Raw token check", {
-      hasSpace: token.includes(" "),
-      hasPlus: token.includes("+"),
-      length: token.length,
-    });
     data = decryptPaymentToken(token);
   } catch (err: any) {
     console.error("[SquarePaymentPage] Token decryption failed", {
