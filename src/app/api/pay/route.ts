@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
         method: "POST",
         body: JSON.stringify(payload),
         baseUrl: API_NY_URL,
-        overrideAuthToken: authToken,
+        overrideAuthToken: `Bearer ${authToken}`,
       }
     );
 
