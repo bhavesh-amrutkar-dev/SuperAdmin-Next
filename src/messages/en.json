@@ -613,7 +613,8 @@
         "subtitle": "Secure checkout powered by Square",
         "totalAmount": "Total Amount",
         "processing": "Processing payment...",
-        "or": "OR"
+        "or": "OR",
+        "pleaseWait": "Please don’t close this window"
     },
     "errors": {
         "temporary": "A temporary error occurred. Please try again.",

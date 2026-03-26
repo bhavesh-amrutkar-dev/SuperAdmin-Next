@@ -178,9 +178,24 @@ export default function SquarePayment({
 
         {/* ✅ Loading Overlay */}
         {isBusy && (
-          <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center rounded-2xl z-10">
-            <div className="text-sm text-gray-600 animate-pulse">
-              {t("payment.processing")}
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-md flex flex-col items-center justify-center rounded-2xl z-10 transition-all">
+
+            {/* Spinner */}
+            <div className="relative">
+              <div className="w-14 h-14 border-4 border-gray-200 border-t-[#FECB02] rounded-full animate-spin"></div>
+
+              {/* subtle glow */}
+              <div className="absolute inset-0 rounded-full blur-md bg-[#FECB02]/20"></div>
+            </div>
+
+            {/* Text */}
+            <div className="mt-4 text-center space-y-1">
+              <p className="text-sm font-semibold text-gray-800">
+                {t("payment.processing")}
+              </p>
+              <p className="text-xs text-gray-500 animate-pulse">
+                {t("payment.pleaseWait") || "Please don’t close this window"}
+              </p>
             </div>
           </div>
         )}
@@ -257,7 +272,7 @@ export default function SquarePayment({
         )}
 
         {/* ✅ Error UI */}
-        {error && (
+        {/* {error && (
           <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 animate-in fade-in">
             <div className="flex-shrink-0 mt-0.5">
               <svg
@@ -287,7 +302,7 @@ export default function SquarePayment({
               ✕
             </button>
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );
