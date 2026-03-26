@@ -231,7 +231,6 @@ export default function SecureCheckoutPage() {
     try {
       setLoadingBankDetails(true);
       const response = await PaymentService.getBankDetails();
-      console.log("Banck details -> ", response);
       
       // Response structure: { data: { bankDetails: [] } } after axios interceptor
       // Old project structure: { data: { data: { bankDetails: [] } } }

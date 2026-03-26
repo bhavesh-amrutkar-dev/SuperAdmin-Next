@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getSquareConfig } from "@/src/lib/config/square";
 import {
   PaymentForm,
@@ -29,10 +29,16 @@ export default function SquarePayment({
   const t = useTranslations();
 
   const [loading, setLoading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   const [applePaySupported, setApplePaySupported] = useState(false);
   const [googlePaySupported, setGooglePaySupported] = useState(false);
   const [cashAppReady, setCashAppReady] = useState(false);
+
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const isBusy = loading || isProcessing;
 
   // ✅ Detect wallets
   useEffect(() => {
@@ -103,6 +109,7 @@ export default function SquarePayment({
         if (tokenResult.status === "OK") {
           await handleToken({ token: tokenResult.token });
         } else {
+          setIsProcessing(false); // ✅ important
           setError("Cash App Pay failed");
         }
       });
@@ -123,8 +130,14 @@ export default function SquarePayment({
   // ✅ Handle token
   const handleToken = async (token: any) => {
     try {
+      setIsProcessing(true);
       setLoading(true);
       setError(null);
+
+      // ⏳ fallback timeout (handles wallet cancel silently)
+      timeoutRef.current = setTimeout(() => {
+        setIsProcessing(false);
+      }, 15000);
 
       const res = await fetch("/api/pay", {
         method: "POST",
@@ -151,6 +164,11 @@ export default function SquarePayment({
       onError?.({ ...err, message });
     } finally {
       setLoading(false);
+      setIsProcessing(false);
+
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
     }
   };
 
@@ -159,8 +177,8 @@ export default function SquarePayment({
       <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-lg p-5 space-y-5">
 
         {/* ✅ Loading Overlay */}
-        {loading && (
-          <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-2xl z-10">
+        {isBusy && (
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center rounded-2xl z-10">
             <div className="text-sm text-gray-600 animate-pulse">
               {t("payment.processing")}
             </div>
@@ -181,8 +199,8 @@ export default function SquarePayment({
           <span className="text-xl font-bold">${amount}</span>
         </div>
 
-        {/* ✅ Disable interaction while loading */}
-        <div className={loading ? "pointer-events-none opacity-60" : ""}>
+        {/* ✅ Disable UI */}
+        <div className={isBusy ? "pointer-events-none opacity-60" : ""}>
           <PaymentForm
             applicationId={appId!}
             locationId={locationId!}
@@ -201,13 +219,19 @@ export default function SquarePayment({
 
             <div className="space-y-2">
               {applePaySupported && (
-                <div className="h-[48px] rounded-xl overflow-hidden">
+                <div
+                  onClick={() => setIsProcessing(true)}
+                  className="h-12 rounded-xl overflow-hidden cursor-pointer"
+                >
                   <ApplePay />
                 </div>
               )}
 
               {googlePaySupported && (
-                <div className="h-[48px] rounded-xl overflow-hidden">
+                <div
+                  onClick={() => setIsProcessing(true)}
+                  className="h-20 rounded-xl overflow-hidden cursor-pointer"
+                >
                   <GooglePay
                     buttonType="long"
                     buttonColor="black"
@@ -232,10 +256,36 @@ export default function SquarePayment({
           </>
         )}
 
-        {/* ✅ Error */}
+        {/* ✅ Error UI */}
         {error && (
-          <div className="text-center text-sm text-red-500">
-            {error}
+          <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 animate-in fade-in">
+            <div className="flex-shrink-0 mt-0.5">
+              <svg
+                className="w-5 h-5 text-red-500"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M12 3C7.03 3 3 7.03 3 12s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9z" />
+              </svg>
+            </div>
+
+            <div className="flex-1">
+              <p className="text-sm font-medium text-red-700">
+                {t("errors.paymentFailed")}
+              </p>
+              <p className="text-xs text-red-600 mt-0.5">
+                {error}
+              </p>
+            </div>
+
+            <button
+              onClick={() => setError(null)}
+              className="text-red-400 hover:text-red-600 text-sm"
+            >
+              ✕
+            </button>
           </div>
         )}
       </div>
