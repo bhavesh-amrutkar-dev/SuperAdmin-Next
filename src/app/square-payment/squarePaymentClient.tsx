@@ -68,7 +68,9 @@ export default function SquarePaymentClient({
     try {
       if (typeof err?.message === "string") {
         const parsed = JSON.parse(err.message);
-        mobileError = parsed?.message || err.message;
+        console.log("Parsed>>>>>>>", parsed);
+        
+        mobileError = parsed?.error?.code || parsed?.message || err.message;
       }
     } catch {
       mobileError = message;
