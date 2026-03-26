@@ -7,6 +7,7 @@ export default function SquarePaymentClient({
   orderId,
   amount,
   accessToken,
+  deviceType
 }: any) {
 
   // useEffect(() => {
@@ -19,11 +20,7 @@ export default function SquarePaymentClient({
   //   });
   // }, [accessToken]);
 
-  const isIOS = () => {
-    if (typeof window === "undefined") return false;
 
-    return /iPhone|iPad|iPod/i.test(navigator.userAgent);
-  };
   const sendPaymentEvent = (payload: any) => {
     let sent = false;
 
@@ -45,9 +42,10 @@ export default function SquarePaymentClient({
   };
   const handleSuccess = () => {
     const payload = { status: "SUCCESS", orderId };
+    console.log("Device type---", deviceType);
 
     const sent = sendPaymentEvent(payload);
-    if (isIOS()) {
+    if (deviceType === 1) {
       window.location.href = `donrifa://square-pay-success?orderId=${orderId}`;
       return;
     }
@@ -63,30 +61,51 @@ export default function SquarePaymentClient({
   };
 
   const handleError = (err: any) => {
-    const message = err?.message || "Payment failed";
+    let message = err?.message || "Payment failed";
+    let mobileError = message; // ✅ default fallback
+
+    // ✅ Try parsing JSON message
+    try {
+      if (typeof err?.message === "string") {
+        const parsed = JSON.parse(err.message);
+        mobileError = parsed?.message || err.message;
+      }
+    } catch {
+      mobileError = message;
+    }
+
     const encodedError = encodeURIComponent(message);
+
     const payload = {
       status: "FAILED",
       orderId,
       error: {
-        message: err?.message || "Payment failed",
+        message,
       },
     };
 
-    const sent = sendPaymentEvent(payload);
-    if (isIOS()) {
-      window.location.href = `donrifa://square-pay-failed?orderId=${orderId}&error=${encodedError}`;
+    sendPaymentEvent(payload);
+
+    // ✅ iOS App
+    if (deviceType === 1) {
+      window.location.href = `donrifa://square-pay-failed?orderId=${orderId}&error=${mobileError}`;
       return;
     }
+
+    // ✅ Android WebView / Mobile
+    if (deviceType === 2) {
+      window.location.href = `/payment-result?status=FAILED&orderId=${orderId}&error=${mobileError}`;
+      return;
+    }
+
+    // ✅ Popup
     if (window.opener) {
       window.close();
       return;
     }
 
-    // fallback for blocked popup
-    // if (!sent) {
+    // ✅ Web fallback
     window.location.href = `/payment-result?status=FAILED&orderId=${orderId}&error=${encodedError}`;
-    // }
   };
 
   return (

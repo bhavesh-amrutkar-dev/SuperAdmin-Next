@@ -29,7 +29,7 @@ export default async function SquarePaymentPage({ searchParams }: any) {
     );
   }
 
-  const { orderId, amount, accessToken } = data;
+  const { orderId, amount, accessToken, deviceType } = data;
 
   if (Date.now() > data.exp) {
     console.warn("[SquarePaymentPage] Token expired", {
@@ -55,6 +55,7 @@ export default async function SquarePaymentPage({ searchParams }: any) {
       orderId={orderId}
       amount={amount}
       accessToken={accessToken}
+      deviceType={deviceType}
     />
   );
 }
