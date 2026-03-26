@@ -18,6 +18,12 @@ export default function SquarePaymentClient({
   //     body: JSON.stringify({ token: accessToken }),
   //   });
   // }, [accessToken]);
+
+  const isIOS = () => {
+    if (typeof window === "undefined") return false;
+
+    return /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  };
   const sendPaymentEvent = (payload: any) => {
     let sent = false;
 
@@ -41,7 +47,10 @@ export default function SquarePaymentClient({
     const payload = { status: "SUCCESS", orderId };
 
     const sent = sendPaymentEvent(payload);
-
+    if (isIOS()) {
+      window.location.href = `donrifa://square-pay-success?orderId=${orderId}`;
+      return;
+    }
     if (window.opener) {
       window.close();
       return;
@@ -49,11 +58,13 @@ export default function SquarePaymentClient({
 
     // fallback
     // if (!sent) {
-      window.location.href = `/payment-result?status=SUCCESS&orderId=${orderId}`;
+    window.location.href = `/payment-result?status=SUCCESS&orderId=${orderId}`;
     // }
   };
 
   const handleError = (err: any) => {
+    const message = err?.message || "Payment failed";
+    const encodedError = encodeURIComponent(message);
     const payload = {
       status: "FAILED",
       orderId,
@@ -63,7 +74,10 @@ export default function SquarePaymentClient({
     };
 
     const sent = sendPaymentEvent(payload);
-
+    if (isIOS()) {
+      window.location.href = `donrifa://square-pay-failed?orderId=${orderId}&error=${encodedError}`;
+      return;
+    }
     if (window.opener) {
       window.close();
       return;
@@ -71,7 +85,7 @@ export default function SquarePaymentClient({
 
     // fallback for blocked popup
     // if (!sent) {
-      window.location.href = `/payment-result?status=FAILED&orderId=${orderId}`;
+    window.location.href = `/payment-result?status=FAILED&orderId=${orderId}&error=${encodedError}`;
     // }
   };
 
