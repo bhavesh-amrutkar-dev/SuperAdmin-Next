@@ -21,10 +21,39 @@ export default function AddressFormModal({
   const handleSubmit = async (data: any) => {
     try {
       if (editing?._id) {
-        await UserAddressService.updateAddress(data);
+        const {
+          _id,
+          userType,
+          createdTimeStamp,
+          createdIsoDate,
+          countryName,
+          cityId,
+          cityName,
+          shopifyStoreId,
+          mbxAddressId,
+          zoneId,
+          zoneName,
+          ...rest
+        } = data;
+
+        const payload = {
+          ...rest,
+
+          name: `${data.firstName || ""} ${data.lastName || ""}`.trim(),
+          addressId: editing._id,
+        };
+
+        console.log("final payload", payload);
+
+        await UserAddressService.updateAddress(payload);
+
         toast.success("Address updated");
       } else {
-        await AuthService.createAddress(data);
+        await AuthService.createAddress({
+          ...data,
+          name: `${data.firstName || ""} ${data.lastName || ""}`.trim(),
+        });
+
         toast.success("Address created");
       }
 

@@ -221,7 +221,10 @@ export default function AddressesPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => toast.warning(t("comingSoon"))}
+                      onClick={() => {
+                        setEditing(address);
+                        setOpenModal(true);
+                      }}
                     >
                       <Pencil size={14} />
                       {t("edit")}
@@ -256,7 +259,10 @@ export default function AddressesPage() {
         {/* Modal */}
         <AddressFormModal
           open={openModal}
-          onClose={() => setOpenModal(false)}
+          onClose={() => {
+            setOpenModal(false);
+            setEditing(null);
+          }}
           onSuccess={fetchAddresses}
           editing={editing}
         />
