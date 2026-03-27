@@ -629,5 +629,6 @@
     "corruptedLinkDesc": "Este enlace de pago está roto o ya ha sido utilizado.",
     "expired": "Sesión expirada",
     "expiredDesc": "Tu sesión de pago ha expirado. Por favor, inicia el proceso nuevamente.",
-    "processingPayment": "Procesando su pago..."
+    "processingPayment": "Procesando su pago...",
+    "addressCreated": "Dirección creada"
 }

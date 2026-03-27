@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { UserAddressService } from "@/src/lib/services/userAddress";
 import { AuthService } from "../lib/services/auth";
 import AddressForm, { AddressFormRM } from "./addressForm";
+import { useTranslations } from "next-intl";
 
 export default function AddressFormModal({
   open,
@@ -17,7 +18,7 @@ export default function AddressFormModal({
   onSuccess,
   editing,
 }: any) {
-
+  const t = useTranslations();
   const handleSubmit = async (data: any) => {
     try {
       if (editing?._id) {
@@ -43,8 +44,6 @@ export default function AddressFormModal({
           addressId: editing._id,
         };
 
-        console.log("final payload", payload);
-
         await UserAddressService.updateAddress(payload);
 
         toast.success("Address updated");
@@ -54,7 +53,7 @@ export default function AddressFormModal({
           name: `${data.firstName || ""} ${data.lastName || ""}`.trim(),
         });
 
-        toast.success("Address created");
+        toast.success(t("addressCreated"));
       }
 
       onSuccess?.();

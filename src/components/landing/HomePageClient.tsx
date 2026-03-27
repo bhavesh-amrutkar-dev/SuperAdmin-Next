@@ -24,7 +24,6 @@ import { useAuth } from "@/src/context/authContext";
 import Loader from "../loader";
 import FallbackUI from "../common/FallBackUi";
 import { useCountry } from "@/src/context/countryContext";
-import { decryptPaymentToken } from "@/src/lib/security/paymentToken";
 
 type LegacyRaffleItem = {
   _id?: string;

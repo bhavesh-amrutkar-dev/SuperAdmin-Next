@@ -25,7 +25,7 @@ export default function SquarePayment({
   onSuccess,
   onError,
 }: SquarePaymentProps) {
-  const { appId, locationId } = getSquareConfig();
+  const { appId, locationId, cashAppPayScript } = getSquareConfig();
   const t = useTranslations();
 
   const [loading, setLoading] = useState(false);
@@ -51,7 +51,7 @@ export default function SquarePayment({
   // ✅ Load Square.js for Cash App
   useEffect(() => {
     const script = document.createElement("script");
-    script.src = "https://sandbox.web.squarecdn.com/v1/square.js";
+    script.src = cashAppPayScript;
     script.async = true;
     script.onload = initCashApp;
 
