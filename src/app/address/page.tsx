@@ -303,7 +303,7 @@ export default function AddressPage() {
                                     <ErrorMessage message={errors.addLine1?.message} />
 
 
-                                    <Button
+                                    {/* <Button
                                         type="button"
                                         variant="outline"
                                         size="sm"
@@ -311,7 +311,7 @@ export default function AddressPage() {
                                         disabled={loadingLocation}
                                     >
                                         {loadingLocation ? t("detecting") : t("useCurrentLocation")}
-                                    </Button>
+                                    </Button> */}
 
                                 </div>
 
