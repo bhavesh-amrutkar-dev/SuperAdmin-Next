@@ -172,6 +172,12 @@ export default function SquarePayment({
     }
   };
 
+  const formatAmount = (value: number | string) => {
+    const num = Number(value);
+    if (isNaN(num)) return "0.00";
+    return num.toFixed(2);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-6">
       <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-lg p-5 space-y-5">
@@ -211,7 +217,9 @@ export default function SquarePayment({
           <span className="text-gray-600 text-sm">
             {t("payment.totalAmount")}
           </span>
-          <span className="text-xl font-bold">${amount}</span>
+          <span className="text-xl font-bold">
+            ${formatAmount(amount)}
+          </span>
         </div>
 
         {/* ✅ Disable UI */}
