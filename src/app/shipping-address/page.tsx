@@ -14,6 +14,7 @@ import { CartService } from "@/src/lib/services/cart";
 import { UserAddressService } from "@/src/lib/services/userAddress";
 import { Button } from "@/src/components/ui/button";
 import Loader from "@/src/components/loader";
+import AddressFormModal from "@/src/components/AddressFormModal";
 
 type TaxItem = {
   taxName?: string;
@@ -123,7 +124,8 @@ export default function ShippingAddressPage() {
 
   const currency = cartData?.currencySymbol || "$";
   const accounting = cartData?.accounting || {};
-
+  const [openModal, setOpenModal] = useState(false);
+  const [editing, setEditing] = useState<any>(null);
   const cartItems = useMemo(() => {
     const items: CartItem[] = [];
     const sellers = cartData?.sellers || [];
@@ -192,27 +194,68 @@ export default function ShippingAddressPage() {
       fetchingCartRef.current = false;
     }
   };
-
-  const fetchAddresses = async () => {
+  const fetchAddresses = async (preferredAddressId?: string) => {
     // Prevent duplicate calls
-    if (fetchingAddressesRef.current) {
-      return;
-    }
+    if (fetchingAddressesRef.current) return;
 
     fetchingAddressesRef.current = true;
+
     try {
       setLoadingAddresses(true);
+
       const response = await UserAddressService.getAddresses();
-      const data = (response as any)?.data?.data || (response as any)?.data || [];
-      const list = Array.isArray(data) ? (data as UserAddress[]) : [];
+      const data =
+        (response as any)?.data?.data ||
+        (response as any)?.data ||
+        [];
+
+      const list = Array.isArray(data)
+        ? (data as UserAddress[])
+        : [];
+
       setAddresses(list);
 
-      const defaultAddr = list.find((a) => a.default) || list[0];
-      if (defaultAddr?._id) {
-        selectAddress(defaultAddr._id);
+      if (!list.length) {
+        setSelectedAddressId("");
+        return;
+      }
+
+      // ✅ Priority-based selection
+      let selectedId = "";
+
+      // 1. If new/edited address passed → select that
+      if (preferredAddressId) {
+        const found = list.find((a) => a._id === preferredAddressId);
+        if (found?._id) {
+          selectedId = found._id;
+        }
+      }
+
+      // 2. Keep existing selected if still exists
+      if (!selectedId && selectedAddressId) {
+        const stillExists = list.find((a) => a._id === selectedAddressId);
+        if (stillExists?._id) {
+          selectedId = stillExists._id;
+        }
+      }
+
+      // 3. Default address
+      if (!selectedId) {
+        const defaultAddr = list.find((a) => a.default);
+        if (defaultAddr?._id) {
+          selectedId = defaultAddr._id;
+        }
+      }
+
+      // 4. Fallback → first address
+      if (!selectedId) {
+        selectedId = list[0]?._id || "";
+      }
+
+      if (selectedId) {
+        selectAddress(selectedId);
       }
     } catch (err: any) {
-      // eslint-disable-next-line no-console
       console.warn("Error fetching addresses:", err);
       setAddresses([]);
       setSelectedAddressId("");
@@ -221,7 +264,6 @@ export default function ShippingAddressPage() {
       fetchingAddressesRef.current = false;
     }
   };
-
   const selectAddress = (addressId: string) => {
     setSelectedAddressId(addressId);
     // keep old + new cookie keys in sync
@@ -269,7 +311,7 @@ export default function ShippingAddressPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D4AF37] mx-auto"></div>
             <p className="mt-4 text-gray-600">{t("loading") || "Loading..."}</p>
           </div> */}
-          <Loader/>
+          <Loader />
         </div>
         <Footer />
       </div>
@@ -318,7 +360,10 @@ export default function ShippingAddressPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => router.push("/profile?tab=addresses")}
+                  onClick={() => {
+                    setEditing(null);
+                    setOpenModal(true);
+                  }}
                   className="btn-primary whitespace-nowrap"
                 >
                   + {t("addAddress").toUpperCase?.() ? t("addAddress").toUpperCase() : t("addAddress")}
@@ -409,7 +454,9 @@ export default function ShippingAddressPage() {
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  router.push(`/profile?tab=addresses&edit=${id}`);
+
+                                  setEditing(addr);
+                                  setOpenModal(true);
                                 }}
                                 className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-yellow-600 mt-1 flex-shrink-0 cursor-pointer"
                               >
@@ -529,19 +576,19 @@ export default function ShippingAddressPage() {
                 </div>
               </div>
               <Button
-              onClick={handleContinue}
-              disabled={!selectedAddressId || cartItems.length === 0 || continuing || loading}
-              className="w-full btn-primary text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg text-sm md:text-default flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-4 h-11"
-            >
-              {(continuing || loading) ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>{t("loading") || "Loading..."}</span>
-                </>
-              ) : (
-                <span>{t("continue")}</span>
-              )}
-            </Button>
+                onClick={handleContinue}
+                disabled={!selectedAddressId || cartItems.length === 0 || continuing || loading}
+                className="w-full btn-primary text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg text-sm md:text-default flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-4 h-11"
+              >
+                {(continuing || loading) ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>{t("loading") || "Loading..."}</span>
+                  </>
+                ) : (
+                  <span>{t("continue")}</span>
+                )}
+              </Button>
             </div>
           </div>
         </div>
@@ -562,6 +609,17 @@ export default function ShippingAddressPage() {
       </div>
 
       <Footer />
+      <AddressFormModal
+        open={openModal}
+        onClose={() => {
+          setOpenModal(false);
+          setEditing(null);
+        }}
+        editing={editing}
+        onSuccess={async () => {
+          await fetchAddresses();
+        }}
+      />
     </div>
   );
 }

@@ -613,14 +613,15 @@
         "subtitle": "Secure checkout powered by Square",
         "totalAmount": "Total Amount",
         "processing": "Processing payment...",
-        "or": "OR"
+        "or": "OR",
+        "pleaseWait": "Please don’t close this window"
     },
     "errors": {
         "temporary": "A temporary error occurred. Please try again.",
         "paymentFailed": "Payment failed",
         "sessionFailed": "Failed to create payment session"
     },
-    "paySqr": "PAY WITH SQUARE",
+    "paySqr": "Pay with Credit/Debit Card",
     "paymentConnectionLost": "Connection lost",
     "invalidLink": "Invalid Link",
     "invalidLinkDesc": "This payment link is not valid. Please try again.",

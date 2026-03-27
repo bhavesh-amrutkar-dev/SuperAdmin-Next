@@ -613,14 +613,15 @@
         "subtitle": "Pago seguro con Square",
         "totalAmount": "Cantidad total",
         "processing": "Procesando pago...",
-        "or": "O"
+        "or": "O",
+         "pleaseWait": "Por favor, no cierre esta ventana."
     },
     "errors": {
         "temporary": "Ocurrió un error temporal.",
         "paymentFailed": "El pago falló",
         "sessionFailed": "No se pudo crear la sesión de pago"
     },
-    "paySqr": "PAGA CON SQUARE",
+    "paySqr": "Paga con tarjeta de crédito/débito",
     "paymentConnectionLost": "Conexión perdida",
     "invalidLink": "Enlace inválido",
     "invalidLinkDesc": "Este enlace de pago no es válido. Inténtalo de nuevo.",

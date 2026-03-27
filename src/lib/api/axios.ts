@@ -21,14 +21,6 @@ apiClient.interceptors.request.use(
     } else {
       config.headers = new AxiosHeaders(headers);
     }
-    // 🔥 FULL REQUEST DEBUG LOG
-    // console.log("========== OUTGOING API REQUEST ==========");
-    // console.log("URL:", `${config.baseURL}${config.url}`);
-    // console.log("Method:", config.method?.toUpperCase());
-    // console.log("Headers:", config.headers?.toJSON?.() || config.headers);
-    // console.log("Query Params:", config.params);
-    // console.log("Body:", config.data);
-    // console.log("==========================================");
 
     return config;
   },
@@ -42,22 +34,40 @@ apiClient.interceptors.response.use(
     const status = error?.response?.status;
     const originalRequest = error.config;
 
-    // Prevent infinite loop: if the failed request was already for guest/signIn, do not retry
-    // Also check if we've already retried to be safe
-    if (status === 401 && !originalRequest._retry && !originalRequest.url?.includes("/guest/signIn")) {
+    if (
+      status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes("/guest/signIn")
+    ) {
       originalRequest._retry = true;
 
       try {
-        // clear old tokens
-        document.cookie = "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-        document.cookie = "refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        // clear tokens
+        document.cookie =
+          "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie =
+          "refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie =
+          "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
 
-        // re-init guest
-        await import("../bootstrap/initGuest").then(m => m.initGuest());
+        // call guest API directly
+        const guestRes = await import("../services/guest").then((m) =>
+          m.GuestService.initGuest()
+        );
 
-        return apiClient(originalRequest); // retry request
+        const newToken = guestRes?.data?.token?.accessToken;
+
+        if (!newToken) throw new Error("No guest token received");
+
+        // inject token into retry request
+        if (!originalRequest.headers) {
+          originalRequest.headers = {};
+        }
+
+        originalRequest.headers["Authorization"] = newToken;
+
+        return apiClient(originalRequest);
       } catch {
-        // If re-init fails, redirect to home or handle gracefully
         window.location.replace("/");
       }
     }
@@ -70,7 +80,6 @@ apiClient.interceptors.response.use(
     });
   }
 );
-
 
 export const pyApiClient = axios.create({
   baseURL: API_PY_URL,

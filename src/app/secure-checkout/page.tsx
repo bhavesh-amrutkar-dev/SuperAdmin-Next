@@ -16,7 +16,7 @@ import PlaceToPayLightbox from "@/src/components/checkout/PlaceToPayLightbox";
 import ComingSoonModal from "@/src/components/modals/ComingSoonModal";
 import { Copy, Check, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { DEFAULT_COUNTRY_CODE, COUNTRY_CODE, BASE_URL, ENABLE_PLACE_TO_PAY } from "@/src/lib/config";
+import { DEFAULT_COUNTRY_CODE, COUNTRY_CODE, BASE_URL, ENABLE_PLACE_TO_PAY, CDN_IMAGE, ENABLE_SQUARE_PAY } from "@/src/lib/config";
 import { getCommonHeaders } from "@/src/lib/api/headers";
 import axios from "axios";
 import { Button } from "../../components/ui/button";
@@ -231,6 +231,7 @@ export default function SecureCheckoutPage() {
     try {
       setLoadingBankDetails(true);
       const response = await PaymentService.getBankDetails();
+      
       // Response structure: { data: { bankDetails: [] } } after axios interceptor
       // Old project structure: { data: { data: { bankDetails: [] } } }
       const bankDetailsData = (response as any)?.data?.bankDetails || (response as any)?.data?.data?.bankDetails || [];
@@ -243,81 +244,89 @@ export default function SecureCheckoutPage() {
     }
   };
 
+  const EMPTY_CART: CartData = {
+    sellers: [],
+    accounting: {
+      bagTotal: 0,
+      subTotal: 0,
+      tax: 0,
+      deliveryFee: 0,
+      finalTotal: 0,
+    },
+  };
+
   const fetchCart = async () => {
     try {
       const response = await CartService.getCart();
-      const data = (response as any)?.data?.data || (response as any)?.data || response;
-
-      // Handle "Data not found" as a valid empty cart response
-      if (data && typeof data === "object" && data.message === "Data not found") {
-        setCartData({
-          sellers: [],
-          accounting: {
-            bagTotal: 0,
-            subTotal: 0,
-            tax: 0,
-            deliveryFee: 0,
-            finalTotal: 0,
-          },
-        });
-        return;
-      }
+      const data = response?.data?.data ?? response?.data ?? response;
 
       setCartData(data as CartData);
     } catch (error: any) {
-      // Check if error is "Data not found" - this is a valid empty cart state
-      const errorMessage = error?.message || error?.response?.data?.message || "";
-      const isDataNotFound = errorMessage === "Data not found" ||
-        error?.response?.data?.message === "Data not found" ||
-        (error?.response?.data && typeof error.response.data === "object" && error.response.data.message === "Data not found");
+      const status = error?.response?.status;
+      const message = error?.response?.data?.message;
 
-      if (isDataNotFound) {
-        // Silently handle empty cart - this is expected when cart is empty
-        setCartData({
-          sellers: [],
-          accounting: {
-            bagTotal: 0,
-            subTotal: 0,
-            tax: 0,
-            deliveryFee: 0,
-            finalTotal: 0,
-          },
-        });
+      // Treat 404 "Data not found" as empty cart
+      if (status === 404 && message === "Data not found") {
+        setCartData(EMPTY_CART);
         return;
       }
 
-      // Only log actual errors, not empty cart cases
+      // Real error
       console.warn("Error fetching cart:", error);
-      setCartData({
-        sellers: [],
-        accounting: {
-          bagTotal: 0,
-          subTotal: 0,
-          tax: 0,
-          deliveryFee: 0,
-          finalTotal: 0,
-        },
-      });
+      setCartData(EMPTY_CART);
     }
   };
   useEffect(() => {
+    let handled = false; // 🔥 prevent duplicate triggers
+
     const handlePaymentMessage = (event: MessageEvent) => {
+      if (handled) return;
       if (event.origin !== window.location.origin) return;
 
-      const { status, orderId } = event.data || {};
-
+      const { status, orderId, error } = event.data || {};
       if (!status) return;
+
+      handled = true;
 
       if (status === "SUCCESS") {
         handleSquareSuccess();
       }
 
       if (status === "FAILED") {
-        handleSquareError(event.data);
+        handleSquareError(error || { orderId });
       }
+
+      // ✅ clean URL if any params exist
+      window.history.replaceState({}, "", window.location.pathname);
     };
 
     window.addEventListener("message", handlePaymentMessage);
+
+    // ✅ Redirect fallback handling
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("status");
+    const orderId = params.get("orderId");
+    const message = params.get("message");
+
+    if (!handled && status === "SUCCESS") {
+      handled = true;
+      handleSquareSuccess();
+
+      // clean URL
+      router.replace("/secure-checkout", { scroll: false });
+    }
+
+    if (!handled && status === "FAILED") {
+      handled = true;
+
+      handleSquareError({
+        orderId,
+        message,
+      });
+
+      // clean URL
+      router.replace("/secure-checkout", { scroll: false });
+    }
 
     return () => {
       window.removeEventListener("message", handlePaymentMessage);
@@ -486,8 +495,7 @@ export default function SecureCheckoutPage() {
     setIsUpdatingStatus(false);
 
     fetchCart()
-  };
-  const handleAuthMovil = async () => {
+  }; const handleAuthMovil = async () => {
     try {
       if (!selectedAddress) return;
 
@@ -651,18 +659,15 @@ export default function SecureCheckoutPage() {
   };
 
   const handlePlaceOrder = async () => {
-    if (!selectedAddress || !cartData) {
-      return;
-    }
+    if (!selectedAddress || !cartData) return;
 
-    // Show coming soon modal only for ATH Móvil
+    // ATH handled separately
     if (paymentMethod === "athMovil") {
       handleAuthMovil();
       return;
     }
 
-
-    // Validate manual payment
+    // ✅ Manual validation
     if (paymentMethod === "manual") {
       if (!selectedBank) {
         setModalConfig({
@@ -679,321 +684,191 @@ export default function SecureCheckoutPage() {
           message: t("uploadReceipt"),
         });
         setConfirmOpen(true);
-        setConfirmOpen(true);
         return;
       }
     }
 
-    // Check if user is authenticated
     const token = getCookie("access_token");
     let uid = getCookie("uid") as string | undefined;
-
-    // If access_token exists but uid doesn't, try to get user ID from API
-    if (token && !uid) {
-      try {
-        const userResponse = await AuthService.getCurrentUser();
-        const userData = (userResponse as any)?.data?.data || (userResponse as any)?.data;
-        if (userData?._id || userData?.id || userData?.userId) {
-          uid = userData._id || userData.id || userData.userId;
-          // Set uid cookie for future use
-          if (uid) {
-            setCookie("uid", uid, { path: "/", sameSite: "lax" });
-          }
-        }
-      } catch (error) {
-        console.warn("Error fetching user ID:", error);
-        // Continue with fallback - API might handle userId internally
-      }
-    }
 
     if (!token) {
       router.push("/auth/login");
       return;
     }
 
+    // ✅ Resolve UID if missing
+    if (!uid) {
+      try {
+        const userResponse = await AuthService.getCurrentUser();
+        const userData = (userResponse as any)?.data?.data ?? (userResponse as any)?.data;
+
+        uid = userData?._id || userData?.id || userData?.userId;
+
+        if (uid) {
+          setCookie("uid", uid, { path: "/", sameSite: "lax" });
+        }
+      } catch (error) {
+        console.warn("Error fetching user ID:", error);
+      }
+    }
+
     setPlacingOrder(true);
 
     try {
-      // Refresh cart before placing order to ensure we have the latest cartId
-      const freshCartResponse = await CartService.getCart();
-      const freshCartData = (freshCartResponse as any)?.data?.data || (freshCartResponse as any)?.data || freshCartResponse;
+      // ✅ USE EXISTING CART (NO API CALL)
+      const cartId = (cartData as any)?._id || (cartData as any)?.cartId;
 
-      // Check if cart is empty or not found
-      if (
-        !freshCartData ||
-        freshCartData.message === "Data not found" ||
-        !freshCartData.sellers ||
-        freshCartData.sellers.length === 0
-      ) {
+      if (!cartId || !cartData?.sellers?.length) {
+        setModalConfig({
+          title: t("cartEmpty"),
+          message: t("cartEmptyDescription"),
+          confirmText: t("goToCart"),
+        });
         setConfirmOpen(true);
         setPlacingOrder(false);
         return;
       }
-      // Update cartData state with fresh data
-      setCartData(freshCartData as CartData);
 
-      // Get cart ID from fresh cart data
-      const cartId = (freshCartData as any)?._id || (freshCartData as any)?.cartId;
-      if (!cartId) {
-        throw new Error("Cart ID not found");
-      }
-
-      // Get user IP address
       const ipAddress = await getMyIP();
 
       let onlinePaymentMethod = 18;
-      if (paymentMethod === "creditCard") {
-        onlinePaymentMethod = 18;
-      }
-      else if (paymentMethod === "manual") {
-        onlinePaymentMethod = 12;
-      }
-      else if (paymentMethod === "square") {
-        onlinePaymentMethod = 21;
-      }
+      if (paymentMethod === "manual") onlinePaymentMethod = 12;
+      if (paymentMethod === "square") onlinePaymentMethod = 21;
 
-      // Get address ID
-      const addressId = selectedAddress._id || (getCookie("addressid") as string) || (getCookie("AddressID") as string) || "";
-      const billingAddressId = billingSameAsShipping ? addressId : addressId;
+      const addressId =
+        selectedAddress._id ||
+        (getCookie("addressid") as string) ||
+        "";
+
       const latitude = (getCookie("lat") as string) || "0";
       const longitude = (getCookie("long") as string) || "0";
 
+      // ✅ Manual payment image
       const orderImages: string[] = [];
       if (paymentMethod === "manual" && receiptFile) {
-        const reader = new FileReader();
-        const base64Promise = new Promise<string>((resolve, reject) => {
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
           reader.onload = () => {
             const result = reader.result as string;
-            const base64 = result.includes(",") ? result.split(",")[1] : result;
-            resolve(base64);
+            resolve(result.split(",")[1]);
           };
           reader.onerror = reject;
+          reader.readAsDataURL(receiptFile);
         });
-        reader.readAsDataURL(receiptFile);
-        const base64Image = await base64Promise;
-        orderImages.push(base64Image);
+
+        orderImages.push(base64);
       }
 
-      // Prepare order payload (matching old project structure)
       const orderPayload = {
-        cartId: cartId,
-        addressId: addressId,
-        billingAddressId: billingAddressId,
+        cartId,
+        addressId,
+        billingAddressId: addressId,
         coupon: "",
         promoId: "",
         discount: 0,
-        latitude: latitude,
-        longitude: longitude,
-        ipAddress: ipAddress,
+        latitude,
+        longitude,
+        ipAddress,
         storeType: 8,
         delivery: [],
         orderType: 2,
         extraNote: "",
         tip: 0,
-        orderImages: orderImages,
-        onlinePaymentMethod: onlinePaymentMethod,
+        orderImages,
+        onlinePaymentMethod,
         payByRewardWallet: false,
         cardId: "",
         paymentType: 1,
-        payByWallet: false, // Wallet payment not implemented yet
-        userId: (uid as string) || "1",
+        payByWallet: false,
+        userId: uid || "1",
       };
 
-      // Call order API
+      // ✅ PLACE ORDER
       const response = await fetch("/api/orders/place", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderPayload),
       });
-      // console.log("order placed");
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.message);
-      }
 
       const orderData = await response.json();
-      // Check if order API returned an error
-      if (
-        orderData?.message &&
-        orderData.message.toLowerCase().includes("cart not found")
-      ) {
+
+      if (!response.ok) {
+        throw new Error(orderData?.message || "Order failed");
+      }
+
+      // ✅ HANDLE CART FAILURE FROM ORDER API
+      if (orderData?.message?.toLowerCase().includes("cart")) {
+        setModalConfig({
+          title: t("cartError"),
+          message: t("cartNotFoundDescription"),
+          confirmText: t("goToCart"),
+          onConfirm: () => router.push("/cart"),
+        });
         setConfirmOpen(true);
         setPlacingOrder(false);
         return;
       }
 
-      // Check if order was placed successfully
-      if (orderData?.orderId) {
+      if (!orderData?.orderId) {
+        throw new Error("Invalid order response");
+      }
 
-        if (paymentMethod === "square") {
-          setSquareOrderId(orderData.orderId);
-          // setShowSquarePayment(true);
-          setPlacingOrder(false);
-          try {
-            const res = await fetch("/api/create-token", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                orderId: orderData.orderId,
-                amount: grandTotal,
-              }),
-            });
+      // ✅ STORE ORDER
+      localStorage.setItem("orderId", orderData.orderId);
+      localStorage.setItem("cartId", cartId);
 
-            if (!res.ok) {
-              throw new Error(t("errors.sessionFailed"));
-            }
+      // =========================
+      // 💳 PAYMENT HANDLING
+      // =========================
 
-            const { token } = await res.json();
+      // 🔵 Square
+      if (paymentMethod === "square") {
+        try {
+          const redirectUrl = orderData?.checkoutProcessUrl;
 
-            if (!token) {
-              throw new Error("Invalid payment session");
-            }
-
-            const url = `/square-payment?t=${encodeURIComponent(token)}`;
-            const width = 420;
-            const height = 720;
-
-            const left = window.screenX + (window.outerWidth - width) / 2;
-            const top = window.screenY + (window.outerHeight - height) / 2;
-
-            const popup = window.open(
-              url,
-              "squarePayment",
-              `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
-            );
-
-
-            // fallback if popup blocked
-            if (!popup) {
-              router.push(url);
-            }
-
-          } catch (err) {
-            console.error("Square payment session error:", err);
-
-            toast.error("Unable to start payment. Please try again.");
-            setPlacingOrder(false);
+          if (!redirectUrl) {
+            throw new Error("Missing checkout URL");
           }
+
+          console.log("➡️ Redirecting to Square:", redirectUrl);
+
+          // ✅ Universal flow (works for web + mobile + no popup issues)
+          window.location.href = redirectUrl;
 
           return;
+        } catch (err) {
+          console.error("Square redirect error:", err);
+
+          toast.error("Payment initialization failed. Try again.");
+          setPlacingOrder(false);
+          return;
         }
-        // Store order ID for later use
-        if (typeof window !== "undefined") {
-          localStorage.setItem("orderId", orderData.orderId);
-          localStorage.setItem("cartId", cartId);
-          if (orderData.numberOfFreeTickets) {
-            localStorage.setItem("TotalFreeTicket", String(orderData.numberOfFreeTickets));
-          }
-        }
-
-        // Handle manual payment differently - upload receipt and redirect
-        if (paymentMethod === "manual") {
-          // Upload receipt file if provided
-          if (receiptFile) {
-            try {
-              // Upload receipt file
-              const formData = new FormData();
-              formData.append("image", receiptFile);
-              formData.append("master_order_id", orderData.orderId);
-              const countryCode = (getCookie(COUNTRY_CODE) as string) || DEFAULT_COUNTRY_CODE;
-              formData.append("country_code", countryCode);
-
-              // Upload receipt using BASE_URL (matches old project: process.env.NEXT_PUBLIC_BASE_URL + endpoint)
-              // Get common headers including authentication token
-              const commonHeaders = getCommonHeaders();
-              // Remove Content-Type from commonHeaders and let axios set it automatically for FormData
-              const { "Content-Type": _, ...headersWithoutContentType } = commonHeaders;
-              await axios.post(`${BASE_URL}validate/payment/receipt/`, formData, {
-                headers: {
-                  ...headersWithoutContentType,
-                  // Don't set Content-Type manually - axios will set it with boundary for multipart/form-data
-                },
-              });
-
-              // Redirect to thank-you page after successful upload
-              router.push("/thank-you");
-              return;
-            } catch (uploadError: any) {
-              console.warn("Receipt upload failed, but order was placed:", uploadError);
-              // Even if upload fails, redirect to thank-you since order is placed
-              router.push("/thank-you");
-              return;
-            }
-          } else {
-            // Manual payment without receipt - still redirect to thank-you
-            router.push("/thank-you");
-            return;
-          }
-        }
-
-        // For other payment methods, check for checkout URL
-
-
-        if (orderData?.checkoutProcessUrl) {
-          // Open Place to Pay lightbox
-          setPlaceToPayUrl(orderData.checkoutProcessUrl);
-        } else if (paymentMethod !== "manual") {
-          // Only throw error for non-manual payments if no checkout URL
-          throw new Error(orderData?.message || "Failed to get checkout URL");
-        } else {
-          // Manual payment without receipt - still redirect to thank-you
-          router.push("/thank-you");
-        }
-      } else {
-        throw new Error(orderData?.message || "Failed to place order");
       }
-    } catch (error: any) {
-      // Extract error message from various possible locations
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        error?.data?.message ||
-        (typeof error === "string" ? error : null) ||
-        "Failed to place order. Please try again.";
 
-      console.warn("Error placing order:", {
-        message: errorMessage,
-        error: error,
-        status: error?.status || error?.response?.status,
-        data: error?.response?.data || error?.data,
+      // 🟡 Manual
+      if (paymentMethod === "manual") {
+        router.push("/thank-you");
+        return;
+      }
+
+      // 🟢 PlaceToPay
+      if (orderData?.checkoutProcessUrl) {
+        setPlaceToPayUrl(orderData.checkoutProcessUrl);
+        return;
+      }
+
+      throw new Error("No payment URL received");
+
+    } catch (error: any) {
+      console.warn("Order error:", error);
+
+      setModalConfig({
+        title: t("checkoutError"),
+        message: error?.message?.message || "Something went wrong",
+        confirmText: t("tryAgain"),
       });
 
-      // Handle specific error cases
-      const errorMsgLower = errorMessage.toLowerCase();
-
-      if (errorMsgLower.includes("cart not found")) {
-        setModalConfig({
-          title: t("cartNotFound"),
-          message: t("cartNotFoundDescription"),
-          confirmText: t("returnToCart"),
-          cancelText: t("continueShopping"),
-          onConfirm: () => router.push("/cart"),
-        });
-        setConfirmOpen(true);
-        router.push("/cart");
-      } else if (
-        errorMsgLower.includes("cart id not found") ||
-        errorMsgLower.includes("cart is empty")
-      ) {
-        setModalConfig({
-          title: t("cartEmpty"),
-          message: t("cartEmptyDescription"),
-          confirmText: t("goToCart"),
-          cancelText: t("continueShopping"),
-          onConfirm: () => router.push("/cart"),
-        });
-        setConfirmOpen(true);
-        router.push("/cart");
-      } else {
-        setModalConfig({
-          title: t("checkoutError"),
-          message: t("checkoutErrorDescription"),
-          confirmText: t("tryAgain"),
-        });
-        setConfirmOpen(true);
-      }
-
+      setConfirmOpen(true);
       setPlacingOrder(false);
     }
   };
@@ -1234,21 +1109,21 @@ export default function SecureCheckoutPage() {
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-center gap-2 sm:gap-4 md:gap-8 max-w-3xl mx-auto">
               <div className="flex flex-col items-center gap-1 sm:gap-2">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full btn-primary flex items-center justify-center text-white font-semibold text-xs sm:text-sm !border-0 pointer-events-none">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full btn-primary flex items-center justify-center text-white font-semibold text-xs sm:text-sm border-0! pointer-events-none">
                   <svg className="w-6 h-6" x="0" y="0" viewBox="0 0 32 32"><g><g data-name="Layer 2"><path d="M16 17.82A6 6 0 0 1 10.11 13a1 1 0 0 1 1-1.15 1 1 0 0 1 1 .83 4 4 0 0 0 7.83 0 1 1 0 0 1 1-.83 1 1 0 0 1 1 1.15A6 6 0 0 1 16 17.82z" fill="#fff" opacity="1" data-original="#fff"></path><path d="M24.9 31H7.1a3 3 0 0 1-3-3.15l.81-17.24a3 3 0 0 1 3-2.87h16.18a3 3 0 0 1 3 2.87l.81 17.24a3 3 0 0 1-3 3.15zM7.91 9.75a1 1 0 0 0-1 1l-.81 17.2a1 1 0 0 0 1 1.05h17.8a1 1 0 0 0 1-1.05l-.81-17.24a1 1 0 0 0-1-1z" fill="#fff" opacity="1" data-original="#fff"></path><path d="M22 8.75h-2V7a4 4 0 0 0-8 0v1.75h-2V7a6 6 0 0 1 12 0z" fill="#fff" opacity="1" data-original="#fff"></path></g></g></svg>
                 </div>
                 <span className="font-semibold text-[#2f2f2f] text-xs sm:text-sm md:text-base">{t("bag")}</span>
               </div>
               <div className="flex-1 h-0.5 mb-5 bg-gray-300 block"></div>
               <div className="flex flex-col items-center gap-1 sm:gap-2">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full btn-primary flex items-center justify-center font-semibold text-xs sm:text-sm !border-0 pointer-events-none">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full btn-primary flex items-center justify-center font-semibold text-xs sm:text-sm border-0! pointer-events-none">
                   <svg className="w-8 h-8" x="0" y="0" viewBox="0 0 48 48"><g><path d="m47.577 23.114-2.35-7.083c-.61-1.841-2.3-3.031-4.304-3.031h-6.292l.23-1.875a2.795 2.795 0 0 0-.657-2.201A2.779 2.779 0 0 0 32.114 8H7.877c-1.6 0-3.052 1.293-3.237 2.873l-.128 1a1 1 0 0 0 .865 1.119.989.989 0 0 0 1.119-.865l.129-1.011C6.694 10.521 7.279 10 7.877 10h24.237c.24 0 .449.088.59.247a.786.786 0 0 1 .173.632l-2.342 19.122H4.283a.988.988 0 0 0-.86-.992.997.997 0 0 0-1.115.869l-.373 3.007a2.81 2.81 0 0 0 .672 2.203 2.734 2.734 0 0 0 2.076.913h1.936c.015.993.343 1.919.989 2.647.771.872 1.869 1.353 3.089 1.353 2.288 0 4.368-1.765 4.836-4H32.86c.015.993.343 1.918.987 2.646.772.873 1.87 1.354 3.091 1.354 2.287 0 4.367-1.765 4.836-4h2.153c1.618 0 3.04-1.265 3.237-2.878l.768-6.263a8.515 8.515 0 0 0-.354-3.745zM45.432 23h-6.026l.475-3.878c.007-.051.089-.122.13-.122h4.094zm-11.045-8h6.537c1.145 0 2.065.636 2.405 1.661l.113.339h-3.431c-1.057 0-1.985.825-2.114 1.878l-.49 4a1.9 1.9 0 0 0 .453 1.493c.354.399.869.628 1.416.628h6.674a6.774 6.774 0 0 1-.003 1.616l-.415 3.384H32.549l1.837-15zm-1.1 19h-1.228l.245-2h2.614a5.195 5.195 0 0 0-1.631 2zm-3.242 0H15.506a3.97 3.97 0 0 0-.861-1.646c-.118-.133-.256-.239-.388-.354h16.034l-.245 2zM7.037 34H4.682a.754.754 0 0 1-.582-.242.801.801 0 0 1-.181-.635L4.058 32h4.585a5.06 5.06 0 0 0-1.607 2zm6.596 1.378C13.459 36.8 12.114 38 10.696 38c-.64 0-1.204-.241-1.592-.679-.394-.444-.566-1.048-.487-1.699C8.792 34.2 10.137 33 11.555 33c.64 0 1.205.241 1.592.679.394.444.566 1.048.486 1.699zm26.241 0C39.699 36.8 38.354 38 36.937 38c-.64 0-1.205-.241-1.593-.679-.394-.444-.566-1.048-.486-1.699C35.033 34.2 36.378 33 37.795 33c.64 0 1.205.241 1.593.679.394.444.566 1.048.486 1.699zM43.927 34h-2.18a3.97 3.97 0 0 0-.861-1.646c-.118-.133-.256-.239-.388-.354h4.79l-.108.878c-.073.598-.659 1.122-1.253 1.122z" fill="#fff" opacity="1" data-original="#fff"></path><path d="M9.03 26a1 1 0 0 0-1-1H1a1 1 0 1 0 0 2h7.03a1 1 0 0 0 1-1zM4.087 20a1 1 0 1 0 0 2h4.561a1 1 0 1 0 0-2zM2.175 17h8.08a1 1 0 1 0 0-2h-8.08a1 1 0 1 0 0 2z" fill="#fff" opacity="1" data-original="#fff"></path></g></svg>
                 </div>
                 <span className="font-semibold text-[#2f2f2f] text-xs sm:text-sm md:text-base inline">{t("shippingDetails")}</span>
               </div>
               <div className="flex-1 h-0.5 mb-5 bg-gray-300 block"></div>
               <div className="flex flex-col items-center gap-1 sm:gap-2">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full btn-primary flex items-center justify-center font-semibold text-xs sm:text-sm !border-0 pointer-events-none">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full btn-primary flex items-center justify-center font-semibold text-xs sm:text-sm border-0! pointer-events-none">
                   <svg className="w-8 h-8" x="0" y="0" viewBox="0 0 64 64"><g><path d="M29.396 45.717a6.139 6.139 0 0 0-6.132 6.132c.288 8.116 11.977 8.114 12.264 0a6.139 6.139 0 0 0-6.132-6.132zm0 9.316a3.185 3.185 0 0 1 0-6.369 3.185 3.185 0 0 1 0 6.37zM45.417 45.717a6.139 6.139 0 0 0-6.132 6.132c.288 8.116 11.978 8.113 12.264 0a6.139 6.139 0 0 0-6.132-6.132zm0 9.316a3.185 3.185 0 0 1 0-6.369 3.185 3.185 0 0 1 0 6.37zM58.864 17.826a5.156 5.156 0 0 0-4.046-1.944H17.48l-.886-4.148c-.686-3.285-4.192-5.669-8.335-5.669H5.474a1.474 1.474 0 1 0 0 2.947h2.784c2.71 0 5.054 1.43 5.452 3.331l1.14 5.337 5.172 22.942a5.15 5.15 0 0 0 5.053 4.041h25.59a5.15 5.15 0 0 0 5.053-4.04L59.872 22.2a5.155 5.155 0 0 0-1.008-4.375zm-1.867 3.727-4.153 18.422a2.22 2.22 0 0 1-2.178 1.74H25.075a2.22 2.22 0 0 1-2.178-1.74l-4.766-21.146h36.687a2.246 2.246 0 0 1 2.179 2.724z" fill="#fff" opacity="1" data-original="#fff"></path><path d="m42.307 25.255-7.444 6.805-2.208-2.717a1.474 1.474 0 0 0-2.287 1.859l3.192 3.93a1.473 1.473 0 0 0 2.138.158l8.597-7.86a1.473 1.473 0 0 0-1.988-2.175z" fill="#fff" opacity="1" data-original="#fff"></path></g></svg>
                 </div>
                 <span className="font-semibold text-[#2f2f2f] text-xs sm:text-sm md:text-base inline">{t("secureCheckout")}</span>
@@ -1270,20 +1145,20 @@ export default function SecureCheckoutPage() {
                   {selectedAddress ? (
                     <div>
                       {selectedAddress.name && (
-                        <p className="text-xs sm:text-sm text-[#2f2f2f] mb-2 break-words flex items-start gap-1">
+                        <p className="text-xs sm:text-sm text-[#2f2f2f] mb-2 wrap-break-words flex items-start gap-1">
                           <span className="font-semibold">
                             {t("name")}:
                           </span> {selectedAddress.name}
                         </p>
                       )}
-                      <p className="text-xs sm:text-sm text-[#2f2f2f] mb-3 break-words flex items-start gap-1">
+                      <p className="text-xs sm:text-sm text-[#2f2f2f] mb-3 wrap-break-words flex items-start gap-1">
                         <span className="font-semibold inline-flex items-center gap-1">
                           <svg className="w-4 h-4" x="0" y="0" viewBox="0 0 512 512"><g><path d="M256 0C153.755 0 70.573 83.182 70.573 185.426c0 126.888 165.939 313.167 173.004 321.035 6.636 7.391 18.222 7.378 24.846 0 7.065-7.868 173.004-194.147 173.004-321.035C441.425 83.182 358.244 0 256 0zm0 469.729c-55.847-66.338-152.035-197.217-152.035-284.301 0-83.834 68.202-152.036 152.035-152.036s152.035 68.202 152.035 152.035C408.034 272.515 311.861 403.37 256 469.729z" fill="#000000" opacity="1" data-original="#000000"></path><path d="M256 92.134c-51.442 0-93.292 41.851-93.292 93.293S204.559 278.72 256 278.72s93.291-41.851 93.291-93.293S307.441 92.134 256 92.134zm0 153.194c-33.03 0-59.9-26.871-59.9-59.901s26.871-59.901 59.9-59.901 59.9 26.871 59.9 59.901-26.871 59.901-59.9 59.901z" fill="#000000" opacity="1" data-original="#000000"></path></g></svg>
                           {t("address")}:
                         </span> {formatAddress(selectedAddress)}.
                       </p>
                       {selectedAddress.mobileNumber && (
-                        <p className="text-xs sm:text-sm text-[#2f2f2f] mb-3 break-words flex items-start gap-1">
+                        <p className="text-xs sm:text-sm text-[#2f2f2f] mb-3 wrap-break-words flex items-start gap-1">
                           <span className="font-semibold inline-flex items-center gap-1">
                             <svg version="1.1" x="0" y="0" viewBox="0 0 482.6 482.6" className="w-4 h-4"><g><path d="M98.339 320.8c47.6 56.9 104.9 101.7 170.3 133.4 24.9 11.8 58.2 25.8 95.3 28.2 2.3.1 4.5.2 6.8.2 24.9 0 44.9-8.6 61.2-26.3.1-.1.3-.3.4-.5 5.8-7 12.4-13.3 19.3-20 4.7-4.5 9.5-9.2 14.1-14 21.3-22.2 21.3-50.4-.2-71.9l-60.1-60.1c-10.2-10.6-22.4-16.2-35.2-16.2-12.8 0-25.1 5.6-35.6 16.1l-35.8 35.8c-3.3-1.9-6.7-3.6-9.9-5.2-4-2-7.7-3.9-11-6-32.6-20.7-62.2-47.7-90.5-82.4-14.3-18.1-23.9-33.3-30.6-48.8 9.4-8.5 18.2-17.4 26.7-26.1 3-3.1 6.1-6.2 9.2-9.3 10.8-10.8 16.6-23.3 16.6-36s-5.7-25.2-16.6-36l-29.8-29.8c-3.5-3.5-6.8-6.9-10.2-10.4-6.6-6.8-13.5-13.8-20.3-20.1-10.3-10.1-22.4-15.4-35.2-15.4-12.7 0-24.9 5.3-35.6 15.5l-37.4 37.4c-13.6 13.6-21.3 30.1-22.9 49.2-1.9 23.9 2.5 49.3 13.9 80 17.5 47.5 43.9 91.6 83.1 138.7zm-72.6-216.6c1.2-13.3 6.3-24.4 15.9-34l37.2-37.2c5.8-5.6 12.2-8.5 18.4-8.5 6.1 0 12.3 2.9 18 8.7 6.7 6.2 13 12.7 19.8 19.6 3.4 3.5 6.9 7 10.4 10.6l29.8 29.8c6.2 6.2 9.4 12.5 9.4 18.7s-3.2 12.5-9.4 18.7c-3.1 3.1-6.2 6.3-9.3 9.4-9.3 9.4-18 18.3-27.6 26.8l-.5.5c-8.3 8.3-7 16.2-5 22.2.1.3.2.5.3.8 7.7 18.5 18.4 36.1 35.1 57.1 30 37 61.6 65.7 96.4 87.8 4.3 2.8 8.9 5 13.2 7.2 4 2 7.7 3.9 11 6 .4.2.7.4 1.1.6 3.3 1.7 6.5 2.5 9.7 2.5 8 0 13.2-5.1 14.9-6.8l37.4-37.4c5.8-5.8 12.1-8.9 18.3-8.9 7.6 0 13.8 4.7 17.7 8.9l60.3 60.2c12 12 11.9 25-.3 37.7-4.2 4.5-8.6 8.8-13.3 13.3-7 6.8-14.3 13.8-20.9 21.7-11.5 12.4-25.2 18.2-42.9 18.2-1.7 0-3.5-.1-5.2-.2-32.8-2.1-63.3-14.9-86.2-25.8-62.2-30.1-116.8-72.8-162.1-127-37.3-44.9-62.4-86.7-79-131.5-10.3-27.5-14.2-49.6-12.6-69.7z" fill="#000000" opacity="1" data-original="#000000"></path></g></svg>
                             {t("phoneNumber")}:
@@ -1313,25 +1188,25 @@ export default function SecureCheckoutPage() {
                       type="checkbox"
                       checked={billingSameAsShipping}
                       onChange={(e) => setBillingSameAsShipping(e.target.checked)}
-                      className="w-4 h-4 text-[#D4AF37] border-gray-300 rounded focus:ring-[#D4AF37] flex-shrink-0"
+                      className="w-4 h-4 accent-[#f3c200] hover:cursor-pointer border-gray-300 rounded focus:ring-[#D4AF37] shrink-0"
                     />
                     <span className="text-xs sm:text-sm text-gray-800">{t("sameAsDeliveryAddress")}</span>
                   </label>
                   {billingAddress && (
                     <div>
                       {billingAddress.name && (
-                        <p className="text-xs sm:text-sm text-[#2f2f2f] mb-3 break-words flex items-start gap-1">
+                        <p className="text-xs sm:text-sm text-[#2f2f2f] mb-3 wrap-break-words flex items-start gap-1">
                           <span className="font-semibold">{t("name")}:</span> {billingAddress.name}
                         </p>
                       )}
-                      <p className="text-xs sm:text-sm text-[#2f2f2f] mb-3 break-words flex items-start gap-1">
+                      <p className="text-xs sm:text-sm text-[#2f2f2f] mb-3 wrap-break-words flex items-start gap-1">
                         <span className="font-semibold inline-flex items-center gap-1">
                           <svg className="w-4 h-4" x="0" y="0" viewBox="0 0 512 512"><g><path d="M256 0C153.755 0 70.573 83.182 70.573 185.426c0 126.888 165.939 313.167 173.004 321.035 6.636 7.391 18.222 7.378 24.846 0 7.065-7.868 173.004-194.147 173.004-321.035C441.425 83.182 358.244 0 256 0zm0 469.729c-55.847-66.338-152.035-197.217-152.035-284.301 0-83.834 68.202-152.036 152.035-152.036s152.035 68.202 152.035 152.035C408.034 272.515 311.861 403.37 256 469.729z" fill="#000000" opacity="1" data-original="#000000"></path><path d="M256 92.134c-51.442 0-93.292 41.851-93.292 93.293S204.559 278.72 256 278.72s93.291-41.851 93.291-93.293S307.441 92.134 256 92.134zm0 153.194c-33.03 0-59.9-26.871-59.9-59.901s26.871-59.901 59.9-59.901 59.9 26.871 59.9 59.901-26.871 59.901-59.9 59.901z" fill="#000000" opacity="1" data-original="#000000"></path></g></svg>
                           {t("address")}:
                         </span> {formatAddress(billingAddress)}.
                       </p>
                       {billingAddress.mobileNumber && (
-                        <p className="text-xs sm:text-sm text-[#2f2f2f] mb-3 break-words flex items-start gap-1">
+                        <p className="text-xs sm:text-sm text-[#2f2f2f] mb-3 wrap-break-words flex items-start gap-1">
                           <span className="font-semibold inline-flex items-center gap-1">
                             <svg version="1.1" x="0" y="0" viewBox="0 0 482.6 482.6" className="w-4 h-4"><g><path d="M98.339 320.8c47.6 56.9 104.9 101.7 170.3 133.4 24.9 11.8 58.2 25.8 95.3 28.2 2.3.1 4.5.2 6.8.2 24.9 0 44.9-8.6 61.2-26.3.1-.1.3-.3.4-.5 5.8-7 12.4-13.3 19.3-20 4.7-4.5 9.5-9.2 14.1-14 21.3-22.2 21.3-50.4-.2-71.9l-60.1-60.1c-10.2-10.6-22.4-16.2-35.2-16.2-12.8 0-25.1 5.6-35.6 16.1l-35.8 35.8c-3.3-1.9-6.7-3.6-9.9-5.2-4-2-7.7-3.9-11-6-32.6-20.7-62.2-47.7-90.5-82.4-14.3-18.1-23.9-33.3-30.6-48.8 9.4-8.5 18.2-17.4 26.7-26.1 3-3.1 6.1-6.2 9.2-9.3 10.8-10.8 16.6-23.3 16.6-36s-5.7-25.2-16.6-36l-29.8-29.8c-3.5-3.5-6.8-6.9-10.2-10.4-6.6-6.8-13.5-13.8-20.3-20.1-10.3-10.1-22.4-15.4-35.2-15.4-12.7 0-24.9 5.3-35.6 15.5l-37.4 37.4c-13.6 13.6-21.3 30.1-22.9 49.2-1.9 23.9 2.5 49.3 13.9 80 17.5 47.5 43.9 91.6 83.1 138.7zm-72.6-216.6c1.2-13.3 6.3-24.4 15.9-34l37.2-37.2c5.8-5.6 12.2-8.5 18.4-8.5 6.1 0 12.3 2.9 18 8.7 6.7 6.2 13 12.7 19.8 19.6 3.4 3.5 6.9 7 10.4 10.6l29.8 29.8c6.2 6.2 9.4 12.5 9.4 18.7s-3.2 12.5-9.4 18.7c-3.1 3.1-6.2 6.3-9.3 9.4-9.3 9.4-18 18.3-27.6 26.8l-.5.5c-8.3 8.3-7 16.2-5 22.2.1.3.2.5.3.8 7.7 18.5 18.4 36.1 35.1 57.1 30 37 61.6 65.7 96.4 87.8 4.3 2.8 8.9 5 13.2 7.2 4 2 7.7 3.9 11 6 .4.2.7.4 1.1.6 3.3 1.7 6.5 2.5 9.7 2.5 8 0 13.2-5.1 14.9-6.8l37.4-37.4c5.8-5.8 12.1-8.9 18.3-8.9 7.6 0 13.8 4.7 17.7 8.9l60.3 60.2c12 12 11.9 25-.3 37.7-4.2 4.5-8.6 8.8-13.3 13.3-7 6.8-14.3 13.8-20.9 21.7-11.5 12.4-25.2 18.2-42.9 18.2-1.7 0-3.5-.1-5.2-.2-32.8-2.1-63.3-14.9-86.2-25.8-62.2-30.1-116.8-72.8-162.1-127-37.3-44.9-62.4-86.7-79-131.5-10.3-27.5-14.2-49.6-12.6-69.7z" fill="#000000" opacity="1" data-original="#000000"></path></g></svg>
                             {t("phoneNumber")}:
@@ -1349,7 +1224,7 @@ export default function SecureCheckoutPage() {
                   )}
                 </div>
               </div>
-
+              {/* //#region Payment methods */}
               {/* PAYMENT METHOD */}
               <div className="rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] p-4 xl:p-6">
                 <div className="pb-3 sm:pb-4 border-b border-gray-300">
@@ -1376,11 +1251,15 @@ export default function SecureCheckoutPage() {
                         value: "manual",
                         label: t("manualPaymentMethods"),
                       },
-                      {
-                        value: "square",
-                        label: "Pay with Square",
-                        square: true
-                      }
+                      ...(ENABLE_SQUARE_PAY
+                        ? [
+                          {
+                            value: "square",
+                            label: t("paySqr"),
+                            icons: true,
+                          },
+                        ]
+                        : []),
                     ].map((method) => {
                       const isSelected = paymentMethod === method.value;
                       const isDisabled = grandTotal <= 0;
@@ -1414,9 +1293,7 @@ export default function SecureCheckoutPage() {
           `}
                           >
                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-wrap">
-                              {method.square && (
-                                <SiSquare className="h-5 w-5 text-black" />
-                              )}
+
                               <span className="text-[13px] text-gray-800 font-semibold">
                                 {method.label}
                               </span>
@@ -1425,8 +1302,8 @@ export default function SecureCheckoutPage() {
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <Image src="/images/Profile_new/visa.svg" alt="VISA" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
                                   <Image src="/images/Profile_new/mastercard.svg" alt="Mastercard" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
-                                  <Image src="/images/Profile_new/ath.jpg" alt="ATH" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
                                   <Image src="/images/Profile_new/amex.jpg" alt="AMEX" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
+                                  <Image src={CDN_IMAGE + "card-8.svg"} alt="Discovery" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
                                 </div>
                               )}
                             </div>
@@ -1459,7 +1336,7 @@ export default function SecureCheckoutPage() {
 
                 </div>
               </div>
-
+              {/* //#endregion */}
               {/* Manual Payment Bank Details Section */}
               {paymentMethod === "manual" && (
                 <div className="mt-4 rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] p-4 md:p-6">
@@ -1538,7 +1415,7 @@ export default function SecureCheckoutPage() {
                               href={selectedBank.bankPaymentURL}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-sm sm:text-base text-[#D4AF37] hover:underline break-words"
+                              className="text-sm sm:text-base text-[#D4AF37] hover:underline wrap-break-words"
                             >
                               {selectedBank.bankPaymentURL}
                             </a>
@@ -1584,7 +1461,7 @@ export default function SecureCheckoutPage() {
                         <label className="block text-xs sm:text-sm font-semibold text-gray-800 mb-2">
                           {t("ProofOfPayment") || "Proof of Payment"}
                         </label>
-                        <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6 text-center min-h-[150px] flex items-center justify-center">
+                        <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6 text-center min-h-37.5 flex items-center justify-center">
                           <input
                             type="file"
                             id="receiptUpload"
@@ -1647,7 +1524,7 @@ export default function SecureCheckoutPage() {
                 <div className="pb-3 sm:pb-4 border-b border-gray-300">
                   <h2 className="text-base sm:text-lg font-bold text-[#2f2f2f] uppercase">{t("orderDetails")}</h2>
                 </div>
-                <div className="mt-3 sm:mt-4 space-y-3 sm:space-y-4 px-1 custom-scroll max-h-[260px] overflow-y-auto">
+                <div className="mt-3 sm:mt-4 space-y-3 sm:space-y-4 px-1 custom-scroll max-h-65 overflow-y-auto">
                   {cartItems.map((item, idx) => {
                     const qty = typeof item.quantity === "object" ? item.quantity?.value || 1 : item.quantity || 1;
                     // Use accounting.finalUnitPrice or accounting.subTotal if available, otherwise calculate from unit price
@@ -1668,7 +1545,7 @@ export default function SecureCheckoutPage() {
 
                     return (
                       <div key={idx} className="flex gap-2 sm:gap-3 md:gap-4 pb-3 sm:pb-4 border-b border-gray-100 last:border-0">
-                        <div className="w-14 h-14 sm:w-22 sm:h-22 rounded bg-white overflow-hidden flex-shrink-0">
+                        <div className="w-14 h-14 sm:w-22 sm:h-22 rounded bg-white overflow-hidden shrink-0">
                           <Image src={getProductImage(item)} alt={item.name || item.productName || "Product"} width={80} height={80} className="w-full h-full object-contain p-1" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -1724,14 +1601,15 @@ export default function SecureCheckoutPage() {
                     </div>
                     <div className="flex justify-between pt-3 border-t border-gray-300 mt-4 items-center">
                       <span className="font-bold text-[#2f2f2f]">{t("grandTotal")}:</span>
-                      <span className="font-bold text-[#2f2f2f] font-semibold text-lg 2xl:text-xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-yellow-600">{currency} {formatCurrency(grandTotal)}</span>
+                      <span className="font-semibold text-lg 2xl:text-xl text-transparent bg-clip-text bg-linear-to-r from-yellow-500 to-yellow-600">{currency} {formatCurrency(grandTotal)}</span>
                     </div>
                     <div className="flex items-center gap-2 flex-1 pt-1 sm:pt-2 py-2">
-                      <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <p className="text-[10px] sm:text-xs text-gray-600">{t("taxInfoMessage")}</p>
                     </div>
+                    {/* //#region Place Order */}
                     {paymentMethod !== "" && !(paymentMethod === "square" && showSquarePayment) && (
                       <>
                         {!(paymentMethod === "athMovil" && isAthReady) && (
@@ -1746,7 +1624,7 @@ export default function SecureCheckoutPage() {
                                 ? t("placeOrder") || "PLACE ORDER"
                                 : paymentMethod === "athMovil"
                                   ? t("payWithATHMovil") || "PAY WITH ATH MÓVIL"
-                                  : paymentMethod === "square"
+                                  : paymentMethod === "square" && ENABLE_SQUARE_PAY
                                     ? t("paySqr")
                                     : paymentMethod === "creditCard" && ENABLE_PLACE_TO_PAY
                                       ? t("payWithPlaceToPay") || "PAY WITH PLACE TO PAY"
@@ -1754,7 +1632,7 @@ export default function SecureCheckoutPage() {
                           </Button>
                         )}
 
-
+                        {/* #endregion */}
                         {/* AFTER ORDER CREATION — SHOW REAL ATH BUTTON */}
                         {paymentMethod === "athMovil" && isAthReady && athToken && athOrderId && (
                           <AthMovilPayment
@@ -1793,7 +1671,7 @@ export default function SecureCheckoutPage() {
                 </svg>
                 <p className="text-[10px] sm:text-xs text-gray-600">{t("taxInfoMessage")}</p>
               </div> */}
-              <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 sm:gap-6">
+              <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-6">
                 <div className="text-right">
                   <p className="text-[10px] sm:text-xs text-gray-500">{t("totalAmount")}</p>
                   <p className="text-base sm:text-lg font-bold text-gray-800">{currency} {formatCurrency(grandTotal)}</p>

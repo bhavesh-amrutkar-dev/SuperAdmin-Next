@@ -58,6 +58,7 @@ export default function AddressForm({
         handleSubmit,
         setValue,
         watch,
+        reset,
         formState: { errors, isSubmitting },
     } = useForm<AddressFormRM>({
         defaultValues: {
@@ -66,19 +67,28 @@ export default function AddressForm({
         },
     });
     useEffect(() => {
-        if (!user) return;
+        if (defaultValues) {
+            const mappedData = mapAddressToForm(defaultValues);
+
+            reset(mappedData);
+        }
+    }, [defaultValues, reset]);
+    useEffect(() => {
+        if (!user || defaultValues) return;
 
         setValue("firstName", user.firstName || "");
         setValue("lastName", user.lastName || "");
-        // Mobile handling
+
         if (user.mobile) {
             setValue("mobileNumber", user.mobile);
             setValue("mobileNumberCode", user.countryCode?.replace("+", "") || "");
             setValue("mobileNumberSortCode", user.sortCountryCode || "");
         }
-    }, [user, setValue]);
+    }, [user, defaultValues, setValue]);
 
     const taggedAs = watch("taggedAs");
+    const mobileNumber = watch("mobileNumber");
+    const mobileCode = watch("mobileNumberCode");
     const askLocationPermission = () => {
         if (!("geolocation" in navigator)) return;
 
@@ -94,7 +104,36 @@ export default function AddressForm({
     useEffect(() => {
         askLocationPermission();
     }, []);
+    const mapAddressToForm = (data: any): AddressFormRM => {
+        // split name safely
+        const nameParts = (data.name || "").trim().split(" ");
 
+        return {
+            ...data,
+
+            // ✅ split name
+            firstName: data.firstName || nameParts[0] || "",
+            lastName:
+                data.lastName ||
+                    nameParts.length > 1
+                    ? nameParts.slice(1).join(" ")
+                    : "",
+
+            // ✅ ensure required fields exist
+            taggedAs: data.taggedAs || "Home",
+
+            mobileNumber: data.mobileNumber || "",
+            mobileNumberCode: data.mobileNumberCode || "",
+            mobileNumberSortCode: data.mobileNumberSortCode || "",
+
+            addLine1: data.addLine1 || "",
+            city: data.city || "",
+            state: data.state || "",
+            country: data.country || data.countryName || "", // 👈 important fix
+            pincode: data.pincode || "",
+            landmark: data.landmark || "",
+        };
+    };
 
     useEffect(() => {
         const fetchCountries = async () => {
@@ -226,6 +265,7 @@ export default function AddressForm({
                         <div className="phone-input">
                             <PhoneInput
                                 country="us"
+                                value={`${mobileCode || ""}${mobileNumber || ""}`}
                                 containerClass="!w-full"
                                 inputClass="!w-full !h-[44px] !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200] !text-sm !pl-14"
                                 onChange={(value, country: any) => {

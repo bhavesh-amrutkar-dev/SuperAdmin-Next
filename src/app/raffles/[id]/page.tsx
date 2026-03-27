@@ -848,34 +848,50 @@ export default function RafflesDetailPage() {
     };
 
     // Handle add to cart
-    const handleAddToCart = async (ticketId: string, quantity: number, redirectToCart: boolean = true, setExactQuantity: boolean = false) => {
+    const handleAddToCart = async (
+        ticketId: string,
+        quantity: number,
+        redirectToCart: boolean = true,
+        setExactQuantity: boolean = false
+    ) => {
         if (!lotteryItem || applyingTicket || quantity <= 0) return;
 
         setApplyingTicket(true);
+
         try {
-            // Check if item already exists in cart
             let existingItemId: string | undefined = undefined;
             let existingQuantity = 0;
 
             try {
                 const cartResponse = await CartService.getCart();
-                const cartData = (cartResponse as any)?.data?.data || (cartResponse as any)?.data;
+                const cartData = cartResponse?.data?.data ?? cartResponse?.data;
 
-                if (cartData && cartData.sellers) {
-                    const productId = lotteryItem.childProductId || lotteryItem.productId || (params?.id as string);
+                if (cartData?.sellers) {
+                    const productId =
+                        lotteryItem.childProductId ||
+                        lotteryItem.productId ||
+                        (params?.id as string);
 
                     for (const seller of cartData.sellers) {
                         if (seller.products) {
                             for (const product of seller.products) {
-                                const prodId = product.productId || product.centralProductId || product._id;
-                                const prodTicketId = product.ticketId || (product.ticketDetails?.ticketId);
+                                const prodId =
+                                    product.productId ||
+                                    product.centralProductId ||
+                                    product._id;
 
-                                // Match by productId and ticketId
+                                const prodTicketId =
+                                    product.ticketId ||
+                                    product.ticketDetails?.ticketId;
+
                                 if (prodId === productId && prodTicketId === (ticketId || null)) {
                                     existingItemId = product.addToCartOnId || product._id;
-                                    existingQuantity = typeof product.quantity === 'object' && product.quantity !== null
-                                        ? Number(product.quantity.value) || 0
-                                        : Number(product.quantity) || 0;
+
+                                    existingQuantity =
+                                        typeof product.quantity === "object" && product.quantity !== null
+                                            ? Number(product.quantity.value) || 0
+                                            : Number(product.quantity) || 0;
+
                                     break;
                                 }
                             }
@@ -883,11 +899,17 @@ export default function RafflesDetailPage() {
                         }
                     }
                 }
-            } catch (cartError) {
-                // If cart fetch fails, proceed with add action
-                console.warn("Could not fetch cart to check for existing items:", cartError);
-            }
+            } catch (cartError: any) {
+                const status = cartError?.response?.status;
 
+                // ✅ Ignore 404 → means empty cart
+                if (status !== 404) {
+                    console.warn(
+                        "Could not fetch cart to check for existing items:",
+                        cartError
+                    );
+                }
+            }
             // If setExactQuantity is true (for quantity updates), set exact quantity
             // Otherwise, add to existing quantity (for initial add)
             const finalQuantity = existingItemId && setExactQuantity ? quantity : (existingItemId ? existingQuantity + quantity : quantity);
@@ -1517,7 +1539,7 @@ export default function RafflesDetailPage() {
                             </div>
 
                             {/* Win Probability Section */}
-                            <WinProbabilitySection lotteryItem={lotteryItem} />
+                            {/* <WinProbabilitySection lotteryItem={lotteryItem} /> */}
 
                         </div>
                     </div>

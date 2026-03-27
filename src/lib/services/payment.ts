@@ -1,6 +1,6 @@
 import { apiClient } from "../api/axios";
 import { getCookie } from "cookies-next";
-import { DEFAULT_LANGUAGE } from "../config";
+import { DEFAULT_COUNTRY_ID, DEFAULT_LANGUAGE } from "../config";
 
 export type WalletData = {
     walletId?: string;
@@ -74,7 +74,7 @@ export const PaymentService = {
      * Response structure: { data: { bankDetails: [] } }
      */
     getBankDetails: (countryId?: string): Promise<BankDetailsResponse> => {
-        const cid = countryId || (getCookie("C_id") as string) || "";
+        const cid = countryId || (getCookie("C_id") as string) || DEFAULT_COUNTRY_ID || "";
         if (!cid) {
             return Promise.reject(new Error("Country ID not found"));
         }

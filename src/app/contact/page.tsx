@@ -30,6 +30,7 @@ import { useProfile } from "@/src/lib/hooks/userProfile";
 import { toast } from "sonner";
 import { ContactService } from "@/src/lib/services/contact";
 import { resolveIpAddress } from "@/src/lib/utils/ip-resolver";
+import { CustomerService } from "@/src/lib/services/customer.service";
 
 type ContactForm = {
     firstName: string;
@@ -54,7 +55,7 @@ export default function ContactPage() {
         phoneCode: "+1",
         query: "",
     });
-
+    const [contactDetails, setContactDetails] = useState<any[]>([]);
     const [errors, setErrors] = useState<Errors>({});
     const [loading, setLoading] = useState(false);
     const { user } = useProfile();
@@ -75,6 +76,21 @@ export default function ContactPage() {
             }));
         }
     }, [user]);
+
+    useEffect(() => {
+        const controller = new AbortController();
+
+        CustomerService.getContactAddress({ signal: controller.signal })
+            .then((res: any) => {
+                const data = res?.data || [];
+                setContactDetails(data);
+            })
+            .catch((err) => {
+                console.error("Error fetching contact details:", err);
+            });
+
+        return () => controller.abort();
+    }, []);
     const fetchingFieldsRef = useRef(false);
 
     const fetchContactFields = useCallback(() => {
@@ -257,11 +273,13 @@ export default function ContactPage() {
                                         <h3 className="font-semibold text-gray-900 mb-1">
                                             {t("address") || "Address"}
                                         </h3>
-                                        <p className="text-gray-500 leading-relaxed text-sm">
-                                            1413 PR-25 4to piso, Puerto Rico<br />
-                                            25, DON RIFA LLC<br />
-                                            San Juan, 00918
-                                        </p>
+                                        {contactDetails.map((item) => (
+                                            <p key={item._id} className="text-gray-500 leading-relaxed text-sm">
+                                                {item.address}<br />
+                                                {item.title}<br />
+                                                {item.city}, {item.zipCode}
+                                            </p>
+                                        ))}
                                     </div>
                                 </div>
 
@@ -274,12 +292,17 @@ export default function ContactPage() {
                                         <h3 className="font-semibold text-gray-900 mb-1">
                                             {t("email") || "Email"}
                                         </h3>
-                                        <a
-                                            href="mailto:service@donrifa.com"
-                                            className="text-gray-600 hover:text-[#FECB02] transition-colors font-medium text-sm"
-                                        >
-                                            service@donrifa.com
-                                        </a>
+
+                                        {contactDetails.map((item) => (
+                                            <a
+                                                key={item._id}
+                                                href={`mailto:${item.email}`}
+                                                className="text-gray-600 hover:text-[#FECB02] transition-colors font-medium text-sm"
+                                            >
+                                                {item.email}
+                                            </a>
+                                        ))}
+
                                     </div>
                                 </div>
 
@@ -292,12 +315,15 @@ export default function ContactPage() {
                                         <h3 className="font-semibold text-gray-900 mb-1">
                                             {t("phoneNumber") || "Phone"}
                                         </h3>
-                                        <a
-                                            href="tel:434497151"
-                                            className="text-gray-600 hover:text-[#FECB02] transition-colors font-medium text-sm"
-                                        >
-                                            787-302-3322
-                                        </a>
+                                        {contactDetails.map((item) => (
+                                            <a
+                                                key={item._id}
+                                                href={`tel:${item.countryCode}${item.phone}`}
+                                                className="text-gray-600 hover:text-[#FECB02] transition-colors font-medium text-sm"
+                                            >
+                                                {item.countryCode} {item.phone}
+                                            </a>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
@@ -340,7 +366,7 @@ export default function ContactPage() {
                                                     </Label>
 
                                                     <Input
-                                                       placeholder={t("enterField", { field: label })}
+                                                        placeholder={t("enterField", { field: label })}
                                                         value={formValues[field._id] || ""}
                                                         error={!!fieldErrors[field._id]}
                                                         onChange={(e) => handleChange(field._id, e.target.value)}
@@ -407,7 +433,7 @@ export default function ContactPage() {
                                                     </Label>
 
                                                     <textarea
-                                                      placeholder={t("enterField", { field: label })}
+                                                        placeholder={t("enterField", { field: label })}
                                                         value={formValues[field._id] || ""}
                                                         onChange={(e) => handleChange(field._id, e.target.value)}
                                                         className={`
