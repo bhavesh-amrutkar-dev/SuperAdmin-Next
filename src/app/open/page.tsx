@@ -24,11 +24,11 @@ export default function OpenDeepLinkHandler() {
         break;
 
       case "invite":
-        router.replace(`/invite/${id}`);
+        router.replace(`/`);
         break;
 
       case "merchandise":
-        router.replace(`/product/${id}?parentId=${parentId}`);
+        router.replace(`/`);
         break;
 
       default:
