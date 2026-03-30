@@ -1295,7 +1295,7 @@ export default function RafflesDetailPage() {
                             {/* Product Image Area */}
                             <div className="bg-white rounded-xl shadow-lg p-3 md:p-4 min-h-[250px] md:h-[500px] lg:h-[calc(100vh-150px)] flex items-center justify-center">
                                 {/* Participate Rule Button - Moved to Left Column per User request */}
-                                {lotteryItem?.raffleEmailEntry && (
+                                {/* {lotteryItem?.raffleEmailEntry && (
                                     <div className="flex justify-start">
                                         <Button
                                             onClick={() => setShowEmailEntryModal(true)}
@@ -1304,7 +1304,7 @@ export default function RafflesDetailPage() {
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="!w-[18px] !h-[18px] text-muted-foreground"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
                                         </Button>
                                     </div>
-                                )}
+                                )} */}
                                 <div className="relative w-full aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden flex items-center justify-center shadow-inner min-h-[250px] md:h-[500px] lg:h-[calc(100vh-150px)]">
                                     <ImageMagnify
                                         largeImage={displayImage}
@@ -1346,7 +1346,16 @@ export default function RafflesDetailPage() {
 
                             {/* Price and Progress Bar */}
                             <PriceProgressBar lotteryItem={lotteryItem} />
-
+                            {lotteryItem?.raffleEmailEntry && (
+                                <div className="mt-4">
+                                    <button
+                                        onClick={() => setShowEmailEntryModal(true)}
+                                        className="w-full border border-[#FECB02] text-[#2f2f2f] font-semibold py-2 rounded-lg hover:bg-[#FECB02]/10 transition hover:cursor-pointer text-sm md:text-base normal-case md:uppercase leading-snug px-3 text-center"
+                                    >
+                                        🎟️ {t("viewFreeParticipationOption")}
+                                    </button>
+                                </div>
+                            )}
                             {/* Titles and Highlights Card */}
                             {lotteryItem.highlights && lotteryItem.highlights.length > 0 && (
                                 <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 border border-gray-50">

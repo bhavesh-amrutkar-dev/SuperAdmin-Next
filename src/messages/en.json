@@ -630,5 +630,6 @@
     "expired": "Session Expired",
     "expiredDesc": "Your payment session has expired. Please restart your checkout.",
     "processingPayment": "Processing your payment...",
-    "addressCreated": "Address created"
+    "addressCreated": "Address created",
+    "viewFreeParticipationOption": "VIEW FREE PARTICIPATION OPTION"
 }

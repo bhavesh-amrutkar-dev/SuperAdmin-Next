@@ -630,5 +630,6 @@
     "expired": "Sesión expirada",
     "expiredDesc": "Tu sesión de pago ha expirado. Por favor, inicia el proceso nuevamente.",
     "processingPayment": "Procesando su pago...",
-    "addressCreated": "Dirección creada"
+    "addressCreated": "Dirección creada",
+    "viewFreeParticipationOption": "VER OPCIÓN DE PARTICIPACIÓN GRATUITA"
 }
