@@ -1,7 +1,7 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
@@ -27,6 +27,8 @@ export default function LoginPage() {
         formState: { errors, isSubmitting },
     } = useForm<IEmailLoginRM>({
     });
+    const searchParams = useSearchParams();
+    const redirect = searchParams?.get("redirect");
     const [showPassword, setShowPassword] = useState(false);
     const onSubmit = async (payload: IEmailLoginRM) => {
         try {
@@ -50,7 +52,12 @@ export default function LoginPage() {
 
             persistAuthSession(session);
             setUser(session);
-            router.replace("/");
+            const safeRedirect =
+                redirect && !redirect.startsWith("/auth")
+                    ? redirect
+                    : "/";
+
+            router.replace(safeRedirect);
         } catch (err: any) {
             toast.error(err?.message || t("loginFailed"));
         }
@@ -179,7 +186,15 @@ export default function LoginPage() {
                 </Link>
             </div>
 
-
+            <div className="mt-4 text-center text-sm text-gray-500">
+                {t("havingTrouble")}{" "}
+                <Link
+                    href="/contact"
+                    className="font-medium text-[#d6ab00] hover:underline"
+                >
+                    {t("contactSupport")}
+                </Link>
+            </div>
             {/* Footer */}
             <p className="mt-5 sm:mt-6 text-center text-sm text-foreground">
                 {t("dontHaveAccount")}{" "}

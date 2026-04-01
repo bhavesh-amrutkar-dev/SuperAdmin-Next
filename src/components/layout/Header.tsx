@@ -95,7 +95,8 @@ export default function Header() {
   }, [menuOpen]);
 
   const fetchingCartRef = useRef(false);
-
+  const redirectPath =
+    pathname && !pathname.startsWith("/auth") ? pathname : "/";
   const fetchCartCount = async () => {
     // Prevent duplicate calls
     if (fetchingCartRef.current) return;
@@ -181,7 +182,7 @@ export default function Header() {
     await logoutUser();
 
     // Redirect
-    router.replace("/auth/login");
+    router.replace(`/auth/login?redirect=${encodeURIComponent(redirectPath)}`);
   };
 
   // Close user menu when clicking outside
@@ -262,7 +263,7 @@ export default function Header() {
 
             {!isLoggedIn && !displayUser ? (
               <Button asChild size="sm" className="hidden lg:inline-flex">
-                <Link href="/auth/login" className="btn-primary min-h-10">
+                <Link href={`/auth/login?redirect=${encodeURIComponent(redirectPath)}`} className="btn-primary min-h-10">
                   <User size={16} /> {t("login")}
                 </Link>
               </Button>
@@ -426,7 +427,7 @@ export default function Header() {
                     className="flex-1 btn-primary"
                     onClick={() => setMenuOpen(false)}
                   >
-                    <Link href="/auth/login">
+                    <Link href={`/auth/login?redirect=${encodeURIComponent(redirectPath)}`}>
                       {t("login")}
                     </Link>
                   </Button>

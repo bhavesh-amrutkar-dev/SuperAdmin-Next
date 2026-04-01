@@ -614,7 +614,7 @@
         "totalAmount": "Cantidad total",
         "processing": "Procesando pago...",
         "or": "O",
-         "pleaseWait": "Por favor, no cierre esta ventana."
+        "pleaseWait": "Por favor, no cierre esta ventana."
     },
     "errors": {
         "temporary": "Ocurrió un error temporal.",
@@ -631,5 +631,7 @@
     "expiredDesc": "Tu sesión de pago ha expirado. Por favor, inicia el proceso nuevamente.",
     "processingPayment": "Procesando su pago...",
     "addressCreated": "Dirección creada",
-    "viewFreeParticipationOption": "VER OPCIÓN DE PARTICIPACIÓN GRATUITA"
+    "viewFreeParticipationOption": "VER OPCIÓN DE PARTICIPACIÓN GRATUITA",
+    "havingTrouble": "¿Tienes problemas?",
+    "contactSupport": "Contactar con soporte"
 }
