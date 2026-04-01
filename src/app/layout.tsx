@@ -30,6 +30,7 @@ export const metadata: Metadata = {
 import { CountryService } from "../lib/services/country";
 import { cookies } from "next/headers";
 import { API_NY_URL, DEFAULT_COUNTRY_CODE, DEFAULT_LANGUAGE } from "../lib/config";
+import AirbridgeProvider from "./airbridgeProvider";
 
 export default async function RootLayout({
   children,
@@ -88,8 +89,9 @@ export default async function RootLayout({
 
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ClientProviders countries={countries}>
-            <BranchProvider />
-            {children}
+            <AirbridgeProvider>
+              {children}
+            </AirbridgeProvider>
           </ClientProviders>
         </NextIntlClientProvider>
       </body>

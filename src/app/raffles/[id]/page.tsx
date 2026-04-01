@@ -1152,51 +1152,53 @@ export default function RafflesDetailPage() {
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/^-+|-+$/g, "");
     const handleShare = async () => {
-        // console.log("handleShare called");
-        if (!lotteryItem) {
-            console.warn("lotteryItem is null, aborting share");
-            return;
-        }
-
-        const displaySlug = slugifyName(displayName || "raffle");
-        let shareUrl = new URL(`raffles/${displaySlug}`, window.location.origin).toString();
-
-        // Append params to the base URL for fallback/current behavior
-        const urlObj = new URL(shareUrl);
-        if (pid) urlObj.searchParams.append("pid", pid);
-        if (lotteryItem.childProductId) urlObj.searchParams.append("cpid", lotteryItem.childProductId);
-        shareUrl = urlObj.toString();
-        // console.log("Initial fallback shareUrl:", shareUrl);
-
-        // console.log("ENABLE_BRANCH_IO:", ENABLE_BRANCH_IO);
-
-        if (ENABLE_BRANCH_IO) {
-            try {
-                setSharing(true);
-                // console.log("Calling createProductDeepLink...");
-                const deepLink = await createProductDeepLink({
-                    id: typeof params?.id === 'string' ? params?.id : Array.isArray(params?.id) ? params?.id[0] : '',
-                    name: displayName || "Raffle",
-                    description: stripHtml(lotteryItem.description || lotteryItem.detailDesc || ""),
-                    image: displayImage || "",
-                    fallbackUrl: shareUrl
-                });
-                // console.log("createProductDeepLink result:", deepLink);
-                if (deepLink) {
-                    shareUrl = deepLink;
-                    // console.log("Using Branch Deep Link:", shareUrl);
-                }
-            } catch (error) {
-                console.warn("Error creating deep link:", error);
-            }
-        }
+        if (!lotteryItem) return;
 
         try {
             setSharing(true);
-            // console.log("Triggering navigator.share with URL:", shareUrl);
 
+            const displaySlug = slugifyName(displayName || "raffle");
+
+            const productId =
+                typeof params?.id === "string"
+                    ? params.id
+                    : Array.isArray(params?.id)
+                        ? params.id[0]
+                        : "";
+
+            // ✅ Call your backend instead of Airbridge directly
+            const res = await fetch("/api/airbridge-link", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    slug: displaySlug,
+                    productId,
+                    pid,
+                    cpid: lotteryItem.childProductId,
+                    // ✅ NEW: OG TAGS
+                    ogTitle: displayName,
+                    ogDescription: stripHtml(
+                        lotteryItem.description ||
+                        lotteryItem.detailDesc ||
+                        "Check this out on Donrifa!"
+                    ),
+                    ogImage: displayImage || "",
+                }),
+            });
+
+            const data = await res.json();
+
+            // fallback safety
+            let shareUrl = data?.url;
+
+            if (!shareUrl) {
+                shareUrl = `${window.location.origin}/raffles/${displaySlug}`;
+            }
+
+            // ✅ Share logic
             if (navigator.share) {
-                // Mobile native share (Safari iOS works on HTTPS + user gesture)
                 await navigator.share({
                     title: displayName,
                     text: stripHtml(
@@ -1204,24 +1206,11 @@ export default function RafflesDetailPage() {
                         lotteryItem.detailDesc ||
                         "Check this out on Donrifa!"
                     ),
-
                     url: shareUrl,
                 });
-                // console.log("navigator.share completed");
             } else {
-                // Clipboard fallback with Safari support
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    await navigator.clipboard.writeText(shareUrl);
-                } else {
-                    const textarea = document.createElement("textarea");
-                    textarea.value = shareUrl;
-                    document.body.appendChild(textarea);
-                    textarea.select();
-                    document.execCommand("copy");
-                    document.body.removeChild(textarea);
-                }
+                await navigator.clipboard.writeText(shareUrl);
                 toast.success("Link copied to clipboard!");
-                // console.log("Clipboard fallback completed");
             }
         } catch (err) {
             console.warn("Share failed:", err);

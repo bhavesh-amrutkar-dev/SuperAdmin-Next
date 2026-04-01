@@ -23,12 +23,12 @@ export default function OpenDeepLinkHandler() {
         router.replace(`/raffles/${id}?pid=${id}`);
         break;
 
-      case "invite":
-        router.replace(`/`);
+      case "inviteNA":
+        router.replace(`/invite/${id}`);
         break;
 
-      case "merchandise":
-        router.replace(`/`);
+      case "merchandiseNA":
+        router.replace(`/product/${id}?parentId=${parentId}`);
         break;
 
       default:

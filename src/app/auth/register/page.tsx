@@ -243,19 +243,19 @@ export default function RegisterPage() {
       newErrors.email = t("emailInvalid");
     }
 
-    if (!form.dob) {
-      newErrors.dob = t("dobRequired");
-    } else {
-      const age =
-        new Date().getFullYear() - new Date(form.dob).getFullYear();
-      if (age < 18) newErrors.dob = t("ageRestriction");
-    }
+    // if (!form.dob) {
+    //   newErrors.dob = t("dobRequired");
+    // } else {
+    //   const age =
+    //     new Date().getFullYear() - new Date(form.dob).getFullYear();
+    //   if (age < 18) newErrors.dob = t("ageRestriction");
+    // }
 
     if (!mobile)
       newErrors.mobile = t("mobileRequired");
 
-    if (!form.country)
-      newErrors.country = t("countryRequired");
+    // if (!form.country)
+    //   newErrors.country = t("countryRequired");
 
     if (!password) {
       newErrors.password = t("passwordRequired");
@@ -438,7 +438,7 @@ export default function RegisterPage() {
         </div>
 
         {/* DOB */}
-        <div className="space-y-2">
+        {/* <div className="space-y-2">
           <Label
             htmlFor="dob"
             error={!!errors.dob}
@@ -457,11 +457,11 @@ export default function RegisterPage() {
             }}
           />
           <ErrorMessage message={errors.dob} />
-        </div>
+        </div> */}
 
         {/* Country */}
 
-        <div className="space-y-2">
+        {/* <div className="space-y-2">
           <Label htmlFor="country" error={!!errors.country} required>
             {t("country")}
           </Label>
@@ -477,7 +477,7 @@ export default function RegisterPage() {
           />
 
           <ErrorMessage message={errors.country} />
-        </div>
+        </div> */}
         {/* Button */}
         <button
           disabled={loading}
