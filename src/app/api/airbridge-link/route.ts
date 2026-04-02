@@ -14,8 +14,20 @@ export async function POST(req: Request) {
       ogDescription,
       ogImage,
     } = body;
+    const getBaseUrl = () => {
+      const env = process.env.NEXT_PUBLIC_APP_ENV;
 
+      switch (env) {
+        case "stage":
+          return "https://stage.donrifa.com";
+        case "production":
+        default:
+          return "https://donrifa.com";
+      }
+    };
+    const baseUrl = getBaseUrl();
 
+    const fallbackUrl = `${baseUrl}/open?donrifa_type=raffle&donrifa_id=${pid}&donrifa_parent_id=${cpid}`;
     const airbridgePayload = {
       channel: "donrifa",
 
@@ -29,10 +41,11 @@ export async function POST(req: Request) {
       deeplinkUrl: `donrifa://open?donrifa_type=raffle&donrifa_id=${pid}&donrifa_parent_id=${cpid}`,
 
       // ✅ THIS CONTROLS YOUR WEB URL (/open)
+
       fallbackPaths: {
-        desktop: `https://donrifa.com/open?donrifa_type=raffle&donrifa_id=${pid}&donrifa_parent_id=${cpid}`,
-        ios: `https://donrifa.com/open?donrifa_type=raffle&donrifa_id=${pid}&donrifa_parent_id=${cpid}`,
-        android: `https://donrifa.com/open?donrifa_type=raffle&donrifa_id=${pid}&donrifa_parent_id=${cpid}`,
+        desktop: fallbackUrl,
+        ios: fallbackUrl,
+        android: fallbackUrl,
       },
 
       ogTag: {
