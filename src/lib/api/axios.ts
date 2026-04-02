@@ -1,6 +1,6 @@
 import axios, { AxiosHeaders } from "axios";
 import { getCommonHeaders } from "./headers";
-import { API_NY_URL, API_PY_URL } from "../config";
+import { API_NY_URL, API_PY_URL, API_PY_URL_ROOT } from "../config";
 
 export const apiClient = axios.create({
   baseURL: API_NY_URL,
@@ -83,7 +83,7 @@ apiClient.interceptors.response.use(
 
 export const pyApiClient = axios.create({
   baseURL: API_PY_URL,
-  timeout: 15000,
+  timeout: 60000,
 });
 
 pyApiClient.interceptors.request.use((config) => {
@@ -101,6 +101,36 @@ pyApiClient.interceptors.request.use((config) => {
 });
 
 pyApiClient.interceptors.response.use(
+  (response) => response.data,
+  (error) =>
+    Promise.reject({
+      status: error?.response?.status,
+      message:
+        error?.response?.data?.message ||
+        "Python service error",
+    })
+);
+
+export const pyApiClientRoot = axios.create({
+  baseURL: API_PY_URL_ROOT,
+  timeout: 60000,
+});
+
+pyApiClientRoot.interceptors.request.use((config) => {
+  const headers = getCommonHeaders();
+
+  if (config.headers instanceof AxiosHeaders) {
+    Object.entries(headers).forEach(([key, value]) => {
+      if (value !== undefined) {
+        config.headers.set(key, value);
+      }
+    });
+  }
+
+  return config;
+});
+
+pyApiClientRoot.interceptors.response.use(
   (response) => response.data,
   (error) =>
     Promise.reject({

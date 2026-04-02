@@ -206,7 +206,7 @@ export default function LoginPage() {
                 </Link>
             </p>
 
-            <div className="mt-4 text-center text-sm text-gray-500">
+            {/* <div className="mt-4 text-center text-sm text-gray-500">
                 {t("havingTrouble")}{" "}
                 <Link
                     href="/contact"
@@ -214,7 +214,7 @@ export default function LoginPage() {
                 >
                     {t("contactSupport")}
                 </Link>
-            </div>
+            </div> */}
 
         </div>
     );

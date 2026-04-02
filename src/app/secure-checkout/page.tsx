@@ -816,9 +816,10 @@ export default function SecureCheckoutPage() {
       if (paymentMethod === "manual" && receiptFile) {
         try {
           const formData = new FormData();
+          const country = (getCookie("C_code") as string) || DEFAULT_COUNTRY_CODE;
           formData.append("image", receiptFile);
           formData.append("master_order_id", orderData.orderId);
-          formData.append("country_code", COUNTRY_CODE || "PR");
+          formData.append("country_code", country);
 
           await PaymentService.uploadReceipt(formData);
 
@@ -849,7 +850,6 @@ export default function SecureCheckoutPage() {
             throw new Error("Missing checkout URL");
           }
 
-          console.log("➡️ Redirecting to Square:", redirectUrl);
 
           // ✅ Universal flow (works for web + mobile + no popup issues)
           window.location.href = redirectUrl;

@@ -11,7 +11,6 @@ export const getCommonHeaders = () => {
   const country = (getCookie("C_code") as string) ||  DEFAULT_COUNTRY_CODE;
 
   return {
-    "Content-Type": "application/json",
     language,
     currencycode: currencyCode ,
     currencysymbol: btoa(currencySymbol),

@@ -2,6 +2,7 @@ export const APP_NAME = "DonRifa"; // APP NAME
 export const APP_WEBSITE = process.env.NEXT_PUBLIC_PP_WEBSITE; // LIVE WEBSITE URL
 export const API_NY_URL = process.env.NEXT_PUBLIC_BASE_URL + `v1`; // API URL FOR NODE
 export const API_PY_URL = process.env.NEXT_PUBLIC_BASE_URL + `python`; //API URL FOR PYTHON
+export const API_PY_URL_ROOT = process.env.NEXT_PUBLIC_BASE_URL; //API URL FOR PYTHON
 export const STORE_CATEGORY_ID = process.env.NEXT_PUBLIC_STORE_CATEGORY_ID; //API URL FOR PYTHON
 // console.log('process.env: ', process.env);
 export const API_PY_URL_IMG = process.env.NEXT_PUBLIC_API_PY_URL_IMG; // IMAGE UPLOAD URL FOR PYTHON
