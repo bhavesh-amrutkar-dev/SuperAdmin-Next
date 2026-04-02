@@ -18,6 +18,7 @@ export type OrderProduct = {
         image?: string;
         medium?: string;
     };
+    payment_receipt_link?: string;
     quantity?: number;
     price?: number;
     totalPrice?: number;

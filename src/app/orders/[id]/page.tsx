@@ -251,7 +251,7 @@ export default function OrderDetailPage() {
     const [error, setError] = useState<string | null>(null);
     const [retrying, setRetrying] = useState(false);
 
-    const orderId = params.id as string;
+    const orderId = params?.id as string;
 
     const fetchOrderDetails = async () => {
         if (!orderId) {

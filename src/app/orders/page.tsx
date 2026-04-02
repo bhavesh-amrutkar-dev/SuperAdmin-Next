@@ -76,6 +76,21 @@ const getStatusLabel = (
             return t("orderStatus.unknown", { status });
     }
 };
+const getProductStatusLabel = (
+    t: any,
+    product: OrderProduct
+): string => {
+    const status = product?.status?.status;
+    const statusText = product?.status?.statusText;
+
+    // ✅ iOS logic (highest priority)
+    if (status === 0) {
+        return t("orderStatus.processing") || "Processing your payment";
+    }
+
+    // ✅ fallback to your existing logic
+    return getStatusLabel(t, status, statusText);
+};
 const getStatusColor = (status?: number): string => {
     if (!status) return "bg-orange-100 text-orange-800";
 
@@ -94,7 +109,15 @@ const getStatusColor = (status?: number): string => {
             return "bg-gray-100 text-gray-800";
     }
 };
+const getProductStatusColor = (product: OrderProduct): string => {
+    const status = product?.status?.status;
 
+    if (status === 0) {
+        return "bg-orange-100 text-orange-800"; // processing color
+    }
+
+    return getStatusColor(status);
+};
 const getStatusIcon = (status?: number) => {
     switch (status) {
         case ORDER_STATUS.COMPLETED:
@@ -109,6 +132,28 @@ const getStatusIcon = (status?: number) => {
         default:
             return <Clock className="w-4 h-4" />;
     }
+};
+const getProductStatusIcon = (product: OrderProduct) => {
+    const status = product?.status?.status;
+
+    if (status === 0) {
+        return <Clock className="w-4 h-4" />;
+    }
+
+    return getStatusIcon(status);
+};
+const getProductNote = (product: OrderProduct): string | null => {
+    const status = product?.status?.status;
+
+    if (status === 0) {
+        if ((product as any)?.payment_receipt_link) {
+            return "Your bank receipt could not be processed. Please wait while admin reviews it.";
+        }
+
+        return "Your payment is being securely processed. Your order will be confirmed once completed.";
+    }
+
+    return null;
 };
 const getSourceLabel = (t: any, source?: string): string => {
     if (!source) return "-";
@@ -524,7 +569,7 @@ export default function OrdersPage() {
                                                 </div>
 
                                                 {/* Desktop Status */}
-                                                <span
+                                                {/* <span
                                                     className={`hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide ${getStatusColor(
                                                         order.status?.status
                                                     )}`}
@@ -535,7 +580,7 @@ export default function OrdersPage() {
                                                         order.status?.status,
                                                         order.status?.statusText
                                                     )}
-                                                </span>
+                                                </span> */}
                                             </div>
 
                                         </div>
@@ -544,43 +589,67 @@ export default function OrdersPage() {
                                         <div className="mt-6 space-y-4">
                                             {order.storeOrders?.map((storeOrder, i) => (
                                                 <div key={i} className="space-y-3">
-                                                    {storeOrder.products?.map((product, index) => (
-                                                        <div
-                                                            key={index}
-                                                            className="flex flex-col md:flex-row md:items-center gap-5 bg-[#fafafa] hover:bg-[#f5f5f5] transition-colors p-4 rounded-2xl border border-transparent hover:border-[#FECB02]/40"
-                                                        >
-                                                            {/* Image */}
-                                                            <div className="w-full md:w-[90px] h-[150px] md:h-[90px] flex items-center justify-center bg-white rounded-xl border border-gray-100 overflow-hidden">
-                                                                <Image
-                                                                    src={getProductImage(product)}
-                                                                    alt={product.name ?? "Product image"}
-                                                                    width={90}
-                                                                    height={90}
-                                                                    className="p-2 object-contain w-full h-full"
-                                                                    unoptimized
-                                                                />
-                                                            </div>
+                                                    {storeOrder.products?.map((product, index) => {
+                                                        const note = getProductNote(product);
 
-                                                            {/* Info */}
-                                                            <div className="flex-1">
-                                                                <h4 className="text-base font-semibold text-[#2F2F2F] line-clamp-2">
-                                                                    {product.name}
-                                                                </h4>
+                                                        return (
+                                                            <div
+                                                                key={index}
+                                                                className="flex flex-col md:flex-row md:items-center gap-5 bg-[#fafafa] hover:bg-[#f5f5f5] transition-colors p-4 rounded-2xl border border-transparent hover:border-[#FECB02]/40"
+                                                            >
+                                                                {/* Image */}
+                                                                <div className="w-full md:w-[90px] h-[150px] md:h-[90px] flex items-center justify-center bg-white rounded-xl border border-gray-100 overflow-hidden">
+                                                                    <Image
+                                                                        src={getProductImage(product)}
+                                                                        alt={product.name ?? "Product image"}
+                                                                        width={90}
+                                                                        height={90}
+                                                                        className="p-2 object-contain w-full h-full"
+                                                                        unoptimized
+                                                                    />
+                                                                </div>
 
-                                                                <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-white border border-gray-200 text-xs font-medium text-[#2F2F2F] uppercase tracking-wide">
-                                                                    {t("quantity")}: {getNumericValue(product.quantity)}
+                                                                {/* Info */}
+                                                                <div className="flex-1">
+                                                                    <h4 className="text-base font-semibold text-[#2F2F2F] line-clamp-2">
+                                                                        {product.name}
+                                                                    </h4>
+
+                                                                    {/* Quantity */}
+                                                                    <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-white border border-gray-200 text-xs font-medium text-[#2F2F2F] uppercase tracking-wide">
+                                                                        {t("quantity")}: {getNumericValue(product.quantity)}
+                                                                    </div>
+
+                                                                    {/* ✅ Product Status */}
+                                                                    <div className="mt-2">
+                                                                        <span
+                                                                            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wide ${getProductStatusColor(
+                                                                                product
+                                                                            )}`}
+                                                                        >
+                                                                            {getProductStatusIcon(product)}
+                                                                            {getProductStatusLabel(t, product)}
+                                                                        </span>
+                                                                    </div>
+
+                                                                    {/* ✅ Optional Note */}
+                                                                    {note && (
+                                                                        <p className="text-xs text-[#797979] mt-2 leading-relaxed">
+                                                                            {note}
+                                                                        </p>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Price */}
+                                                                <div className="text-lg font-semibold text-[#2F2F2F]">
+                                                                    {formatCurrency(
+                                                                        getProductTotal(product),
+                                                                        currency
+                                                                    )}
                                                                 </div>
                                                             </div>
-
-                                                            {/* Price */}
-                                                            <div className="text-lg font-semibold text-[#2F2F2F]">
-                                                                {formatCurrency(
-                                                                    getProductTotal(product),
-                                                                    currency
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    ))}
+                                                        );
+                                                    })}
                                                 </div>
                                             ))}
                                         </div>
