@@ -205,6 +205,17 @@ export default function LoginPage() {
                     {t("signUp")}
                 </Link>
             </p>
+
+            <div className="mt-4 text-center text-sm text-gray-500">
+                {t("havingTrouble")}{" "}
+                <Link
+                    href="/contact"
+                    className="font-medium text-[#d6ab00] hover:underline"
+                >
+                    {t("contactSupport")}
+                </Link>
+            </div>
+
         </div>
     );
 }
