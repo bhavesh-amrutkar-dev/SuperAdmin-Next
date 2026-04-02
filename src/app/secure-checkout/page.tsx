@@ -231,7 +231,7 @@ export default function SecureCheckoutPage() {
     try {
       setLoadingBankDetails(true);
       const response = await PaymentService.getBankDetails();
-      
+
       // Response structure: { data: { bankDetails: [] } } after axios interceptor
       // Old project structure: { data: { data: { bankDetails: [] } } }
       const bankDetailsData = (response as any)?.data?.bankDetails || (response as any)?.data?.data?.bankDetails || [];
@@ -745,19 +745,19 @@ export default function SecureCheckoutPage() {
 
       // ✅ Manual payment image
       const orderImages: string[] = [];
-      if (paymentMethod === "manual" && receiptFile) {
-        const base64 = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const result = reader.result as string;
-            resolve(result.split(",")[1]);
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(receiptFile);
-        });
+      // if (paymentMethod === "manual" && receiptFile) {
+      //   const base64 = await new Promise<string>((resolve, reject) => {
+      //     const reader = new FileReader();
+      //     reader.onload = () => {
+      //       const result = reader.result as string;
+      //       resolve(result.split(",")[1]);
+      //     };
+      //     reader.onerror = reject;
+      //     reader.readAsDataURL(receiptFile);
+      //   });
 
-        orderImages.push(base64);
-      }
+      //   orderImages.push(base64);
+      // }
 
       const orderPayload = {
         cartId,
@@ -811,6 +811,25 @@ export default function SecureCheckoutPage() {
 
       if (!orderData?.orderId) {
         throw new Error("Invalid order response");
+      }
+      // ✅ Upload receipt for manual payment
+      if (paymentMethod === "manual" && receiptFile) {
+        try {
+          const formData = new FormData();
+          formData.append("image", receiptFile);
+          formData.append("master_order_id", orderData.orderId);
+          formData.append("country_code", COUNTRY_CODE || "PR");
+
+          await PaymentService.uploadReceipt(formData);
+
+          console.log("✅ Receipt uploaded successfully");
+        } catch (err) {
+          console.warn("❌ Receipt upload failed:", err);
+
+          toast.error("Receipt upload failed. Please try again.");
+          setPlacingOrder(false);
+          return;
+        }
       }
 
       // ✅ STORE ORDER
