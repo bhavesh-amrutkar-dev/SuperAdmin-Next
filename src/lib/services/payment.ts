@@ -1,4 +1,4 @@
-import { apiClient } from "../api/axios";
+import { apiClient, pyApiClient } from "../api/axios";
 import { getCookie } from "cookies-next";
 import { DEFAULT_COUNTRY_ID, DEFAULT_LANGUAGE } from "../config";
 
@@ -100,6 +100,17 @@ export const PaymentService = {
 
     ATHMovileToken: () => {
         return apiClient.get(`/athmovil/config`);
+    },
+
+    /**
+   * Upload manual payment receipt
+   */
+    uploadReceipt: (formData: FormData) => {
+        return pyApiClient.post(`/validate/payment/receipt/`, formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        });
     },
 };
 

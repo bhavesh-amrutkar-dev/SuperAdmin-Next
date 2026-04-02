@@ -186,7 +186,7 @@ export default function LoginPage() {
                 </Link>
             </div>
 
-            <div className="mt-4 text-center text-sm text-gray-500">
+            {/* <div className="mt-4 text-center text-sm text-gray-500">
                 {t("havingTrouble")}{" "}
                 <Link
                     href="/contact"
@@ -194,7 +194,7 @@ export default function LoginPage() {
                 >
                     {t("contactSupport")}
                 </Link>
-            </div>
+            </div> */}
             {/* Footer */}
             <p className="mt-5 sm:mt-6 text-center text-sm text-foreground">
                 {t("dontHaveAccount")}{" "}
