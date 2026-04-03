@@ -50,7 +50,7 @@ export async function POST(req: Request) {
 
       ogTag: {
         title: ogTitle || "DonRifa",
-        description: ogDescription || "Play and win on DonRifa!",
+        // description: ogDescription || "Play and win on DonRifa!",
         imageUrl:
           ogImage ||
           "https://static.airbridge.io/images/2021_airbridge_og_tag.png",
