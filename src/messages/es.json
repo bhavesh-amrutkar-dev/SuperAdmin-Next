@@ -633,5 +633,6 @@
     "addressCreated": "Dirección creada",
     "viewFreeParticipationOption": "VER OPCIÓN DE PARTICIPACIÓN GRATUITA",
     "havingTrouble": "¿Tienes problemas?",
-    "contactSupport": "Contactar con soporte"
+    "contactSupport": "Contactar con soporte",
+    "outerSrcPayment": "Vía pago externo"
 }

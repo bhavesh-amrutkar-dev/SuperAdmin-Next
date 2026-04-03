@@ -447,7 +447,7 @@ export default function OrderDetailPage() {
                                         <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white break-all">
                                             {order.orderId || order.masterOrderId}
                                         </h2>
-                                        {order.status && (
+                                        {/* {order.status && (
                                             <span
                                                 className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-md w-fit ${getStatusColor(
                                                     order.status.status
@@ -456,7 +456,7 @@ export default function OrderDetailPage() {
                                                 {getStatusIcon(order.status.status)}
                                                 {getStatusLabel(order.status.status, order.status.statusName)}
                                             </span>
-                                        )}
+                                        )} */}
                                     </div>
                                     <div className="flex items-center gap-2 text-white/90">
                                         <Calendar size={16} className="sm:w-[18px] sm:h-[18px]" />
@@ -589,12 +589,26 @@ export default function OrderDetailPage() {
                                                                 <span className="px-2 sm:px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs sm:text-sm font-medium">
                                                                     {t("quantity") || "Qty"}: {getNumericValue(product.quantity) || 1}
                                                                 </span>
+
+
                                                                 {product.campaignId && (
                                                                     <span className="px-2 sm:px-3 py-1 bg-purple-100 text-purple-700 rounded-lg text-xs font-bold uppercase">
                                                                         {t("entries") || "ENTRIES"}
                                                                     </span>
                                                                 )}
                                                             </div>
+                                                            {product.status && (
+                                                                <div className="mb-2 sm:mb-3">
+                                                                    <span
+                                                                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold ${getStatusColor(
+                                                                            product.status.status
+                                                                        )}`}
+                                                                    >
+                                                                        {getStatusIcon(product.status.status)}
+                                                                        {getStatusLabel(product.status.status, product.status.statusText)}
+                                                                    </span>
+                                                                </div>
+                                                            )}
                                                             {product.attributes && product.attributes.length > 0 && (
                                                                 <div className="text-xs text-gray-600 space-y-1 bg-gray-50 p-2 rounded-lg mb-2 sm:mb-0">
                                                                     {product.attributes.map((attr, attrIndex) => (
@@ -614,6 +628,12 @@ export default function OrderDetailPage() {
                                                                     currencySymbol
                                                                 )}
                                                             </p>
+                                                            {product?.accounting?.outterSourceAcceptance && (
+                                                                <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-[11px] font-semibold">
+                                                                    <CreditCard size={12} />
+                                                                   {t("outerSrcPayment")}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 ))}

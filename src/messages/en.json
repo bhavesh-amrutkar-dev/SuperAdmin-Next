@@ -633,5 +633,6 @@
     "addressCreated": "Address created",
     "viewFreeParticipationOption": "VIEW FREE PARTICIPATION OPTION",
     "havingTrouble": "Having trouble?",
-    "contactSupport": "Contact support"
+    "contactSupport": "Contact support",
+    "outerSrcPayment": "Via External Payment"
 }

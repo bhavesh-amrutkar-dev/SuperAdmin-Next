@@ -28,6 +28,9 @@ export type OrderProduct = {
         value?: string;
         measurementUnitName?: string;
     }>;
+    accounting?: {
+        outterSourceAcceptance?: boolean;
+    };
 };
 
 export type StoreOrder = {
