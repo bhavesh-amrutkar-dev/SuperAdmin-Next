@@ -154,9 +154,24 @@ export default function CountrySelectorModal({ open, onClose, onCountryChange }:
     if (!selected) return;
 
     const cookieOptions = { maxAge: 60 * 60 * 24 * 365 };
-    setCookie(COUNTRY_CODE, selected.code, cookieOptions);
-    setCookie(COUNTRY, selected.name || DEFAULT_COUNTRY, cookieOptions);
-    setCookie("C_id", selected.id, cookieOptions);
+    setCookie(COUNTRY_CODE, selected.code, {
+      path: "/",
+      sameSite: "none",
+      secure: true,
+      maxAge: 60 * 60 * 24 * 365,
+    });
+    setCookie(COUNTRY, selected.name || DEFAULT_COUNTRY, {
+      path: "/",
+      sameSite: "none",
+      secure: true,
+      maxAge: 60 * 60 * 24 * 365,
+    });
+    setCookie("C_id", selected.id, {
+      path: "/",
+      sameSite: "none",
+      secure: true,
+      maxAge: 60 * 60 * 24 * 365,
+    });
 
     setSelectedCountryId(selected.id);
     onCountryChange?.(selected);

@@ -18,16 +18,18 @@ export async function initGuest() {
     if (accessToken) {
       setCookie("token", accessToken, {
         path: "/",
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 7,
+        sameSite: "none",
+        secure: true,
+        maxAge: 60 * 60 * 24 * 365,
       });
     }
 
     if (sid) {
       setCookie("sid", sid, {
         path: "/",
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 7,
+        sameSite: "none",
+        secure: true,
+        maxAge: 60 * 60 * 24 * 365,
       });
     }
   } catch (err) {

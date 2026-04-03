@@ -149,7 +149,9 @@ export default function VerifyOtpPage() {
         localStorage.setItem("reset_token", res.data.accessToken);
         setCookie("token", res.data.accessToken, {
           path: "/",
-          sameSite: "lax",
+          sameSite: "none",
+          secure: true,
+          maxAge: 60 * 60 * 24 * 365,
         });
         setStep("resetPassword");
         setOtp(Array(4).fill(""));

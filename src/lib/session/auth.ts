@@ -13,26 +13,30 @@ export function persistAuthSession(session: AuthSession) {
 
   setCookie("access_token", session.accessToken, {
     path: "/",
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60 * 24 * 7,
+    sameSite: "none",
+    secure: true,
+    maxAge: 60 * 60 * 24 * 365,
   });
 
   setCookie("token", session.accessToken, {
     path: "/",
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60 * 24 * 7, // 1 day
+    sameSite: "none",
+    secure: true,
+    maxAge: 60 * 60 * 24 * 365, // 1 day
   });
 
   setCookie("refresh_token", session.refreshToken, {
     path: "/",
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    sameSite: "none",
+    secure: true,
+    maxAge: 60 * 60 * 24 * 355,
   });
 
   setCookie("access_exp", session.accessExpireAt, {
     path: "/",
+    sameSite: "none",
+    secure: true,
+    maxAge: 60 * 60 * 24 * 365,
   });
 
   setCookie("user_name", session.name, { path: "/" });
@@ -41,7 +45,9 @@ export function persistAuthSession(session: AuthSession) {
   if (session.userId) {
     setCookie("uid", session.userId, {
       path: "/",
-      sameSite: "lax",
+      sameSite: "none",
+      secure: true,
+      maxAge: 60 * 60 * 24 * 365,
     });
   }
 }

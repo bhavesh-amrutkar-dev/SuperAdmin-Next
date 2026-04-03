@@ -41,7 +41,13 @@ export default function LanguageSwitcher({ variant = "header" }: Props) {
   const changeLanguage = (nextLocale: Locale) => {
     if (nextLocale === locale) return;
 
-    setCookie("NEXT_LOCALE", nextLocale, { path: "/" });
+    setCookie("NEXT_LOCALE", nextLocale, {
+      path: "/",
+      sameSite: "none",
+      secure: true,
+      maxAge: 60 * 60 * 24 * 365,
+
+    });
     setOpen(false);
 
     if (typeof window !== "undefined") {

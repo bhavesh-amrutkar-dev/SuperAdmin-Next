@@ -705,7 +705,12 @@ export default function SecureCheckoutPage() {
         uid = userData?._id || userData?.id || userData?.userId;
 
         if (uid) {
-          setCookie("uid", uid, { path: "/", sameSite: "lax" });
+          setCookie("uid", uid, {
+            path: "/",
+            sameSite: "none",
+            secure: true,
+            maxAge: 60 * 60 * 24 * 365,
+          });
         }
       } catch (error) {
         console.warn("Error fetching user ID:", error);

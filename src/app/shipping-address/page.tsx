@@ -267,9 +267,28 @@ export default function ShippingAddressPage() {
   const selectAddress = (addressId: string) => {
     setSelectedAddressId(addressId);
     // keep old + new cookie keys in sync
-    setCookie("addressid", addressId);
-    setCookie("AddressID", addressId);
-    setCookie("appyingCheck", "1");
+    setCookie("addressid", addressId, {
+      path: "/",
+      sameSite: "none",
+      secure: true,
+      maxAge: 60 * 60 * 24 * 365,
+    });
+    setCookie("AddressID", addressId,
+      {
+        path: "/",
+        sameSite: "none",
+        secure: true,
+        maxAge: 60 * 60 * 24 * 365,
+      }
+    );
+    setCookie("appyingCheck", "1",
+      {
+        path: "/",
+        sameSite: "none",
+        secure: true,
+        maxAge: 60 * 60 * 24 * 365,
+      }
+    );
   };
 
   const handleContinue = async () => {

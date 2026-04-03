@@ -13,7 +13,7 @@ type CountryContextType = {
 const CountryContext = createContext<CountryContextType>({
   countries: [],
   selectedCountryId: null,
-  setSelectedCountryId: () => {},
+  setSelectedCountryId: () => { },
 });
 
 export const useCountry = () => useContext(CountryContext);
@@ -35,7 +35,12 @@ export function CountryProvider({
   }, []);
 
   const setSelectedCountryId = (id: string) => {
-    setCookie("C_id", id);
+    setCookie("C_id", id, {
+      path: "/",
+      sameSite: "none",
+      secure: true,
+      maxAge: 60 * 60 * 24 * 365,
+    });
     setSelectedCountryIdState(id);
   };
 

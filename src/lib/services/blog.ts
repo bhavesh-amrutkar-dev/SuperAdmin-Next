@@ -19,7 +19,12 @@ const getBlogToken = async (): Promise<string> => {
         const response = await axios.get(BLOG_URL);
         const token = response?.data?.token || "";
         if (token && typeof window !== "undefined") {
-            setCookie("BlogToken", token);
+            setCookie("BlogToken", token, {
+                path: "/",
+                sameSite: "none",
+                secure: true,
+                maxAge: 60 * 60 * 24 * 365,
+            });
         }
         return token;
     } catch (error) {
