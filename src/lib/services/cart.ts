@@ -121,7 +121,6 @@ export const OrderService = {
                 latitude: (getCookie("lat") as string) || "0",
                 longitude: (getCookie("long") as string) || "0",
             },
-            ticketId: ""
         };
 
         return apiClient.post("/expressOrder", finalPayload);
