@@ -495,17 +495,97 @@ export default function SecureCheckoutPage() {
     setIsUpdatingStatus(false);
 
     fetchCart()
-  }; 
+  };
+  const pollOrderStatus = async (orderId: string, timeoutSeconds: number) => {
+    const delays = [30000, 60000, 90000, 120000, 150000, 180000, 210000, 240000, 270000, 300000];
+
+    const startTime = Date.now();
+    const maxTime = timeoutSeconds * 1000;
+
+    for (let i = 0; i < delays.length; i++) {
+      try {
+        const res = await fetch("/api/orders/status-update", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            orderId,
+            paymentMethod: 10,
+          }),
+        });
+
+        const data = await res.json();
+
+        // ✅ SUCCESS
+        if (data?.status === "success") {
+          setIsUpdatingStatus(false);
+          setPlacingOrder(false);
+
+          handleAthSuccess();
+          return;
+        }
+
+        // ❌ If backend later adds FAILED/CANCELLED
+        if (data?.status === "failed" || data?.status === "cancelled") {
+          setIsUpdatingStatus(false);
+          setPlacingOrder(false);
+
+          handleAthCancel();
+          return;
+        }
+
+        // ⏳ pending → continue
+
+      } catch (err) {
+        console.warn("Polling error:", err);
+      }
+
+      // ⏱ check total timeout
+      const elapsed = Date.now() - startTime;
+      if (elapsed >= maxTime) {
+        break;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, delays[i]));
+    }
+
+    // ⏳ Timeout reached
+    setIsUpdatingStatus(false);
+    setPlacingOrder(false);
+
+    setModalConfig({
+      title: "Payment Pending",
+      message: "Your payment is still processing. Please check later.",
+      confirmText: "OK",
+    });
+    setConfirmOpen(true);
+  };
+  const extractErrorMessage = (error: any) => {
+    const raw =
+      error?.response?.data?.message ||
+      error?.message ||
+      error?.data?.message ||
+      (typeof error === "string" ? error : null) ||
+      "Something went wrong";
+
+    try {
+      const parsed = JSON.parse(raw);
+      return parsed?.message || raw;
+    } catch {
+      return raw;
+    }
+  };
+
   const handleAuthMovil = async () => {
     try {
       if (!selectedAddress) return;
 
       setPlacingOrder(true);
+      setIsUpdatingStatus(true); // 🔥 show loader UI
+
       const cartId = (cartData as any)?._id;
-      if (!cartId) {
-        console.warn("❌ Cart ID not found");
-        throw new Error("Cart ID not found");
-      }
+      if (!cartId) throw new Error("Cart ID not found");
 
       const addressId =
         selectedAddress?._id ||
@@ -516,7 +596,6 @@ export default function SecureCheckoutPage() {
       const latitude = (getCookie("lat") as string) || "0";
       const longitude = (getCookie("long") as string) || "0";
       const ipAddress = await getMyIP();
-
 
       const orderPayload = {
         cartId,
@@ -541,114 +620,43 @@ export default function SecureCheckoutPage() {
         payByWallet: false,
         userId: uid || "1",
       };
-      // 1️⃣ Create order (your existing logic)
+
       const response = await fetch("/api/orders/place", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderPayload),
       });
 
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.message || "Order creation failed");
-      }
-
       const createdOrder = await response.json();
-      if (
-        createdOrder?.message &&
-        createdOrder.message.toLowerCase().includes("cart not found")
-      ) {
-        setConfirmOpen(true);
-        setPlacingOrder(false);
-        return;
+
+      if (!response.ok || !createdOrder?.orderId) {
+        throw new Error(createdOrder?.message || "Order failed");
       }
 
-      if (!createdOrder?.orderId) {
-        throw new Error("Order creation failed");
-      }
-
-      // Store order ID for later use
-      if (typeof window !== "undefined") {
-        localStorage.setItem("orderId", createdOrder.orderId);
-        localStorage.setItem("cartId", cartId);
-        if (createdOrder.numberOfFreeTickets) {
-          localStorage.setItem("TotalFreeTicket", String(createdOrder.numberOfFreeTickets));
-        }
-      }
-
-      setOrderTotal(createdOrder?.totalAmount)
       const orderId = createdOrder.orderId;
 
-      // 2️⃣ Get public token
-      const tokenResponse = await PaymentService.ATHMovileToken();
-      const publicToken =
-        (tokenResponse as any)?.data?.data?.publicToken ||
-        (tokenResponse as any)?.data?.publicToken;
+      // ✅ timeout from API (fallback 5 min)
+      const timeoutSeconds = createdOrder?.timeOut || 300;
 
-      if (!publicToken) {
-        throw new Error("Public token not received");
-      }
-
-      // 3️⃣ Save to state (THIS triggers component mount)
-      setAthOrderId(orderId);
-      setAthToken(publicToken);
-      setIsAthReady(true);
+      // 🔥 Start polling
+      await pollOrderStatus(orderId, timeoutSeconds);
 
     } catch (error: any) {
-      // Extract error message from various possible locations
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        error?.data?.message ||
-        (typeof error === "string" ? error : null) ||
-        "Failed to place order. Please try again.";
+      console.warn("ATH error:", error);
 
-      console.warn("Error placing order:", {
-        message: errorMessage,
-        error: error,
-        status: error?.status || error?.response?.status,
-        data: error?.response?.data || error?.data,
+      setIsUpdatingStatus(false);
+      setPlacingOrder(false);
+
+      const finalMessage = extractErrorMessage(error);
+
+      setModalConfig({
+        title: t("checkoutError"),
+        message: finalMessage,
       });
 
-      // Handle specific error cases
-      const errorMsgLower = errorMessage.toLowerCase();
-
-      if (errorMsgLower.includes("cart not found")) {
-        setModalConfig({
-          title: t("cartNotFound"),
-          message: t("cartNotFoundDescription"),
-          confirmText: t("returnToCart"),
-          cancelText: t("continueShopping"),
-          onConfirm: () => router.push("/cart"),
-        });
-        setConfirmOpen(true);
-        router.push("/cart");
-      } else if (
-        errorMsgLower.includes("cart id not found") ||
-        errorMsgLower.includes("cart is empty")
-      ) {
-        setModalConfig({
-          title: t("cartEmpty"),
-          message: t("cartEmptyDescription"),
-          confirmText: t("goToCart"),
-          cancelText: t("continueShopping"),
-          onConfirm: () => router.push("/cart"),
-        });
-        setConfirmOpen(true);
-        router.push("/cart");
-      } else {
-        setModalConfig({
-          title: t("checkoutError"),
-          message: t("checkoutErrorDescription"),
-          confirmText: t("tryAgain"),
-        });
-        setConfirmOpen(true);
-      }
-
-      setPlacingOrder(false);
+      setConfirmOpen(true);
     }
   };
-
   const handlePlaceOrder = async () => {
     if (!selectedAddress || !cartData) return;
 
@@ -1500,7 +1508,7 @@ export default function SecureCheckoutPage() {
                   )}
                 </div>
               )}
-           
+
             </div>
 
             {/* RIGHT COLUMN */}
