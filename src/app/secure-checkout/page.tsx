@@ -495,21 +495,12 @@ export default function SecureCheckoutPage() {
     setIsUpdatingStatus(false);
 
     fetchCart()
-  }; const handleAuthMovil = async () => {
+  }; 
+  const handleAuthMovil = async () => {
     try {
       if (!selectedAddress) return;
 
       setPlacingOrder(true);
-      // const freshCartResponse = await CartService.getCart();
-
-      // const freshCartData =
-      //   (freshCartResponse as any)?.data?.data ||
-      //   (freshCartResponse as any)?.data ||
-      //   freshCartResponse;
-
-      // const cartId =
-      //   (freshCartData as any)?._id ||
-      //   (freshCartData as any)?.cartId;
       const cartId = (cartData as any)?._id;
       if (!cartId) {
         console.warn("❌ Cart ID not found");
@@ -1337,30 +1328,8 @@ export default function SecureCheckoutPage() {
                     })}
                   </div>
 
-                  {/* {paymentMethod === "athMovil" && (
-                  <div className="mt-6">
-                    <div className="ATH_Movil">
-                      <div id="ATHMovil_Checkout_Button_payment" />
-
-                    </div>
-
-              
-                    {athResponses.length > 0 && (
-                      <div className="mt-4 bg-gray-100 p-3 rounded text-xs max-h-40 overflow-y-auto">
-                        {athResponses.map((res, idx) => (
-                          <div key={idx} className="mb-1 break-all">
-                            {res}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )} */}
-
-
                 </div>
               </div>
-              {/* //#endregion */}
               {/* Manual Payment Bank Details Section */}
               {paymentMethod === "manual" && (
                 <div className="mt-4 rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] p-4 md:p-6">
@@ -1531,14 +1500,7 @@ export default function SecureCheckoutPage() {
                   )}
                 </div>
               )}
-              {/* {paymentMethod === "square" && showSquarePayment && squareOrderId && (
-                <SquarePayment
-                  orderId={squareOrderId}
-                  amount={Math.round(grandTotal * 100)}
-                  onSuccess={handleSquareSuccess}
-                  onError={handleSquareError}
-                />
-              )} */}
+           
             </div>
 
             {/* RIGHT COLUMN */}
@@ -1667,14 +1629,6 @@ export default function SecureCheckoutPage() {
                             onSuccess={handleAthSuccess}
                             onCancel={handleAthCancel}
                           />
-                          // <AthMovilCheckout
-                          //   total={orderTotal || grandTotal}
-                          //   publicToken={athToken}
-                          //   orderId={athOrderId}
-                          //   userId={(getCookie("uid") as string) || ""}
-                          //   onSuccess={handleAthSuccess}
-                          //   onCancel={handleAthCancel}
-                          // />
                         )}
                       </>
                     )}
@@ -1685,36 +1639,7 @@ export default function SecureCheckoutPage() {
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="fixed hidden bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
-          <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 max-w-6xl mx-auto">
-              {/* <div className="flex items-center gap-2 flex-1">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-[10px] sm:text-xs text-gray-600">{t("taxInfoMessage")}</p>
-              </div> */}
-              <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-6">
-                <div className="text-right">
-                  <p className="text-[10px] sm:text-xs text-gray-500">{t("totalAmount")}</p>
-                  <p className="text-base sm:text-lg font-bold text-gray-800">{currency} {formatCurrency(grandTotal)}</p>
-                </div>
 
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Place to Pay Lightbox */}
-        {/* {placeToPayUrl && (
-          <PlaceToPayLightbox
-            url={placeToPayUrl}
-            onSuccess={handlePlaceToPaySuccess}
-            onError={handlePlaceToPayError}
-            onClose={handlePlaceToPayClose}
-          />
-        )} */}
 
         {/* Place to Pay Popup */}
         {ENABLE_PLACE_TO_PAY && placeToPayUrl && (
@@ -1725,12 +1650,6 @@ export default function SecureCheckoutPage() {
             onClose={handlePlaceToPayClose}
           />
         )}
-        {/* Coming Soon Modal */}
-        <ComingSoonModal
-          isOpen={showComingSoonModal}
-          onClose={() => setShowComingSoonModal(false)}
-          paymentMethod={paymentMethod}
-        />
 
         <Footer />
       </div>
