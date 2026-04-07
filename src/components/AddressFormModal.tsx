@@ -19,39 +19,57 @@ export default function AddressFormModal({
   editing,
 }: any) {
   const t = useTranslations();
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: AddressFormRM) => {
     try {
+      const payload = {
+        // ✅ computed fields
+        name: `${data.firstName || ""} ${data.lastName || ""}`.trim(),
+
+        addLine1: `${data.city}, ${data.state}, ${data.country}`,
+
+        city: data.city,
+        state: data.state,
+        country: data.country,
+        pincode: data.pincode,
+        landmark: data.landmark,
+
+        // ✅ mobile
+        mobileNumber: data.mobileNumber?.trim(),
+        mobileNumberCode: data.mobileNumberCode,
+        mobileNumberSortCode: data.mobileNumberSortCode?.toLowerCase(),
+
+        // ✅ REQUIRED by API
+        countryCode: data.mobileNumberSortCode?.toUpperCase(),
+
+        // ✅ tagging
+        tagged:
+          data.taggedAs === "Home"
+            ? 1
+            : data.taggedAs === "Office"
+              ? 2
+              : 3,
+
+        taggedAs:
+          data.taggedAs === "Other"
+            ? data.taggedAsLabel?.trim() || "Other"
+            : data.taggedAs,
+
+        // ✅ geo (fallback safe)
+        latitude: data.latitude ?? 0,
+        longitude: data.longitude ?? 0,
+
+        default: data.default ?? false,
+      };
+
       if (editing?._id) {
-        const {
-          _id,
-          userType,
-          createdTimeStamp,
-          createdIsoDate,
-          countryName,
-          cityId,
-          cityName,
-          shopifyStoreId,
-          mbxAddressId,
-          zoneId,
-          zoneName,
-          ...rest
-        } = data;
-
-        const payload = {
-          ...rest,
-
-          name: `${data.firstName || ""} ${data.lastName || ""}`.trim(),
+        await UserAddressService.updateAddress({
+          ...payload,
           addressId: editing._id,
-        };
-
-        await UserAddressService.updateAddress(payload);
+        });
 
         toast.success("Address updated");
       } else {
-        await AuthService.createAddress({
-          ...data,
-          name: `${data.firstName || ""} ${data.lastName || ""}`.trim(),
-        });
+        await AuthService.createAddress(payload);
 
         toast.success(t("addressCreated"));
       }
@@ -62,7 +80,6 @@ export default function AddressFormModal({
       toast.error(err?.message || "Save failed");
     }
   };
-
   return (
     <Dialog
       open={open}

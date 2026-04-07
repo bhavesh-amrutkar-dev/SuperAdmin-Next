@@ -400,7 +400,11 @@ export default function ShippingAddressPage() {
                     <Button
                       variant="primary"
                       size="default"
-                      onClick={() => router.push("/profile?tab=addresses")}
+                      onClick={() => {
+                        setEditing(null);
+                        setOpenModal(true);
+                      }}
+
                       className="mt-3 sm:mt-4"
                     >
                       + {t("addAddress")}

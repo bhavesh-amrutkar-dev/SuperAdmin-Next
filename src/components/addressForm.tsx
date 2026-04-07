@@ -16,24 +16,36 @@ import { Textarea } from "./ui/textarea";
 import { useProfile } from "../lib/hooks/userProfile";
 
 export type AddressFormRM = {
-    name: string;
+    // 👤 UI fields
     firstName: string;
     lastName: string;
+
     addLine1: string;
     city: string;
     state: string;
     country: string;
     pincode: string;
-    mobileNumber: string;
-    taggedAs: "Home" | "Office" | "Other";
-    taggedAsLabel?: string;
-    mobileNumberCode: string;
-    mobileNumberSortCode: string;
     landmark: string;
 
+    // 📞 Mobile
+    mobileNumber: string;
+    mobileNumberCode: string;
+    mobileNumberSortCode: string;
 
+    // 🏷️ Tagging
+    taggedAs: "Home" | "Office" | "Other";
+    taggedAsLabel?: string;
+
+    // ⚙️ Optional / computed (used during edit or submit)
+    name?: string;
+    tagged?: number;
+    countryCode?: string;
+
+    latitude?: number;
+    longitude?: number;
+
+    default?: boolean;
 };
-
 const inputBase =
     "w-full rounded-xl border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-100 focus:border-yellow-400";
 

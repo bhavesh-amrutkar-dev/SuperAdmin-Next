@@ -53,7 +53,7 @@ export default function AddressPage() {
     const { user } = useProfile();
     // useEffect(() => {
     //     console.log(user);
-        
+
     //     if (user === undefined) return; // still loading profile
 
     //     if (!user) {
@@ -176,37 +176,56 @@ export default function AddressPage() {
         fetchCountries();
     }, []);
 
-    const onSubmit = async (payload: AddressFormRM) => {
+    const onSubmit = async (data: AddressFormRM) => {
         try {
-            await AuthService.createAddress({
-                name: `${payload.firstName} ${payload.lastName}`,
-                addLine1: `${payload.city}, ${payload.state}, ${payload.country}`,
-                city: payload.city,
-                state: payload.state,
-                country: payload.country,
-                pincode: payload.pincode,
-                landmark: payload.landmark,
-                mobileNumber: payload.mobileNumber,
-                mobileNumberCode: payload.mobileNumberCode,
-                mobileNumberSortCode: payload.mobileNumberSortCode,
+            const payload = {
+                // ✅ name
+                name: `${data.firstName} ${data.lastName}`.trim(),
+
+                // ✅ address
+                addLine1: `${data.city}, ${data.state}, ${data.country}`,
+                city: data.city,
+                state: data.state,
+                country: data.country,
+                pincode: data.pincode,
+                landmark: data.landmark,
+
+                // ✅ mobile
+                mobileNumber: data.mobileNumber?.trim(),
+                mobileNumberCode: data.mobileNumberCode,
+                mobileNumberSortCode: data.mobileNumberSortCode?.toLowerCase(),
+
+                // ✅ REQUIRED
+                countryCode: data.mobileNumberSortCode?.toUpperCase(),
+
+                // ✅ geo
                 latitude: coords?.latitude ?? DEFAULT_COORDS.latitude,
                 longitude: coords?.longitude ?? DEFAULT_COORDS.longitude,
+
+                // ✅ tagging
                 tagged:
-                    payload.taggedAs === "Home"
+                    data.taggedAs === "Home"
                         ? 1
-                        : payload.taggedAs === "Office"
+                        : data.taggedAs === "Office"
                             ? 2
                             : 3,
-                taggedAs: payload.taggedAsLabel ?? payload.taggedAs,
+
+                taggedAs:
+                    data.taggedAs === "Other"
+                        ? data.taggedAsLabel?.trim() || "Other"
+                        : data.taggedAs,
+
+                // ✅ default flag
                 default: false,
-            });
+            };
+
+            await AuthService.createAddress(payload);
 
             router.replace("/");
         } catch (err: any) {
             toast.error(err?.message || t("addressSaveFailed"));
         }
     };
-
     return (
         <>
             <Header />
