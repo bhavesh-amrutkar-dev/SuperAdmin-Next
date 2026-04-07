@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { getCookie } from "cookies-next";
 
 import { HomeService } from "@/src/lib/services/home";
 import { RaffleService } from "@/src/lib/services/raffles";
@@ -22,8 +21,8 @@ import RaffleSectionLayout from "./RafflesSelectionLayout";
 import { FullScreenLoader } from "../fullScreenLoader";
 import { useAuth } from "@/src/context/authContext";
 import Loader from "../loader";
-import FallbackUI from "../common/FallBackUi";
 import { useCountry } from "@/src/context/countryContext";
+import RafflesOnHome from "../layout/RafflesOnHome";
 
 type LegacyRaffleItem = {
   _id?: string;
@@ -61,17 +60,12 @@ export default function HomePageClient({
     initialRaffles || null
   );
 
-  // Global error if any API fails
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [loadingRaffles, setLoadingRaffles] = useState(false);
 
-  /* -----------------------------
-     Resolve Country ID
-  ------------------------------ */
   const { selectedCountryId } = useCountry();
-  /* -----------------------------
-     Fetch Home Banners
-  ------------------------------ */
+
+  /* ----------------------------- Fetch Banners ------------------------------ */
   const fetchBanners = useCallback(async () => {
     try {
       const res = await HomeService.getHomePage(1);
@@ -83,16 +77,12 @@ export default function HomePageClient({
       setBanners(mapBanners(res.banner_images, locale));
     } catch (err: any) {
       console.warn("Home Banners Fetch Failed:", err);
-      throw err; // propagate to global error
+      throw err;
     }
   }, [locale, t]);
 
-  /* -----------------------------
-     Fetch Raffles
-  ------------------------------ */
+  /* ----------------------------- Fetch Raffles ------------------------------ */
   const fetchRaffles = useCallback(async () => {
-    if (!selectedCountryId) return;
-
     if (abortRef.current) abortRef.current.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -118,7 +108,11 @@ export default function HomePageClient({
           return {
             id: campaignId,
             name: raffle.campaignTitle || raffle.productName || "",
-            price: raffle.cashAwardAmount ?? raffle.goalValue ?? raffle.ticketPrice ?? 0,
+            price:
+              raffle.cashAwardAmount ??
+              raffle.goalValue ??
+              raffle.ticketPrice ??
+              0,
             currencySymbol: raffle.currencySymbol || "$",
             image:
               raffle.image?.[0]?.medium ||
@@ -128,6 +122,7 @@ export default function HomePageClient({
         })
         .filter(Boolean) as RaffleItem[];
 
+      // ✅ FIX: do NOT throw error on empty
       if (raffleItems.length > 0) {
         setRaffleSection({
           id: "all-raffles",
@@ -137,21 +132,19 @@ export default function HomePageClient({
           items: raffleItems,
         });
       } else {
-        throw new Error(t("serviceDown") || "No raffles available");
+        setRaffleSection(null);
       }
     } catch (err: any) {
       if (err?.name !== "AbortError") {
         console.warn("Raffles Fetch Failed:", err);
-        throw err; // propagate to global error
+        throw err;
       }
     } finally {
       setLoadingRaffles(false);
     }
-  }, [selectedCountryId, t]);
+  }, [t]);
 
-  /* -----------------------------
-     Fetch All Data
-  ------------------------------ */
+  /* ----------------------------- Fetch All ------------------------------ */
   const fetchAll = useCallback(async () => {
     setGlobalError(null);
     setLoading(true);
@@ -168,61 +161,49 @@ export default function HomePageClient({
       setLoading(false);
     }
   }, [fetchBanners, fetchRaffles, t]);
-  useEffect(() => {
-    if (loading) return;
 
-    const hash = window.location.hash;
-    if (!hash) return;
-
-    const element = document.querySelector(hash);
-    if (!element) return;
-
-    setTimeout(() => {
-      const headerOffset = 100; // adjust to your header height
-      const elementPosition =
-        element.getBoundingClientRect().top + window.pageYOffset;
-
-      const offsetPosition = elementPosition - headerOffset;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: "smooth",
-      });
-    }, 500);
-  }, [loading]);
+  /* ----------------------------- Initial Load ------------------------------ */
   useEffect(() => {
     if (!ready) return;
-
-    if (!selectedCountryId) {
-      // No country selected → stop loader
-      setLoading(false);
-      return;
-    }
 
     fetchAll();
 
     return () => abortRef.current?.abort();
-  }, [ready, selectedCountryId]);
-  /* -----------------------------
-     Render
-  ------------------------------ */
-  if (loading) return <FullScreenLoader />;
+  }, [ready]);
 
-  // if (globalError) {
-  //   return <FallbackUI message={globalError} onRetry={fetchAll} />;
-  // }
+  /* ----------------------------- Country Change Retry ------------------------------ */
+  useEffect(() => {
+    const handleCountryChange = () => {
+      fetchAll();
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("countryChanged", handleCountryChange);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("countryChanged", handleCountryChange);
+      }
+    };
+  }, [fetchAll]);
+
+  /* ----------------------------- Render ------------------------------ */
+  if (loading) return <FullScreenLoader />;
 
   return (
     <>
       {banners.length > 0 && <HeroSlider banners={banners} />}
-      {loadingRaffles ? (
+
+      {/* {loadingRaffles ? (
         <Loader />
       ) : raffleSection ? (
         <RaffleSectionLayout
           section={raffleSection}
           viewMoreLabel={t("viewMore") ?? "View More"}
         />
-      ) : null}
+      ) : null} */}
+      <RafflesOnHome />
       <HowItWorksSection />
     </>
   );

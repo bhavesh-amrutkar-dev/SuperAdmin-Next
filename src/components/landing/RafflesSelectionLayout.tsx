@@ -28,9 +28,7 @@ export default function RaffleSectionLayout({
   viewMoreLabel: string;
 }) {
   const hasMore = section.items?.length > 5;
-  const itemsToShow = hasMore
-    ? section.items.slice(0, 5)
-    : section.items ?? [];
+  const itemsToShow = section.items ?? [];
   const isSingle = itemsToShow.length === 1
 
   const isLoading = !section.items?.length;
@@ -119,7 +117,7 @@ export default function RaffleSectionLayout({
         </div>
 
         {/* View More */}
-        {hasMore && (
+        {/* {hasMore && (
           <div className="mt-10 text-center">
             <Link
               href="/raffles"
@@ -152,7 +150,7 @@ export default function RaffleSectionLayout({
               </svg>
             </Link>
           </div>
-        )}
+        )} */}
       </div>
     </section>
   );

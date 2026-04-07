@@ -17,7 +17,7 @@ export default function ClientProviders({
 }) {
   return (
     <AuthProvider>
-      <CountryProvider countries={countries}>
+      {/* <CountryProvider countries={countries}> */}
         {/* <CountryGuard> */}
         <Toaster
           position="top-center"
@@ -38,7 +38,7 @@ export default function ClientProviders({
         {children}
         <ScrollToTop />
         {/* </CountryGuard> */}
-      </CountryProvider>
+      {/* </CountryProvider> */}
     </AuthProvider>
   );
 }

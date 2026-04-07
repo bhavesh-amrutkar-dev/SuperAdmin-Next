@@ -53,7 +53,7 @@ export default function Header() {
 
   const navItems = [
     { key: "howItWorks", href: "/#howItWorks" },
-    { key: "raffles", href: "/raffles" },
+    // { key: "raffles", href: "/raffles" },
     { key: "winners", href: "/winners" },
     { key: "contact", href: "/contact" },
   ];
@@ -249,7 +249,7 @@ export default function Header() {
 
           {/* CART ICON RIGHT */}
           <div className="flex items-center gap-2">
-            <Button
+            {/* <Button
               variant="dark"
               size="sm"
               onClick={() => setCountryModalOpen(true)}
@@ -257,7 +257,7 @@ export default function Header() {
             >
               <Globe size={14} />
               {currentCountry}
-            </Button>
+            </Button> */}
             <LanguageSwitcher variant="header" />
 
 
@@ -495,7 +495,7 @@ export default function Header() {
             <div className="border-t my-3" />
 
             {/* Country */}
-            <Button
+            {/* <Button
               variant="dropdown"
               size="sm"
               onClick={() => {
@@ -505,7 +505,7 @@ export default function Header() {
             >
               <Globe size={16} />
               {currentCountry}
-            </Button>
+            </Button> */}
 
             {/* Language */}
             <div className="pt-1">
@@ -568,11 +568,11 @@ export default function Header() {
       </div>
 
 
-      <CountrySelectorModal
+      {/* <CountrySelectorModal
         open={countryModalOpen}
         onClose={() => setCountryModalOpen(false)}
         onCountryChange={(country) => setCurrentCountry(country.name)}
-      />
+      /> */}
     </header>
   );
 }
