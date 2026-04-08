@@ -53,7 +53,7 @@ export default function Header() {
 
   const navItems = [
     { key: "howItWorks", href: "/#howItWorks" },
-    // { key: "raffles", href: "/raffles" },
+    // { key: "raffles", href: "/#raffles" },
     { key: "winners", href: "/winners" },
     { key: "contact", href: "/contact" },
   ];

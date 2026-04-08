@@ -190,7 +190,7 @@ export default function RafflesOnHome() {
 
     function RaffleSkeletonCard() {
         return (
-            <div className="relative overflow-hidden bg-white rounded-4xl shadow-xl flex flex-col p-4">
+            <div id="raffles" className="relative overflow-hidden bg-white rounded-4xl shadow-xl flex flex-col p-4">
                 {/* shimmer layer */}
                 <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
 
