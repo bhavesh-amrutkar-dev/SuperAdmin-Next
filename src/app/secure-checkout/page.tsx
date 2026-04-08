@@ -1181,9 +1181,9 @@ export default function SecureCheckoutPage() {
               </p>
 
               {/* Timer */}
-              {/* <div className="text-sm font-semibold text-[#D4AF37]">
+              <div className="text-sm font-semibold text-[#D4AF37]">
                 {formatTimer(timer)}
-              </div> */}
+              </div>
 
             </div>
           </div>
