@@ -634,5 +634,6 @@
     "viewFreeParticipationOption": "VIEW FREE PARTICIPATION OPTION",
     "havingTrouble": "Having trouble?",
     "contactSupport": "Contact support",
-    "outerSrcPayment": "Via External Payment"
+    "outerSrcPayment": "Via External Payment",
+    "pleaseWaitDoNotClose": "Please wait... do not refresh or close"
 }
