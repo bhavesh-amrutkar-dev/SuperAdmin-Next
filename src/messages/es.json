@@ -635,5 +635,6 @@
     "havingTrouble": "¿Tienes problemas?",
     "contactSupport": "Contactar con soporte",
     "outerSrcPayment": "Vía pago externo",
-    "pleaseWaitDoNotClose": "Por favor, espere... no actualice ni cierre"
+    "pleaseWaitDoNotClose": "Por favor, espere... no actualice ni cierre",
+    "cancelTransaction": "Cancelar transacción"
 }
