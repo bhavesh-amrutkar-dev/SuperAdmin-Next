@@ -636,5 +636,6 @@
     "contactSupport": "Contact support",
     "outerSrcPayment": "Via External Payment",
     "pleaseWaitDoNotClose": "Please wait... do not refresh or close",
-    "cancelTransaction": "Cancel Transaction"
+    "cancelTransaction": "Cancel Transaction",
+    "cancelTransactionMsg": "Are you sure you want to cancel this transaction?"
 }
