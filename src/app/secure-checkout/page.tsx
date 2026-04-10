@@ -613,10 +613,10 @@ export default function SecureCheckoutPage() {
   };
   const handleUserCancelClick = () => {
     setModalConfig({
-      title: "Cancel Transaction",
-      message: "Are you sure you want to cancel this transaction?",
-      confirmText: "Yes",
-      cancelText: "No",
+      title: t("cancelTransaction"),
+      message: t("cancelTransactionMsg"),
+      confirmText: t("yes"),
+      cancelText: t("no"),
       onConfirm: () => {
         setIsUpdatingStatus(false);
         setPlacingOrder(false);
