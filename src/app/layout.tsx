@@ -31,6 +31,8 @@ import { CountryService } from "../lib/services/country";
 import { cookies } from "next/headers";
 import { API_NY_URL, DEFAULT_COUNTRY_CODE, DEFAULT_LANGUAGE } from "../lib/config";
 import AirbridgeProvider from "./airbridgeProvider";
+import GoogleAnalyticsTracker from "../components/GoogleAnalyticsTracker";
+import MetaPixelTracker from "../components/metaPixel";
 
 export default async function RootLayout({
   children,
@@ -86,10 +88,50 @@ export default async function RootLayout({
           src="https://payments.athmovil.com/api/js/athmovil_base.js"
           strategy="beforeInteractive"
         /> */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-YRFMY9GL2H"
+          strategy="afterInteractive"
+        />
 
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    window.gtag = gtag;
+    gtag('js', new Date());
+    gtag('config', 'G-YRFMY9GL2H', {
+      page_path: window.location.pathname,
+    });
+  `}
+        </Script>
+        <Script id="meta-pixel" strategy="afterInteractive">
+          {`
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+
+    fbq('init', '1468573554204803');
+    fbq('track', 'PageView');
+  `}
+        </Script>
+        <noscript>
+          <img
+            height="1"
+            width="1"
+            style={{ display: "none" }}
+            src="https://www.facebook.com/tr?id=1468573554204803&ev=PageView&noscript=1"
+          />
+        </noscript>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ClientProviders countries={countries}>
             <AirbridgeProvider>
+              <GoogleAnalyticsTracker />
+              <MetaPixelTracker />
               {children}
             </AirbridgeProvider>
           </ClientProviders>
