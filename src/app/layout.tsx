@@ -33,6 +33,7 @@ import { API_NY_URL, DEFAULT_COUNTRY_CODE, DEFAULT_LANGUAGE } from "../lib/confi
 import AirbridgeProvider from "./airbridgeProvider";
 import GoogleAnalyticsTracker from "../components/GoogleAnalyticsTracker";
 import MetaPixelTracker from "../components/metaPixel";
+import FirebaseInit from "./FirebaseInit";
 
 export default async function RootLayout({
   children,
@@ -88,11 +89,11 @@ export default async function RootLayout({
           src="https://payments.athmovil.com/api/js/athmovil_base.js"
           strategy="beforeInteractive"
         /> */}
-        <Script
+        {/* <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-YRFMY9GL2H"
           strategy="afterInteractive"
-        />
-
+        /> */}
+        {/* 
         <Script id="google-analytics" strategy="afterInteractive">
           {`
     window.dataLayer = window.dataLayer || [];
@@ -103,7 +104,7 @@ export default async function RootLayout({
       page_path: window.location.pathname,
     });
   `}
-        </Script>
+        </Script> */}
         <Script id="meta-pixel" strategy="afterInteractive">
           {`
     !function(f,b,e,v,n,t,s)
@@ -130,7 +131,8 @@ export default async function RootLayout({
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ClientProviders countries={countries}>
             <AirbridgeProvider>
-              <GoogleAnalyticsTracker />
+              {/* <GoogleAnalyticsTracker /> */}
+              <FirebaseInit />
               <MetaPixelTracker />
               {children}
             </AirbridgeProvider>

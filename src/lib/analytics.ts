@@ -1,8 +1,8 @@
+import { trackFirebaseEvent } from "./firebase";
+
 export const trackEvent = (eventName: string, params?: any) => {
-  // Google Analytics
-  if (typeof window !== "undefined" && window.gtag) {
-    window.gtag("event", eventName, params);
-  }
+  // Firebase (GA4)
+  trackFirebaseEvent(eventName, params);
 
   // Meta Pixel
   if (typeof window !== "undefined" && window.fbq) {

@@ -166,6 +166,7 @@ export default function EntrySelection({
                                 <Button
                                     onClick={onApplyClick}
                                     disabled={applyingTicket}
+
                                     className="px-4 py-1.5 h-auto bg-[#FECB02] hover:bg-[#FFD84D] text-black font-bold rounded transition-all uppercase shadow-md text-[11px] min-w-[80px]"
                                 >
                                     {applyingTicket ? (

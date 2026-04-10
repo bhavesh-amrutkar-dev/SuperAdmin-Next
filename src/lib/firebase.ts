@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAnalytics, isSupported } from "firebase/analytics";
+import { getAnalytics, isSupported, logEvent  } from "firebase/analytics";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAX-vu54c0lsNthzyjm64V-MqHniFuVu60",
@@ -16,15 +16,19 @@ const app = initializeApp(firebaseConfig);
 
 let analytics: any = null;
 
+export const initAnalytics = async () => {
+  if (typeof window !== "undefined") {
+    const supported = await isSupported();
+    if (supported) {
+      analytics = getAnalytics(app);
+    }
+  }
+};
 
-if (typeof window !== "undefined") {
-    isSupported().then((yes) => {
-        if (yes) {
-            analytics = getAnalytics(app);
-            console.log("LOADING ANALYTICS");
-            console.log(analytics);
-        }
-    });
-}
-
-export { analytics };
+export const trackFirebaseEvent = (eventName: string, params?: any) => {
+  if (analytics) {
+    console.log(analytics);
+    
+    logEvent(analytics, eventName, params);
+  }
+};

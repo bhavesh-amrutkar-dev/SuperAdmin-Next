@@ -104,6 +104,7 @@ import { stripHtml } from "@/src/lib/utils/HtmltoText";
 import { Button } from "../../../components/ui/button";
 import ImageMagnify from "@/src/lib/utils/imageMagnify";
 import RaffleDetailSkeleton from "@/src/components/raffle-detail/RaffleDetailSkeleton";
+import { trackEvent } from "@/src/lib/analytics";
 
 
 export default function RafflesDetailPage() {
@@ -1427,6 +1428,12 @@ export default function RafflesDetailPage() {
                                 ticketQuantity={ticketQuantity}
                                 onTicketQuantityChange={setTicketQuantity}
                                 onApplyClick={() => {
+                                    console.log("CALL_ADD_TO_CART_TICKETS");
+                                    
+                                    trackEvent("CALL_ADD_TO_CART_TICKETS", {
+                                        ticket_quantity: ticketQuantity,
+                                    });
+
                                     if (ticketQuantity <= 0 || ticketQuantity > userTickets || !lotteryItem) {
                                         return;
                                     }
