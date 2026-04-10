@@ -30,6 +30,7 @@ import Script from "next/script";
 import SquarePayment from "@/src/components/payments/SquarePayment";
 import SquareScript from "@/src/components/payments/SqaureScript";
 import { getSquareErrorMessage } from "@/src/lib/config/squareEnum";
+import { trackEvent } from "@/src/lib/analytics";
 
 type TaxItem = {
   taxName?: string;
@@ -562,40 +563,40 @@ export default function SecureCheckoutPage() {
     fetchCart()
   };
   const pollOrderStatus = async (orderId: string, timeoutSeconds: number) => {
-  const startTime = Date.now();
-  const maxTime = timeoutSeconds * 1000;
+    const startTime = Date.now();
+    const maxTime = timeoutSeconds * 1000;
 
-  while (Date.now() - startTime < maxTime) {
-    try {
-      const res = await fetch("/api/orders/status-update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId, paymentMethod: 10 }),
-      });
+    while (Date.now() - startTime < maxTime) {
+      try {
+        const res = await fetch("/api/orders/status-update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId, paymentMethod: 10 }),
+        });
 
-      const data = await res.json();
-      const status = data?.statusText?.toLowerCase();
+        const data = await res.json();
+        const status = data?.statusText?.toLowerCase();
 
-      if (status === "success") {
-        handleAthSuccess();
-        return;
+        if (status === "success") {
+          handleAthSuccess();
+          return;
+        }
+
+        if (status === "cancelled" || status === "failed") {
+          handleAthCancel();
+          return;
+        }
+
+      } catch (err) {
+        console.warn("Polling error:", err);
       }
 
-      if (status === "cancelled" || status === "failed") {
-        handleAthCancel();
-        return;
-      }
-
-    } catch (err) {
-      console.warn("Polling error:", err);
+      await new Promise((r) => setTimeout(r, 30000)); // fixed interval
     }
 
-    await new Promise((r) => setTimeout(r, 30000)); // fixed interval
-  }
-
-  // timeout reached
-  router.push("/orders");
-};
+    // timeout reached
+    router.push("/orders");
+  };
   const extractErrorMessage = (error: any) => {
     const raw =
       error?.response?.data?.message ||
@@ -672,7 +673,7 @@ export default function SecureCheckoutPage() {
         payByWallet: false,
         userId: uid || "1",
       };
-
+      trackEvent("GOTO_PAYEMNT");
       const response = await fetch("/api/orders/place", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -712,6 +713,8 @@ export default function SecureCheckoutPage() {
     }
   };
   const handlePlaceOrder = async () => {
+    trackEvent("CONTINUE_AND_CONFIRM_ORDER");
+
     if (!selectedAddress || !cartData) return;
 
     // ATH handled separately
@@ -730,7 +733,8 @@ export default function SecureCheckoutPage() {
         setConfirmOpen(true);
         return;
       }
-
+      trackEvent("GOTO_PAYEMNT");
+      trackEvent("SELECT_BANK");
       if (!receiptFile || !manualPaymentConfirmed) {
         setModalConfig({
           title: t("validationError"),
@@ -739,6 +743,7 @@ export default function SecureCheckoutPage() {
         setConfirmOpen(true);
         return;
       }
+      trackEvent("UPLOAD_PAYMENT_RECEIPT");
     }
 
     const token = getCookie("access_token");
@@ -901,6 +906,8 @@ export default function SecureCheckoutPage() {
 
       // 🔵 Square
       if (paymentMethod === "square") {
+              trackEvent("GOTO_PAYEMNT");
+              
         try {
           const redirectUrl = orderData?.checkoutProcessUrl;
 
@@ -1013,6 +1020,7 @@ export default function SecureCheckoutPage() {
   };
 
   const handlePaymentMethodChange = async (method: string) => {
+    trackEvent("SELECTED_PAYMENT_METHOD");
     setPaymentMethod(method);
     if (method !== "manual") {
       setShowBankDetails(false);

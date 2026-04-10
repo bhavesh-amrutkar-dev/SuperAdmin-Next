@@ -1429,7 +1429,7 @@ export default function RafflesDetailPage() {
                                 onTicketQuantityChange={setTicketQuantity}
                                 onApplyClick={() => {
                                     console.log("CALL_ADD_TO_CART_TICKETS");
-                                    
+
                                     trackEvent("CALL_ADD_TO_CART_TICKETS", {
                                         ticket_quantity: ticketQuantity,
                                     });
@@ -1471,6 +1471,8 @@ export default function RafflesDetailPage() {
                                         onContinue={async () => {
                                             if (continuing || applyingTicket || !selectedTicket) return;
                                             setContinuing(true);
+                                            trackEvent("RAFFLE_MANUAL_TICKET_FORCE_CHECKOUT");
+                                            trackEvent("CALL_ADD_TO_CART_TICKETS");
                                             try {
                                                 await handleAddToCart(selectedTicket, selectedQuantity, false, true);
                                                 await new Promise(resolve => setTimeout(resolve, 100));
