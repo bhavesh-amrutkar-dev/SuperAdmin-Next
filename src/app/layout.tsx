@@ -34,6 +34,7 @@ import AirbridgeProvider from "./airbridgeProvider";
 import GoogleAnalyticsTracker from "../components/GoogleAnalyticsTracker";
 import MetaPixelTracker from "../components/metaPixel";
 import FirebaseInit from "./FirebaseInit";
+import FirebasePageTracker from "../components/FirebasePageTracker";
 
 export default async function RootLayout({
   children,
@@ -133,6 +134,7 @@ export default async function RootLayout({
             <AirbridgeProvider>
               {/* <GoogleAnalyticsTracker /> */}
               <FirebaseInit />
+              <FirebasePageTracker />
               <MetaPixelTracker />
               {children}
             </AirbridgeProvider>

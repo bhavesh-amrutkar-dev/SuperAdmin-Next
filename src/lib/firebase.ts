@@ -15,27 +15,31 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 let analytics: any = null;
-
+let isInitializing = false;
 export const initAnalytics = async () => {
+    if (analytics || isInitializing) return;
+
     if (typeof window !== "undefined") {
+        isInitializing = true;
+
         const supported = await isSupported();
         if (supported) {
-            console.log("✅ Firebase Analytics Initialized");
             analytics = getAnalytics(app);
+            console.log("✅ Firebase Analytics Initialized");
         }
+
+        isInitializing = false;
     }
 };
-
 export const trackFirebaseEvent = async (eventName: string, params?: any) => {
     if (!analytics) {
-        const supported = await isSupported();
-        if (supported) {
-            analytics = getAnalytics(app);
-        }
+        await initAnalytics(); // 🔥 ensure initialized
     }
 
     if (analytics) {
-        console.log("🔥 Firebase Event:", eventName);
+        console.log("🔥 Firebase Event:", eventName, params);
         logEvent(analytics, eventName, params);
+    } else {
+        console.warn("⚠️ Firebase analytics not initialized");
     }
 };
