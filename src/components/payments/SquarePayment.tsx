@@ -267,8 +267,8 @@ export default function SquarePayment({
         </div>
 
         {/* ✅ Cash App */}
-        {cashAppReady && (
-          <>
+        {/* {cashAppReady && (
+          <> */}
             <div className="flex items-center gap-3 my-4">
               <div className="flex-1 border-t"></div>
               <span className="text-xs text-gray-400">OR</span>
@@ -276,8 +276,8 @@ export default function SquarePayment({
             </div>
 
             <div id="cash-app-pay" className="h-[48px]" />
-          </>
-        )}
+          {/* </>
+        )} */}
 
         {/* ✅ Error UI */}
         {/* {error && (
