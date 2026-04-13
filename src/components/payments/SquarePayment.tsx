@@ -269,11 +269,11 @@ export default function SquarePayment({
         {/* ✅ Cash App */}
         {/* {cashAppReady && (
           <> */}
-            <div className="flex items-center gap-3 my-4">
+            {/* <div className="flex items-center gap-3 my-4">
               <div className="flex-1 border-t"></div>
               <span className="text-xs text-gray-400">OR</span>
               <div className="flex-1 border-t"></div>
-            </div>
+            </div> */}
 
             <div id="cash-app-pay" className="h-[48px]" />
           {/* </>
