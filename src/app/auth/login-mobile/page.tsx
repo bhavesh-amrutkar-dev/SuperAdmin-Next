@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
@@ -14,6 +14,8 @@ import { IMobileLoginRM } from "@/src/models/api/request/auth";
 export default function LoginMobilePage() {
   const router = useRouter();
   const t = useTranslations();
+  const searchParams = useSearchParams();
+  const redirect = searchParams?.get("redirect");
 
   const [mobile, setMobile] = useState("");
   const [countryCode, setCountryCode] = useState("");
@@ -47,11 +49,10 @@ export default function LoginMobilePage() {
 
       const { otpId, otpExpiryTime } = data.data;
 
-      router.push(
-        `/auth/verify-otp?method=mobile&value=${encodeURIComponent(
-          `${countryCode}${mobile}`
-        )}&otpId=${otpId}&expiry=${otpExpiryTime}`
-      );
+      const verifyUrl = `/auth/verify-otp?method=mobile&value=${encodeURIComponent(
+        `${countryCode}${mobile}`
+      )}&otpId=${otpId}&expiry=${otpExpiryTime}${redirect ? `&redirect=${encodeURIComponent(redirect)}` : ""}`;
+      router.push(verifyUrl);
     } catch (err: any) {
       toast.error(err?.message || t("otpSendFailed"));
     } finally {
@@ -112,7 +113,7 @@ export default function LoginMobilePage() {
           </div>
 
           <Link
-            href="/auth/login"
+            href={redirect ? `/auth/login?redirect=${encodeURIComponent(redirect)}` : "/auth/login"}
             className="mt-4 w-full rounded-lg btn-primary py-3 font-semibold
       hover:bg-yellow-400 hover:text-black transition disabled:opacity-50 flex items-center justify-center gap-2"
           >
@@ -125,7 +126,7 @@ export default function LoginMobilePage() {
       <p className="mt-5 sm:mt-6 text-center text-sm text-foreground">
         {t("noAccount")}{" "}
         <Link
-          href="/auth/register"
+          href={redirect ? `/auth/register?redirect=${encodeURIComponent(redirect)}` : "/auth/register"}
           className="font-semibold text-[#2f2f2f] hover:text-[#f3c200] hover:underline transition"
         >
           {t("signUp")}

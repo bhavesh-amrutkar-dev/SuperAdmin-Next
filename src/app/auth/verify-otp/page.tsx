@@ -23,6 +23,7 @@ export default function VerifyOtpPage() {
   const method = searchParams?.get("method") || "mobile"; // email or mobile
   const value = searchParams?.get("value") || "";
   const otpId = searchParams?.get("otpId");
+  const redirect = searchParams?.get("redirect");
 
   const [step, setStep] = useState<"otp" | "resetPassword">("otp");
   const [password, setPassword] = useState("");
@@ -133,7 +134,8 @@ export default function VerifyOtpPage() {
         persistAuthSession(session);
 
         sessionStorage.removeItem("signup_payload");
-        router.replace("/address");
+        const safeSignupRedirect = redirect && !redirect.startsWith("/auth") ? redirect : "/address";
+        router.replace(safeSignupRedirect);
         return;
       }
 
@@ -160,7 +162,8 @@ export default function VerifyOtpPage() {
 
       const session = mapAuthSession(res.data);
       persistAuthSession(session);
-      router.replace("/");
+      const safeRedirect = redirect && !redirect.startsWith("/auth") ? redirect : "/";
+      router.replace(safeRedirect);
     } catch (err: any) {
       toast.error(err?.message || t("otpInvalidGeneric"));
     } finally {
