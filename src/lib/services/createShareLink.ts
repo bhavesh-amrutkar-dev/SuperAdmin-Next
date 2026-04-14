@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     } = body;
 
     // ✅ 1. Log incoming request
-    console.log("🔹 Incoming Request:", JSON.stringify(body, null, 2));
+    // console.log("🔹 Incoming Request:", JSON.stringify(body, null, 2));
 
     // ✅ 2. Build payload separately (important for debugging)
     const airbridgePayload = {
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
     };
 
     // ✅ 3. Log payload sent to Airbridge
-    console.log("🚀 Airbridge Payload:", JSON.stringify(airbridgePayload, null, 2));
+    // console.log("🚀 Airbridge Payload:", JSON.stringify(airbridgePayload, null, 2));
 
     const response = await axios.post(
       "https://api.airbridge.io/v1/tracking-links",
@@ -79,10 +79,10 @@ export async function POST(req: Request) {
     );
 
     // ✅ 4. Log full response
-    console.log(
-      "✅ Airbridge Response:",
-      JSON.stringify(response.data, null, 2)
-    );
+    // console.log(
+    //   "✅ Airbridge Response:",
+    //   JSON.stringify(response.data, null, 2)
+    // );
 
     return NextResponse.json({
       url: response.data.data.trackingLink.shortUrl,

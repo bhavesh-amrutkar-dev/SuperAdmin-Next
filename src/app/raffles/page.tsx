@@ -319,7 +319,7 @@ export default function RafflesPage() {
                                     href={id ? `/raffles/${slug}?pid=${id}&cpid=${raffle.childProductId ?? ""}` : "#"}
                                     className="bg-white rounded-4xl shadow-xl flex flex-col p-4 hover:shadow-2xl transition-shadow"
                                     onClick={() => {
-                                        console.log("CLICK_PRODUCT");
+                                        // console.log("CLICK_PRODUCT");
                                         trackEvent("CLICK_PRODUCT", {
                                             product_id: id,
                                             product_name: productName,

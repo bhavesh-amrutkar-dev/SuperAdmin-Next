@@ -1428,7 +1428,7 @@ export default function RafflesDetailPage() {
                                 ticketQuantity={ticketQuantity}
                                 onTicketQuantityChange={setTicketQuantity}
                                 onApplyClick={() => {
-                                    console.log("CALL_ADD_TO_CART_TICKETS");
+                                    // console.log("CALL_ADD_TO_CART_TICKETS");
 
                                     trackEvent("CALL_ADD_TO_CART_TICKETS", {
                                         ticket_quantity: ticketQuantity,

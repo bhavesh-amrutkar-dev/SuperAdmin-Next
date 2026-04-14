@@ -886,7 +886,7 @@ export default function SecureCheckoutPage() {
 
           await PaymentService.uploadReceipt(formData);
 
-          console.log("✅ Receipt uploaded successfully");
+          // console.log("✅ Receipt uploaded successfully");
         } catch (err) {
           console.warn("❌ Receipt upload failed:", err);
 
