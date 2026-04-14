@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
@@ -15,7 +15,8 @@ type Method = "email" | "mobile" | "";
 export default function ForgotPasswordPage() {
   const router = useRouter();
   const t = useTranslations();
-
+  const searchParams = useSearchParams();
+  const redirect = searchParams?.get("redirect");
   const [method, setMethod] = useState<Method>("email");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
@@ -60,7 +61,12 @@ export default function ForgotPasswordPage() {
         }
 
         toast.success("Password reset link sent to your email.");
-        router.push("/auth/login");
+        const redirectQuery =
+          redirect && !redirect.startsWith("/auth")
+            ? `?redirect=${encodeURIComponent(redirect)}`
+            : "";
+
+        router.push(`/auth/login${redirectQuery}`);
       }
 
       if (method === "mobile") {
@@ -82,10 +88,15 @@ export default function ForgotPasswordPage() {
         const data = await res.json();
         const { otpId, otpExpiryTime } = data.data;
 
+        const redirectQuery =
+          redirect && !redirect.startsWith("/auth")
+            ? `&redirect=${encodeURIComponent(redirect)}`
+            : "";
+
         router.push(
           `/auth/verify-otp?method=mobile&value=${encodeURIComponent(
             `${countryCode}${mobile}`
-          )}&otpId=${otpId}&expiry=${otpExpiryTime}&flow=forgotPassword`
+          )}&otpId=${otpId}&expiry=${otpExpiryTime}&flow=forgotPassword${redirectQuery}`
         );
       }
     } catch (err: any) {

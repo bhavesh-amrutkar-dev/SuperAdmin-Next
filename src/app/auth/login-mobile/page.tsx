@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
@@ -12,12 +12,24 @@ import { AuthService } from "@/src/lib/services/auth";
 import { IMobileLoginRM } from "@/src/models/api/request/auth";
 
 export default function LoginMobilePage() {
+  const searchParams = useSearchParams();
+  const redirect = searchParams?.get("redirect");
   const router = useRouter();
   const t = useTranslations();
 
   const [mobile, setMobile] = useState("");
   const [countryCode, setCountryCode] = useState("");
   const [loading, setLoading] = useState(false);
+
+
+  const loginHref =
+    redirect && !redirect.startsWith("/auth")
+      ? `/auth/login?redirect=${encodeURIComponent(redirect)}`
+      : "/auth/login";
+  const registerHref =
+    redirect && !redirect.startsWith("/auth")
+      ? `/auth/register?redirect=${encodeURIComponent(redirect)}`
+      : "/auth/register";
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -44,13 +56,17 @@ export default function LoginMobilePage() {
       }
 
       const data = await res.json();
-
       const { otpId, otpExpiryTime } = data.data;
+
+      const redirectQuery =
+        redirect && !redirect.startsWith("/auth")
+          ? `&redirect=${encodeURIComponent(redirect)}`
+          : "";
 
       router.push(
         `/auth/verify-otp?method=mobile&value=${encodeURIComponent(
           `${countryCode}${mobile}`
-        )}&otpId=${otpId}&expiry=${otpExpiryTime}`
+        )}&otpId=${otpId}&expiry=${otpExpiryTime}${redirectQuery}`
       );
     } catch (err: any) {
       toast.error(err?.message || t("otpSendFailed"));
@@ -112,9 +128,9 @@ export default function LoginMobilePage() {
           </div>
 
           <Link
-            href="/auth/login"
+            href={loginHref}
             className="mt-4 w-full rounded-lg btn-primary py-3 font-semibold
-      hover:bg-yellow-400 hover:text-black transition disabled:opacity-50 flex items-center justify-center gap-2"
+  hover:bg-yellow-400 hover:text-black transition disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {t("loginWithEmail")}
           </Link>
@@ -125,7 +141,7 @@ export default function LoginMobilePage() {
       <p className="mt-5 sm:mt-6 text-center text-sm text-foreground">
         {t("noAccount")}{" "}
         <Link
-          href="/auth/register"
+          href={registerHref}
           className="font-semibold text-[#2f2f2f] hover:text-[#f3c200] hover:underline transition"
         >
           {t("signUp")}

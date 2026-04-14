@@ -30,6 +30,15 @@ export default function LoginPage() {
     const searchParams = useSearchParams();
     const redirect = searchParams?.get("redirect");
     const [showPassword, setShowPassword] = useState(false);
+
+    const forgotPasswordHref =
+        redirect && !redirect.startsWith("/auth")
+            ? `/auth/forgot-password?redirect=${encodeURIComponent(redirect)}`
+            : "/auth/forgot-password";
+    const loginMobileHref =
+        redirect && !redirect.startsWith("/auth")
+            ? `/auth/login-mobile?redirect=${encodeURIComponent(redirect)}`
+            : "/auth/login-mobile";
     const onSubmit = async (payload: IEmailLoginRM) => {
         try {
             const res = await fetch("/api/login", {
@@ -147,7 +156,7 @@ export default function LoginPage() {
                 {/* Forgot Password */}
                 <div className="flex justify-end">
                     <Link
-                        href="/auth/forgot-password"
+                        href={forgotPasswordHref}
                         className="text-sm font-medium text-foreground hover:text-[#d6ab00] transition"
                     >
                         {t("forgotPassword")}
@@ -177,10 +186,9 @@ export default function LoginPage() {
                 </div>
 
                 <Link
-                    href="/auth/login-mobile"
+                    href={loginMobileHref}
                     className="mt-4 w-full rounded-lg btn-primary py-3 font-semibold
-      hover:bg-yellow-400 hover:text-black transition disabled:opacity-50 flex items-center justify-center gap-2"
-
+    hover:bg-yellow-400 hover:text-black transition disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                     {t("loginWithNumber")}
                 </Link>
