@@ -20,6 +20,16 @@ export default function LoginMobilePage() {
   const [mobile, setMobile] = useState("");
   const [countryCode, setCountryCode] = useState("");
   const [loading, setLoading] = useState(false);
+
+
+  const loginHref =
+    redirect && !redirect.startsWith("/auth")
+      ? `/auth/login?redirect=${encodeURIComponent(redirect)}`
+      : "/auth/login";
+  const registerHref =
+    redirect && !redirect.startsWith("/auth")
+      ? `/auth/register?redirect=${encodeURIComponent(redirect)}`
+      : "/auth/register";
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -46,13 +56,13 @@ export default function LoginMobilePage() {
       }
 
       const data = await res.json();
-
       const { otpId, otpExpiryTime } = data.data;
 
-      const verifyUrl = `/auth/verify-otp?method=mobile&value=${encodeURIComponent(
-        `${countryCode}${mobile}`
-      )}&otpId=${otpId}&expiry=${otpExpiryTime}${redirect ? `&redirect=${encodeURIComponent(redirect)}` : ""}`;
-      router.push(verifyUrl);
+      router.push(
+        `/auth/verify-otp?method=mobile&value=${encodeURIComponent(
+          `${countryCode}${mobile}`
+        )}&otpId=${otpId}&expiry=${otpExpiryTime}`
+      );
     } catch (err: any) {
       toast.error(err?.message || t("otpSendFailed"));
     } finally {
@@ -113,9 +123,9 @@ export default function LoginMobilePage() {
           </div>
 
           <Link
-            href={redirect ? `/auth/login?redirect=${encodeURIComponent(redirect)}` : "/auth/login"}
+            href="/auth/login"
             className="mt-4 w-full rounded-lg btn-primary py-3 font-semibold
-      hover:bg-yellow-400 hover:text-black transition disabled:opacity-50 flex items-center justify-center gap-2"
+  hover:bg-yellow-400 hover:text-black transition disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {t("loginWithEmail")}
           </Link>
@@ -126,7 +136,7 @@ export default function LoginMobilePage() {
       <p className="mt-5 sm:mt-6 text-center text-sm text-foreground">
         {t("noAccount")}{" "}
         <Link
-          href={redirect ? `/auth/register?redirect=${encodeURIComponent(redirect)}` : "/auth/register"}
+          href="/auth/register"
           className="font-semibold text-[#2f2f2f] hover:text-[#f3c200] hover:underline transition"
         >
           {t("signUp")}
