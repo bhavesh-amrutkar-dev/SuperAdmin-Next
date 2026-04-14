@@ -30,6 +30,7 @@ import Script from "next/script";
 import SquarePayment from "@/src/components/payments/SquarePayment";
 import SquareScript from "@/src/components/payments/SqaureScript";
 import { getSquareErrorMessage } from "@/src/lib/config/squareEnum";
+
 import { trackEvent } from "@/src/lib/analytics";
 
 type TaxItem = {
@@ -188,7 +189,6 @@ export default function SecureCheckoutPage() {
     return items;
   }, [cartData]);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [timer, setTimer] = useState(0);
   const [modalConfig, setModalConfig] = useState<{
     title: string;
     message: string;
@@ -199,43 +199,6 @@ export default function SecureCheckoutPage() {
     title: "",
     message: "",
   });
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-
-    if (isUpdatingStatus && timer > 0) {
-      interval = setInterval(() => {
-        setTimer((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isUpdatingStatus, timer]);
-  const formatTimer = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-
-    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-  };
-  useEffect(() => {
-    if (isUpdatingStatus) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
-    }
-
-    return () => {
-      document.body.style.overflow = "auto";
-    };
-  }, [isUpdatingStatus]);
   useEffect(() => {
     fetchAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -260,24 +223,7 @@ export default function SecureCheckoutPage() {
       setSelectedAddress(defaultAddr);
     }
   }, [addresses]);
-  // useEffect(() => {
-  //   if (!isUpdatingStatus || timer <= 0) return;
 
-  //   const interval = setInterval(() => {
-  //     setTimer((prev) => {
-  //       if (prev <= 1) {
-  //         clearInterval(interval);
-
-  //         // ⏳ Timer finished → redirect to orders page
-  //         router.push("/orders");
-  //         return 0;
-  //       }
-  //       return prev - 1;
-  //     });
-  //   }, 1000);
-
-  //   return () => clearInterval(interval);
-  // }, [isUpdatingStatus, timer]);
   const fetchAll = async () => {
     await Promise.all([fetchCart(), fetchAddresses(), fetchBankDetails()]);
     setLoading(false);
@@ -388,20 +334,6 @@ export default function SecureCheckoutPage() {
       window.removeEventListener("message", handlePaymentMessage);
     };
   }, []);
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isUpdatingStatus) {
-        e.preventDefault();
-        e.returnValue = ""; // required for browser popup
-      }
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, [isUpdatingStatus]);
   const handleSquareSuccess = () => {
     toast.success(
       t("paymentSuccess") || "Payment Successful",
@@ -532,7 +464,11 @@ export default function SecureCheckoutPage() {
   };
 
   const handleAthCancel = async () => {
+    if (!athOrderId) return;
 
+    // 1️⃣ Immediate UI response
+    setIsAthReady(false);
+    setPlacingOrder(false);
 
     setModalConfig({
       title: t("paymentCancelled"),
@@ -547,98 +483,40 @@ export default function SecureCheckoutPage() {
     setConfirmOpen(true);
 
     // 2️⃣ Background backend update (non-blocking)
-    // setIsUpdatingStatus(true);
-    // await fetch("/api/orders/status-update", {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify({
-    //     orderId: athOrderId,
-    //     paymentMethod: 10,
-    //   }),
-    // }).catch((error) => {
-    //   console.warn("ATH cancel background update failed:", error);
-    // });
-    // setIsUpdatingStatus(false);
+    setIsUpdatingStatus(true);
+    await fetch("/api/orders/status-update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        orderId: athOrderId,
+        paymentMethod: 10,
+      }),
+    }).catch((error) => {
+      console.warn("ATH cancel background update failed:", error);
+    });
+    setIsUpdatingStatus(false);
 
     fetchCart()
-  };
-  const pollOrderStatus = async (orderId: string, timeoutSeconds: number) => {
-    const startTime = Date.now();
-    const maxTime = timeoutSeconds * 1000;
-
-    while (Date.now() - startTime < maxTime) {
-      try {
-        const res = await fetch("/api/orders/status-update", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId, paymentMethod: 10 }),
-        });
-
-        const data = await res.json();
-        const status = data?.statusText?.toLowerCase();
-
-        if (status === "success") {
-          handleAthSuccess();
-          return;
-        }
-
-        if (status === "cancelled" || status === "failed") {
-          handleAthCancel();
-          return;
-        }
-
-      } catch (err) {
-        console.warn("Polling error:", err);
-      }
-
-      await new Promise((r) => setTimeout(r, 30000)); // fixed interval
-    }
-
-    // timeout reached
-    router.push("/orders");
-  };
-  const extractErrorMessage = (error: any) => {
-    const raw =
-      error?.response?.data?.message ||
-      error?.message ||
-      error?.data?.message ||
-      (typeof error === "string" ? error : null) ||
-      "Something went wrong";
-
-    try {
-      const parsed = JSON.parse(raw);
-      return parsed?.message || raw;
-    } catch {
-      return raw;
-    }
-  };
-  const handleUserCancelClick = () => {
-    setModalConfig({
-      title: t("cancelTransaction"),
-      message: t("cancelTransactionMsg"),
-      confirmText: t("yes"),
-      cancelText: t("no"),
-      onConfirm: () => {
-        setIsUpdatingStatus(false);
-        setPlacingOrder(false);
-
-        // 👉 redirect to orders page
-        router.push("/orders");
-      },
-    });
-
-    setConfirmOpen(true);
-  };
-
-  const handleAuthMovil = async () => {
+  }; const handleAuthMovil = async () => {
     try {
       if (!selectedAddress) return;
 
       setPlacingOrder(true);
-      setIsUpdatingStatus(true); // 🔥 show loader UI
+      // const freshCartResponse = await CartService.getCart();
 
+      // const freshCartData =
+      //   (freshCartResponse as any)?.data?.data ||
+      //   (freshCartResponse as any)?.data ||
+      //   freshCartResponse;
+
+      // const cartId =
+      //   (freshCartData as any)?._id ||
+      //   (freshCartData as any)?.cartId;
       const cartId = (cartData as any)?._id;
-      if (!cartId) throw new Error("Cart ID not found");
+      if (!cartId) {
+        console.warn("❌ Cart ID not found");
+        throw new Error("Cart ID not found");
+      }
 
       const addressId =
         selectedAddress?._id ||
@@ -649,6 +527,7 @@ export default function SecureCheckoutPage() {
       const latitude = (getCookie("lat") as string) || "0";
       const longitude = (getCookie("long") as string) || "0";
       const ipAddress = await getMyIP();
+
 
       const orderPayload = {
         cartId,
@@ -673,6 +552,7 @@ export default function SecureCheckoutPage() {
         payByWallet: false,
         userId: uid || "1",
       };
+      // 1️⃣ Create order (your existing logic)
       trackEvent("GOTO_PAYEMNT");
       const response = await fetch("/api/orders/place", {
         method: "POST",
@@ -680,41 +560,110 @@ export default function SecureCheckoutPage() {
         body: JSON.stringify(orderPayload),
       });
 
-      const createdOrder = await response.json();
-
-      if (!response.ok || !createdOrder?.orderId) {
-        throw new Error(createdOrder?.message || "Order failed");
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.message || "Order creation failed");
       }
 
+      const createdOrder = await response.json();
+      if (
+        createdOrder?.message &&
+        createdOrder.message.toLowerCase().includes("cart not found")
+      ) {
+        setConfirmOpen(true);
+        setPlacingOrder(false);
+        return;
+      }
+
+      if (!createdOrder?.orderId) {
+        throw new Error("Order creation failed");
+      }
+
+      // Store order ID for later use
+      if (typeof window !== "undefined") {
+        localStorage.setItem("orderId", createdOrder.orderId);
+        localStorage.setItem("cartId", cartId);
+        if (createdOrder.numberOfFreeTickets) {
+          localStorage.setItem("TotalFreeTicket", String(createdOrder.numberOfFreeTickets));
+        }
+      }
+
+      setOrderTotal(createdOrder?.totalAmount)
       const orderId = createdOrder.orderId;
 
-      // ✅ timeout from API (fallback 5 min)
-      const timeoutSeconds = Number(createdOrder?.timeOut) || 300;
+      // 2️⃣ Get public token
+      // const tokenResponse = await PaymentService.ATHMovileToken();
+      const tokenResponse = await PaymentService.ATHMovileToken();
+      const publicToken =
+        (tokenResponse as any)?.data?.data?.publicToken ||
+        (tokenResponse as any)?.data?.publicToken;
 
-      // 🔥 start countdown
-      setTimer(timeoutSeconds);
-      // 🔥 Start polling
-      await pollOrderStatus(orderId, timeoutSeconds);
+      if (!publicToken) {
+        throw new Error("Public token not received");
+      }
+
+      // 3️⃣ Save to state (THIS triggers component mount)
+      setAthOrderId(orderId);
+      setAthToken(publicToken);
+      setIsAthReady(true);
 
     } catch (error: any) {
-      console.warn("ATH error:", error);
+      // Extract error message from various possible locations
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        error?.data?.message ||
+        (typeof error === "string" ? error : null) ||
+        "Failed to place order. Please try again.";
 
-      setIsUpdatingStatus(false);
-      setPlacingOrder(false);
-
-      const finalMessage = extractErrorMessage(error);
-
-      setModalConfig({
-        title: t("checkoutError"),
-        message: finalMessage,
+      console.warn("Error placing order:", {
+        message: errorMessage,
+        error: error,
+        status: error?.status || error?.response?.status,
+        data: error?.response?.data || error?.data,
       });
 
-      setConfirmOpen(true);
+      // Handle specific error cases
+      const errorMsgLower = errorMessage.toLowerCase();
+
+      if (errorMsgLower.includes("cart not found")) {
+        setModalConfig({
+          title: t("cartNotFound"),
+          message: t("cartNotFoundDescription"),
+          confirmText: t("returnToCart"),
+          cancelText: t("continueShopping"),
+          onConfirm: () => router.push("/cart"),
+        });
+        setConfirmOpen(true);
+        router.push("/cart");
+      } else if (
+        errorMsgLower.includes("cart id not found") ||
+        errorMsgLower.includes("cart is empty")
+      ) {
+        setModalConfig({
+          title: t("cartEmpty"),
+          message: t("cartEmptyDescription"),
+          confirmText: t("goToCart"),
+          cancelText: t("continueShopping"),
+          onConfirm: () => router.push("/cart"),
+        });
+        setConfirmOpen(true);
+        router.push("/cart");
+      } else {
+        setModalConfig({
+          title: t("checkoutError"),
+          message: t("checkoutErrorDescription"),
+          confirmText: t("tryAgain"),
+        });
+        setConfirmOpen(true);
+      }
+
+      setPlacingOrder(false);
     }
   };
+
   const handlePlaceOrder = async () => {
     trackEvent("CONTINUE_AND_CONFIRM_ORDER");
-
     if (!selectedAddress || !cartData) return;
 
     // ATH handled separately
@@ -735,6 +684,7 @@ export default function SecureCheckoutPage() {
       }
       trackEvent("GOTO_PAYEMNT");
       trackEvent("SELECT_BANK");
+
       if (!receiptFile || !manualPaymentConfirmed) {
         setModalConfig({
           title: t("validationError"),
@@ -906,8 +856,7 @@ export default function SecureCheckoutPage() {
 
       // 🔵 Square
       if (paymentMethod === "square") {
-              trackEvent("GOTO_PAYEMNT");
-              
+        trackEvent("GOTO_PAYEMNT");
         try {
           const redirectUrl = orderData?.checkoutProcessUrl;
 
@@ -1192,17 +1141,17 @@ export default function SecureCheckoutPage() {
               </p>
 
               {/* Timer */}
-              <div className="text-sm font-semibold text-[#D4AF37]">
+              {/* <div className="text-sm font-semibold text-[#D4AF37]">
                 {formatTimer(timer)}
-              </div>
+              </div> */}
 
               {/* 🔥 CANCEL BUTTON */}
-              <button
+              {/* <button
                 onClick={handleUserCancelClick}
                 className="mt-2 text-sm text-red-500 hover:cursor-pointer"
               >
                 {t("cancelTransaction") || "Cancel Transaction"}
-              </button>
+              </button> */}
 
             </div>
           </div>
