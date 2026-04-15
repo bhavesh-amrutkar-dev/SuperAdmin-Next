@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, X } from "lucide-react";
 import { toast } from "sonner";
@@ -25,6 +26,7 @@ interface LoginModalProps {
 export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps) {
     const t = useTranslations();
     const { setUser } = useAuth();
+    const pathname = usePathname();
     const [showPassword, setShowPassword] = useState(false);
     const {
         register,
@@ -225,14 +227,14 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                         </div>
 
                         <Link
-                            href="/auth/login-mobile"
+                            href={`/auth/login-mobile?redirect=${encodeURIComponent(pathname)}`}
                             className="mt-3 sm:mt-4 flex items-center justify-center rounded-lg border border-[#2f2f2f]
               py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-[#2f2f2f]
               hover:border-[#f3c200] hover:text-[#f3c200] transition"
                             onClick={(e) => {
                                 e.preventDefault();
                                 onClose();
-                                window.location.href = "/auth/login-mobile";
+                                window.location.href = `/auth/login-mobile?redirect=${encodeURIComponent(pathname)}`;
                             }}
                         >
                             {t("loginWithNumber")}
@@ -243,12 +245,12 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                     <p className="mt-6 sm:mt-8 text-center text-xs sm:text-sm text-[#2f2f2f]">
                         {t("dontHaveAccount")}{" "}
                         <Link
-                            href="/auth/register"
+                            href={`/auth/register?redirect=${encodeURIComponent(pathname)}`}
                             className="font-semibold text-[#2f2f2f] hover:text-[#f3c200] hover:underline transition"
                             onClick={(e) => {
                                 e.preventDefault();
                                 onClose();
-                                window.location.href = "/auth/register";
+                                window.location.href = `/auth/register?redirect=${encodeURIComponent(pathname)}`;
                             }}
                         >
                             {t("signUp")}

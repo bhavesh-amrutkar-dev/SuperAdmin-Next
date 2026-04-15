@@ -186,7 +186,7 @@ export default function LoginPage() {
                 </div>
 
                 <Link
-                    href={loginMobileHref}
+                    href={redirect ? `/auth/login-mobile?redirect=${encodeURIComponent(redirect)}` : "/auth/login-mobile"}
                     className="mt-4 w-full rounded-lg btn-primary py-3 font-semibold
     hover:bg-yellow-400 hover:text-black transition disabled:opacity-50 flex items-center justify-center gap-2"
                 >
@@ -207,7 +207,7 @@ export default function LoginPage() {
             <p className="mt-5 sm:mt-6 text-center text-sm text-foreground">
                 {t("dontHaveAccount")}{" "}
                 <Link
-                    href="/auth/register"
+                    href={redirect ? `/auth/register?redirect=${encodeURIComponent(redirect)}` : "/auth/register"}
                     className="font-semibold text-[#2f2f2f] hover:text-[#f3c200] hover:underline transition"
                 >
                     {t("signUp")}
