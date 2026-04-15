@@ -128,49 +128,49 @@ export default function SquarePayment({
   });
 
   // ✅ Handle token
-  const handleToken = async (token: any) => {
-    try {
-      setIsProcessing(true);
-      setLoading(true);
-      setError(null);
+    const handleToken = async (token: any) => {
+      try {
+        setIsProcessing(true);
+        setLoading(true);
+        setError(null);
 
-      // ⏳ fallback timeout (handles wallet cancel silently)
-      timeoutRef.current = setTimeout(() => {
+        // ⏳ fallback timeout (handles wallet cancel silently)
+        timeoutRef.current = setTimeout(() => {
+          setIsProcessing(false);
+        }, 15000);
+
+        const res = await fetch("/api/pay", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            token: token.token,
+            orderId,
+            authToken,
+          }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.message || t("errors.paymentFailed"));
+        }
+
+        onSuccess?.();
+      } catch (err: any) {
+        const message = normalizeError(err);
+        setError(message);
+        onError?.({ ...err, message });
+      } finally {
+        setLoading(false);
         setIsProcessing(false);
-      }, 15000);
 
-      const res = await fetch("/api/pay", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          token: token.token,
-          orderId,
-          authToken,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || t("errors.paymentFailed"));
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
       }
-
-      onSuccess?.();
-    } catch (err: any) {
-      const message = normalizeError(err);
-      setError(message);
-      onError?.({ ...err, message });
-    } finally {
-      setLoading(false);
-      setIsProcessing(false);
-
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    }
-  };
+    };
 
   const formatAmount = (value: number | string) => {
     const num = Number(value);

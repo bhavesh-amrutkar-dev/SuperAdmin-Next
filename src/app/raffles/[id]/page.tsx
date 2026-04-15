@@ -1522,8 +1522,8 @@ export default function RafflesDetailPage() {
 
                                             /* ✅ FREE TICKET FLOW */
                                             if (selectedTicketData && selectedTicketData.price === 0) {
-                                                if (!user) {
-                                                    setShowExpressRegister(true); // 👈 changed
+                                             if (!user) {
+                                                    setShowLoginModal(true);
                                                     return;
                                                 }
 
@@ -1538,11 +1538,10 @@ export default function RafflesDetailPage() {
 
                                             /* ✅ PAID FLOW */
                                             if (selectedTicketData && selectedTicketData.price > 0) {
-                                                if (!user) {
-                                                    setShowExpressRegister(true); // 👈 added
+                                               if (!user) {
+                                                    setShowLoginModal(true);
                                                     return;
                                                 }
-
                                                 handleParticipateClick(selectedTicketData.id, 1);
                                                 return;
                                             }
@@ -1566,44 +1565,6 @@ export default function RafflesDetailPage() {
 
                         </div>
                     </div>
-                    <Dialog open={showExpressRegister} onOpenChange={setShowExpressRegister}>
-                        <DialogContent
-                            showCloseButton
-                            disableOutsideClose
-                            disableEscapeClose
-                            className="p-0 max-w-lg w-[95%] h-[90vh] flex flex-col"
-                        >
-                            {/* 🔹 Header */}
-                            <div className="px-5 pt-5 pb-3 border-b">
-                                <DialogTitle className="mb-0 border-none pb-0">
-                                   Enter Details to Participate
-                                </DialogTitle>
-                            </div>
-
-                            {/* 🔹 Scrollable Body */}
-                            <div className="flex-1 overflow-y-auto ">
-                                <ExpressRegisterForm
-                                    cartId={lotteryItem?._id}
-                                    isExpressOrder={true}
-                                    onSubmit={async (payload) => {
-                                        try {
-                                            console.log("EXPRESS PAYLOAD", payload);
-
-                                            setShowExpressRegister(false);
-
-                                            if (payload) {
-                                                handleParticipateClick(selectedTicket, 1);
-                                            }
-
-                                        } catch (err) {
-                                            console.error(err);
-                                        }
-                                    }}
-                                />
-                            </div>
-
-                        </DialogContent>
-                    </Dialog>
                     {/* Additional Information Sections - Now properly at the bottom */}
                     <div className="border border-gray-200 bg-white rounded-xl mt-6 lg:mt-8 overflow-hidden">
                         {/* Product Description Section */}
