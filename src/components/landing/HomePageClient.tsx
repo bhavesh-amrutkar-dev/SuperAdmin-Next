@@ -91,6 +91,7 @@ export default function HomePageClient({
      Fetch Raffles
   ------------------------------ */
   const fetchRaffles = useCallback(async () => {
+    if (!selectedCountryId) return;
 
     if (abortRef.current) abortRef.current.abort();
     const controller = new AbortController();
