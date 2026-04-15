@@ -91,8 +91,6 @@ export default function HomePageClient({
      Fetch Raffles
   ------------------------------ */
   const fetchRaffles = useCallback(async () => {
-    if (!selectedCountryId) return;
-
     if (abortRef.current) abortRef.current.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -118,7 +116,11 @@ export default function HomePageClient({
           return {
             id: campaignId,
             name: raffle.campaignTitle || raffle.productName || "",
-            price: raffle.cashAwardAmount ?? raffle.goalValue ?? raffle.ticketPrice ?? 0,
+            price:
+              raffle.cashAwardAmount ??
+              raffle.goalValue ??
+              raffle.ticketPrice ??
+              0,
             currencySymbol: raffle.currencySymbol || "$",
             image:
               raffle.image?.[0]?.medium ||
@@ -128,6 +130,7 @@ export default function HomePageClient({
         })
         .filter(Boolean) as RaffleItem[];
 
+      // ✅ FIX: do NOT throw error on empty
       if (raffleItems.length > 0) {
         setRaffleSection({
           id: "all-raffles",
@@ -137,17 +140,17 @@ export default function HomePageClient({
           items: raffleItems,
         });
       } else {
-        throw new Error(t("serviceDown") || "No raffles available");
+        setRaffleSection(null);
       }
     } catch (err: any) {
       if (err?.name !== "AbortError") {
         console.warn("Raffles Fetch Failed:", err);
-        throw err; // propagate to global error
+        throw err;
       }
     } finally {
       setLoadingRaffles(false);
     }
-  }, [selectedCountryId, t]);
+  }, [t]);
 
   /* -----------------------------
      Fetch All Data
