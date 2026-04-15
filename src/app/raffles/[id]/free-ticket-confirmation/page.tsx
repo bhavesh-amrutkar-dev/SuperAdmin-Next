@@ -14,6 +14,7 @@ import { UserAddressService } from "@/src/lib/services/userAddress";
 import { PRODUCT_CART } from "@/src/lib/config";
 import { getCookie } from "cookies-next";
 import Loader from "@/src/components/loader";
+import { trackEvent } from "@/src/lib/analytics";
 
 type LegacyRaffleDetail = {
     productName?: string;
@@ -120,7 +121,7 @@ export default function FreeTicketConfirmationPage() {
 
     const handleConfirm = async () => {
         if (!lotteryItem || !ticketId || quantity <= 0 || applyingTicket) return;
-
+        trackEvent("RAFFLE_FREE_TICKET_FORCES_CHECKOUT");
         setApplyingTicket(true);
         setError(null);
 
@@ -171,6 +172,7 @@ export default function FreeTicketConfirmationPage() {
     };
 
     const handleCancel = () => {
+        trackEvent("CANCEL_RAFFLE_FREE_TICKET_CHECKOUT");
         router.back();
     };
 

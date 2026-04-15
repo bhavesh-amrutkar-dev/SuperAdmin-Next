@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import type { CountryData } from "react-phone-input-2";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -60,6 +60,8 @@ export default function RegisterPage() {
   const [otpId, setOtpId] = useState<string | null>(null);
 
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams?.get("redirect");
 
   const sendOtp = async () => {
     setOtpLoading(true);
@@ -117,7 +119,7 @@ export default function RegisterPage() {
       router.push(
         `/auth/verify-otp?method=mobile&value=${encodeURIComponent(
           `${cleanedForm.countryCode}${cleanedForm.mobile}`
-        )}&otpId=${otpId}&expiry=${otpExpiryTime}&flow=signup`
+        )}&otpId=${otpId}&expiry=${otpExpiryTime}&flow=signup${redirect ? `&redirect=${encodeURIComponent(redirect)}` : ""}`
       );
     } catch (err: any) {
       toast.error(err?.message)
@@ -495,7 +497,7 @@ export default function RegisterPage() {
       <div className="mt-5 sm:mt-6 text-center">
         <p className="text-sm">
           {t("alreadyHaveAccount")}{" "}
-          <Link href="/auth/login" className="font-semibold text-[#2f2f2f] hover:text-[#f3c200] hover:underline transition">
+          <Link href={redirect ? `/auth/login?redirect=${encodeURIComponent(redirect)}` : "/auth/login"} className="font-semibold text-[#2f2f2f] hover:text-[#f3c200] hover:underline transition">
             {t("signIn")}
           </Link>
         </p>

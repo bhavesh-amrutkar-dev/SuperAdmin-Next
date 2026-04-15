@@ -42,7 +42,7 @@ export default function SquarePaymentClient({
   };
   const handleSuccess = () => {
     const payload = { status: "SUCCESS", orderId };
-    console.log("Device type---", deviceType);
+    // console.log("Device type---", deviceType);
 
     const sent = sendPaymentEvent(payload);
     if (deviceType === 1) {
@@ -68,7 +68,7 @@ export default function SquarePaymentClient({
     try {
       if (typeof err?.message === "string") {
         const parsed = JSON.parse(err.message);
-        console.log("Parsed>>>>>>>", parsed);
+        // console.log("Parsed>>>>>>>", parsed);
         
         mobileError = parsed?.error?.code || parsed?.message || err.message;
       }

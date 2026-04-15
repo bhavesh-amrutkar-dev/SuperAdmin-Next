@@ -104,8 +104,7 @@ import { stripHtml } from "@/src/lib/utils/HtmltoText";
 import { Button } from "../../../components/ui/button";
 import ImageMagnify from "@/src/lib/utils/imageMagnify";
 import RaffleDetailSkeleton from "@/src/components/raffle-detail/RaffleDetailSkeleton";
-import ExpressRegisterForm from "@/src/components/express/ExpressRegisterForm";
-import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
+import { trackEvent } from "@/src/lib/analytics";
 
 
 export default function RafflesDetailPage() {
@@ -1430,6 +1429,12 @@ export default function RafflesDetailPage() {
                                 ticketQuantity={ticketQuantity}
                                 onTicketQuantityChange={setTicketQuantity}
                                 onApplyClick={() => {
+                                    // console.log("CALL_ADD_TO_CART_TICKETS");
+
+                                    trackEvent("CALL_ADD_TO_CART_TICKETS", {
+                                        ticket_quantity: ticketQuantity,
+                                    });
+
                                     if (ticketQuantity <= 0 || ticketQuantity > userTickets || !lotteryItem) {
                                         return;
                                     }
@@ -1467,6 +1472,8 @@ export default function RafflesDetailPage() {
                                         onContinue={async () => {
                                             if (continuing || applyingTicket || !selectedTicket) return;
                                             setContinuing(true);
+                                            trackEvent("RAFFLE_MANUAL_TICKET_FORCE_CHECKOUT");
+                                            trackEvent("CALL_ADD_TO_CART_TICKETS");
                                             try {
                                                 await handleAddToCart(selectedTicket, selectedQuantity, false, true);
                                                 await new Promise(resolve => setTimeout(resolve, 100));

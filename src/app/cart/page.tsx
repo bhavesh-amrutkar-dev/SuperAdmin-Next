@@ -13,6 +13,7 @@ import { CartService } from "@/src/lib/services/cart";
 import { getCookie } from "cookies-next";
 import { Button } from "../../components/ui/button";
 import Loader from "@/src/components/loader";
+import { trackEvent } from "@/src/lib/analytics";
 
 interface CartItem {
   _id?: string;
@@ -533,7 +534,9 @@ export default function CartPage() {
     setShowConfirmModal(false);
     setItemToRemove(null);
   };
-
+  useEffect(() => {
+    trackEvent("GOTO_CART");
+  }, []);
   const getProductImage = (item: CartItem): string => {
     // Check images object (old project uses product.images.large)
     if (item.images) {
@@ -609,6 +612,7 @@ export default function CartPage() {
 
   // Handle checkout - check authentication first
   const handleCheckout = async () => {
+    trackEvent("CONTINUE_PAYMENT_CLICK");
     if (checkoutLoading || updating) return; // Prevent multiple clicks during API calls
 
     if (!isAuthenticated()) {
@@ -656,10 +660,10 @@ export default function CartPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D4AF37] mx-auto"></div>
             <p className="mt-4 text-gray-600"> {t("loadingCart")}</p>
           </div> */}
-          <Loader/>
+          <Loader />
         </div>
-        
-         
+
+
         <Footer />
       </div>
     );
@@ -1023,7 +1027,7 @@ export default function CartPage() {
       )}
 
       {/* <div className={itemCount > 0 ? "pb-20 sm:pb-24" : ""}> */}
-        <Footer />
+      <Footer />
       {/* </div> */}
 
       {/* Confirmation Modal */}

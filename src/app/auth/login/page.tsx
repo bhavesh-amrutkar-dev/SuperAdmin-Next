@@ -30,6 +30,15 @@ export default function LoginPage() {
     const searchParams = useSearchParams();
     const redirect = searchParams?.get("redirect");
     const [showPassword, setShowPassword] = useState(false);
+
+    const forgotPasswordHref =
+        redirect && !redirect.startsWith("/auth")
+            ? `/auth/forgot-password?redirect=${encodeURIComponent(redirect)}`
+            : "/auth/forgot-password";
+    const loginMobileHref =
+        redirect && !redirect.startsWith("/auth")
+            ? `/auth/login-mobile?redirect=${encodeURIComponent(redirect)}`
+            : "/auth/login-mobile";
     const onSubmit = async (payload: IEmailLoginRM) => {
         try {
             const res = await fetch("/api/login", {
@@ -147,7 +156,7 @@ export default function LoginPage() {
                 {/* Forgot Password */}
                 <div className="flex justify-end">
                     <Link
-                        href="/auth/forgot-password"
+                        href={forgotPasswordHref}
                         className="text-sm font-medium text-foreground hover:text-[#d6ab00] transition"
                     >
                         {t("forgotPassword")}
@@ -177,10 +186,9 @@ export default function LoginPage() {
                 </div>
 
                 <Link
-                    href="/auth/login-mobile"
+                    href={redirect ? `/auth/login-mobile?redirect=${encodeURIComponent(redirect)}` : "/auth/login-mobile"}
                     className="mt-4 w-full rounded-lg btn-primary py-3 font-semibold
-      hover:bg-yellow-400 hover:text-black transition disabled:opacity-50 flex items-center justify-center gap-2"
-
+    hover:bg-yellow-400 hover:text-black transition disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                     {t("loginWithNumber")}
                 </Link>
@@ -199,7 +207,7 @@ export default function LoginPage() {
             <p className="mt-5 sm:mt-6 text-center text-sm text-foreground">
                 {t("dontHaveAccount")}{" "}
                 <Link
-                    href="/auth/register"
+                    href={redirect ? `/auth/register?redirect=${encodeURIComponent(redirect)}` : "/auth/register"}
                     className="font-semibold text-[#2f2f2f] hover:text-[#f3c200] hover:underline transition"
                 >
                     {t("signUp")}

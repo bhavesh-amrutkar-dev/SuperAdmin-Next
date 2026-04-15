@@ -54,7 +54,7 @@ export default function AthMovilPayment({
 
         const response = await authFn();
 
-        console.log("✅ ATH Authorization Response:", response);
+        // console.log("✅ ATH Authorization Response:", response);
 
         await onSuccess(response);
 
@@ -74,7 +74,7 @@ export default function AthMovilPayment({
 
         if (typeof findFn === "function") {
           response = await findFn();
-          console.log("⚠️ ATH Cancel Response:", response);
+          // console.log("⚠️ ATH Cancel Response:", response);
         }
 
         await onCancel(response);
@@ -94,7 +94,7 @@ export default function AthMovilPayment({
 
         if (typeof findFn === "function") {
           response = await findFn();
-          console.log("⏳ ATH Expired Response:", response);
+          // console.log("⏳ ATH Expired Response:", response);
         }
 
         await onCancel(response);
