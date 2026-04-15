@@ -34,10 +34,12 @@ export default function ExpressRegisterForm({
   onSubmit,
   cartId,
   isExpressOrder = true,
+  isRaffle
 }: {
   onSubmit: (payload: any) => Promise<void>;
   cartId?: string;
   isExpressOrder?: boolean;
+  isRaffle: boolean
 }) {
   const t = useTranslations();
 
@@ -88,7 +90,7 @@ export default function ExpressRegisterForm({
       onSubmit={handleSubmit(async (data) => {
         const payload = buildPayload(data);
         console.log("payload", payload);
-        
+
         await onSubmit(payload);
       })}
       className="space-y-5"
@@ -169,9 +171,8 @@ export default function ExpressRegisterForm({
                   value.replace(country.dialCode, "")
                 );
               }}
-              inputClass={`!w-full !h-[44px] !rounded-lg !border ${
-                errors.mobileNumber ? "!border-red-500" : "!border-input"
-              }`}
+              inputClass={`!w-full !h-[44px] !rounded-lg !border ${errors.mobileNumber ? "!border-red-500" : "!border-input"
+                }`}
             />
 
             <ErrorMessage message={errors.mobileNumber?.message} />
@@ -180,7 +181,7 @@ export default function ExpressRegisterForm({
       </section>
 
       {/* Address */}
-      <section className="bg-gray-50 p-4 rounded-2xl space-y-4">
+      {!isRaffle && (<section className="bg-gray-50 p-4 rounded-2xl space-y-4">
         <h2 className="text-sm font-semibold uppercase text-gray-500">
           {t("paymentInformation")}
         </h2>
@@ -264,10 +265,10 @@ export default function ExpressRegisterForm({
             <ErrorMessage message={errors.pincode?.message} />
           </div>
         </div>
-      </section>
+      </section>)}
 
       {/* Address Type */}
-      <section className="bg-gray-50 p-4 rounded-2xl">
+      {!isRaffle && (<section className="bg-gray-50 p-4 rounded-2xl">
         <h2 className="text-sm font-semibold uppercase text-gray-500 mb-3">
           {t("addressType")}
         </h2>
@@ -289,7 +290,7 @@ export default function ExpressRegisterForm({
             </Button>
           ))}
         </div>
-      </section>
+      </section>)}
 
       {/* Submit */}
       <Button

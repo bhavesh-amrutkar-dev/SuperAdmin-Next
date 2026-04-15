@@ -944,7 +944,7 @@ export default function RafflesDetailPage() {
 
             // Only redirect if redirectToCart is true
             if (redirectToCart) {
-                router.push("/cart");
+                router.push("/express-checkout");
             }
         } catch (err) {
             const errorMessage =
@@ -1480,7 +1480,7 @@ export default function RafflesDetailPage() {
                                             } catch (error) {
                                                 console.warn("Error updating cart before redirect:", error);
                                             } finally {
-                                                router.push("/cart");
+                                                router.push("/express-checkout");
                                             }
                                         }}
                                         applyingTicket={applyingTicket}
@@ -1538,10 +1538,10 @@ export default function RafflesDetailPage() {
 
                                             /* ✅ PAID FLOW */
                                             if (selectedTicketData && selectedTicketData.price > 0) {
-                                               if (!user) {
-                                                    setShowLoginModal(true);
-                                                    return;
-                                                }
+                                            //    if (!user) {
+                                            //         setShowLoginModal(true);
+                                            //         return;
+                                            //     }
                                                 handleParticipateClick(selectedTicketData.id, 1);
                                                 return;
                                             }
