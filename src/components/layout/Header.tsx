@@ -14,12 +14,20 @@ import LanguageSwitcher from "../LanguageSwitcher";
 import { getCookie } from "cookies-next";
 import CountrySelectorModal from "./CountrySelectorModal";
 import { logout as logoutUser } from "@/src/lib/utils/logout";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CartService } from "@/src/lib/services/cart";
 import { Button } from "../ui/button";
 import { useAuth } from "@/src/context/authContext";
 
 export default function Header() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const queryString = searchParams?.toString();
+  const fullPath = queryString ? `${pathname}?${queryString}` : pathname;
+
+  const redirectPath =
+    fullPath && !fullPath.startsWith("/auth") ? fullPath : "/";
   const [menuOpen, setMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -32,7 +40,6 @@ export default function Header() {
   const t = useTranslations();
   const router = useRouter();
   const { user, setUser } = useAuth();
-  const pathname = usePathname();
   const [cookieUser, setCookieUser] = useState<{ name?: string; profilePic?: string } | null>(null);
 
   // Get user data from cookies on client side only (prevents hydration mismatch)
@@ -95,8 +102,7 @@ export default function Header() {
   }, [menuOpen]);
 
   const fetchingCartRef = useRef(false);
-  const redirectPath =
-    pathname && !pathname.startsWith("/auth") ? pathname : "/";
+
   const fetchCartCount = async () => {
     // Prevent duplicate calls
     if (fetchingCartRef.current) return;
