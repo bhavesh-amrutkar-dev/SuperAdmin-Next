@@ -235,10 +235,15 @@ export default function VerifyOtpPage() {
       setTimer(otpExpiryTime ?? 180);
 
       // update URL with new otpId
+      const redirectQuery =
+        redirect && !redirect.startsWith("/auth")
+          ? `&redirect=${encodeURIComponent(redirect)}`
+          : "";
+
       router.replace(
         `/auth/verify-otp?method=${method}&value=${encodeURIComponent(
           value
-        )}&otpId=${newOtpId}&expiry=${otpExpiryTime}&flow=${flow}`
+        )}&otpId=${newOtpId}&expiry=${otpExpiryTime}&flow=${flow}${redirectQuery}`
       );
 
       toast.success(t("otpResent"));

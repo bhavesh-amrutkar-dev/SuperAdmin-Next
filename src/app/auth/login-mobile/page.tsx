@@ -58,10 +58,15 @@ export default function LoginMobilePage() {
       const data = await res.json();
       const { otpId, otpExpiryTime } = data.data;
 
+      const redirectQuery =
+        redirect && !redirect.startsWith("/auth")
+          ? `&redirect=${encodeURIComponent(redirect)}`
+          : "";
+
       router.push(
         `/auth/verify-otp?method=mobile&value=${encodeURIComponent(
           `${countryCode}${mobile}`
-        )}&otpId=${otpId}&expiry=${otpExpiryTime}`
+        )}&otpId=${otpId}&expiry=${otpExpiryTime}${redirectQuery}`
       );
     } catch (err: any) {
       toast.error(err?.message || t("otpSendFailed"));
@@ -123,7 +128,7 @@ export default function LoginMobilePage() {
           </div>
 
           <Link
-            href="/auth/login"
+            href={loginHref}
             className="mt-4 w-full rounded-lg btn-primary py-3 font-semibold
   hover:bg-yellow-400 hover:text-black transition disabled:opacity-50 flex items-center justify-center gap-2"
           >
@@ -136,7 +141,7 @@ export default function LoginMobilePage() {
       <p className="mt-5 sm:mt-6 text-center text-sm text-foreground">
         {t("noAccount")}{" "}
         <Link
-          href="/auth/register"
+           href={registerHref}
           className="font-semibold text-[#2f2f2f] hover:text-[#f3c200] hover:underline transition"
         >
           {t("signUp")}
