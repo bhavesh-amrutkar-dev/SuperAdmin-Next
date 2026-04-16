@@ -439,6 +439,7 @@ export default function SecureCheckoutPage() {
       setPlacingOrder(false);
       setIsUpdatingStatus(true);
 
+      trackEvent("ORDER_API_STATUES");
       await fetch("/api/orders/status-update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -495,6 +496,8 @@ export default function SecureCheckoutPage() {
 
     // 2️⃣ Background backend update (non-blocking)
     setIsUpdatingStatus(true);
+
+    trackEvent("ORDER_API_STATUES");
     await fetch("/api/orders/status-update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -566,6 +569,7 @@ export default function SecureCheckoutPage() {
       };
       // 1️⃣ Create order (your existing logic)
       trackEvent("GOTO_PAYEMNT");
+
       const response = await fetch("/api/orders/place", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -927,6 +931,7 @@ export default function SecureCheckoutPage() {
         const orderId = localStorage.getItem("orderId");
 
         if (orderId) {
+          trackEvent("ORDER_API_STATUES");
           await fetch("/api/orders/status-update", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
