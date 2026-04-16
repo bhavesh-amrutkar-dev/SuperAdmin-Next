@@ -291,6 +291,9 @@ export default function SecureCheckoutPage() {
       handled = true;
 
       if (status === "SUCCESS") {
+        trackEvent("SQUARE_PAYMENT_SUCEESS", {
+          order_id: orderId
+        });
         handleSquareSuccess();
       }
 
