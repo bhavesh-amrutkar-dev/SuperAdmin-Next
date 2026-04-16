@@ -278,7 +278,7 @@ export default function SquarePayment({
           </>
         )} */}
 
-        <div id="cash-app-pay" className="h-[48px]" />
+        {/* <div id="cash-app-pay" className="h-[48px]" /> */}
 
         {/* ✅ Error UI */}
         {/* {error && (
