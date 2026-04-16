@@ -343,6 +343,7 @@ export default function SecureCheckoutPage() {
     };
   }, []);
   const handleSquareSuccess = () => {
+    trackEvent("PAYMENT_SUCCESS");
     toast.success(
       t("paymentSuccess") || "Payment Successful",
       {

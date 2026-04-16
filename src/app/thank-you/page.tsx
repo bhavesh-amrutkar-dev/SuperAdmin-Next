@@ -10,6 +10,7 @@ import Footer from "@/src/components/layout/Footer";
 import PreFooterIconModule from "@/src/components/layout/PreFooterIconModule";
 import { getCookie } from "cookies-next";
 import { DEFAULT_LANGUAGE } from "@/src/lib/config";
+import { trackEvent } from "@/src/lib/analytics";
 
 export default function ThankYouPage() {
   const router = useRouter();
@@ -91,6 +92,7 @@ export default function ThankYouPage() {
         await orderStatusUpdateFn(2);
         await orderStatusUpdateFn(3);
       } else if (payment === "square") {
+         trackEvent("PAYMENT_SUCCESS");
         await orderStatusUpdateFn(3);
       } else {
         await orderStatusUpdateFn(3);
