@@ -3,6 +3,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { RaffleSection } from "@/src/models/api/response/home";
 import Skeleton from "../ui/skeleton";
+import { trackEvent } from "@/src/lib/analytics";
 
 const RaffleCard = dynamic(() => import("./RaffleCard"), {
   loading: () => (
@@ -100,6 +101,13 @@ export default function RaffleSectionLayout({
                   href={href}
                   className="block"
                   prefetch={false}
+                  onClick={() => {
+                    // console.log("CLICK_PRODUCT");
+                    trackEvent("CLICK_PRODUCT", {
+                      product_id: item.id,
+                      product_name: item.name,
+                    });
+                  }}
                 >
                   <div
                     className="
