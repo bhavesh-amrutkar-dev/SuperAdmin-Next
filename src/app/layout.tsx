@@ -112,7 +112,6 @@ export default async function RootLayout({
             gtag('js', new Date());
             gtag('config', 'G-YRFMY9GL2H', {
               page_path: window.location.pathname,
-               debug_mode: true,
             });
           `}
         </Script>
