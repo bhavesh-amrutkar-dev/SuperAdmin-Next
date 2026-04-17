@@ -42,7 +42,7 @@ export default function SquarePayment({
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const cashAppRef = useRef<any>(null);
-const lastBlurTimeRef = useRef(0);
+  const lastBlurTimeRef = useRef(0);
   const isBusy = loading || isProcessing;
   const log = (...args: any[]) => {
     console.log("[CashAppFlow]", ...args);
@@ -119,58 +119,64 @@ const lastBlurTimeRef = useRef(0);
   };
 
   // 🔥 Re-init on return from Cash App
- useEffect(() => {
-  const handleBlur = () => {
-    if (!hasInitiatedCashAppRef.current) return;
+  useEffect(() => {
+    const handleBlur = () => {
+      if (!hasInitiatedCashAppRef.current) return;
 
-    lastBlurTimeRef.current = Date.now();
-    hasUserLeftRef.current = true;
-    log("Blur after Cash App click");
-  };
+      lastBlurTimeRef.current = Date.now();
+      hasUserLeftRef.current = true;
+      log("Blur after Cash App click");
+    };
 
-  const handleFocus = () => {
-    log("Focus event triggered");
+    const handleFocus = () => {
+      log("Focus event triggered");
 
-    if (!hasInitiatedCashAppRef.current) {
-      log("Ignored: no Cash App click");
-      return;
-    }
+      if (!hasInitiatedCashAppRef.current) {
+        log("Ignored: no Cash App click");
+        return;
+      }
 
-    if (!hasUserLeftRef.current) {
-      log("Ignored: no blur before");
-      return;
-    }
+      if (!hasUserLeftRef.current) {
+        log("Ignored: no blur before");
+        return;
+      }
 
-    if (hasHandledReturnRef.current) {
-      log("Already handled");
-      return;
-    }
+      if (hasHandledReturnRef.current) {
+        log("Already handled");
+        return;
+      }
 
-    const timeDiff = Date.now() - lastBlurTimeRef.current;
+      const timeDiff = Date.now() - lastBlurTimeRef.current;
 
-    if (timeDiff < 800) {
-      log("Ignored: blur too short");
-      return;
-    }
+      if (timeDiff < 800) {
+        log("Ignored: blur too short");
+        return;
+      }
 
-    hasHandledReturnRef.current = true;
+      hasHandledReturnRef.current = true;
 
-    log("Valid Cash App return → redirect");
+      log("Valid Cash App return → redirect");
 
-    setTimeout(() => {
-      onReturn?.();
-    }, 300);
-  };
+      setTimeout(() => {
+        // ❗ ONLY trigger if NOT already redirected by Square
+        if (!window.location.pathname.includes("/payment-result")) {
+          log("Fallback return → calling onReturn");
+          onReturn?.();
+        } else {
+          log("Already redirected by Square → skip onReturn");
+        }
+      }, 300);
+    };
 
-  // ✅ ADD THIS (you missed it)
-  window.addEventListener("blur", handleBlur);
-  window.addEventListener("focus", handleFocus);
+    // ✅ ADD THIS (you missed it)
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("focus", handleFocus);
 
-  return () => {
-    window.removeEventListener("blur", handleBlur);
-    window.removeEventListener("focus", handleFocus);
-  };
-}, []);
+    return () => {
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, []);
 
   const normalizeError = (err: any) => {
     if (!err) return t("errors.paymentFailed");
@@ -208,7 +214,7 @@ const lastBlurTimeRef = useRef(0);
       });
 
       const cashAppPay = await payments.cashAppPay(paymentRequest, {
-        redirectURL: window.location.href,
+        redirectURL: `${window.location.origin}/payment-result?orderId=${orderId}`,
         referenceId: orderId,
       });
 
