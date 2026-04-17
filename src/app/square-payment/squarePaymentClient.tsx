@@ -69,7 +69,7 @@ export default function SquarePaymentClient({
       if (typeof err?.message === "string") {
         const parsed = JSON.parse(err.message);
         // console.log("Parsed>>>>>>>", parsed);
-        
+
         mobileError = parsed?.error?.code || parsed?.message || err.message;
       }
     } catch {
@@ -109,7 +109,43 @@ export default function SquarePaymentClient({
     // ✅ Web fallback
     window.location.href = `/payment-result?status=FAILED&orderId=${orderId}&error=${encodedError}`;
   };
+  const handleReturn = () => {
+    const message = "Payment not completed"; // ✅ correct semantic
+    const mobileError = "USER_CANCELLED"; // ✅ machine-friendly
+    const encodedError = encodeURIComponent(message);
 
+    const payload = {
+      status: "FAILED", // or "ABANDONED" if you want better semantics
+      orderId,
+      error: {
+        message,
+        code: mobileError,
+      },
+    };
+
+    sendPaymentEvent(payload);
+
+    // ✅ iOS App
+    if (deviceType === 1) {
+      window.location.href = `donrifa://square-pay-failed?orderId=${orderId}&error=${mobileError}`;
+      return;
+    }
+
+    // ✅ Android WebView / Mobile
+    if (deviceType === 2) {
+      window.location.href = `/payment-result?status=FAILED&orderId=${orderId}&error=${mobileError}`;
+      return;
+    }
+
+    // ✅ Popup
+    if (window.opener) {
+      window.close();
+      return;
+    }
+
+    // ✅ Web fallback
+    window.location.href = `/payment-result?status=FAILED&orderId=${orderId}&error=${encodedError}`;
+  };
   return (
     <SquarePayment
       orderId={orderId}
@@ -117,6 +153,7 @@ export default function SquarePaymentClient({
       authToken={accessToken}
       onSuccess={handleSuccess}
       onError={handleError}
+      onReturn={handleReturn}
     />
   );
 }

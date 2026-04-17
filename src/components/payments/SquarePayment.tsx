@@ -16,6 +16,7 @@ interface SquarePaymentProps {
   authToken: string;
   onSuccess?: () => void;
   onError?: (error: any) => void;
+  onReturn?: () => void;
 }
 
 export default function SquarePayment({
@@ -24,6 +25,7 @@ export default function SquarePayment({
   authToken,
   onSuccess,
   onError,
+  onReturn
 }: SquarePaymentProps) {
   const { appId, locationId, cashAppPayScript } = getSquareConfig();
   const t = useTranslations();
@@ -31,16 +33,20 @@ export default function SquarePayment({
   const [loading, setLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const hasUserLeftRef = useRef(false);
+  const hasHandledReturnRef = useRef(false);
+  const hasInitiatedCashAppRef = useRef(false);
   const [applePaySupported, setApplePaySupported] = useState(false);
   const [googlePaySupported, setGooglePaySupported] = useState(false);
   const [cashAppReady, setCashAppReady] = useState(false);
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const cashAppRef = useRef<any>(null);
-
+const lastBlurTimeRef = useRef(0);
   const isBusy = loading || isProcessing;
-
+  const log = (...args: any[]) => {
+    console.log("[CashAppFlow]", ...args);
+  };
   // 🔥 FIX: detect and clean cash_request_id
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -48,8 +54,14 @@ export default function SquarePayment({
     const params = new URLSearchParams(window.location.search);
     const cashRequestId = params.get("cash_request_id");
 
+    log("Page Loaded", {
+      url: window.location.href,
+      cashRequestId,
+    });
+
     if (cashRequestId) {
-      // remove query param without reload
+      log("Returned from Cash App (cash_request_id detected)", cashRequestId);
+
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
@@ -64,14 +76,21 @@ export default function SquarePayment({
 
   // ✅ Load Square.js
   useEffect(() => {
+    log("Loading Square script...");
+
     const script = document.createElement("script");
     script.src = cashAppPayScript;
     script.async = true;
-    script.onload = initCashApp;
+
+    script.onload = () => {
+      log("Square script loaded");
+      initCashApp();
+    };
 
     document.body.appendChild(script);
 
     return () => {
+      log("Removing Square script");
       document.body.removeChild(script);
     };
   }, []);
@@ -79,30 +98,79 @@ export default function SquarePayment({
   // 🔥 Reset Cash App
   const resetCashApp = async () => {
     try {
+      log("Resetting Cash App instance...");
+
       if (cashAppRef.current) {
         await cashAppRef.current.destroy?.();
+        log("Old Cash App instance destroyed");
+
         cashAppRef.current = null;
       }
 
       setCashAppReady(false);
 
       setTimeout(() => {
+        log("Re-initializing Cash App...");
         initCashApp();
       }, 300);
     } catch (e) {
-      console.error("Cash App reset failed", e);
+      log("Cash App reset failed", e);
     }
   };
 
   // 🔥 Re-init on return from Cash App
-  useEffect(() => {
-    const handleFocus = () => {
-      resetCashApp();
-    };
+ useEffect(() => {
+  const handleBlur = () => {
+    if (!hasInitiatedCashAppRef.current) return;
 
-    window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
-  }, []);
+    lastBlurTimeRef.current = Date.now();
+    hasUserLeftRef.current = true;
+    log("Blur after Cash App click");
+  };
+
+  const handleFocus = () => {
+    log("Focus event triggered");
+
+    if (!hasInitiatedCashAppRef.current) {
+      log("Ignored: no Cash App click");
+      return;
+    }
+
+    if (!hasUserLeftRef.current) {
+      log("Ignored: no blur before");
+      return;
+    }
+
+    if (hasHandledReturnRef.current) {
+      log("Already handled");
+      return;
+    }
+
+    const timeDiff = Date.now() - lastBlurTimeRef.current;
+
+    if (timeDiff < 800) {
+      log("Ignored: blur too short");
+      return;
+    }
+
+    hasHandledReturnRef.current = true;
+
+    log("Valid Cash App return → redirect");
+
+    setTimeout(() => {
+      onReturn?.();
+    }, 300);
+  };
+
+  // ✅ ADD THIS (you missed it)
+  window.addEventListener("blur", handleBlur);
+  window.addEventListener("focus", handleFocus);
+
+  return () => {
+    window.removeEventListener("blur", handleBlur);
+    window.removeEventListener("focus", handleFocus);
+  };
+}, []);
 
   const normalizeError = (err: any) => {
     if (!err) return t("errors.paymentFailed");
@@ -119,9 +187,16 @@ export default function SquarePayment({
   // ✅ Cash App init
   const initCashApp = async () => {
     try {
-      if (!(window as any).Square) return;
+      log("Initializing Cash App...");
+
+      if (!(window as any).Square) {
+        log("Square not found on window");
+        return;
+      }
 
       const payments = (window as any).Square.payments(appId, locationId);
+
+      log("Creating payment request", { amount, orderId });
 
       const paymentRequest = payments.paymentRequest({
         countryCode: "US",
@@ -133,36 +208,38 @@ export default function SquarePayment({
       });
 
       const cashAppPay = await payments.cashAppPay(paymentRequest, {
-        // 🔥 FIX: clean redirect URL (no query params)
         redirectURL: window.location.href,
         referenceId: orderId,
       });
 
+      log("Cash App instance created");
+
       cashAppRef.current = cashAppPay;
 
-      await cashAppPay.attach("#cash-app-pay", {
-        shape: "semiround",
-        width: "full",
-      });
+      await cashAppPay.attach("#cash-app-pay");
+
+      log("Cash App button attached (QR ready)");
 
       setCashAppReady(true);
-  console.log("ontokenization");
-        
+
+      // 🔥 Tokenization listener
       cashAppPay.addEventListener("ontokenization", async (event: any) => {
-        console.log("ontokenization", event);
-        
+        log("Tokenization event received", event);
+
         const { tokenResult } = event.detail;
 
         if (tokenResult.status === "OK") {
+          log("Tokenization SUCCESS", tokenResult);
           await handleToken({ token: tokenResult.token });
         } else {
+          log("Tokenization FAILED", tokenResult);
           setIsProcessing(false);
           setError("Cash App Pay failed");
           await resetCashApp();
         }
       });
     } catch (err) {
-      console.error("Cash App Pay init failed", err);
+      log("Cash App init error", err);
     }
   };
 
@@ -178,11 +255,14 @@ export default function SquarePayment({
   // ✅ Handle token
   const handleToken = async (token: any) => {
     try {
+      log("Starting payment API call", { orderId });
+
       setIsProcessing(true);
       setLoading(true);
       setError(null);
 
       timeoutRef.current = setTimeout(() => {
+        log("Timeout reached (15s), resetting...");
         setIsProcessing(false);
         resetCashApp();
       }, 15000);
@@ -201,13 +281,17 @@ export default function SquarePayment({
 
       const data = await res.json();
 
+      log("Payment API response", { status: res.status, data });
+
       if (!res.ok) {
-        throw new Error(data.message || t("errors.paymentFailed"));
+        throw new Error(data.message);
       }
 
-      // 🔥 FIX: redirect after success (avoid staying on payment page)
+      log("Payment SUCCESS → calling onSuccess");
       onSuccess?.();
     } catch (err: any) {
+      log("Payment ERROR", err);
+
       const message = normalizeError(err);
       setError(message);
       onError?.({ ...err, message });
@@ -220,7 +304,6 @@ export default function SquarePayment({
       }
     }
   };
-
   const formatAmount = (value: number | string) => {
     const num = Number(value);
     if (isNaN(num)) return "0.00";
@@ -289,7 +372,14 @@ export default function SquarePayment({
           </PaymentForm>
         </div>
 
-        <div id="cash-app-pay" className="h-[48px]" />
+        <div
+          id="cash-app-pay"
+          className="h-[48px]"
+          onClick={() => {
+            log("Cash App wrapper clicked");
+            hasInitiatedCashAppRef.current = true;
+          }}
+        />
       </div>
     </div>
   );
