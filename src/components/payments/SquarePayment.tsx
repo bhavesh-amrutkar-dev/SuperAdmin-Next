@@ -37,11 +37,22 @@ export default function SquarePayment({
   const [cashAppReady, setCashAppReady] = useState(false);
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // 🔥 FIX: keep reference to Cash App instance
   const cashAppRef = useRef<any>(null);
 
   const isBusy = loading || isProcessing;
+
+  // 🔥 FIX: detect and clean cash_request_id
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    const cashRequestId = params.get("cash_request_id");
+
+    if (cashRequestId) {
+      // remove query param without reload
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
 
   // ✅ Detect wallets
   useEffect(() => {
@@ -51,7 +62,7 @@ export default function SquarePayment({
     }
   }, []);
 
-  // ✅ Load Square.js for Cash App
+  // ✅ Load Square.js
   useEffect(() => {
     const script = document.createElement("script");
     script.src = cashAppPayScript;
@@ -65,7 +76,7 @@ export default function SquarePayment({
     };
   }, []);
 
-  // 🔥 FIX: Reset Cash App instance
+  // 🔥 Reset Cash App
   const resetCashApp = async () => {
     try {
       if (cashAppRef.current) {
@@ -83,7 +94,7 @@ export default function SquarePayment({
     }
   };
 
-  // 🔥 FIX: re-init when user comes back from Cash App (mobile)
+  // 🔥 Re-init on return from Cash App
   useEffect(() => {
     const handleFocus = () => {
       resetCashApp();
@@ -93,7 +104,6 @@ export default function SquarePayment({
     return () => window.removeEventListener("focus", handleFocus);
   }, []);
 
-  // ✅ Normalize error
   const normalizeError = (err: any) => {
     if (!err) return t("errors.paymentFailed");
 
@@ -123,12 +133,11 @@ export default function SquarePayment({
       });
 
       const cashAppPay = await payments.cashAppPay(paymentRequest, {
-        // 🔥 FIX: safer redirect URL
-        redirectURL: window.location.href,
+        // 🔥 FIX: clean redirect URL (no query params)
+        redirectURL: window.location.origin + window.location.pathname,
         referenceId: orderId,
       });
 
-      // 🔥 FIX: store instance
       cashAppRef.current = cashAppPay;
 
       await cashAppPay.attach("#cash-app-pay", {
@@ -146,8 +155,6 @@ export default function SquarePayment({
         } else {
           setIsProcessing(false);
           setError("Cash App Pay failed");
-
-          // 🔥 FIX: reset after failure
           await resetCashApp();
         }
       });
@@ -172,7 +179,6 @@ export default function SquarePayment({
       setLoading(true);
       setError(null);
 
-      // 🔥 FIX: reset on silent cancel
       timeoutRef.current = setTimeout(() => {
         setIsProcessing(false);
         resetCashApp();
@@ -196,7 +202,9 @@ export default function SquarePayment({
         throw new Error(data.message || t("errors.paymentFailed"));
       }
 
+      // 🔥 FIX: redirect after success (avoid staying on payment page)
       onSuccess?.();
+      window.location.href = "/payment-success";
     } catch (err: any) {
       const message = normalizeError(err);
       setError(message);
@@ -222,7 +230,7 @@ export default function SquarePayment({
       <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-lg p-5 space-y-5">
 
         {isBusy && (
-          <div className="absolute inset-0 bg-white/80 backdrop-blur-md flex flex-col items-center justify-center rounded-2xl z-10">
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-md flex items-center justify-center rounded-2xl z-10">
             <div className="w-14 h-14 border-4 border-gray-200 border-t-[#FECB02] rounded-full animate-spin"></div>
           </div>
         )}
@@ -279,7 +287,6 @@ export default function SquarePayment({
           </PaymentForm>
         </div>
 
-        {/* 🔥 Cash App button */}
         <div id="cash-app-pay" className="h-[48px]" />
       </div>
     </div>
