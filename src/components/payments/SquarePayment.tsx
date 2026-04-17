@@ -38,6 +38,9 @@ export default function SquarePayment({
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // 🔥 FIX: keep reference to Cash App instance
+  const cashAppRef = useRef<any>(null);
+
   const isBusy = loading || isProcessing;
 
   // ✅ Detect wallets
@@ -60,6 +63,34 @@ export default function SquarePayment({
     return () => {
       document.body.removeChild(script);
     };
+  }, []);
+
+  // 🔥 FIX: Reset Cash App instance
+  const resetCashApp = async () => {
+    try {
+      if (cashAppRef.current) {
+        await cashAppRef.current.destroy?.();
+        cashAppRef.current = null;
+      }
+
+      setCashAppReady(false);
+
+      setTimeout(() => {
+        initCashApp();
+      }, 300);
+    } catch (e) {
+      console.error("Cash App reset failed", e);
+    }
+  };
+
+  // 🔥 FIX: re-init when user comes back from Cash App (mobile)
+  useEffect(() => {
+    const handleFocus = () => {
+      resetCashApp();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
   }, []);
 
   // ✅ Normalize error
@@ -92,9 +123,13 @@ export default function SquarePayment({
       });
 
       const cashAppPay = await payments.cashAppPay(paymentRequest, {
-        redirectURL: window.location.href,
+        // 🔥 FIX: safer redirect URL
+        redirectURL: window.location.origin + window.location.pathname,
         referenceId: orderId,
       });
+
+      // 🔥 FIX: store instance
+      cashAppRef.current = cashAppPay;
 
       await cashAppPay.attach("#cash-app-pay", {
         shape: "semiround",
@@ -109,8 +144,11 @@ export default function SquarePayment({
         if (tokenResult.status === "OK") {
           await handleToken({ token: tokenResult.token });
         } else {
-          setIsProcessing(false); // ✅ important
+          setIsProcessing(false);
           setError("Cash App Pay failed");
+
+          // 🔥 FIX: reset after failure
+          await resetCashApp();
         }
       });
     } catch (err) {
@@ -134,9 +172,10 @@ export default function SquarePayment({
       setLoading(true);
       setError(null);
 
-      // ⏳ fallback timeout (handles wallet cancel silently)
+      // 🔥 FIX: reset on silent cancel
       timeoutRef.current = setTimeout(() => {
         setIsProcessing(false);
+        resetCashApp();
       }, 15000);
 
       const res = await fetch("/api/pay", {
@@ -182,35 +221,14 @@ export default function SquarePayment({
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-6">
       <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-lg p-5 space-y-5">
 
-        {/* ✅ Loading Overlay */}
         {isBusy && (
-          <div className="absolute inset-0 bg-white/80 backdrop-blur-md flex flex-col items-center justify-center rounded-2xl z-10 transition-all">
-
-            {/* Spinner */}
-            <div className="relative">
-              <div className="w-14 h-14 border-4 border-gray-200 border-t-[#FECB02] rounded-full animate-spin"></div>
-
-              {/* subtle glow */}
-              <div className="absolute inset-0 rounded-full blur-md bg-[#FECB02]/20"></div>
-            </div>
-
-            {/* Text */}
-            <div className="mt-4 text-center space-y-1">
-              <p className="text-sm font-semibold text-gray-800">
-                {t("payment.processing")}
-              </p>
-              <p className="text-xs text-gray-500 animate-pulse">
-                {t("payment.pleaseWait") || "Please don’t close this window"}
-              </p>
-            </div>
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-md flex flex-col items-center justify-center rounded-2xl z-10">
+            <div className="w-14 h-14 border-4 border-gray-200 border-t-[#FECB02] rounded-full animate-spin"></div>
           </div>
         )}
 
-        <div className="text-center space-y-1">
+        <div className="text-center">
           <h2 className="text-lg font-semibold">{t("payment.title")}</h2>
-          <p className="text-xs text-gray-500">
-            {t("payment.subtitle")}
-          </p>
         </div>
 
         <div className="flex justify-between items-center bg-gray-100 px-4 py-3 rounded-xl">
@@ -222,7 +240,6 @@ export default function SquarePayment({
           </span>
         </div>
 
-        {/* ✅ Disable UI */}
         <div className={isBusy ? "pointer-events-none opacity-60" : ""}>
           <PaymentForm
             applicationId={appId!}
@@ -255,63 +272,15 @@ export default function SquarePayment({
                   onClick={() => setIsProcessing(true)}
                   className="h-20 rounded-xl overflow-hidden cursor-pointer"
                 >
-                  <GooglePay
-                    buttonType="long"
-                    buttonColor="black"
-                    buttonSizeMode="fill"
-                  />
+                  <GooglePay />
                 </div>
               )}
             </div>
           </PaymentForm>
         </div>
 
-        {/* ✅ Cash App */}
-        {/* {cashAppReady && (
-          <>
-            <div className="flex items-center gap-3 my-4">
-              <div className="flex-1 border-t"></div>
-              <span className="text-xs text-gray-400">OR</span>
-              <div className="flex-1 border-t"></div>
-            </div>
-
-          </>
-        )} */}
-
-        {/* <div id="cash-app-pay" className="h-[48px]" /> */}
-
-        {/* ✅ Error UI */}
-        {/* {error && (
-          <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 animate-in fade-in">
-            <div className="flex-shrink-0 mt-0.5">
-              <svg
-                className="w-5 h-5 text-red-500"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M12 3C7.03 3 3 7.03 3 12s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9z" />
-              </svg>
-            </div>
-
-            <div className="flex-1">
-              <p className="text-sm font-medium text-red-700">
-                {t("errors.paymentFailed")}
-              </p>
-              <p className="text-xs text-red-600 mt-0.5">
-                {error}
-              </p>
-            </div>
-
-            <button
-              onClick={() => setError(null)}
-              className="text-red-400 hover:text-red-600 text-sm"
-            >
-              ✕
-            </button>
-          </div>
-        )} */}
+        {/* 🔥 Cash App button */}
+        <div id="cash-app-pay" className="h-[48px]" />
       </div>
     </div>
   );
