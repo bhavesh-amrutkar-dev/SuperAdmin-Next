@@ -134,7 +134,7 @@ export default function SquarePayment({
 
       const cashAppPay = await payments.cashAppPay(paymentRequest, {
         // 🔥 FIX: clean redirect URL (no query params)
-        redirectURL: window.location.origin + window.location.pathname,
+        redirectURL: window.location.href,
         referenceId: orderId,
       });
 
