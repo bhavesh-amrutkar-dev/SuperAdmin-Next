@@ -146,8 +146,11 @@ export default function SquarePayment({
       });
 
       setCashAppReady(true);
-
+  console.log("ontokenization");
+        
       cashAppPay.addEventListener("ontokenization", async (event: any) => {
+        console.log("ontokenization", event);
+        
         const { tokenResult } = event.detail;
 
         if (tokenResult.status === "OK") {
@@ -204,7 +207,6 @@ export default function SquarePayment({
 
       // 🔥 FIX: redirect after success (avoid staying on payment page)
       onSuccess?.();
-      window.location.href = "/payment-success";
     } catch (err: any) {
       const message = normalizeError(err);
       setError(message);
