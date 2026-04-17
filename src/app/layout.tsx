@@ -96,6 +96,7 @@ export default async function RootLayout({
             'https://connect.facebook.net/en_US/fbevents.js');
 
             fbq('init', '1468573554204803');
+            fbq('track', 'PageView');
           `}
         </Script>
 
