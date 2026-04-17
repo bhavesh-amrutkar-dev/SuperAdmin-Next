@@ -110,6 +110,8 @@ export default function SquarePaymentClient({
     window.location.href = `/payment-result?status=FAILED&orderId=${orderId}&error=${encodedError}`;
   };
   const handleReturn = () => {
+    console.log("handle return");
+    
     const message = "Payment not completed"; // ✅ correct semantic
     const mobileError = "USER_CANCELLED"; // ✅ machine-friendly
     const encodedError = encodeURIComponent(message);
@@ -153,7 +155,6 @@ export default function SquarePaymentClient({
       authToken={accessToken}
       onSuccess={handleSuccess}
       onError={handleError}
-      onReturn={handleReturn}
     />
   );
 }

@@ -16,7 +16,6 @@ interface SquarePaymentProps {
   authToken: string;
   onSuccess?: () => void;
   onError?: (error: any) => void;
-  onReturn?: () => void;
 }
 
 export default function SquarePayment({
@@ -25,7 +24,6 @@ export default function SquarePayment({
   authToken,
   onSuccess,
   onError,
-  onReturn
 }: SquarePaymentProps) {
   const { appId, locationId, cashAppPayScript } = getSquareConfig();
   const t = useTranslations();
@@ -33,38 +31,14 @@ export default function SquarePayment({
   const [loading, setLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const hasUserLeftRef = useRef(false);
-  const hasHandledReturnRef = useRef(false);
-  const hasInitiatedCashAppRef = useRef(false);
+
   const [applePaySupported, setApplePaySupported] = useState(false);
   const [googlePaySupported, setGooglePaySupported] = useState(false);
   const [cashAppReady, setCashAppReady] = useState(false);
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const cashAppRef = useRef<any>(null);
-  const lastBlurTimeRef = useRef(0);
+
   const isBusy = loading || isProcessing;
-  const log = (...args: any[]) => {
-    console.log("[CashAppFlow]", ...args);
-  };
-  // 🔥 FIX: detect and clean cash_request_id
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const params = new URLSearchParams(window.location.search);
-    const cashRequestId = params.get("cash_request_id");
-
-    log("Page Loaded", {
-      url: window.location.href,
-      cashRequestId,
-    });
-
-    if (cashRequestId) {
-      log("Returned from Cash App (cash_request_id detected)", cashRequestId);
-
-      window.history.replaceState({}, "", window.location.pathname);
-    }
-  }, []);
 
   // ✅ Detect wallets
   useEffect(() => {
@@ -74,110 +48,21 @@ export default function SquarePayment({
     }
   }, []);
 
-  // ✅ Load Square.js
+  // ✅ Load Square.js for Cash App
   useEffect(() => {
-    log("Loading Square script...");
-
     const script = document.createElement("script");
     script.src = cashAppPayScript;
     script.async = true;
-
-    script.onload = () => {
-      log("Square script loaded");
-      initCashApp();
-    };
+    script.onload = initCashApp;
 
     document.body.appendChild(script);
 
     return () => {
-      log("Removing Square script");
       document.body.removeChild(script);
     };
   }, []);
 
-  // 🔥 Reset Cash App
-  const resetCashApp = async () => {
-    try {
-      log("Resetting Cash App instance...");
-
-      if (cashAppRef.current) {
-        await cashAppRef.current.destroy?.();
-        log("Old Cash App instance destroyed");
-
-        cashAppRef.current = null;
-      }
-
-      setCashAppReady(false);
-
-      setTimeout(() => {
-        log("Re-initializing Cash App...");
-        initCashApp();
-      }, 300);
-    } catch (e) {
-      log("Cash App reset failed", e);
-    }
-  };
-
-  // 🔥 Re-init on return from Cash App
-  useEffect(() => {
-    const handleBlur = () => {
-      if (!hasInitiatedCashAppRef.current) return;
-
-      lastBlurTimeRef.current = Date.now();
-      hasUserLeftRef.current = true;
-      log("Blur after Cash App click");
-    };
-
-    const handleFocus = () => {
-      log("Focus event triggered");
-
-      if (!hasInitiatedCashAppRef.current) {
-        log("Ignored: no Cash App click");
-        return;
-      }
-
-      if (!hasUserLeftRef.current) {
-        log("Ignored: no blur before");
-        return;
-      }
-
-      if (hasHandledReturnRef.current) {
-        log("Already handled");
-        return;
-      }
-
-      const timeDiff = Date.now() - lastBlurTimeRef.current;
-
-      if (timeDiff < 800) {
-        log("Ignored: blur too short");
-        return;
-      }
-
-      hasHandledReturnRef.current = true;
-
-      log("Valid Cash App return → redirect");
-
-      setTimeout(() => {
-        // ❗ ONLY trigger if NOT already redirected by Square
-        if (!window.location.pathname.includes("/payment-result")) {
-          log("Fallback return → calling onReturn");
-          onReturn?.();
-        } else {
-          log("Already redirected by Square → skip onReturn");
-        }
-      }, 300);
-    };
-
-    // ✅ ADD THIS (you missed it)
-    window.addEventListener("blur", handleBlur);
-    window.addEventListener("focus", handleFocus);
-
-    return () => {
-      window.removeEventListener("blur", handleBlur);
-      window.removeEventListener("focus", handleFocus);
-    };
-  }, []);
-
+  // ✅ Normalize error
   const normalizeError = (err: any) => {
     if (!err) return t("errors.paymentFailed");
 
@@ -193,16 +78,9 @@ export default function SquarePayment({
   // ✅ Cash App init
   const initCashApp = async () => {
     try {
-      log("Initializing Cash App...");
-
-      if (!(window as any).Square) {
-        log("Square not found on window");
-        return;
-      }
+      if (!(window as any).Square) return;
 
       const payments = (window as any).Square.payments(appId, locationId);
-
-      log("Creating payment request", { amount, orderId });
 
       const paymentRequest = payments.paymentRequest({
         countryCode: "US",
@@ -214,38 +92,29 @@ export default function SquarePayment({
       });
 
       const cashAppPay = await payments.cashAppPay(paymentRequest, {
-        redirectURL: `${window.location.origin}/payment-result?orderId=${orderId}`,
+        redirectURL: window.location.href,
         referenceId: orderId,
       });
 
-      log("Cash App instance created");
-
-      cashAppRef.current = cashAppPay;
-
-      await cashAppPay.attach("#cash-app-pay");
-
-      log("Cash App button attached (QR ready)");
+      await cashAppPay.attach("#cash-app-pay", {
+        shape: "semiround",
+        width: "full",
+      });
 
       setCashAppReady(true);
 
-      // 🔥 Tokenization listener
       cashAppPay.addEventListener("ontokenization", async (event: any) => {
-        log("Tokenization event received", event);
-
         const { tokenResult } = event.detail;
 
         if (tokenResult.status === "OK") {
-          log("Tokenization SUCCESS", tokenResult);
           await handleToken({ token: tokenResult.token });
         } else {
-          log("Tokenization FAILED", tokenResult);
-          setIsProcessing(false);
+          setIsProcessing(false); // ✅ important
           setError("Cash App Pay failed");
-          await resetCashApp();
         }
       });
     } catch (err) {
-      log("Cash App init error", err);
+      console.error("Cash App Pay init failed", err);
     }
   };
 
@@ -261,16 +130,13 @@ export default function SquarePayment({
   // ✅ Handle token
   const handleToken = async (token: any) => {
     try {
-      log("Starting payment API call", { orderId });
-
       setIsProcessing(true);
       setLoading(true);
       setError(null);
 
+      // ⏳ fallback timeout (handles wallet cancel silently)
       timeoutRef.current = setTimeout(() => {
-        log("Timeout reached (15s), resetting...");
         setIsProcessing(false);
-        resetCashApp();
       }, 15000);
 
       const res = await fetch("/api/pay", {
@@ -287,17 +153,12 @@ export default function SquarePayment({
 
       const data = await res.json();
 
-      log("Payment API response", { status: res.status, data });
-
       if (!res.ok) {
-        throw new Error(data.message);
+        throw new Error(data.message || t("errors.paymentFailed"));
       }
 
-      log("Payment SUCCESS → calling onSuccess");
       onSuccess?.();
     } catch (err: any) {
-      log("Payment ERROR", err);
-
       const message = normalizeError(err);
       setError(message);
       onError?.({ ...err, message });
@@ -310,6 +171,7 @@ export default function SquarePayment({
       }
     }
   };
+
   const formatAmount = (value: number | string) => {
     const num = Number(value);
     if (isNaN(num)) return "0.00";
@@ -320,14 +182,35 @@ export default function SquarePayment({
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-6">
       <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-lg p-5 space-y-5">
 
+        {/* ✅ Loading Overlay */}
         {isBusy && (
-          <div className="absolute inset-0 bg-white/80 backdrop-blur-md flex items-center justify-center rounded-2xl z-10">
-            <div className="w-14 h-14 border-4 border-gray-200 border-t-[#FECB02] rounded-full animate-spin"></div>
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-md flex flex-col items-center justify-center rounded-2xl z-10 transition-all">
+
+            {/* Spinner */}
+            <div className="relative">
+              <div className="w-14 h-14 border-4 border-gray-200 border-t-[#FECB02] rounded-full animate-spin"></div>
+
+              {/* subtle glow */}
+              <div className="absolute inset-0 rounded-full blur-md bg-[#FECB02]/20"></div>
+            </div>
+
+            {/* Text */}
+            <div className="mt-4 text-center space-y-1">
+              <p className="text-sm font-semibold text-gray-800">
+                {t("payment.processing")}
+              </p>
+              <p className="text-xs text-gray-500 animate-pulse">
+                {t("payment.pleaseWait") || "Please don’t close this window"}
+              </p>
+            </div>
           </div>
         )}
 
-        <div className="text-center">
+        <div className="text-center space-y-1">
           <h2 className="text-lg font-semibold">{t("payment.title")}</h2>
+          <p className="text-xs text-gray-500">
+            {t("payment.subtitle")}
+          </p>
         </div>
 
         <div className="flex justify-between items-center bg-gray-100 px-4 py-3 rounded-xl">
@@ -339,6 +222,7 @@ export default function SquarePayment({
           </span>
         </div>
 
+        {/* ✅ Disable UI */}
         <div className={isBusy ? "pointer-events-none opacity-60" : ""}>
           <PaymentForm
             applicationId={appId!}
@@ -371,21 +255,63 @@ export default function SquarePayment({
                   onClick={() => setIsProcessing(true)}
                   className="h-20 rounded-xl overflow-hidden cursor-pointer"
                 >
-                  <GooglePay />
+                  <GooglePay
+                    buttonType="long"
+                    buttonColor="black"
+                    buttonSizeMode="fill"
+                  />
                 </div>
               )}
             </div>
           </PaymentForm>
         </div>
 
-        <div
-          id="cash-app-pay"
-          className="h-[48px]"
-          onClick={() => {
-            log("Cash App wrapper clicked");
-            hasInitiatedCashAppRef.current = true;
-          }}
-        />
+        {/* ✅ Cash App */}
+        {/* {cashAppReady && (
+          <>
+            <div className="flex items-center gap-3 my-4">
+              <div className="flex-1 border-t"></div>
+              <span className="text-xs text-gray-400">OR</span>
+              <div className="flex-1 border-t"></div>
+            </div>
+
+          </>
+        )} */}
+
+        {/* <div id="cash-app-pay" className="h-[48px]" /> */}
+
+        {/* ✅ Error UI */}
+        {/* {error && (
+          <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 animate-in fade-in">
+            <div className="flex-shrink-0 mt-0.5">
+              <svg
+                className="w-5 h-5 text-red-500"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M12 3C7.03 3 3 7.03 3 12s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9z" />
+              </svg>
+            </div>
+
+            <div className="flex-1">
+              <p className="text-sm font-medium text-red-700">
+                {t("errors.paymentFailed")}
+              </p>
+              <p className="text-xs text-red-600 mt-0.5">
+                {error}
+              </p>
+            </div>
+
+            <button
+              onClick={() => setError(null)}
+              className="text-red-400 hover:text-red-600 text-sm"
+            >
+              ✕
+            </button>
+          </div>
+        )} */}
       </div>
     </div>
   );
