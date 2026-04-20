@@ -1,14 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-export default function GuestProfileClient({ email, token }: any) {
+type TokenStatus = "validating" | "valid" | "invalid";
+
+export default function GuestProfileClient({ token }: any) {
     const router = useRouter();
 
+    const [tokenStatus, setTokenStatus] = useState<TokenStatus>("validating");
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [loading, setLoading] = useState(false);
@@ -16,6 +20,30 @@ export default function GuestProfileClient({ email, token }: any) {
 
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    useEffect(() => {
+        const validateToken = async () => {
+            try {
+                const res = await fetch("/api/validatePasswordToken", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ token }),
+                });
+
+                if (res.status === 400 || !res.ok) {
+                    setTokenStatus("invalid");
+                } else {
+                    const data = await res.json();
+                    setEmail(data?.email || "");
+                    setTokenStatus("valid");
+                }
+            } catch {
+                setTokenStatus("invalid");
+            }
+        };
+
+        validateToken();
+    }, [token]);
 
     const validate = () => {
         if (password.length < 8) {
@@ -69,6 +97,22 @@ export default function GuestProfileClient({ email, token }: any) {
     };
     const isDisabled =
         loading || !password || !confirmPassword || !!validate();
+
+    if (tokenStatus === "validating") {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+                <p className="text-gray-500">Verifying link...</p>
+            </div>
+        );
+    }
+
+    if (tokenStatus === "invalid") {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+                <p className="text-center text-red-500">Invalid or expired link</p>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
