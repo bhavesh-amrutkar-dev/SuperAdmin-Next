@@ -21,6 +21,8 @@ import Loader from "@/src/components/loader";
 import { getMyIP } from "@/src/lib/utils/getIp";
 import ExpressRegisterForm from "@/src/components/express/ExpressRegisterForm";
 import { CDN_IMAGE } from "@/src/lib/config";
+import { useTranslations } from "next-intl";
+import { Button } from "@/src/components/ui/button";
 
 // ─────────────────────────────────────────────
 // Types
@@ -30,6 +32,7 @@ type CartItem = {
   _id?: string;
   name?: string;
   productName?: string;
+  drawDateTimeStemp?: number;
   brandName?: string;
   quantity?: number | { value?: number };
   images?: { large?: string; medium?: string; small?: string } | any;
@@ -92,12 +95,10 @@ function getQty(item: CartItem): number {
 
 export default function GuestCheckoutPage() {
   const router = useRouter();
-
+  const t = useTranslations();
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [cartData, setCartData] = useState<CartData | null>(null);
-
-
   const [paymentMethod, setPaymentMethod] = useState<"square" | "athMovil" | "manual">("square");
   const [quantities, setQuantities] = useState<Record<string, number>>({});
 
@@ -204,27 +205,69 @@ export default function GuestCheckoutPage() {
   const isRaffle = useMemo(() => {
     return cartItems.some((item: any) => !!item?.campaignId);
   }, [cartItems]);
-  if (loading) {
+
+
+  const Countdown = ({ timestamp }: { timestamp?: number }) => {
+    const [time, setTime] = useState({
+      days: 0,
+      hours: 0,
+      minutes: 0,
+      seconds: 0,
+    });
+
+    useEffect(() => {
+      if (!timestamp || timestamp <= 0) {
+        setTime({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+
+      const interval = setInterval(() => {
+        const end = new Date(timestamp * 1000).getTime();
+        const now = Date.now();
+        const diff = end - now;
+
+        if (diff > 0) {
+          setTime({
+            days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+            hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+            minutes: Math.floor((diff / (1000 * 60)) % 60),
+            seconds: Math.floor((diff / 1000) % 60),
+          });
+        } else {
+          setTime({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        }
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }, [timestamp]);
+
     return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <div className="flex-1 flex flex-col items-center justify-center gap-4">
-          <Loader />
-          <p className="text-sm text-gray-400 animate-pulse">Preparing your checkout…</p>
-        </div>
-        <Footer />
+      <div className="flex items-center gap-4 text-center">
+        {[
+          { label: "DAYS", value: time.days },
+          { label: "HRS", value: time.hours },
+          { label: "MINS", value: time.minutes },
+          { label: "SECS", value: time.seconds },
+        ].map((t, i, arr) => (
+          <div key={i} className="flex items-center gap-2">
+            <div>
+              <p className="text-[10px] text-yellow-500 font-semibold">
+                {t.label}
+              </p>
+              <p className="text-sm font-bold text-gray-800">
+                {String(t.value).padStart(2, "0")}
+              </p>
+            </div>
+
+            {/* ✅ Separator only if NOT last */}
+            {i < arr.length - 1 && (
+              <span className="h-6 w-px bg-gray-300 mx-1" />
+            )}
+          </div>
+        ))}
       </div>
     );
-  }
-
-
-  // ── step badge ──
-  const StepBadge = ({ n }: { n: number }) => (
-    <span className="inline-flex w-6 h-6 rounded-full items-center justify-center
-                     bg-[var(--theme-color)] text-[var(--footer-dark)] text-xs font-bold shrink-0">
-      {n}
-    </span>
-  );
+  };
 
   // ── section card wrapper ──
   const SectionCard = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
@@ -242,7 +285,6 @@ export default function GuestCheckoutPage() {
     title: string;
   }) => (
     <div className="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
-      <StepBadge n={step} />
       <span className="text-gray-400">{icon}</span>
       <h2 className="font-semibold text-gray-800 text-[15px]">{title}</h2>
     </div>
@@ -302,10 +344,25 @@ export default function GuestCheckoutPage() {
       setPlacingOrder(false);
     }
   };
+
   const baseCls = `
 flex items-center justify-between w-full px-4 py-3 rounded-xl
 border text-sm transition-all cursor-pointer
 `;
+
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <div className="flex-1 flex flex-col items-center justify-center gap-4">
+          <Loader />
+          <p className="text-sm text-gray-400 animate-pulse">Preparing your checkout…</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#ededed]">
@@ -351,78 +408,97 @@ border text-sm transition-all cursor-pointer
                     </button>
                   </div>
                 ) : (
-                  <ul className="space-y-3">
-                    {cartItems.map((item, idx) => {
-                      const key = item._id || String(idx);
-                      const qty = quantities[key] ?? getQty(item);
-                      const unitPrice =
-                        Number(item.accounting?.finalUnitPrice) ||
-                        Number(item.accounting?.unitPrice) ||
-                        Number(item.price) ||
-                        0;
-                      const itemTotal = fmt(unitPrice * qty);
+                  <div className="max-h-[420px] overflow-y-auto pr-2 custom-scroll">
+                    <ul className="space-y-3 ">
+                      {cartItems.map((item, idx) => {
+                        const key = item._id || String(idx);
 
-                      return (
-                        <li
-                          key={key}
-                          className="group flex gap-3 p-3 rounded-xl border border-gray-100
-                                     hover:border-gray-200 hover:shadow-sm transition-all duration-150 bg-gray-50/50"
-                        >
-                          {/* Image */}
-                          <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-gray-100 shrink-0 bg-white">
-                            <Image
-                              src={getProductImage(item)}
-                              alt={item.name || item.productName || "Product"}
-                              fill
-                              className="object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = "/placeholder-product.png";
-                              }}
-                            />
-                          </div>
+                        const qty = quantities[key] ?? getQty(item);
 
-                          {/* Details */}
-                          <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5">
-                            <p className="text-sm font-semibold text-gray-800 truncate leading-tight">
-                              {item.name || item.productName || "Product"}
-                            </p>
-                            {item.brandName && (
-                              <p className="text-xs text-gray-400 truncate">{item.brandName}</p>
-                            )}
-                            {/* +/- controls */}
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <button
-                                type="button"
-                                onClick={() => updateQty(key, -1)}
-                                className="w-6 h-6 rounded-md border border-gray-200 bg-white flex items-center justify-center
-                                           text-gray-500 hover:border-gray-400 hover:text-gray-800 transition-colors disabled:opacity-40"
-                                disabled={qty <= 1}
-                              >
-                                <Minus className="w-3 h-3" />
-                              </button>
-                              <span className="w-5 text-center text-sm font-semibold text-gray-800 tabular-nums">
-                                {qty}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => updateQty(key, 1)}
-                                className="w-6 h-6 rounded-md border border-gray-200 bg-white flex items-center justify-center
-                                           text-gray-500 hover:border-gray-400 hover:text-gray-800 transition-colors"
-                              >
-                                <Plus className="w-3 h-3" />
-                              </button>
+                        const unitPrice =
+                          Number(item.accounting?.finalUnitPrice) ||
+                          Number(item.accounting?.unitPrice) ||
+                          Number(item.price) ||
+                          0;
+
+                        const itemTotal = fmt(unitPrice * qty);
+
+
+                        return (
+                          <li
+                            key={`${item._id}-${idx}`}
+                            className="flex items-center gap-5 p-5 rounded-2xl bg-gray-50 border border-gray-200"
+                          >
+                            {/* LEFT - IMAGE */}
+                            <div className="relative w-28 h-24 rounded-xl overflow-hidden bg-white flex items-center justify-center">
+                              <Image
+                                src={getProductImage(item)}
+                                alt={item.name || "Product"}
+                                fill
+                                className="object-contain"
+                              />
                             </div>
-                          </div>
 
-                          {/* Price */}
-                          <div className="flex flex-col items-end justify-center shrink-0">
-                            <p className="text-sm font-bold text-gray-900">{currency}{itemTotal}</p>
-                            <p className="text-xs text-gray-400 mt-0.5">{currency}{fmt(unitPrice)} each</p>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
+                            {/* CENTER */}
+                            <div className="flex-1">
+                              <p className="text-yellow-500 font-extrabold text-lg leading-none">
+                                WIN
+                              </p>
+
+                              <p className="text-sm font-semibold text-gray-800 mt-1">
+                                {item.name || item.productName}
+                              </p>
+                            </div>
+
+                            {/* RIGHT */}
+                            <div className="flex flex-col items-end gap-3">
+
+                              <Countdown timestamp={item.drawDateTimeStemp} />
+                              {/* PRICE + QTY */}
+                              <div className="flex items-center gap-2 bg-gray-100 rounded-full">
+
+                                {/* Price */}
+                                <div className="flex flex-col justify-center items-center text-center h-10 px-3 min-w-[110px]">
+                                  <p className="text-xs text-gray-600 font-medium leading-none">
+                                    {currency}{fmt(unitPrice)}
+                                  </p>
+                                  <p className="text-xs text-green-600 font-semibold leading-none mt-1">
+                                    {qty} {t("tickets")}
+                                  </p>
+                                </div>
+
+                                {/* Stepper */}
+                                <div className="flex items-center bg-yellow-400 rounded-full px-3 h-10 gap-3">
+                                  <Button
+                                    onClick={() => updateQty(key, -1)}
+                                    className="w-7 h-7 rounded-full bg-white flex items-center justify-center shadow-sm"
+                                  >
+                                    <Minus className="w-4 h-4" />
+                                  </Button>
+
+                                  <span className="font-bold text-base w-6 text-center">
+                                    {qty}
+                                  </span>
+
+                                  <Button
+                                    onClick={() => updateQty(key, 1)}
+                                    className="w-7 h-7 rounded-full bg-white flex items-center justify-center shadow-sm"
+                                  >
+                                    <Plus className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* SUBTOTAL */}
+                              <p className="text-xs text-gray-500">
+                                Sub Total {currency}{itemTotal}
+                              </p>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
                 )}
               </SectionCard>
 
@@ -457,12 +533,13 @@ border text-sm transition-all cursor-pointer
                 </div>
 
                 {/* Line items */}
-                <div className="px-6 py-4 space-y-3 max-h-52 overflow-y-auto">
+                <div className="px-6 py-4 space-y-3 max-h-52 overflow-y-auto custom-scroll">
                   {cartItems.length === 0 ? (
                     <p className="text-sm text-gray-400 text-center py-4">Cart is empty</p>
                   ) : (
                     cartItems.map((item, idx) => {
                       const key = item._id || String(idx);
+
                       const qty = quantities[key] ?? getQty(item);
                       const unitPrice =
                         Number(item.accounting?.finalUnitPrice) ||
@@ -471,7 +548,7 @@ border text-sm transition-all cursor-pointer
                         0;
                       const total = fmt(unitPrice * qty);
                       return (
-                        <div key={key} className="flex items-center gap-3">
+                        <div key={`${item._id}-${idx}`} className="flex items-center gap-3">
                           <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-gray-100 shrink-0 bg-gray-50">
                             <Image
                               src={getProductImage(item)}
@@ -533,8 +610,7 @@ border text-sm transition-all cursor-pointer
                 {/* Payment Method */}
                 <div className="px-6 py-5 border-t border-gray-100">
                   <div className="flex items-center gap-2 mb-4">
-                    <CreditCard className="w-4 h-4 text-gray-400" />
-                    <h3 className="font-semibold text-gray-800 text-[15px]">Payment Method</h3>
+                    <h3 className="font-semibold text-gray-800 text-[15px]">Select Method</h3>
                   </div>
 
                   <div className="flex flex-col gap-3">
@@ -548,29 +624,27 @@ border text-sm transition-all cursor-pointer
                         : "border-gray-200 hover:border-gray-300 bg-white"
                         }`}
                     >
+                      {/* LEFT */}
                       <div className="flex items-center gap-3">
-                        <span
-                          className={`w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "athMovil"
-                            ? "border-yellow-500"
-                            : "border-gray-300"
-                            }`}
-                        >
+                        <span className={`w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "athMovil" ? "border-yellow-500" : "border-gray-300"
+                          }`}>
                           {paymentMethod === "athMovil" && (
                             <span className="w-2 h-2 rounded-full bg-yellow-500" />
                           )}
                         </span>
+
                         <span className="font-medium text-gray-700">
-                          Pay with ATH Móvil
+                          {t("payWithATHMovil")}
                         </span>
-                        <Image
-                          src="/images/icons/authmovil.png"
-                          alt="ATH"
-                          width={28}
-                          height={18}
-                        />
-
-
                       </div>
+
+                      {/* RIGHT */}
+                      <Image
+                        src="/images/icons/authmovil.png"
+                        alt="ATH"
+                        width={28}
+                        height={18}
+                      />
                     </button>
 
                     {/* Manual Payment */}
@@ -582,24 +656,28 @@ border text-sm transition-all cursor-pointer
                         : "border-gray-200 hover:border-gray-300 bg-white"
                         }`}
                     >
+                      {/* LEFT */}
                       <div className="flex items-center gap-3">
-                        <span
-                          className={`w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "manual"
-                            ? "border-yellow-500"
-                            : "border-gray-300"
-                            }`}
-                        >
+                        <span className={`w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "manual" ? "border-yellow-500" : "border-gray-300"
+                          }`}>
                           {paymentMethod === "manual" && (
                             <span className="w-2 h-2 rounded-full bg-yellow-500" />
                           )}
                         </span>
 
-                        <CreditCard className="w-4 h-4 text-gray-500" />
-
                         <span className="font-medium text-gray-700">
-                          Manual Payment Methods
+                          {t("manualPaymentMethods")}
                         </span>
                       </div>
+
+                      {/* RIGHT ICON */}
+                      <Image
+                        src="/images/icons/mannualPayment.png"
+                        alt="Manual"
+                        width={40}
+                        height={20}
+                        className="object-contain"
+                      />
                     </button>
                     {/* Credit / Debit Card (Square) */}
                     <button
@@ -623,42 +701,32 @@ border text-sm transition-all cursor-pointer
                         </span>
 
                         <span className="font-medium text-gray-700">
-                          Pay with Credit Card
+                          {t("paySqr")}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Image src="/images/Profile_new/visa.svg" alt="VISA" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
-                        <Image src="/images/Profile_new/mastercard.svg" alt="Mastercard" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
-                        <Image src="/images/Profile_new/amex.jpg" alt="AMEX" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
-                        <Image src={CDN_IMAGE + "card-8.svg"} alt="Discovery" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Image src="/images/Profile_new/visa.svg" alt="VISA" width={40} height={25} className="h-5 w-auto object-contain" />
+                        <Image src="/images/Profile_new/mastercard.svg" alt="Mastercard" width={40} height={25} className="h-5 w-auto object-contain" />
+                        <Image src="/images/Profile_new/amex.jpg" alt="AMEX" width={40} height={25} className="h-5 w-auto object-contain" />
+                        <Image src={CDN_IMAGE + "card-8.svg"} alt="Discovery" width={40} height={25} className="h-5 w-auto object-contain" />
                       </div>
                     </button>
 
                   </div>
 
-                  {paymentMethod !== "manual" && (
-                    <div className="mt-4 flex items-center gap-2 px-3 py-2.5 rounded-lg bg-gray-50 border border-gray-100">
-                      <Lock className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                      <p className="text-xs text-gray-500">
-                        You'll be securely redirected to complete your payment after placing the order.
-                      </p>
-                    </div>
-                  )}
                 </div>
 
                 {/* Pay button */}
                 <div className="px-6 pb-6">
 
-                  <button
+                  <Button
                     type="submit"
                     form="express-form"
                     disabled={placingOrder || cartItems.length === 0}
                     className="w-full h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2
                                transition-all duration-200
-                               bg-[var(--footer-dark)] text-white
-                               hover:opacity-90 active:scale-[0.98]
-                               disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+                               "
                   >
                     {placingOrder ? (
                       <>
@@ -671,7 +739,7 @@ border text-sm transition-all cursor-pointer
                         Pay {currency}{fmt(grandTotal)}
                       </>
                     )}
-                  </button>
+                  </Button>
 
 
                 </div>
@@ -684,7 +752,7 @@ border text-sm transition-all cursor-pointer
 
       {/* ── Mobile sticky Pay bar ──
            Visible only on small screens, fixed to bottom          ── */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50
+      {/* <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50
                       bg-white border-t border-gray-200 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]
                       px-4 py-3 flex items-center gap-3">
         <div className="flex-1 min-w-0">
@@ -693,12 +761,11 @@ border text-sm transition-all cursor-pointer
             {currency}{fmt(grandTotal)}
           </p>
         </div>
-        <button
+        <Button
           type="submit"
           form="express-form"
           disabled={placingOrder || cartItems.length === 0}
-          className="flex-shrink-0 h-11 px-6 rounded-xl font-bold text-sm flex items-center gap-2
-                     bg-[var(--footer-dark)] text-white transition-all
+          className="flex-shrink-0 h-11 px-6 rounded-xl font-bold text-sm flex items-center gap-2 transition-all
                      hover:opacity-90 active:scale-[0.97]
                      disabled:opacity-50 disabled:cursor-not-allowed"
         >
@@ -713,8 +780,8 @@ border text-sm transition-all cursor-pointer
               Pay {currency}{fmt(grandTotal)}
             </>
           )}
-        </button>
-      </div>
+        </Button>
+      </div> */}
 
       <Footer />
     </div>

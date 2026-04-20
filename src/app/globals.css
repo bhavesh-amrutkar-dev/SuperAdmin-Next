@@ -479,3 +479,12 @@ html {
   color: #f3c200;
   text-decoration: underline;
 }
+
+.custom-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+}
