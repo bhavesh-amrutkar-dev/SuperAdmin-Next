@@ -5,37 +5,37 @@ export default async function GuestProfilePage({ searchParams }: any) {
   const params = await searchParams;
   const token = decodeURIComponent(params?.t || "");
 
-  if (!token) {
-    return <div className="p-6 text-center">Invalid link</div>;
-  }
+  // if (!token) {
+  //   return <div className="p-6 text-center">Invalid link</div>;
+  // }
 
-  let data;
+  // let data;
 
-  try {
-    data = decryptPaymentToken(token);
-    console.log("data", data);
-    
-  } catch (err: any) {
-    console.error("[GuestProfilePage] Token decryption failed", err);
-    return (
-      <div className="p-6 text-center">
-        Invalid or expired link
-      </div>
-    );
-  }
+  // try {
+  //   data = decryptPaymentToken(token);
+  //   console.log("data", data);
 
-  // ✅ Expiry check (if exists)
-  if (data?.exp && Date.now() > data.exp) {
-    return (
-      <div className="p-6 text-center">
-        Link expired
-      </div>
-    );
-  }
+  // } catch (err: any) {
+  //   console.error("[GuestProfilePage] Token decryption failed", err);
+  //   return (
+  //     <div className="p-6 text-center">
+  //       Invalid or expired link
+  //     </div>
+  //   );
+  // }
 
-  const { email, accessToken } = data;
-  console.log("accessToken");
-  
+  // // ✅ Expiry check (if exists)
+  // if (data?.exp && Date.now() > data.exp) {
+  //   return (
+  //     <div className="p-6 text-center">
+  //       Link expired
+  //     </div>
+  //   );
+  // }
 
-  return <GuestProfileClient email={email} token={accessToken} />;
+  // const { email, accessToken } = data;
+  // console.log("accessToken");
+  console.log(token);
+
+  return <GuestProfileClient token={token} />;
 }
