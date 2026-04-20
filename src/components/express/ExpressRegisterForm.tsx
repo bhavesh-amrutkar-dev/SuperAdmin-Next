@@ -87,6 +87,7 @@ export default function ExpressRegisterForm({
 
   return (
     <form
+      id="express-form"
       onSubmit={handleSubmit(async (data) => {
         const payload = buildPayload(data);
         console.log("payload", payload);
@@ -292,14 +293,7 @@ export default function ExpressRegisterForm({
         </div>
       </section>)}
 
-      {/* Submit */}
-      <Button
-        type="submit"
-        className="w-full h-11"
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? t("saving") : t("continue")}
-      </Button>
+
     </form>
   );
 }
