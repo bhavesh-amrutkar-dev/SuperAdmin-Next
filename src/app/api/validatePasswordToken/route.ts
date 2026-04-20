@@ -13,8 +13,8 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await serverFetch("/validatePasswordToken", {
       method: "POST",
-      body: JSON.stringify({}),
-      baseUrl: API_NY_URL
+      body: JSON.stringify({ token }),
+      baseUrl: API_NY_URL,
     });
 
     if (error) {
