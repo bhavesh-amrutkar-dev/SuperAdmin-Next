@@ -20,6 +20,7 @@ import { Label } from "@/src/components/ui/label";
 import Loader from "@/src/components/loader";
 import { getMyIP } from "@/src/lib/utils/getIp";
 import ExpressRegisterForm from "@/src/components/express/ExpressRegisterForm";
+import { CDN_IMAGE } from "@/src/lib/config";
 
 // ─────────────────────────────────────────────
 // Types
@@ -301,6 +302,10 @@ export default function GuestCheckoutPage() {
       setPlacingOrder(false);
     }
   };
+  const baseCls = `
+flex items-center justify-between w-full px-4 py-3 rounded-xl
+border text-sm transition-all cursor-pointer
+`;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#ededed]">
@@ -430,7 +435,7 @@ export default function GuestCheckoutPage() {
 
                 <ExpressRegisterForm
                   cartId={(cartData as any)?._id}
-                  isRaffle={isRaffle} 
+                  isRaffle={isRaffle}
                   onSubmit={async (formData) => {
                     await handleDynamicSubmit(formData);
                   }}
@@ -538,69 +543,96 @@ export default function GuestCheckoutPage() {
                     <button
                       type="button"
                       onClick={() => setPaymentMethod("athMovil")}
-                      className={`group relative flex items-center gap-4 p-4 w-full rounded-xl border-2 text-left
-                                  transition-all duration-150 cursor-pointer
-                                  ${paymentMethod === "athMovil"
-                          ? "border-[var(--theme-color)] bg-[var(--theme-color)]/5 shadow-sm"
-                          : "border-dashed border-gray-200 hover:border-gray-300 bg-gray-50"}`}
+                      className={`${baseCls} ${paymentMethod === "athMovil"
+                        ? "border-yellow-400 bg-yellow-50"
+                        : "border-gray-200 hover:border-gray-300 bg-white"
+                        }`}
                     >
-                      <div className={`absolute top-3 right-3 w-4 h-4 rounded-full border-2 flex items-center justify-center
-                                      transition-colors
-                                      ${paymentMethod === "athMovil" ? "border-[var(--theme-color)]" : "border-gray-300"}`}>
-                        {paymentMethod === "athMovil" && (
-                          <div className="w-2 h-2 rounded-full bg-[var(--theme-color)]" />
-                        )}
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "athMovil"
+                            ? "border-yellow-500"
+                            : "border-gray-300"
+                            }`}
+                        >
+                          {paymentMethod === "athMovil" && (
+                            <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                          )}
+                        </span>
+                        <span className="font-medium text-gray-700">
+                          Pay with ATH Móvil
+                        </span>
+                        <Image
+                          src="/images/icons/authmovil.png"
+                          alt="ATH"
+                          width={28}
+                          height={18}
+                        />
+
+
                       </div>
-                      <Image src="/images/icons/authmovil.png" alt="ATH Móvil" width={40} height={24} className="h-6 w-auto object-contain rounded" />
-                      <p className="text-xs font-semibold text-gray-700 leading-tight">Pay with ATH Móvil</p>
                     </button>
 
                     {/* Manual Payment */}
                     <button
                       type="button"
                       onClick={() => setPaymentMethod("manual")}
-                      className={`group relative flex items-center gap-4 p-4 w-full rounded-xl border-2 text-left
-                                  transition-all duration-150 cursor-pointer
-                                  ${paymentMethod === "manual"
-                          ? "border-[var(--theme-color)] bg-[var(--theme-color)]/5 shadow-sm"
-                          : "border-dashed border-gray-200 hover:border-gray-300 bg-gray-50"}`}
+                      className={`${baseCls} ${paymentMethod === "manual"
+                        ? "border-yellow-400 bg-yellow-50"
+                        : "border-gray-200 hover:border-gray-300 bg-white"
+                        }`}
                     >
-                      <div className={`absolute top-3 right-3 w-4 h-4 rounded-full border-2 flex items-center justify-center
-                                      transition-colors
-                                      ${paymentMethod === "manual" ? "border-[var(--theme-color)]" : "border-gray-300"}`}>
-                        {paymentMethod === "manual" && (
-                          <div className="w-2 h-2 rounded-full bg-[var(--theme-color)]" />
-                        )}
-                      </div>
-                      <div className="w-10 h-6 rounded bg-gray-100 flex items-center justify-center">
-                        <CreditCard className="w-4 h-4 text-gray-400" />
-                      </div>
-                      <p className="text-xs font-semibold text-gray-700 leading-tight">Manual Payment Methods</p>
-                    </button>
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "manual"
+                            ? "border-yellow-500"
+                            : "border-gray-300"
+                            }`}
+                        >
+                          {paymentMethod === "manual" && (
+                            <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                          )}
+                        </span>
 
+                        <CreditCard className="w-4 h-4 text-gray-500" />
+
+                        <span className="font-medium text-gray-700">
+                          Manual Payment Methods
+                        </span>
+                      </div>
+                    </button>
                     {/* Credit / Debit Card (Square) */}
                     <button
                       type="button"
                       onClick={() => setPaymentMethod("square")}
-                      className={`group relative flex items-center gap-4 p-4 w-full rounded-xl border-2 text-left
-                                  transition-all duration-150 cursor-pointer
-                                  ${paymentMethod === "square"
-                          ? "border-[var(--theme-color)] bg-[var(--theme-color)]/5 shadow-sm"
-                          : "border-dashed border-gray-200 hover:border-gray-300 bg-gray-50"}`}
+                      className={`${baseCls} ${paymentMethod === "square"
+                        ? "border-yellow-400 bg-yellow-50"
+                        : "border-gray-200 hover:border-gray-300 bg-white"
+                        }`}
                     >
-                      <div className={`absolute top-3 right-3 w-4 h-4 rounded-full border-2 flex items-center justify-center
-                                      transition-colors
-                                      ${paymentMethod === "square" ? "border-[var(--theme-color)]" : "border-gray-300"}`}>
-                        {paymentMethod === "square" && (
-                          <div className="w-2 h-2 rounded-full bg-[var(--theme-color)]" />
-                        )}
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "square"
+                            ? "border-yellow-500"
+                            : "border-gray-300"
+                            }`}
+                        >
+                          {paymentMethod === "square" && (
+                            <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                          )}
+                        </span>
+
+                        <span className="font-medium text-gray-700">
+                          Pay with Credit Card
+                        </span>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <Image src="/images/Profile_new/visa.svg" alt="Visa" width={32} height={20} className="h-5 w-auto object-contain" />
-                        <Image src="/images/Profile_new/mastercard.svg" alt="Mastercard" width={32} height={20} className="h-5 w-auto object-contain" />
-                        <Image src="/images/Profile_new/amex.jpg" alt="Amex" width={32} height={20} className="h-5 w-auto object-contain rounded-sm" />
+
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Image src="/images/Profile_new/visa.svg" alt="VISA" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
+                        <Image src="/images/Profile_new/mastercard.svg" alt="Mastercard" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
+                        <Image src="/images/Profile_new/amex.jpg" alt="AMEX" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
+                        <Image src={CDN_IMAGE + "card-8.svg"} alt="Discovery" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
                       </div>
-                      <p className="text-xs font-semibold text-gray-700 leading-tight">Pay with Credit/Debit Card</p>
                     </button>
 
                   </div>
