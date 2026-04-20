@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
     const payload = {
       email,
       newPassword,
+      token
     };
 
     console.log("[SetPassword API] Forwarding payload to backend", {
@@ -43,7 +44,6 @@ export async function POST(request: NextRequest) {
         method: "POST",
         body: JSON.stringify(payload),
         baseUrl: API_NY_URL,
-        overrideAuthToken: token,
       }
     );
 
