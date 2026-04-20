@@ -70,7 +70,7 @@ export default function EntrySelection({
 
     return (
         <div className="">
-            <div className={`grid grid-cols-1 ${user ? "lg:grid-cols-1 xl:grid-cols-2" : "grid-cols-1"} gap-4 2xl:gap-6`}>
+            <div className={`grid grid-cols-1 ${(user && userTickets > 0) ? "lg:grid-cols-1 xl:grid-cols-2" : "grid-cols-1"} gap-4 2xl:gap-6`}>
                 {/* Left Column: Tickets */}
                 <div className="space-y-4">
                     <div className="max-h-45 overflow-y-auto pr-2 custom-scroll">
@@ -113,7 +113,7 @@ export default function EntrySelection({
                 </div>
 
                 {/* Right Column: Special Ticket Entry Box - Only visible if logged in */}
-                {user && (
+                {user &&  userTickets > 0 && (
                     <div className="p-3 bg-[#2f2f2f] rounded-lg flex flex-col justify-between min-h-[150px]">
                         <div>
                             <div className="flex items-center justify-between mb-3">

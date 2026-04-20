@@ -944,7 +944,11 @@ export default function RafflesDetailPage() {
 
             // Only redirect if redirectToCart is true
             if (redirectToCart) {
-                router.push("/express-checkout");
+                if (user) {
+                    router.push("/cart");
+                } else {
+                    router.push("/guest-checkout");
+                }
             }
         } catch (err) {
             const errorMessage =
@@ -1480,7 +1484,14 @@ export default function RafflesDetailPage() {
                                             } catch (error) {
                                                 console.warn("Error updating cart before redirect:", error);
                                             } finally {
-                                                router.push("/express-checkout");
+
+
+                                                if (user) {
+                                                    router.push("/cart");
+                                                } else {
+                                                    router.push("/guest-checkout");
+                                                }
+
                                             }
                                         }}
                                         applyingTicket={applyingTicket}
@@ -1522,7 +1533,7 @@ export default function RafflesDetailPage() {
 
                                             /* ✅ FREE TICKET FLOW */
                                             if (selectedTicketData && selectedTicketData.price === 0) {
-                                             if (!user) {
+                                                if (!user) {
                                                     setShowLoginModal(true);
                                                     return;
                                                 }
@@ -1538,10 +1549,10 @@ export default function RafflesDetailPage() {
 
                                             /* ✅ PAID FLOW */
                                             if (selectedTicketData && selectedTicketData.price > 0) {
-                                            //    if (!user) {
-                                            //         setShowLoginModal(true);
-                                            //         return;
-                                            //     }
+                                                //    if (!user) {
+                                                //         setShowLoginModal(true);
+                                                //         return;
+                                                //     }
                                                 handleParticipateClick(selectedTicketData.id, 1);
                                                 return;
                                             }

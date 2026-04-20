@@ -4,7 +4,6 @@ import { serverFetch } from "@/src/lib/api/server-api";
 import { trackEvent } from "@/src/lib/analytics";
 
 export async function POST(request: NextRequest) {
-  trackEvent("ORDER_API_STATUES");
   try {
     const body = await request.json();
 

@@ -312,6 +312,9 @@ export default function SecureCheckoutPage() {
 
     if (!handled && status === "SUCCESS") {
       handled = true;
+      trackEvent("SQUARE_PAYMENT_SUCEESS", {
+        order_id: orderId
+      });
       handleSquareSuccess();
 
       // clean URL
@@ -320,7 +323,9 @@ export default function SecureCheckoutPage() {
 
     if (!handled && status === "FAILED") {
       handled = true;
-
+      trackEvent("SQUARE_PAYMENT_FAILURE", {
+        order_id: orderId
+      });
       handleSquareError({
         orderId,
         message,
@@ -424,6 +429,9 @@ export default function SecureCheckoutPage() {
 
 
   const handleAthSuccess = async (res?: any) => {
+    trackEvent("ATH_MOVIL_SUCCESS", {
+      order_id: athOrderId
+    });
     if (!athOrderId) return;
     // console.log("Ath movil payment success log from handleAth success")
     try {
@@ -431,6 +439,7 @@ export default function SecureCheckoutPage() {
       setPlacingOrder(false);
       setIsUpdatingStatus(true);
 
+      trackEvent("ORDER_API_STATUES");
       await fetch("/api/orders/status-update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -464,6 +473,9 @@ export default function SecureCheckoutPage() {
   };
 
   const handleAthCancel = async () => {
+    trackEvent("ATH_MOVIL_CANCEL", {
+      order_id: athOrderId
+    });
     if (!athOrderId) return;
 
     // 1️⃣ Immediate UI response
@@ -484,6 +496,8 @@ export default function SecureCheckoutPage() {
 
     // 2️⃣ Background backend update (non-blocking)
     setIsUpdatingStatus(true);
+
+    trackEvent("ORDER_API_STATUES");
     await fetch("/api/orders/status-update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -555,6 +569,7 @@ export default function SecureCheckoutPage() {
       };
       // 1️⃣ Create order (your existing logic)
       trackEvent("GOTO_PAYEMNT");
+
       const response = await fetch("/api/orders/place", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -916,6 +931,7 @@ export default function SecureCheckoutPage() {
         const orderId = localStorage.getItem("orderId");
 
         if (orderId) {
+          trackEvent("ORDER_API_STATUES");
           await fetch("/api/orders/status-update", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
