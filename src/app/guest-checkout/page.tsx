@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { setCookie } from "cookies-next";
+import { getCookie, setCookie } from "cookies-next";
 import { toast } from "sonner";
 import {
   ShoppingBag, User, MapPin, CreditCard,
@@ -20,10 +20,12 @@ import { Label } from "@/src/components/ui/label";
 import Loader from "@/src/components/loader";
 import { getMyIP } from "@/src/lib/utils/getIp";
 import ExpressRegisterForm from "@/src/components/express/ExpressRegisterForm";
-import { CDN_IMAGE } from "@/src/lib/config";
+import { CDN_IMAGE, DEFAULT_COUNTRY_CODE } from "@/src/lib/config";
 import { useTranslations } from "next-intl";
 import { Button } from "@/src/components/ui/button";
 import { trackEvent } from "@/src/lib/analytics";
+import { BankDetail, PaymentService } from "@/src/lib/services/payment";
+import { FileUploader } from "@/src/components/ui/fileUploader";
 
 // ─────────────────────────────────────────────
 // Types
@@ -102,13 +104,47 @@ export default function GuestCheckoutPage() {
   const [cartData, setCartData] = useState<CartData | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<"square" | "athMovil" | "manual">("square");
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [showManualModal, setShowManualModal] = useState(false);
+  const [bankDetails, setBankDetails] = useState<BankDetail[]>([]);
+  const [selectedBank, setSelectedBank] = useState<any>(null);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+  const [manualPaymentConfirmed, setManualPaymentConfirmed] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState<any>(null);
 
+  useEffect(() => {
+    if (showManualModal) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [showManualModal]);
   // ── Init guest session & load cart ──────────────────
   useEffect(() => {
     initAndLoad();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  useEffect(() => {
+    const fetchBanks = async () => {
+      try {
+        const res = await PaymentService.getBankDetails();
+        const banks =
+          (res as any)?.data?.bankDetails ||
+          (res as any)?.data?.data?.bankDetails ||
+          [];
 
+        setBankDetails(banks);
+      } catch (err) {
+        console.warn("Bank fetch failed", err);
+      }
+    };
+
+    fetchBanks();
+  }, []);
 
   const initAndLoad = async () => {
     try {
@@ -346,28 +382,29 @@ export default function GuestCheckoutPage() {
     };
   }, []);
   const handleSquareSuccess = () => {
-  toast.success("Payment Successful", {
-    description: "Redirecting to order confirmation...",
-  });
+    toast.success("Payment Successful", {
+      description: "Redirecting to order confirmation...",
+    });
 
-  setTimeout(() => {
-    router.push("/thank-you?payment=square");
-  }, 1200);
-};
+    setTimeout(() => {
+      router.push("/thank-you?payment=square");
+    }, 1200);
+  };
 
-const handleSquareError = (err: any) => {
-  console.warn("Square payment failed:", err);
+  const handleSquareError = (err: any) => {
+    console.warn("Square payment failed:", err);
 
-  toast.error("Payment Failed", {
-    description: err?.message || "Please try again",
-  });
+    toast.error("Payment Failed", {
+      description: err?.message || "Please try again",
+    });
 
-  fetchCart();
-};
+    fetchCart();
+  };
 
   const handleDynamicSubmit = async (formData: any) => {
     try {
       setPlacingOrder(true);
+
       console.log("test", formData);
 
       const ipAddress = await getMyIP();
@@ -376,7 +413,13 @@ const handleSquareError = (err: any) => {
         paymentMethod === "athMovil" ? 10 :
           paymentMethod === "manual" ? 12 :
             21;
-
+      // ✅ Manual payment
+      if (paymentMethod === "manual") {
+        setPendingFormData(formData); // store form
+        setShowManualModal(true);
+        setPlacingOrder(false);
+        return;
+      }
       const orderPayload = {
         ...formData, // ✅ comes from dynamic form
 
@@ -410,11 +453,6 @@ const handleSquareError = (err: any) => {
 
       localStorage.setItem("orderId", orderData.orderId);
 
-      // ✅ Manual payment
-      if (paymentMethod === "manual") {
-        router.push("/thank-you");
-        return;
-      }
 
       if (orderData.paymentMethod === 21) {
         trackEvent("GOTO_PAYMENT");
@@ -842,7 +880,164 @@ border text-sm transition-all cursor-pointer
           </div>
         </div>
       </main>
+      {showManualModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+          <div className="bg-white w-full max-w-md rounded-2xl p-6 space-y-5 shadow-xl">
 
+            {/* Title */}
+            <h2 className="text-lg font-semibold text-gray-800">
+              Manual Payment
+            </h2>
+
+            {/* Bank List */}
+            <div className="space-y-3">
+              <p className="text-sm text-gray-500">
+                Please select a bank to continue with your manual payment.
+              </p>
+
+              <div className="grid grid-cols-3 gap-3">
+                {bankDetails.map((bank) => (
+                  <div
+                    key={bank._id}
+                    onClick={() => setSelectedBank(bank)}
+                    className={`cursor-pointer border rounded-xl p-3 flex items-center justify-center bg-white transition-all
+          ${selectedBank?._id === bank._id
+                        ? "border-yellow-400 shadow-md ring-2 ring-yellow-300"
+                        : "border-gray-200 hover:border-gray-300"
+                      }`}
+                  >
+                    {/* ✅ Bank Logo */}
+                    {bank.paymentMethodLogo ? (
+                      <img
+                        src={bank.paymentMethodLogo}
+                        alt={bank.bankName}
+                        className="h-8 object-contain"
+                      />
+                    ) : (
+                      <span className="text-xs font-semibold text-gray-600 text-center">
+                        {bank.bankName}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Upload Receipt */}
+
+            <FileUploader
+              title="Upload Receipt"
+              maxFiles={1}
+              acceptedTypes=".jpg,.png,.jpeg"
+              helperText={
+                !selectedBank
+                  ? "Select a bank first"
+                  : "Upload payment receipt (Max 10MB)"
+              }
+              currentFiles={receiptFile ? [receiptFile] : []}
+              onFileChange={(files) => {
+                if (!selectedBank) return; // extra safety
+                const file = files[0] as File;
+                setReceiptFile(file);
+              }}
+              disabled={!selectedBank} // ✅ IMPORTANT
+            />
+            {/* Confirm Checkbox */}
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={manualPaymentConfirmed}
+                onChange={(e) =>
+                  setManualPaymentConfirmed(e.target.checked)
+                }
+              />
+              <p className="text-sm text-gray-600">
+                I confirm this payment is completed
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setShowManualModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="w-full"
+                disabled={
+                  !selectedBank ||
+                  !receiptFile ||
+                  !manualPaymentConfirmed ||
+                  placingOrder
+                }
+                onClick={async () => {
+                  try {
+                    setPlacingOrder(true);
+
+                    // ✅ 1. Close modal FIRST
+                    setShowManualModal(false);
+
+                    const ipAddress = await getMyIP();
+
+                    const orderPayload = {
+                      ...pendingFormData,
+                      ipAddress,
+                      storeType: 8,
+                      paymentType: 1,
+                      onlinePaymentMethod: 12,
+                    };
+
+                    // ✅ 2. Create order
+                    const res = await fetch("/api/expressRegistration", {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify(orderPayload),
+                    });
+
+                    const orderData = await res.json();
+
+                    if (!res.ok || !orderData?.orderId) {
+                      throw new Error(orderData?.message || "Order failed");
+                    }
+
+                    // ✅ 3. Upload receipt
+                    const formData = new FormData();
+                    const country =
+                      (getCookie("C_code") as string) || DEFAULT_COUNTRY_CODE;
+                    if (!receiptFile) {
+                      throw new Error("Receipt file is missing");
+                    }
+                    formData.append("image", receiptFile);
+                    formData.append("master_order_id", orderData.orderId);
+                    formData.append("country_code", country);
+
+                    await PaymentService.uploadReceipt(formData);
+
+                    // ✅ 4. Success
+                    localStorage.setItem("orderId", orderData.orderId);
+
+                    toast.success("Payment submitted successfully");
+
+                    router.push("/thank-you?payment=manual");
+
+                  } catch (err: any) {
+                    console.error(err);
+                    toast.error(err?.message || "Manual payment failed");
+                    setPlacingOrder(false);
+                  }
+                }}
+              >
+                {placingOrder ? "Processing..." : "Confirm"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* ── Mobile sticky Pay bar ──
            Visible only on small screens, fixed to bottom          ── */}
       {/* <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50
