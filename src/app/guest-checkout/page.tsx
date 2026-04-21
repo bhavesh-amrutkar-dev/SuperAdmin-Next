@@ -26,6 +26,7 @@ import { Button } from "@/src/components/ui/button";
 import { trackEvent } from "@/src/lib/analytics";
 import { BankDetail, PaymentService } from "@/src/lib/services/payment";
 import { FileUploader } from "@/src/components/ui/fileUploader";
+import AthMovilPayment from "@/src/components/payments/AuthMovilPayment";
 
 // ─────────────────────────────────────────────
 // Types
@@ -111,7 +112,10 @@ export default function GuestCheckoutPage() {
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [manualPaymentConfirmed, setManualPaymentConfirmed] = useState(false);
   const [pendingFormData, setPendingFormData] = useState<any>(null);
-
+  const [athOrderId, setAthOrderId] = useState<string | null>(null);
+  const [athToken, setAthToken] = useState<string | null>(null);
+  const [isAthReady, setIsAthReady] = useState(false);
+  const [orderTotal, setOrderTotal] = useState(0);
   useEffect(() => {
     if (showManualModal) {
       document.body.style.overflow = "hidden";
@@ -467,12 +471,94 @@ export default function GuestCheckoutPage() {
         window.location.href = redirectUrl;
         return;
       }
+      if (paymentMethod === "athMovil") {
+        try {
+          trackEvent("GOTO_PAYMENT");
 
+          // ✅ Save order info
+          setAthOrderId(orderData.orderId);
+          setOrderTotal(orderData.totalAmount || grandTotal);
+
+          // ✅ Get ATH token
+          const tokenRes = await PaymentService.ATHMovileToken();
+
+          const publicToken =
+            (tokenRes as any)?.data?.data?.publicToken ||
+            (tokenRes as any)?.data?.publicToken;
+
+          if (!publicToken) {
+            throw new Error("ATH token not received");
+          }
+
+          // ✅ Set state → triggers component
+          setAthToken(publicToken);
+          setIsAthReady(true);
+
+          return; // ❗ STOP here
+        } catch (err: any) {
+          toast.error(err?.message || "ATH payment failed");
+          setPlacingOrder(false);
+          return;
+        }
+      }
 
     } catch (err: any) {
       toast.error(err?.message || "Something went wrong");
       setPlacingOrder(false);
     }
+  };
+  const handleAthSuccess = async () => {
+    trackEvent("ATH_MOVIL_SUCCESS", {
+      order_id: athOrderId
+    });
+
+    if (!athOrderId) return;
+
+    try {
+      setIsAthReady(false);
+      setPlacingOrder(false);
+
+      await fetch("/api/orders/status-update", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          orderId: athOrderId,
+          paymentMethod: 10,
+        }),
+      });
+
+      router.push("/thank-you?payment=athmovil");
+
+    } catch (err) {
+      toast.error("Payment confirmation failed");
+    }
+  };
+  const handleAthCancel = async () => {
+    trackEvent("ATH_MOVIL_CANCEL", {
+      order_id: athOrderId
+    });
+
+    if (!athOrderId) return;
+
+    setIsAthReady(false);
+    setPlacingOrder(false);
+
+    toast.error("Payment cancelled");
+
+    await fetch("/api/orders/status-update", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        orderId: athOrderId,
+        paymentMethod: 10,
+      }),
+    }).catch(() => { });
+
+    fetchCart();
   };
 
   const baseCls = `
@@ -854,7 +940,7 @@ border text-sm transition-all cursor-pointer
                   <Button
                     type="submit"
                     form="express-form"
-                    disabled={placingOrder || cartItems.length === 0}
+                    disabled={placingOrder || cartItems.length === 0 || (paymentMethod === "athMovil" && isAthReady)}
                     className="w-full h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2
                                transition-all duration-200
                                "
@@ -872,7 +958,31 @@ border text-sm transition-all cursor-pointer
                     )}
                   </Button>
 
+                  {paymentMethod === "athMovil" && isAthReady && athToken && athOrderId && (
+                    <div className="px-6 pb-6 pt-2 border-t border-gray-100 space-y-3">
 
+                      <p className="text-sm font-medium text-gray-700">
+                        Complete your payment
+                      </p>
+
+                      <p className="text-xs text-gray-500">
+                        Click below to pay securely with ATH Móvil
+                      </p>
+
+                      {/* 🔥 ATH BUTTON RENDERS HERE */}
+                      <div className="flex justify-center">
+                        <AthMovilPayment
+                          total={orderTotal || grandTotal}
+                          publicToken={athToken}
+                          orderId={athOrderId}
+                          userId={(getCookie("uid") as string) || ""}
+                          onSuccess={handleAthSuccess}
+                          onCancel={handleAthCancel}
+                        />
+                      </div>
+
+                    </div>
+                  )}
                 </div>
 
               </div>
@@ -1038,6 +1148,20 @@ border text-sm transition-all cursor-pointer
           </div>
         </div>
       )}
+
+      {paymentMethod === "athMovil" &&
+        isAthReady &&
+        athToken &&
+        athOrderId && (
+          <AthMovilPayment
+            total={orderTotal || grandTotal}
+            publicToken={athToken}
+            orderId={athOrderId}
+            userId={(getCookie("uid") as string) || ""}
+            onSuccess={handleAthSuccess}
+            onCancel={handleAthCancel}
+          />
+        )}
       {/* ── Mobile sticky Pay bar ──
            Visible only on small screens, fixed to bottom          ── */}
       {/* <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50
