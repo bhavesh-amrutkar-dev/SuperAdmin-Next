@@ -17,33 +17,40 @@ export async function POST(request: NextRequest) {
     );
 
     if (error) {
+      console.error("❌ BACKEND ERROR:", error);
+
       return NextResponse.json(
         { message: error.message },
         { status: error.status || 500 }
       );
     }
 
-    const orderData = data?.data?.orderDetails?.data;
+    // ✅ NEW STRUCTURE SUPPORT
+    const orderData =
+      data?.data
 
     if (!orderData) {
+      console.error("❌ Invalid response structure", data);
+
       return NextResponse.json(
         { message: "Invalid order response from backend" },
         { status: 500 }
       );
     }
 
-    // ✅ Flattened response for frontend
-    return NextResponse.json({
-      cartId: data.data.cartId,
+    const response = {
+      cartId: orderData.cartId,
       orderId: orderData.orderId,
       totalAmount: orderData.totalAmount,
       freeTickets: orderData.numberOfFreeTickets,
       paymentMethod: orderData.onlinePaymentMethod,
       paymentMethodText: orderData.onlinePaymentMethodText,
       checkoutUrl: orderData.checkoutProcessUrl,
-    });
+    };
+    return NextResponse.json(response);
 
   } catch (err: unknown) {
+
     return NextResponse.json(
       {
         message:
