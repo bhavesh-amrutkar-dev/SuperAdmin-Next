@@ -17,7 +17,7 @@ export type ExpressRegisterFormRM = {
 
   mobileNumber: string;
   countryCode: string;
-
+  mobileNumberSortCode: string;
   addLine1: string;
   city: string;
   state: string;
@@ -52,31 +52,41 @@ export default function ExpressRegisterForm({
   } = useForm<ExpressRegisterFormRM>({
     defaultValues: {
       addressType: 1,
+
+      // ✅ Default location
+      city: "San Juan",
+      country: "Puerto Rico",
+      state: "PR",
+      mobileNumberSortCode: "",
     },
   });
 
   const addressType = watch("addressType");
-
   const buildPayload = (data: ExpressRegisterFormRM) => {
+    const mobile = data.mobileNumber?.replace(/\D/g, "") || "";
+
     return {
       cartId,
       email: data.email,
-      phone: data.mobileNumber,
+
+      phone: mobile,
       countryCode: `+${data.countryCode}`,
 
-      isExpressOrder,
+      // ✅ Dynamic ISO (IN, US, PR)
+      mobileNumberSortCode: data.mobileNumberSortCode,
 
+      isRaffle,
+      discount: 0,
       ...(isExpressOrder && {
         addLine1: data.addLine1,
         addLine2: data.addLine1,
         addressCity: data.city,
         addressState: data.state,
         addressCountry: data.country,
-        state: data.state,
         addressPostCode: data.pincode,
         latitude: data.latitude || 0,
         longitude: data.longitude || 0,
-        addressType: data.addressType,
+        // addressType: data.addressType,
         default: true,
       }),
 
@@ -84,7 +94,6 @@ export default function ExpressRegisterForm({
       lastName: data.lastName,
     };
   };
-
   return (
     <form
       id="express-form"
@@ -97,11 +106,7 @@ export default function ExpressRegisterForm({
       className="space-y-5"
     >
       {/* 👤 BASIC INFO */}
-      <section className="bg-gray-50 p-4 rounded-2xl space-y-4">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase">
-          {t("personalInformation")}
-        </h2>
-
+      <section className=" p-1 rounded-2xl space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* First Name */}
           <div className="space-y-2">
@@ -166,11 +171,18 @@ export default function ExpressRegisterForm({
               onChange={(value, country: any) => {
                 if (!country?.dialCode) return;
 
-                setValue("countryCode", country.dialCode);
-                setValue(
-                  "mobileNumber",
-                  value.replace(country.dialCode, "")
-                );
+                const dialCode = country.dialCode;
+                const isoCode = country.countryCode?.toUpperCase(); // ✅ IN, US, PR
+
+                const numberWithoutCode = value.startsWith(dialCode)
+                  ? value.slice(dialCode.length)
+                  : value;
+
+                setValue("countryCode", dialCode);
+                setValue("mobileNumber", numberWithoutCode);
+
+                // ✅ NEW FIELD
+                setValue("mobileNumberSortCode", isoCode);
               }}
               inputClass={`!w-full !h-[44px] !rounded-lg !border ${errors.mobileNumber ? "!border-red-500" : "!border-input"
                 }`}
@@ -182,11 +194,7 @@ export default function ExpressRegisterForm({
       </section>
 
       {/* Address */}
-      {!isRaffle && (<section className="bg-gray-50 p-4 rounded-2xl space-y-4">
-        <h2 className="text-sm font-semibold uppercase text-gray-500">
-          {t("paymentInformation")}
-        </h2>
-
+      {!isRaffle && (<section className="p-1 rounded-2xl space-y-4">
         {/* Address Line */}
         <div className="space-y-2">
           <Label required error={!!errors.addLine1}>
@@ -213,10 +221,8 @@ export default function ExpressRegisterForm({
             </Label>
             <Input
               placeholder={t("country")}
-              error={!!errors.country}
-              {...register("country", {
-                required: t("countryRequired"),
-              })}
+              defaultValue="Puerto Rico"
+              {...register("country", { required: t("countryRequired") })}
             />
             <ErrorMessage message={errors.country?.message} />
           </div>
@@ -228,10 +234,8 @@ export default function ExpressRegisterForm({
             </Label>
             <Input
               placeholder={t("cityPlaceholder")}
-              error={!!errors.city}
-              {...register("city", {
-                required: t("cityRequired"),
-              })}
+              defaultValue="San Juan"
+              {...register("city", { required: t("cityRequired") })}
             />
             <ErrorMessage message={errors.city?.message} />
           </div>
@@ -269,7 +273,7 @@ export default function ExpressRegisterForm({
       </section>)}
 
       {/* Address Type */}
-      {!isRaffle && (<section className="bg-gray-50 p-4 rounded-2xl">
+      {!isRaffle && (<section className="p-1 rounded-2xl">
         <h2 className="text-sm font-semibold uppercase text-gray-500 mb-3">
           {t("addressType")}
         </h2>

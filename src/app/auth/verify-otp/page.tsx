@@ -207,6 +207,8 @@ export default function VerifyOtpPage() {
       }
       // Login / signup flow
       else {
+        console.log(mobile, countryCode);
+        
         res = await fetch("/api/login-mobile", {
           method: "POST",
           headers: {

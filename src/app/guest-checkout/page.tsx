@@ -23,6 +23,7 @@ import ExpressRegisterForm from "@/src/components/express/ExpressRegisterForm";
 import { CDN_IMAGE } from "@/src/lib/config";
 import { useTranslations } from "next-intl";
 import { Button } from "@/src/components/ui/button";
+import { trackEvent } from "@/src/lib/analytics";
 
 // ─────────────────────────────────────────────
 // Types
@@ -289,9 +290,85 @@ export default function GuestCheckoutPage() {
       <h2 className="font-semibold text-gray-800 text-[15px]">{title}</h2>
     </div>
   );
+  useEffect(() => {
+    let handled = false;
+
+    const handlePaymentMessage = (event: MessageEvent) => {
+      if (handled) return;
+      if (event.origin !== window.location.origin) return;
+
+      const { status, orderId, error } = event.data || {};
+      if (!status) return;
+
+      handled = true;
+
+      if (status === "SUCCESS") {
+        trackEvent("SQUARE_PAYMENT_SUCCESS", { order_id: orderId });
+        handleSquareSuccess();
+      }
+
+      if (status === "FAILED") {
+        trackEvent("SQUARE_PAYMENT_FAILURE", { order_id: orderId });
+        handleSquareError(error || { orderId });
+      }
+
+      window.history.replaceState({}, "", window.location.pathname);
+    };
+
+    window.addEventListener("message", handlePaymentMessage);
+
+    // ✅ URL fallback (redirect flow)
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("status");
+    const orderId = params.get("orderId");
+    const message = params.get("message");
+
+    if (!handled && status === "SUCCESS") {
+      handled = true;
+
+      trackEvent("SQUARE_PAYMENT_SUCCESS", { order_id: orderId });
+      handleSquareSuccess();
+
+      router.replace("/secure-checkout", { scroll: false });
+    }
+
+    if (!handled && status === "FAILED") {
+      handled = true;
+
+      trackEvent("SQUARE_PAYMENT_FAILURE", { order_id: orderId });
+      handleSquareError({ orderId, message });
+
+      router.replace("/secure-checkout", { scroll: false });
+    }
+
+    return () => {
+      window.removeEventListener("message", handlePaymentMessage);
+    };
+  }, []);
+  const handleSquareSuccess = () => {
+  toast.success("Payment Successful", {
+    description: "Redirecting to order confirmation...",
+  });
+
+  setTimeout(() => {
+    router.push("/thank-you?payment=square");
+  }, 1200);
+};
+
+const handleSquareError = (err: any) => {
+  console.warn("Square payment failed:", err);
+
+  toast.error("Payment Failed", {
+    description: err?.message || "Please try again",
+  });
+
+  fetchCart();
+};
+
   const handleDynamicSubmit = async (formData: any) => {
     try {
       setPlacingOrder(true);
+      console.log("test", formData);
 
       const ipAddress = await getMyIP();
 
@@ -305,7 +382,6 @@ export default function GuestCheckoutPage() {
 
         ipAddress,
         storeType: 8,
-        orderType: 2,
         paymentType: 1,
         onlinePaymentMethod: onlinePaymentMethodCode,
 
@@ -315,14 +391,16 @@ export default function GuestCheckoutPage() {
         payByWallet: false,
         payByRewardWallet: false,
       };
+      console.log("orderPayload", orderPayload);
 
-      const res = await fetch("/api/orders/place", {
+      const res = await fetch("/api/expressRegistration", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(orderPayload),
       });
+      console.log("res", res);
 
       const orderData = await res.json();
 
@@ -332,12 +410,26 @@ export default function GuestCheckoutPage() {
 
       localStorage.setItem("orderId", orderData.orderId);
 
+      // ✅ Manual payment
       if (paymentMethod === "manual") {
         router.push("/thank-you");
         return;
       }
 
-      window.location.href = orderData.checkoutProcessUrl;
+      if (orderData.paymentMethod === 21) {
+        trackEvent("GOTO_PAYMENT");
+
+        const redirectUrl = orderData.checkoutUrl;
+
+        if (!redirectUrl) {
+          throw new Error("Missing checkout URL");
+        }
+
+        // ✅ redirect to Square
+        window.location.href = redirectUrl;
+        return;
+      }
+
 
     } catch (err: any) {
       toast.error(err?.message || "Something went wrong");
@@ -400,12 +492,13 @@ border text-sm transition-all cursor-pointer
                   <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400">
                     <ShoppingBag className="w-10 h-10 opacity-30" />
                     <p className="text-sm font-medium">Your cart is empty</p>
-                    <button
+                    <Button
                       onClick={() => router.push("/")}
-                      className="text-xs text-[var(--theme-color)] font-semibold hover:underline"
+                      variant="ghost"
+                      className="text-xs text-[var(--theme-color)] font-semibold"
                     >
-                      Browse raffles →
-                    </button>
+                      Browse raffles
+                    </Button>
                   </div>
                 ) : (
                   <div className="max-h-[420px] overflow-y-auto pr-2 custom-scroll">
@@ -453,7 +546,7 @@ border text-sm transition-all cursor-pointer
                             {/* RIGHT */}
                             <div className="flex flex-col items-end gap-3">
 
-                              <Countdown timestamp={item.drawDateTimeStemp} />
+                              {/* <Countdown timestamp={item.drawDateTimeStemp} /> */}
                               {/* PRICE + QTY */}
                               <div className="flex items-center gap-2 bg-gray-100 rounded-full">
 
@@ -506,7 +599,7 @@ border text-sm transition-all cursor-pointer
                 <SectionHeading
                   step={1}
                   icon={<User className="w-4 h-4" />}
-                  title="User Details"
+                  title="Customer Details"
                 />
 
                 <ExpressRegisterForm

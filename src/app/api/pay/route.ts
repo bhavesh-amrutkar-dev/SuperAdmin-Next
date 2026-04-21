@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     //   tokenExists: !!token,
     // });
 
-    if (!token || !orderId || !authToken) {
+    if (!token || !orderId) {
       return NextResponse.json(
         { message: "Missing required fields (token, orderId)" },
         { status: 400 }
@@ -33,7 +33,9 @@ export async function POST(request: NextRequest) {
         method: "POST",
         body: JSON.stringify(payload),
         baseUrl: API_NY_URL,
-        overrideAuthToken: `Bearer ${authToken}`,
+        ...(authToken && {
+          overrideAuthToken: `Bearer ${authToken}`,
+        }),
       }
     );
 

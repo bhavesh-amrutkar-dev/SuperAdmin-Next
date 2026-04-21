@@ -14,6 +14,8 @@ export default async function SquarePaymentPage({ searchParams }: any) {
 
   try {
     data = decryptPaymentToken(token);
+    console.log("data", data);
+    
   } catch (err: any) {
     console.error("[SquarePaymentPage] Token decryption failed", {
       error: err?.message,
