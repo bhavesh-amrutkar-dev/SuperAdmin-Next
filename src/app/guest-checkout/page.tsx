@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import {
   ShoppingBag, User, MapPin, CreditCard,
   Lock, ChevronRight, Plus, Minus,
+  Trash2,
 } from "lucide-react";
 
 import Header from "@/src/components/layout/Header";
@@ -33,23 +34,57 @@ import { useForm } from "react-hook-form";
 // Types
 // ─────────────────────────────────────────────
 
-type CartItem = {
+export interface CartItem {
   _id?: string;
-  name?: string;
+  productId?: string;
+  centralProductId?: string;
   productName?: string;
-  drawDateTimeStemp?: number;
+  name?: string;
   brandName?: string;
-  quantity?: number | { value?: number };
-  images?: { large?: string; medium?: string; small?: string } | any;
+  storeName?: string;
+  unitId?: string;
+  ticketId?: string;
+  product?: {
+    name?: string;
+    price?: number | string;
+    ticketPrice?: number | string;
+    unitPrice?: number | string;
+    image?: string;
+    images?: Array<{ medium?: string; large?: string; small?: string } | string> | { medium?: string; large?: string; small?: string };
+    productImage?: string;
+  };
   productImage?: string;
   image?: string;
+  images?: {
+    medium?: string;
+    large?: string;
+    small?: string;
+  };
+  sellerName?: string;
+  storeId?: string;
+  quantity?: number | { value?: number };
+  price?: number | string;
+  unitPrice?: number | string;
+  ticketPrice?: number | string;
+  ticketCount?: number;
+  ticketDetails?: {
+    numberOfTicket?: number;
+    ticketId?: string;
+  };
+  numberOfFreeTickets?: number;
+  totalPrice?: number | string;
+  addToCartOnId?: string;
   accounting?: {
     finalUnitPrice?: number | string;
     unitPrice?: number | string;
     subTotal?: number | string;
   };
-  price?: number | string;
-};
+  sellerSingleUnitPrice?: {
+    unitPrice?: number | string;
+    price?: number | string;
+    ticketPrice?: number | string;
+  };
+}
 
 type CartData = {
   _id?: string;
@@ -117,7 +152,7 @@ export default function GuestCheckoutPage() {
   const [athToken, setAthToken] = useState<string | null>(null);
   const [isAthReady, setIsAthReady] = useState(false);
   const [orderTotal, setOrderTotal] = useState(0);
-
+  const [updatingKeys, setUpdatingKeys] = useState<Record<string, "inc" | "dec" | null>>({});
   const form = useForm<ExpressRegisterFormRM>({
     defaultValues: {
       addressType: 1,
@@ -232,10 +267,53 @@ export default function GuestCheckoutPage() {
   const accounting = cartData?.accounting || {};
   const currency = cartData?.currencySymbol || "$";
 
-  const updateQty = (key: string, delta: number) => {
-    setQuantities((prev) => ({ ...prev, [key]: Math.max(1, (prev[key] ?? 1) + delta) }));
-  };
+  const updateQty = async (item: CartItem, key: string, delta: number) => {
+    if (updatingKeys[key]) return;
 
+    const actionType = delta > 0 ? "inc" : "dec";
+
+    try {
+      setUpdatingKeys((prev) => ({ ...prev, [key]: actionType }));
+
+      const currentQty = quantities[key] ?? getQty(item);
+      const newQty = Math.max(1, currentQty + delta);
+
+      const payload = {
+        productId: item.productId || item._id || "",
+        centralProductId: item.centralProductId || item._id || "",
+        unitId: item.unitId,
+        storeId: item.storeId,
+        ticketId: item.ticketDetails?.ticketId,
+        campaignId: (item as any)?.campaignId || "",
+        countryId: getCookie("C_id") as string,
+
+        newQuantity: newQty,
+        action: 2,
+
+        cartType: 2,
+        typeOfCart: 1,
+        storeTypeId: 1,
+
+        offers: {},
+        addToCartOnId: item.addToCartOnId,
+        cartStatus: "updatecart",
+
+        deliveryAddressId: getCookie("addressid") as string || "",
+      };
+
+      await CartService.addToCart(payload);
+
+      setQuantities((prev) => ({
+        ...prev,
+        [key]: newQty,
+      }));
+
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update quantity");
+    } finally {
+      setUpdatingKeys((prev) => ({ ...prev, [key]: null }));
+    }
+  };
   const subtotal = useMemo(
     () =>
       cartItems.reduce((sum, item, idx) => {
@@ -255,7 +333,70 @@ export default function GuestCheckoutPage() {
   const shipping = Number(accounting.deliveryFee ?? accounting.shippingFee ?? 0);
   const grandTotal = subtotal + tax + shipping;
 
+  const handleRemoveItem = async (item: CartItem, key: string) => {
+    try {
+      // ✅ Optimistic UI update (instant remove)
+      setQuantities((prev) => {
+        const updated = { ...prev };
+        delete updated[key];
+        return updated;
+      });
 
+      setCartData((prev) => {
+        if (!prev) return prev;
+
+        return {
+          ...prev,
+          sellers: prev.sellers
+            ?.map((seller) => ({
+              ...seller,
+              products: seller.products?.filter((p) => {
+                const id = p._id;
+                return id !== item._id;
+              }),
+            }))
+            .filter((s) => (s.products?.length ?? 0) > 0),
+        };
+      });
+      console.log("item", item);
+
+      // ✅ API CALL (same as cart page)
+      const payload = {
+        productId: item._id || "",
+        centralProductId: item._id || "",
+        unitId: item.unitId,
+        storeId: item.storeId,
+        ticketId: item.ticketDetails?.ticketId,
+        campaignId: (item as any)?.campaignId || "",
+        countryId: getCookie("C_id") as string,
+        newQuantity: 0,
+        action: 3, // ✅ DELETE
+        cartType: 2,
+        typeOfCart: 1,
+        storeTypeId: 1,
+        offers: {},
+        addToCartOnId: item.addToCartOnId,
+        cartStatus: "removedcart",
+        deliveryAddressId: getCookie("addressid") as string || "",
+      };
+
+      await CartService.addToCart(payload);
+
+      // ✅ Refresh silently
+      fetchCart();
+
+      // ✅ Update header cart count
+      window.dispatchEvent(new Event("cartUpdated"));
+
+      toast.success("Item removed from cart");
+    } catch (err: any) {
+      console.warn("Remove failed", err);
+      toast.error("Failed to remove item");
+
+      // fallback reload
+      fetchCart();
+    }
+  };
 
 
   const isRaffle = useMemo(() => {
@@ -702,10 +843,18 @@ border text-sm transition-all cursor-pointer
                                 {/* Stepper */}
                                 <div className="flex items-center bg-yellow-400 rounded-full px-3 h-10 gap-3">
                                   <Button
-                                    onClick={() => updateQty(key, -1)}
-                                    className="w-7 h-7 rounded-full bg-white flex items-center justify-center shadow-sm"
+                                    onClick={() => updateQty(item, key, -1)}
+                                  disabled={qty <= 1 || !!updatingKeys[key]}
+                                    className={`w-7 h-7 rounded-full flex items-center justify-center shadow-sm ${qty <= 1
+                                      ? "bg-gray-200 cursor-not-allowed opacity-50"
+                                      : "bg-white"
+                                      }`}
                                   >
-                                    <Minus className="w-4 h-4" />
+                                    {updatingKeys[key] === "dec" ? (
+                                      <span className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                                    ) : (
+                                      <Minus className="w-4 h-4" />
+                                    )}
                                   </Button>
 
                                   <span className="font-bold text-base w-6 text-center">
@@ -713,12 +862,23 @@ border text-sm transition-all cursor-pointer
                                   </span>
 
                                   <Button
-                                    onClick={() => updateQty(key, 1)}
+                                    onClick={() => updateQty(item, key, 1)}
+                                   disabled={!!updatingKeys[key]}
                                     className="w-7 h-7 rounded-full bg-white flex items-center justify-center shadow-sm"
                                   >
-                                    <Plus className="w-4 h-4" />
+                                    {updatingKeys[key] === "inc" ? (
+                                      <span className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                                    ) : (
+                                      <Plus className="w-4 h-4" />
+                                    )}
                                   </Button>
                                 </div>
+                                <button
+                                  onClick={() => handleRemoveItem(item, key)}
+                                  className="text-xs text-red-500 flex items-center gap-1 hover:cursor-pointer"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
                               </div>
 
                               {/* SUBTOTAL */}
@@ -1152,7 +1312,7 @@ border text-sm transition-all cursor-pointer
                     router.push("/thank-you?payment=manual");
 
                   } catch (err: any) {
-                    console.error(err);
+                    console.warn(err);
                     toast.error(err?.message || "Manual payment failed");
                     setPlacingOrder(false);
                   }

@@ -406,6 +406,8 @@ export default function CartPage() {
     }
   };
 
+  
+
   const handleRemoveClick = (item: CartItem) => {
     setItemToRemove(item);
     setShowConfirmModal(true);

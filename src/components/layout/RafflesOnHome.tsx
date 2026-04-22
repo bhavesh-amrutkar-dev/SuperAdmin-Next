@@ -190,7 +190,7 @@ export default function RafflesOnHome() {
 
     function RaffleSkeletonCard() {
         return (
-            <div id="raffles" className="relative overflow-hidden bg-white rounded-4xl shadow-xl flex flex-col p-4">
+            <div  className="relative overflow-hidden bg-white rounded-4xl shadow-xl flex flex-col p-4">
                 {/* shimmer layer */}
                 <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
 
@@ -242,7 +242,7 @@ export default function RafflesOnHome() {
         <main>
 
             {/* Page Header */}
-            <section className="mx-auto w-full max-w-[1648px] px-2 md:px-6 pt-8 lg:pt-4 xl:pt-8 pb-7 lg:pb-9 xl:pb-10">
+            <section id="raffles" className=" scroll-mt-24 mx-auto w-full max-w-[1648px] px-2 md:px-6 pt-8 lg:pt-4 xl:pt-8 pb-7 lg:pb-9 xl:pb-10">
 
                 {/* Raffles Grid */}
                 {/* <div className="p-3 mb-6 border-b border-gray-300 pb-3 flex items-center justify-between">

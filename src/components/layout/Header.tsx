@@ -246,6 +246,7 @@ export default function Header() {
               <Link
                 key={item.href}
                 href={item.href}
+                scroll={true}
                 className="hover:text-[#FECB02] transition"
               >
                 {t(item.key)}
