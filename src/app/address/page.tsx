@@ -40,7 +40,27 @@ const DEFAULT_COORDS = {
     latitude: 0.0,
     longitude: 0.0,
 };
-
+const getFlagEmoji = (countryCode: string) => {
+    return countryCode
+        ?.toUpperCase()
+        .replace(/./g, (char) =>
+            String.fromCodePoint(127397 + char.charCodeAt(0))
+        );
+};
+const mapCountryCurrency = (data: any[]): CountryCurrency[] => {
+    return data.map((c) => ({
+        _id: c._id,
+        name: c.countryName,
+        countryCode: c.countryCode,
+        countryCodeAlpha3: "", // optional (fill later if needed)
+        currencyCode: c.currencyShortCode,
+        currencyName: "", // optional
+        currencySymbol: c.currencySymbol,
+        countryCodeMobile: "", // optional
+        emoji: getFlagEmoji(c.countryCode),
+        ioc: "", // optional
+    }));
+};
 
 export default function AddressPage() {
     const t = useTranslations();
@@ -165,7 +185,8 @@ export default function AddressPage() {
             setCountriesLoading(true);
             try {
                 const res = await AuthService.getCurrency();
-                setCountries(res?.data ?? []);
+
+                setCountries(mapCountryCurrency(res?.data ?? []));
             } catch {
                 toast.error("Failed to load countries");
             } finally {

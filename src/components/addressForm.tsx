@@ -49,6 +49,27 @@ export type AddressFormRM = {
 const inputBase =
     "w-full rounded-xl border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-100 focus:border-yellow-400";
 
+const getFlagEmoji = (countryCode: string) => {
+    return countryCode
+        ?.toUpperCase()
+        .replace(/./g, (char) =>
+            String.fromCodePoint(127397 + char.charCodeAt(0))
+        );
+};
+const mapCountryCurrency = (data: any[]): CountryCurrency[] => {
+    return data.map((c) => ({
+        _id: c._id,
+        name: c.countryName,
+        countryCode: c.countryCode,
+        countryCodeAlpha3: "", // optional (fill later if needed)
+        currencyCode: c.currencyShortCode,
+        currencyName: "", // optional
+        currencySymbol: c.currencySymbol,
+        countryCodeMobile: "", // optional
+        emoji: getFlagEmoji(c.countryCode),
+        ioc: "", // optional
+    }));
+};
 export default function AddressForm({
     onSubmit,
     defaultValues,
@@ -152,7 +173,8 @@ export default function AddressForm({
             setCountriesLoading(true);
             try {
                 const res = await AuthService.getCurrency();
-                setCountries(res?.data ?? []);
+
+                setCountries(mapCountryCurrency(res?.data ?? []));
             } finally {
                 setCountriesLoading(false);
             }

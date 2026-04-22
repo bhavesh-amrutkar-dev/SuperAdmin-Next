@@ -46,7 +46,7 @@ export const AuthService = {
   },
 
   getCurrency(): Promise<IAPIResponse<CountryCurrency[]>> {
-    return apiClient.get("/currencies");
+    return apiClient.get("/country");
   }
   ,
 

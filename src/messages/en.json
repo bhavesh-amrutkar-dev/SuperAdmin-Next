@@ -314,7 +314,7 @@
     "addressTypeOtherRequired": "Please specify the type of address",
     "addressSaveFailed": "Failed to save address",
     "addressPlaceholder": "Flat, Street, Area",
-    "landmarkPlaceholder": "Nearby landmark (optional)",
+    "landmarkPlaceholder": "Nearby landmark",
     "landmarkRequired": "Landmark is required",
     "didntReceiveCode": "Didn't receive the code?",
     "loadingCart": "Loading cart...",
