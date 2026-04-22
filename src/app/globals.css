@@ -488,3 +488,29 @@ html {
   background: #d1d5db;
   border-radius: 10px;
 }
+
+.custom-phone-no input.form-control {
+    border-color: #000;
+}
+
+.custom-phone-no input.form-control ~ .flag-dropdown {
+    border: none;
+    background: transparent !important;
+}
+
+.custom-phone-no .react-tel-input .selected-flag:hover{
+  background-color: transparent !important;
+}
+
+.custom-phone-no input.form-control:focus,
+.custom-phone-no input.form-control.open{
+    border-color: #fdc700;
+}
+
+.custom-phone-no input.form-control ~ .flag-dropdown .selected-flag.open {
+    background: transparent;
+}
+
+div#ATHMovil_Checkout_Button_payment div{
+  width: auto !important;
+}
