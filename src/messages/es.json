@@ -315,7 +315,7 @@
     "addressTypeOtherRequired": "Por favor especifica el tipo de dirección",
     "addressSaveFailed": "No se pudo guardar la dirección",
     "addressPlaceholder": "Apartamento, calle, zona",
-    "landmarkPlaceholder": "Punto de referencia cercano (opcional)",
+    "landmarkPlaceholder": "Punto de referencia cercano",
     "landmarkRequired": "El punto de referencia es obligatorio",
     "loadingCart": "Cargando carrito...",
     "bag": "BOLSA",

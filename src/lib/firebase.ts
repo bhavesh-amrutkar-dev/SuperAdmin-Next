@@ -24,9 +24,7 @@ export const initAnalytics = async () => {
  
         const supported = await isSupported();
       if (supported) {
-            analytics = initializeAnalytics(app, {
-                config: { debug_mode: true },
-            });
+            analytics = initializeAnalytics(app);
             console.log("✅ Firebase Analytics Initialized");
         }
  
@@ -39,7 +37,7 @@ export const trackFirebaseEvent = async (eventName: string, params?: any) => {
     }
  
     if (analytics) {
-        console.log("🔥 Firebase Event:", eventName, params);
+        // console.log("🔥 Firebase Event:", eventName, params);
         logEvent(analytics, eventName, params);
     } else {
         console.warn("⚠️ Firebase analytics not initialized");

@@ -96,6 +96,7 @@ export default async function RootLayout({
             'https://connect.facebook.net/en_US/fbevents.js');
 
             fbq('init', '1468573554204803');
+            fbq('track', 'PageView');
           `}
         </Script>
 
@@ -112,7 +113,6 @@ export default async function RootLayout({
             gtag('js', new Date());
             gtag('config', 'G-YRFMY9GL2H', {
               page_path: window.location.pathname,
-               debug_mode: true,
             });
           `}
         </Script>

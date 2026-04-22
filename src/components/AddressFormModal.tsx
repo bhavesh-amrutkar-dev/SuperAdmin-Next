@@ -21,15 +21,23 @@ export default function AddressFormModal({
   const t = useTranslations();
   const handleSubmit = async (data: AddressFormRM) => {
     try {
+      // 🚨 Ensure countryId exists
+      if (!data.countryId) {
+        toast.error("Please select a country");
+        return;
+      }
+
       const payload = {
-        // ✅ computed fields
+        // ✅ name
         name: `${data.firstName || ""} ${data.lastName || ""}`.trim(),
 
-        addLine1: `${data.city}, ${data.state}, ${data.country}`,
-
+        // ✅ address (FIXED)
+        addLine1: data.addLine1, // ✅ DO NOT OVERRIDE
         city: data.city,
         state: data.state,
         country: data.country,
+        countryId: data.countryId,
+
         pincode: data.pincode,
         landmark: data.landmark,
 
@@ -54,7 +62,7 @@ export default function AddressFormModal({
             ? data.taggedAsLabel?.trim() || "Other"
             : data.taggedAs,
 
-        // ✅ geo (fallback safe)
+        // ✅ geo
         latitude: data.latitude ?? 0,
         longitude: data.longitude ?? 0,
 
