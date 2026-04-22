@@ -9,12 +9,13 @@ import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
+import { useState } from "react";
 
 export type ExpressRegisterFormRM = {
   firstName: string;
   lastName: string;
   email: string;
-
+  mobileFullNumber: string;
   mobileNumber: string;
   countryCode: string;
   mobileNumberSortCode: string;
@@ -31,35 +32,29 @@ export type ExpressRegisterFormRM = {
 };
 
 export default function ExpressRegisterForm({
+  form,
   onSubmit,
   cartId,
   isExpressOrder = true,
   isRaffle
 }: {
+  form: any; // or UseFormReturn<ExpressRegisterFormRM>
   onSubmit: (payload: any) => Promise<void>;
   cartId?: string;
   isExpressOrder?: boolean;
-  isRaffle: boolean
+  isRaffle: boolean;
 }) {
   const t = useTranslations();
-
+  const [mobileFullValue, setMobileFullValue] = useState(
+    form.getValues("mobileFullNumber") || ""
+  );
   const {
     register,
     handleSubmit,
     setValue,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm<ExpressRegisterFormRM>({
-    defaultValues: {
-      addressType: 1,
-
-      // ✅ Default location
-      city: "San Juan",
-      country: "Puerto Rico",
-      state: "PR",
-      mobileNumberSortCode: "",
-    },
-  });
+  } = form;
 
   const addressType = watch("addressType");
   const buildPayload = (data: ExpressRegisterFormRM) => {
@@ -97,10 +92,8 @@ export default function ExpressRegisterForm({
   return (
     <form
       id="express-form"
-      onSubmit={handleSubmit(async (data) => {
+      onSubmit={handleSubmit(async (data: ExpressRegisterFormRM) => {
         const payload = buildPayload(data);
-        console.log("payload", payload);
-
         await onSubmit(payload);
       })}
       className="space-y-5"
@@ -165,14 +158,20 @@ export default function ExpressRegisterForm({
             <Label error={!!errors.mobileNumber} required>
               {t("mobile")}
             </Label>
-
             <PhoneInput
               country="us"
+              value={mobileFullValue}
               onChange={(value, country: any) => {
                 if (!country?.dialCode) return;
 
                 const dialCode = country.dialCode;
-                const isoCode = country.countryCode?.toUpperCase(); // ✅ IN, US, PR
+                const isoCode = country.countryCode?.toUpperCase();
+
+                // ✅ update local state (prevents re-render issues)
+                setMobileFullValue(value);
+
+                // ✅ sync with react-hook-form
+                setValue("mobileFullNumber", value, { shouldDirty: true });
 
                 const numberWithoutCode = value.startsWith(dialCode)
                   ? value.slice(dialCode.length)
@@ -180,8 +179,6 @@ export default function ExpressRegisterForm({
 
                 setValue("countryCode", dialCode);
                 setValue("mobileNumber", numberWithoutCode);
-
-                // ✅ NEW FIELD
                 setValue("mobileNumberSortCode", isoCode);
               }}
               inputClass={`!w-full !h-[44px] !rounded-lg !border ${errors.mobileNumber ? "!border-red-500" : "!border-input"

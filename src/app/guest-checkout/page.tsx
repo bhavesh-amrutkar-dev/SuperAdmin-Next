@@ -19,7 +19,7 @@ import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import Loader from "@/src/components/loader";
 import { getMyIP } from "@/src/lib/utils/getIp";
-import ExpressRegisterForm from "@/src/components/express/ExpressRegisterForm";
+import ExpressRegisterForm, { ExpressRegisterFormRM } from "@/src/components/express/ExpressRegisterForm";
 import { CDN_IMAGE, DEFAULT_COUNTRY_CODE } from "@/src/lib/config";
 import { useTranslations } from "next-intl";
 import { Button } from "@/src/components/ui/button";
@@ -27,6 +27,7 @@ import { trackEvent } from "@/src/lib/analytics";
 import { BankDetail, PaymentService } from "@/src/lib/services/payment";
 import { FileUploader } from "@/src/components/ui/fileUploader";
 import AthMovilPayment from "@/src/components/payments/AuthMovilPayment";
+import { useForm } from "react-hook-form";
 
 // ─────────────────────────────────────────────
 // Types
@@ -116,6 +117,20 @@ export default function GuestCheckoutPage() {
   const [athToken, setAthToken] = useState<string | null>(null);
   const [isAthReady, setIsAthReady] = useState(false);
   const [orderTotal, setOrderTotal] = useState(0);
+
+  const form = useForm<ExpressRegisterFormRM>({
+    defaultValues: {
+      addressType: 1,
+      city: "San Juan",
+      country: "Puerto Rico",
+      state: "PR",
+      mobileNumberSortCode: "",
+      mobileFullNumber: "",
+    },
+    shouldUnregister: false, // ✅ IMPORTANT
+  });
+
+
   useEffect(() => {
     if (showManualModal) {
       document.body.style.overflow = "hidden";
@@ -727,6 +742,7 @@ border text-sm transition-all cursor-pointer
                 />
 
                 <ExpressRegisterForm
+                  form={form} // ✅ pass form
                   cartId={(cartData as any)?._id}
                   isRaffle={isRaffle}
                   onSubmit={async (formData) => {
