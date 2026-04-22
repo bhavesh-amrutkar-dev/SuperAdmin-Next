@@ -45,6 +45,7 @@ export type AddressFormRM = {
     longitude?: number;
 
     default?: boolean;
+    countryId: string;
 };
 const inputBase =
     "w-full rounded-xl border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-100 focus:border-yellow-400";
@@ -107,6 +108,11 @@ export default function AddressForm({
         }
     }, [defaultValues, reset]);
     useEffect(() => {
+        if (defaultValues?.countryId) {
+            setValue("countryId", defaultValues.countryId);
+        }
+    }, [defaultValues, setValue]);
+    useEffect(() => {
         if (!user || defaultValues) return;
 
         setValue("firstName", user.firstName || "");
@@ -165,6 +171,7 @@ export default function AddressForm({
             country: data.country || data.countryName || "", // 👈 important fix
             pincode: data.pincode || "",
             landmark: data.landmark || "",
+            countryId: data.countryId
         };
     };
 
@@ -362,24 +369,24 @@ export default function AddressForm({
                             </Label>
 
                             <select
-                                className={`
-      w-full rounded-lg border bg-background
-      px-3 py-3 text-sm
-      transition-colors duration-200
-      focus:outline-none focus:ring-0 !border-[#2f2f2f] focus:!border-[#f3c200]
-      h-11
-      ${errors.country
-                                        ? "border-red-500 focus:ring-red-200 focus:border-red-500"
-                                        : "border-gray-300 hover:border-gray-400"}
-    `}
-                                {...register("country", {
+                                {...register("countryId", {
                                     required: t("countryRequired"),
                                 })}
                                 disabled={countriesLoading}
+                                onChange={(e) => {
+                                    const selectedId = e.target.value;
+
+                                    const selectedCountry = countries.find(c => c._id === selectedId);
+
+                                    if (selectedCountry) {
+                                        setValue("country", selectedCountry.name); // store name
+                                    }
+                                }}
+                                className="w-full rounded-lg border px-3 py-3 text-sm"
                             >
                                 <option value="">{t("selectCountry")}</option>
                                 {countries.map((c) => (
-                                    <option key={c._id} value={c.name} data-code={c.countryCode}>
+                                    <option key={c._id} value={c._id}>
                                         {c.emoji} {c.name}
                                     </option>
                                 ))}

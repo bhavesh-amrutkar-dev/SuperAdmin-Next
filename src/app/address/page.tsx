@@ -34,6 +34,7 @@ type AddressFormRM = {
     mobileNumberCode: string;
     mobileNumberSortCode: string;
     landmark: string;
+    countryId: string;
 };
 
 const DEFAULT_COORDS = {
@@ -208,6 +209,7 @@ export default function AddressPage() {
                 city: data.city,
                 state: data.state,
                 country: data.country,
+                countryId: data.countryId,
                 pincode: data.pincode,
                 landmark: data.landmark,
 
@@ -238,6 +240,7 @@ export default function AddressPage() {
 
                 // ✅ default flag
                 default: false,
+
             };
 
             await AuthService.createAddress(payload);
@@ -363,23 +366,34 @@ export default function AddressPage() {
                                         </Label>
 
                                         <select
-                                            className={`
-      w-full rounded-lg border bg-background
-      px-4 py-2 text-sm
-      transition-colors duration-200
-      focus:outline-none focus:ring-2 focus:ring-yellow-200 focus:border-[#f3c200]
-      ${errors.country
-                                                    ? "border-red-500 focus:ring-red-200 focus:border-red-500"
-                                                    : "border-gray-300 hover:border-gray-400"}
-    `}
-                                            {...register("country", {
+                                            {...register("countryId", {
                                                 required: t("countryRequired"),
                                             })}
                                             disabled={countriesLoading}
+                                            className={`
+    w-full rounded-lg border bg-background
+    px-4 py-2 text-sm
+    transition-colors duration-200
+    focus:outline-none focus:ring-2 focus:ring-yellow-200 focus:border-[#f3c200]
+    ${errors.countryId
+                                                    ? "border-red-500"
+                                                    : "border-gray-300 hover:border-gray-400"}
+  `}
+                                            onChange={(e) => {
+                                                const selectedId = e.target.value;
+
+                                                const selectedCountry = countries.find(
+                                                    (c) => c._id === selectedId
+                                                );
+
+                                                if (selectedCountry) {
+                                                    setValue("country", selectedCountry.name); // ✅ for payload display
+                                                }
+                                            }}
                                         >
                                             <option value="">{t("selectCountry")}</option>
                                             {countries.map((c) => (
-                                                <option key={c._id} value={c.name} data-code={c.countryCode}>
+                                                <option key={c._id} value={c._id}>
                                                     {c.emoji} {c.name}
                                                 </option>
                                             ))}
