@@ -383,18 +383,23 @@ export default function Header() {
 
             )}
 
-            <Button asChild size="icon" className="relative">
-              <Link
-                href="/cart"
-                className="btn-primary"
-              >
-                <ShoppingCart size={20} />
-                {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-1 bg-red-500 text-white text-xs min-w-[20px] h-5 rounded-full flex items-center justify-center px-1">
-                    {cartCount > 99 ? "99+" : cartCount}
-                  </span>
-                )}
-              </Link>
+            <Button
+              size="icon"
+              className="relative btn-primary"
+              onClick={() => {
+                if (isLoggedIn || displayUser) {
+                  router.push("/cart");
+                } else {
+                  router.push("/guest-checkout");
+                }
+              }}
+            >
+              <ShoppingCart size={20} />
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-1 bg-red-500 text-white text-xs min-w-[20px] h-5 rounded-full flex items-center justify-center px-1">
+                  {cartCount > 99 ? "99+" : cartCount}
+                </span>
+              )}
             </Button>
           </div>
 
