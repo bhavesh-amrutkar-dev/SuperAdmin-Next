@@ -6,3 +6,4 @@ declare global {
     fbq: (...args: any[]) => void; // also fix Meta Pixel typing
   }
 }
+declare module "*.css";

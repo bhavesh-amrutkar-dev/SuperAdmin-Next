@@ -975,10 +975,7 @@ border text-sm transition-all cursor-pointer gap-1
                                   (e.target as HTMLImageElement).src = "/placeholder-product.png";
                                 }}
                               />
-                              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--footer-dark)]
-                                             text-white text-[9px] font-bold flex items-center justify-center leading-none">
-                                {qty}
-                              </span>
+                             
                             </div>
                             <p className="flex-1 text-xs text-gray-600 leading-tight line-clamp-2">
                               {item.name || item.productName || "Product"}
