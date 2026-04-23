@@ -468,7 +468,7 @@ export default function GuestCheckoutPage() {
 
   // ── section card wrapper ──
   const SectionCard = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-    <div className={`bg-white rounded-2xl border border-gray-100 shadow-[0_2px_16px_rgba(0,0,0,0.06)] p-6 ${className}`}>
+    <div className={`bg-white rounded-2xl border border-gray-100 shadow-[0_2px_16px_rgba(0,0,0,0.06)] p-4 sm:p-6 ${className}`}>
       {children}
     </div>
   );
@@ -718,8 +718,8 @@ export default function GuestCheckoutPage() {
   };
 
   const baseCls = `
-flex items-center justify-between w-full px-4 py-3 rounded-xl
-border text-sm transition-all cursor-pointer
+flex items-center justify-between w-full px-3 xl:px-4 py-3 rounded-xl
+border text-sm transition-all cursor-pointer gap-1
 `;
 
 
@@ -740,14 +740,14 @@ border text-sm transition-all cursor-pointer
     <div className="min-h-screen flex flex-col bg-[#ededed]">
       <Header />
 
-      <main className="flex-1 py-8 px-4 pb-28 lg:pb-8">
+      <main className="flex-1 py-8 px-4 pb-8">
         <div className="max-w-7xl mx-auto">
 
 
           {/* ── 2-column grid ──
                Mobile  → 1 col
                Desktop → 2 col (cart+forms | payment+summary)     ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-5 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_420px] gap-5 items-start">
 
             {/* ════════════════════════════
                 COL 1 — Cart Items + Personal Info + Address
@@ -781,7 +781,7 @@ border text-sm transition-all cursor-pointer
                     </Button>
                   </div>
                 ) : (
-                  <div className="max-h-[420px] overflow-y-auto pr-2 custom-scroll">
+                  <div className="max-h-[420px] overflow-y-auto sm:pr-2 custom-scroll">
                     <ul className="space-y-3 ">
                       {cartItems.map((item, idx) => {
                         const key = item._id || String(idx);
@@ -800,38 +800,40 @@ border text-sm transition-all cursor-pointer
                         return (
                           <li
                             key={`${item._id}-${idx}`}
-                            className="flex items-center gap-5 p-5 rounded-2xl bg-gray-50 border border-gray-200"
+                            className="flex items-center gap-5 p-3 sm:p-5 rounded-2xl bg-gray-50 border border-gray-200 flex-wrap xl:flex-nowrap justify-between"
                           >
                             {/* LEFT - IMAGE */}
-                            <div className="relative w-28 h-24 rounded-xl overflow-hidden bg-white flex items-center justify-center">
-                              <Image
-                                src={getProductImage(item)}
-                                alt={item.name || "Product"}
-                                fill
-                                className="object-contain"
-                              />
-                            </div>
+                            <div className="flex items-center gap-4 sm:gap-5">
+                              <div className="relative w-20 h-20 sm:w-28 sm:h-24 rounded-xl overflow-hidden bg-white flex items-center justify-center">
+                                <Image
+                                  src={getProductImage(item)}
+                                  alt={item.name || "Product"}
+                                  fill
+                                  className="object-contain"
+                                />
+                              </div>
 
-                            {/* CENTER */}
-                            <div className="flex-1">
-                              <p className="text-yellow-500 font-extrabold text-lg leading-none">
-                                WIN
-                              </p>
+                              {/* CENTER */}
+                              <div className="flex-1">
+                                <p className="text-yellow-500 font-extrabold text-lg leading-none">
+                                  WIN
+                                </p>
 
-                              <p className="text-sm font-semibold text-gray-800 mt-1">
-                                {item.name || item.productName}
-                              </p>
+                                <p className="text-xs sm:text-sm font-semibold text-gray-800 mt-1">
+                                  {item.name || item.productName}
+                                </p>
+                              </div>
                             </div>
 
                             {/* RIGHT */}
-                            <div className="flex flex-col items-end gap-3">
+                            <div className="flex flex-col-reverse sm:flex-row-reverse xl:flex-col items-start sm:items-center xl:items-end gap-3 justify-between xl:justify-items-start w-full xl:w-auto flex-wrap md:flex-nowrap">
 
                               {/* <Countdown timestamp={item.drawDateTimeStemp} /> */}
                               {/* PRICE + QTY */}
-                              <div className="flex items-center gap-2 bg-gray-100 rounded-full">
+                              <div className="flex items-center gap-2 bg-gray-100 rounded-full pe-3">
 
                                 {/* Price */}
-                                <div className="flex flex-col justify-center items-center text-center h-10 px-3 min-w-[110px]">
+                                <div className="flex flex-col justify-center items-center text-center h-10 px-1 sm:px-3 min-w-[90px] sm:min-w-[110px]">
                                   <p className="text-xs text-gray-600 font-medium leading-none">
                                     {currency}{fmt(unitPrice)}
                                   </p>
@@ -841,7 +843,7 @@ border text-sm transition-all cursor-pointer
                                 </div>
 
                                 {/* Stepper */}
-                                <div className="flex items-center bg-yellow-400 rounded-full px-3 h-10 gap-3">
+                                <div className="flex items-center bg-yellow-400 rounded-full px-2 sm:px-3 h-10 gap-1 sm:gap-3">
                                   <Button
                                     onClick={() => updateQty(item, key, -1)}
                                   disabled={qty <= 1 || !!updatingKeys[key]}
@@ -926,7 +928,7 @@ border text-sm transition-all cursor-pointer
                 </div>
 
                 {/* Line items */}
-                <div className="px-6 py-4 space-y-3 max-h-52 overflow-y-auto custom-scroll">
+                <div className="px-4 sm:px-6 py-4 sm:py-5 space-y-3 max-h-52 overflow-y-auto custom-scroll">
                   {cartItems.length === 0 ? (
                     <p className="text-sm text-gray-400 text-center py-4">Cart is empty</p>
                   ) : (
@@ -970,7 +972,7 @@ border text-sm transition-all cursor-pointer
                 </div>
 
                 {/* Totals */}
-                <div className="px-6 py-4 border-t border-gray-100 space-y-2.5">
+                <div className="px-4 sm:px-6 py-4 border-t border-gray-100 space-y-2.5">
                   <div className="flex justify-between text-sm text-gray-500">
                     <span>Subtotal</span>
                     <span className="font-medium text-gray-700">
@@ -1001,7 +1003,7 @@ border text-sm transition-all cursor-pointer
                 </div>
 
                 {/* Payment Method */}
-                <div className="px-6 py-5 border-t border-gray-100">
+                <div className="px-4 sm:px-6 py-4 sm:py-5 border-t border-gray-100">
                   <div className="flex items-center gap-2 mb-4">
                     <h3 className="font-semibold text-gray-800 text-[15px]">Select Method</h3>
                   </div>
@@ -1019,14 +1021,14 @@ border text-sm transition-all cursor-pointer
                     >
                       {/* LEFT */}
                       <div className="flex items-center gap-3">
-                        <span className={`w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "athMovil" ? "border-yellow-500" : "border-gray-300"
+                        <span className={`min-w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "athMovil" ? "border-yellow-500" : "border-gray-300"
                           }`}>
                           {paymentMethod === "athMovil" && (
                             <span className="w-2 h-2 rounded-full bg-yellow-500" />
                           )}
                         </span>
 
-                        <span className="font-medium text-gray-700">
+                        <span className="text-[12px] xl:text-sm font-medium text-start text-gray-700">
                           {t("payWithATHMovil")}
                         </span>
                       </div>
@@ -1050,15 +1052,15 @@ border text-sm transition-all cursor-pointer
                         }`}
                     >
                       {/* LEFT */}
-                      <div className="flex items-center gap-3">
-                        <span className={`w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "manual" ? "border-yellow-500" : "border-gray-300"
+                      <div className="flex items-center gap-2 xl:gap-3">
+                        <span className={`min-w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "manual" ? "border-yellow-500" : "border-gray-300"
                           }`}>
                           {paymentMethod === "manual" && (
                             <span className="w-2 h-2 rounded-full bg-yellow-500" />
                           )}
                         </span>
 
-                        <span className="font-medium text-gray-700">
+                        <span className="text-[12px] xl:text-sm font-medium text-start text-gray-700">
                           {t("manualPaymentMethods")}
                         </span>
                       </div>
@@ -1081,9 +1083,9 @@ border text-sm transition-all cursor-pointer
                         : "border-gray-200 hover:border-gray-300 bg-white"
                         }`}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 xl:gap-3">
                         <span
-                          className={`w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "square"
+                          className={`min-w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "square"
                             ? "border-yellow-500"
                             : "border-gray-300"
                             }`}
@@ -1093,7 +1095,7 @@ border text-sm transition-all cursor-pointer
                           )}
                         </span>
 
-                        <span className="font-medium text-gray-700">
+                        <span className="text-[12px] xl:text-sm font-medium text-start text-gray-700">
                           {t("paySqr")}
                         </span>
                       </div>
@@ -1135,7 +1137,7 @@ border text-sm transition-all cursor-pointer
                   </Button>
 
                   {paymentMethod === "athMovil" && isAthReady && athToken && athOrderId && (
-                    <div className="px-6 pb-6 pt-2 border-t border-gray-100 space-y-3">
+                    <div className="px-6 pb-6 pt-2 border-t border-gray-100 space-y-3 my-4 bg-gray-100 rounded-xl">
 
                       <p className="text-sm font-medium text-gray-700">
                         Complete your payment
@@ -1146,7 +1148,7 @@ border text-sm transition-all cursor-pointer
                       </p>
 
                       {/* 🔥 ATH BUTTON RENDERS HERE */}
-                      <div className="flex justify-center">
+                      <div className="flex justify-start">
                         <AthMovilPayment
                           total={orderTotal || grandTotal}
                           publicToken={athToken}
