@@ -81,6 +81,8 @@ export default function AddressPage() {
     //         router.replace("/auth/login");
     //     }
     // }, [user, router]);
+
+
     const requestLocation = async () => {
         if (!("geolocation" in navigator)) {
             toast.error("Geolocation not supported by your browser");
@@ -141,6 +143,7 @@ export default function AddressPage() {
             }
         );
     };
+
     const askLocationPermission = () => {
         if (!("geolocation" in navigator)) return;
 
@@ -163,10 +166,24 @@ export default function AddressPage() {
         handleSubmit,
         setValue,
         watch,
+        trigger,
         formState: { errors, isSubmitting },
     } = useForm<AddressFormRM>({
         defaultValues: { taggedAs: "Home" },
     });
+    useEffect(() => {
+        if (countries.length > 0) {
+            const countryId = user?.countryId || "633a6c3dd17f0000ea00102e";
+
+            setValue("countryId", countryId);
+
+            const selectedCountry = countries.find(c => c._id === countryId);
+
+            if (selectedCountry) {
+                setValue("country", selectedCountry.name);
+            }
+        }
+    }, [countries, user, setValue]);
     useEffect(() => {
         if (!user) return;
         setValue("firstName", user.firstName || "");
@@ -250,6 +267,7 @@ export default function AddressPage() {
             toast.error(err?.message || t("addressSaveFailed"));
         }
     };
+
     return (
         <>
             <Header />
@@ -309,14 +327,31 @@ export default function AddressPage() {
                                         containerClass="!w-full"
                                         inputClass="!w-full !h-[44px] !rounded-lg !border !border-gray-300 !text-sm !pl-14 focus:!border-[#f3c200] focus:!ring-2 focus:!ring-yellow-200"
                                         onChange={(value, country: any) => {
-                                            setValue("mobileNumber", value.replace(country.dialCode, ""));
+                                            const numberWithoutCode = value.replace(country.dialCode, "");
+
+                                            setValue("mobileNumber", numberWithoutCode, {
+                                                shouldValidate: true,
+                                            });
+
                                             setValue("mobileNumberCode", country.dialCode);
                                             setValue("mobileNumberSortCode", country.countryCode);
+
+                                            // 🔥 trigger validation immediately
+                                            trigger("mobileNumber");
                                         }}
                                     />
                                     <ErrorMessage message={errors.mobileNumber?.message} />
                                 </div>
-
+                                <input
+                                    type="hidden"
+                                    {...register("mobileNumber", {
+                                        required: t("mobileRequired"),
+                                        minLength: {
+                                            value: 7,
+                                            message: t("invalidMobile"),
+                                        },
+                                    })}
+                                />
                             </div>
                         </section>
 
@@ -366,10 +401,19 @@ export default function AddressPage() {
                                         </Label>
 
                                         <select
-                                            {...register("countryId", {
-                                                required: t("countryRequired"),
-                                            })}
+                                            value={watch("countryId") || ""}
                                             disabled={countriesLoading}
+                                            onChange={(e) => {
+                                                const selectedId = e.target.value;
+
+                                                setValue("countryId", selectedId);
+
+                                                const selectedCountry = countries.find(c => c._id === selectedId);
+
+                                                if (selectedCountry) {
+                                                    setValue("country", selectedCountry.name);
+                                                }
+                                            }}
                                             className={`
     w-full rounded-lg border bg-background
     px-4 py-2 text-sm
@@ -379,17 +423,6 @@ export default function AddressPage() {
                                                     ? "border-red-500"
                                                     : "border-gray-300 hover:border-gray-400"}
   `}
-                                            onChange={(e) => {
-                                                const selectedId = e.target.value;
-
-                                                const selectedCountry = countries.find(
-                                                    (c) => c._id === selectedId
-                                                );
-
-                                                if (selectedCountry) {
-                                                    setValue("country", selectedCountry.name); // ✅ for payload display
-                                                }
-                                            }}
                                         >
                                             <option value="">{t("selectCountry")}</option>
                                             {countries.map((c) => (
@@ -398,7 +431,6 @@ export default function AddressPage() {
                                                 </option>
                                             ))}
                                         </select>
-
                                         <ErrorMessage message={errors.country?.message} />
                                     </div>
 

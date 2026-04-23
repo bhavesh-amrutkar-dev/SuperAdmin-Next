@@ -92,6 +92,7 @@ export default function AddressForm({
         handleSubmit,
         setValue,
         watch,
+        trigger,
         reset,
         formState: { errors, isSubmitting },
     } = useForm<AddressFormRM>({
@@ -101,12 +102,15 @@ export default function AddressForm({
         },
     });
     useEffect(() => {
-        if (defaultValues) {
+        if (defaultValues && countries.length > 0) {
             const mappedData = mapAddressToForm(defaultValues);
 
-            reset(mappedData);
+            reset({
+                ...mappedData,
+                countryId: mappedData.countryId || "",
+            });
         }
-    }, [defaultValues, reset]);
+    }, [defaultValues, countries, reset]);
     useEffect(() => {
         if (defaultValues?.countryId) {
             setValue("countryId", defaultValues.countryId);
@@ -144,22 +148,30 @@ export default function AddressForm({
         askLocationPermission();
     }, []);
     const mapAddressToForm = (data: any): AddressFormRM => {
-        // split name safely
         const nameParts = (data.name || "").trim().split(" ");
+
+        let taggedAs: AddressFormRM["taggedAs"] = "Home";
+        let taggedAsLabel = "";
+
+        // 🔥 FIX LOGIC
+        if (data.tagged === 1) taggedAs = "Home";
+        else if (data.tagged === 2) taggedAs = "Office";
+        else if (data.tagged === 3) {
+            taggedAs = "Other";
+            taggedAsLabel = data.taggedAs || "";
+        }
 
         return {
             ...data,
 
-            // ✅ split name
             firstName: data.firstName || nameParts[0] || "",
             lastName:
                 data.lastName ||
-                    nameParts.length > 1
-                    ? nameParts.slice(1).join(" ")
-                    : "",
+                (nameParts.length > 1 ? nameParts.slice(1).join(" ") : ""),
 
-            // ✅ ensure required fields exist
-            taggedAs: data.taggedAs || "Home",
+            // ✅ FIXED
+            taggedAs,
+            taggedAsLabel,
 
             mobileNumber: data.mobileNumber || "",
             mobileNumberCode: data.mobileNumberCode || "",
@@ -168,10 +180,10 @@ export default function AddressForm({
             addLine1: data.addLine1 || "",
             city: data.city || "",
             state: data.state || "",
-            country: data.country || data.countryName || "", // 👈 important fix
+            country: data.countryName || data.country || "",
             pincode: data.pincode || "",
             landmark: data.landmark || "",
-            countryId: data.countryId
+            countryId: data.countryId,
         };
     };
 
@@ -310,15 +322,32 @@ export default function AddressForm({
                                 containerClass="!w-full"
                                 inputClass="!w-full !h-[44px] !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200] !text-sm !pl-14"
                                 onChange={(value, country: any) => {
-                                    setValue("mobileNumber", value.replace(country.dialCode, ""));
+                                    const numberWithoutCode = value.replace(country.dialCode, "");
+
+                                    setValue("mobileNumber", numberWithoutCode, {
+                                        shouldValidate: true,
+                                    });
+
                                     setValue("mobileNumberCode", country.dialCode);
                                     setValue("mobileNumberSortCode", country.countryCode);
+
+                                    // 🔥 trigger validation immediately
+                                    trigger("mobileNumber");
                                 }}
                             />
                         </div>
                         <ErrorMessage message={errors.mobileNumber?.message} />
                     </div>
-
+                    <input
+                        type="hidden"
+                        {...register("mobileNumber", {
+                            required: t("mobileRequired"),
+                            minLength: {
+                                value: 7,
+                                message: t("invalidMobile"),
+                            },
+                        })}
+                    />
                 </div>
             </section>
 
@@ -367,19 +396,18 @@ export default function AddressForm({
                             <Label required error={!!errors.country}>
                                 {t("country")}
                             </Label>
-
                             <select
-                                {...register("countryId", {
-                                    required: t("countryRequired"),
-                                })}
+                                value={watch("countryId") || ""}
                                 disabled={countriesLoading}
                                 onChange={(e) => {
                                     const selectedId = e.target.value;
 
+                                    setValue("countryId", selectedId);
+
                                     const selectedCountry = countries.find(c => c._id === selectedId);
 
                                     if (selectedCountry) {
-                                        setValue("country", selectedCountry.name); // store name
+                                        setValue("country", selectedCountry.name);
                                     }
                                 }}
                                 className="w-full rounded-lg border px-3 py-3 text-sm"

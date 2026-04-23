@@ -25,8 +25,11 @@ interface UserAddress {
   mobileNumber?: string;
   mobileNumberCode?: string;
   default?: boolean;
-}
 
+  // ✅ ADD THIS
+  tagged?: number;
+  taggedAs?: string;
+}
 export default function AddressesPage() {
   const t = useTranslations();
 
@@ -119,6 +122,18 @@ export default function AddressesPage() {
     }
   };
 
+  const getTagLabel = (address: UserAddress) => {
+    if (address.tagged === 1) return "Home";
+    if (address.tagged === 2) return "Office";
+    if (address.tagged === 3) return address.taggedAs || "Other";
+    return "";
+  };
+  const getTagStyle = (tagged?: number) => {
+    if (tagged === 1) return "bg-green-100 text-green-700";
+    if (tagged === 2) return "bg-blue-100 text-blue-700";
+    if (tagged === 3) return "bg-purple-100 text-purple-700";
+    return "bg-gray-100 text-gray-700";
+  };
   return (
     <>
       <ConfirmationModal
@@ -192,8 +207,15 @@ export default function AddressesPage() {
                       {t("default")}
                     </span>
                   )}
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="font-semibold">{address.name}</h3>
 
-                  <h3 className="font-semibold mb-2">{address.name}</h3>
+                    <span
+                      className={`px-2.5 py-1 rounded-full text-xs font-medium ${getTagStyle(address.tagged)}`}
+                    >
+                      {getTagLabel(address)}
+                    </span>
+                  </div>
 
                   <div className="text-sm text-gray-600 space-y-1">
                     <p>{address.addLine1}</p>
