@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, UseFormReturn } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
@@ -38,7 +38,7 @@ export default function ExpressRegisterForm({
   isExpressOrder = true,
   isRaffle
 }: {
-  form: any; // or UseFormReturn<ExpressRegisterFormRM>
+   form: UseFormReturn<ExpressRegisterFormRM>
   onSubmit: (payload: any) => Promise<void>;
   cartId?: string;
   isExpressOrder?: boolean;
