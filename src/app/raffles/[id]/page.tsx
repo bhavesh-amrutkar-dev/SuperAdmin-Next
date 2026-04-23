@@ -130,6 +130,7 @@ export default function RafflesDetailPage() {
     const [showApplyConfirmationModal, setShowApplyConfirmationModal] = useState(false);
     const [userTicketBalance, setUserTicketBalance] = useState<number>(0);
     const [loadingTicketBalance, setLoadingTicketBalance] = useState(false);
+    const [showExpressRegister, setShowExpressRegister] = useState(false);
     const [openSections, setOpenSections] = useState<{
         productDescription: boolean;
         rulesOfDraw: boolean;
@@ -943,7 +944,11 @@ export default function RafflesDetailPage() {
 
             // Only redirect if redirectToCart is true
             if (redirectToCart) {
-                router.push("/cart");
+                if (user) {
+                    router.push("/cart");
+                } else {
+                    router.push("/guest-checkout");
+                }
             }
         } catch (err) {
             const errorMessage =
@@ -1479,7 +1484,14 @@ export default function RafflesDetailPage() {
                                             } catch (error) {
                                                 console.warn("Error updating cart before redirect:", error);
                                             } finally {
-                                                router.push("/cart");
+
+
+                                                if (user) {
+                                                    router.push("/cart");
+                                                } else {
+                                                    router.push("/guest-checkout");
+                                                }
+
                                             }
                                         }}
                                         applyingTicket={applyingTicket}
@@ -1502,9 +1514,15 @@ export default function RafflesDetailPage() {
 
                                             ticketsSource.forEach((ticket: any, index: number) => {
                                                 const ticketId = ticket.ticketId || ticket.id || ticket._id || index.toString();
+
                                                 if (selectedTicket && ticketId === selectedTicket) {
                                                     const ticketPrice = ticket.price || ticket.ticketPrice || 0;
-                                                    const numberOfTickets = ticket.numberOfTicket || ticket.numberOfTickets || ticket.quantity || 0;
+                                                    const numberOfTickets =
+                                                        ticket.numberOfTicket ||
+                                                        ticket.numberOfTickets ||
+                                                        ticket.quantity ||
+                                                        0;
+
                                                     selectedTicketData = {
                                                         id: ticketId,
                                                         price: ticketPrice,
@@ -1513,20 +1531,28 @@ export default function RafflesDetailPage() {
                                                 }
                                             });
 
+                                            /* ✅ FREE TICKET FLOW */
                                             if (selectedTicketData && selectedTicketData.price === 0) {
                                                 if (!user) {
                                                     setShowLoginModal(true);
                                                     return;
                                                 }
+
                                                 setPendingFreeTicket({
                                                     id: selectedTicketData.id,
                                                     quantity: selectedTicketData.quantity || 1,
                                                 });
+
                                                 setShowFreeTicketModal(true);
                                                 return;
                                             }
 
+                                            /* ✅ PAID FLOW */
                                             if (selectedTicketData && selectedTicketData.price > 0) {
+                                                //    if (!user) {
+                                                //         setShowLoginModal(true);
+                                                //         return;
+                                                //     }
                                                 handleParticipateClick(selectedTicketData.id, 1);
                                                 return;
                                             }
@@ -1550,7 +1576,6 @@ export default function RafflesDetailPage() {
 
                         </div>
                     </div>
-
                     {/* Additional Information Sections - Now properly at the bottom */}
                     <div className="border border-gray-200 bg-white rounded-xl mt-6 lg:mt-8 overflow-hidden">
                         {/* Product Description Section */}

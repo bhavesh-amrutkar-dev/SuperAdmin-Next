@@ -15,7 +15,7 @@ import { Button } from "../../components/ui/button";
 import Loader from "@/src/components/loader";
 import { trackEvent } from "@/src/lib/analytics";
 
-interface CartItem {
+export interface CartItem {
   _id?: string;
   productId?: string;
   centralProductId?: string;
@@ -405,6 +405,8 @@ export default function CartPage() {
       setUpdating(null);
     }
   };
+
+  
 
   const handleRemoveClick = (item: CartItem) => {
     setItemToRemove(item);

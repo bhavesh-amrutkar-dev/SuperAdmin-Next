@@ -515,7 +515,8 @@ export default function SecureCheckoutPage() {
     setIsUpdatingStatus(false);
 
     fetchCart()
-  }; const handleAuthMovil = async () => {
+  }; 
+  const handleAuthMovil = async () => {
     try {
       if (!selectedAddress) return;
 

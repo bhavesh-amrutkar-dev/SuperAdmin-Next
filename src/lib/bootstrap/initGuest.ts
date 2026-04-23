@@ -12,28 +12,49 @@ export async function initGuest() {
   try {
     const res = await GuestService.initGuest();
 
-    const accessToken = res?.data?.token?.accessToken;
-    const sid = res?.data?.sid;
+    const data = res?.data;
+
+    const accessToken = data?.token?.accessToken;
+    const sid = data?.sid;
+
+    const countryCode = data?.countryDetails?.countryCode || data?.country;
+    const currencyCode = data?.countryDetails?.currencyShortCode;
+    const currencySymbol = data?.countryDetails?.currencySymbol;
+    const countryId = data?.countryDetails?._id;
+
+    const cookieOptions = {
+      path: "/",
+      sameSite: "none" as const,
+      secure: true,
+      maxAge: 60 * 60 * 24 * 365,
+    };
 
     if (accessToken) {
-      setCookie("token", accessToken, {
-        path: "/",
-        sameSite: "none",
-        secure: true,
-        maxAge: 60 * 60 * 24 * 365,
-      });
+      setCookie("token", accessToken, cookieOptions);
     }
 
     if (sid) {
-      setCookie("sid", sid, {
-        path: "/",
-        sameSite: "none",
-        secure: true,
-        maxAge: 60 * 60 * 24 * 365,
-      });
+      setCookie("sid", sid, cookieOptions);
     }
+
+    /* ✅ NEW */
+    if (countryCode) {
+      setCookie("C_code", countryCode, cookieOptions);
+    }
+
+    if (currencyCode) {
+      setCookie("currencyCode", currencyCode, cookieOptions);
+    }
+
+    if (currencySymbol) {
+      setCookie("currencySymbol", currencySymbol, cookieOptions);
+    }
+
+    if (countryId) {
+      setCookie("C_id", countryId, cookieOptions);
+    }
+
   } catch (err) {
     console.warn("Guest init failed", err);
   }
 }
-

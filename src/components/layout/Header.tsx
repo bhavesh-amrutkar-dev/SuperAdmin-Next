@@ -60,7 +60,7 @@ export default function Header() {
 
   const navItems = [
     { key: "howItWorks", href: "/#howItWorks" },
-    { key: "raffles", href: "/raffles" },
+    { key: "raffles", href: "/#raffles" },
     { key: "winners", href: "/winners" },
     { key: "contact", href: "/contact" },
   ];
@@ -246,6 +246,7 @@ export default function Header() {
               <Link
                 key={item.href}
                 href={item.href}
+                scroll={true}
                 className="hover:text-[#FECB02] transition"
               >
                 {t(item.key)}
