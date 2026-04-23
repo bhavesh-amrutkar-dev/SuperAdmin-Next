@@ -154,7 +154,7 @@ export default function ExpressRegisterForm({
           </div>
 
           {/* Mobile */}
-          <div className="sm:col-span-2 space-y-2">
+          <div className="sm:col-span-2 space-y-2 custom-phone-no">
             <Label error={!!errors.mobileNumber} required>
               {t("mobile")}
             </Label>
