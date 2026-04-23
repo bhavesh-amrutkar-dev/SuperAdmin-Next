@@ -144,6 +144,7 @@ export default function AddressForm({
             }
         );
     };
+
     useEffect(() => {
         askLocationPermission();
     }, []);
@@ -186,7 +187,11 @@ export default function AddressForm({
             countryId: data.countryId,
         };
     };
-
+    useEffect(() => {
+        if (taggedAs !== "Other") {
+            setValue("taggedAsLabel", "");
+        }
+    }, [taggedAs, setValue]);
     useEffect(() => {
         const fetchCountries = async () => {
             setCountriesLoading(true);
@@ -261,14 +266,29 @@ export default function AddressForm({
         );
     };
 
-
+    const noWhiteSpaceOnly = (value: string, message: string) => {
+        if (!value || value.trim().length === 0) {
+            return message;
+        }
+        return true;
+    };
 
     return (
         <form
             onSubmit={handleSubmit(async (data) => {
-                await onSubmit({
+                const cleanedData = {
                     ...data,
-                    name: `${data.firstName} ${data.lastName}`,
+                    firstName: data.firstName.trim(),
+                    lastName: data.lastName.trim(),
+                    addLine1: data.addLine1.trim(),
+                    city: data.city.trim(),
+                    state: data.state.trim(),
+                    landmark: data.landmark.trim(),
+                };
+
+                await onSubmit({
+                    ...cleanedData,
+                    name: `${cleanedData.firstName} ${cleanedData.lastName}`,
                 });
             })}
             className="space-y-5"
@@ -292,6 +312,8 @@ export default function AddressForm({
                             error={!!errors.firstName}
                             {...register("firstName", {
                                 required: t("firstNameRequired"),
+                                validate: (value) =>
+                                    noWhiteSpaceOnly(value, t("firstNameRequired")),
                             })}
                         />
                         <ErrorMessage message={errors.firstName?.message} />
@@ -307,6 +329,8 @@ export default function AddressForm({
                             error={!!errors.lastName}
                             {...register("lastName", {
                                 required: t("lastNameRequired"),
+                                validate: (value) =>
+                                    noWhiteSpaceOnly(value, t("lastNameRequired")),
                             })}
                         />
                         <ErrorMessage message={errors.lastName?.message} />
@@ -372,6 +396,8 @@ export default function AddressForm({
                             error={!!errors.addLine1}
                             {...register("addLine1", {
                                 required: t("addressRequired"),
+                                validate: (value) =>
+                                    noWhiteSpaceOnly(value, t("addressRequired")),
                             })}
                         />
 
@@ -434,6 +460,8 @@ export default function AddressForm({
                                 error={!!errors.city}
                                 {...register("city", {
                                     required: t("cityRequired"),
+                                    validate: (value) =>
+                                        noWhiteSpaceOnly(value, t("cityRequired")),
                                 })}
                             />
 
@@ -451,6 +479,8 @@ export default function AddressForm({
                                 error={!!errors.state}
                                 {...register("state", {
                                     required: t("stateRequired"),
+                                    validate: (value) =>
+                                        noWhiteSpaceOnly(value, t("stateRequired")),
                                 })}
                             />
 
@@ -468,6 +498,8 @@ export default function AddressForm({
                                 error={!!errors.pincode}
                                 {...register("pincode", {
                                     required: t("pincodeRequired"),
+                                    validate: (value) =>
+                                        noWhiteSpaceOnly(value, t("pincodeRequired")),
                                 })}
                             />
 
@@ -485,6 +517,8 @@ export default function AddressForm({
                                 error={!!errors.landmark}
                                 {...register("landmark", {
                                     required: t("landmarkRequired"),
+                                    validate: (value) =>
+                                        noWhiteSpaceOnly(value, t("landmarkRequired")),
                                 })}
                             />
 
@@ -527,6 +561,12 @@ export default function AddressForm({
                             error={!!errors.taggedAsLabel}
                             {...register("taggedAsLabel", {
                                 required: t("addressTypeOtherRequired"),
+                                validate: (value) => {
+                                    if (!value || value.trim().length === 0) {
+                                        return t("addressTypeOtherRequired");
+                                    }
+                                    return true;
+                                },
                             })}
                         />
                         <ErrorMessage message={errors.taggedAsLabel?.message} />
