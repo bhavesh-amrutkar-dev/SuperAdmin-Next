@@ -263,7 +263,7 @@ export default function GuestCheckoutPage() {
     });
     return items;
   }, [cartData]);
-
+  const isCartEmpty = cartItems.length === 0;
   const accounting = cartData?.accounting || {};
   const currency = cartData?.currencySymbol || "$";
 
@@ -747,425 +747,451 @@ border text-sm transition-all cursor-pointer gap-1
           {/* ── 2-column grid ──
                Mobile  → 1 col
                Desktop → 2 col (cart+forms | payment+summary)     ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_420px] gap-5 items-start">
 
-            {/* ════════════════════════════
+          {isCartEmpty ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <ShoppingBag className="w-12 h-12 text-gray-300 mb-4" />
+
+              <h2 className="text-lg font-semibold text-gray-700">
+                Your cart is empty
+              </h2>
+
+              <p className="text-sm text-gray-400 mt-1 mb-4">
+                Looks like you haven’t added anything yet
+              </p>
+
+              <Button
+                onClick={() => router.push("/")}
+                className="mt-2"
+              >
+                Browse Products
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_420px] gap-5 items-start">
+
+              {/* ════════════════════════════
                 COL 1 — Cart Items + Personal Info + Address
                 ════════════════════════════ */}
-            <div className="space-y-5">
+              <div className="space-y-5">
 
-              {/* Cart Items */}
-              <SectionCard>
-                <div className="flex items-center justify-between mb-5 pb-4 border-b border-gray-100">
-                  <div className="flex items-center gap-2">
-                    <ShoppingBag className="w-4 h-4 text-gray-400" />
-                    <h2 className="font-semibold text-gray-800 text-[15px]">Your Items</h2>
+                {/* Cart Items */}
+                <SectionCard>
+                  <div className="flex items-center justify-between mb-5 pb-4 border-b border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <ShoppingBag className="w-4 h-4 text-gray-400" />
+                      <h2 className="font-semibold text-gray-800 text-[15px]">Your Items</h2>
+                    </div>
+                    {cartItems.length > 0 && (
+                      <span className="text-xs font-medium text-gray-400 bg-gray-100 rounded-full px-2.5 py-0.5">
+                        {cartItems.length} {cartItems.length === 1 ? "item" : "items"}
+                      </span>
+                    )}
                   </div>
-                  {cartItems.length > 0 && (
-                    <span className="text-xs font-medium text-gray-400 bg-gray-100 rounded-full px-2.5 py-0.5">
-                      {cartItems.length} {cartItems.length === 1 ? "item" : "items"}
-                    </span>
+
+                  {cartItems.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400">
+                      <ShoppingBag className="w-10 h-10 opacity-30" />
+                      <p className="text-sm font-medium">Your cart is empty</p>
+                      <Button
+                        onClick={() => router.push("/")}
+                        variant="ghost"
+                        className="text-xs text-[var(--theme-color)] font-semibold"
+                      >
+                        Browse raffles
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="max-h-[420px] overflow-y-auto sm:pr-2 custom-scroll">
+                      <ul className="space-y-3 ">
+                        {cartItems.map((item, idx) => {
+                          const key = item._id || String(idx);
+
+                          const qty = quantities[key] ?? getQty(item);
+
+                          const unitPrice =
+                            Number(item.accounting?.finalUnitPrice) ||
+                            Number(item.accounting?.unitPrice) ||
+                            Number(item.price) ||
+                            0;
+
+                          const itemTotal = fmt(unitPrice * qty);
+
+
+                          return (
+                            <li
+                              key={`${item._id}-${idx}`}
+                              className="flex items-center gap-5 p-3 sm:p-5 rounded-2xl bg-gray-50 border border-gray-200 flex-wrap xl:flex-nowrap justify-between"
+                            >
+                              {/* LEFT - IMAGE */}
+                              <div className="flex items-center gap-4 sm:gap-5">
+                                <div className="relative w-20 h-20 sm:w-28 sm:h-24 rounded-xl overflow-hidden bg-white flex items-center justify-center">
+                                  <Image
+                                    src={getProductImage(item)}
+                                    alt={item.name || "Product"}
+                                    fill
+                                    className="object-contain"
+                                  />
+                                </div>
+
+                                {/* CENTER */}
+                                <div className="flex-1">
+                                  <p className="text-yellow-500 font-extrabold text-lg leading-none">
+                                    WIN
+                                  </p>
+
+                                  <p className="text-xs sm:text-sm font-semibold text-gray-800 mt-1">
+                                    {item.name || item.productName}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* RIGHT */}
+                              <div className="flex flex-col-reverse sm:flex-row-reverse xl:flex-col items-start sm:items-center xl:items-end gap-3 justify-between xl:justify-items-start w-full xl:w-auto flex-wrap md:flex-nowrap">
+
+                                {/* <Countdown timestamp={item.drawDateTimeStemp} /> */}
+                                {/* PRICE + QTY */}
+                                <div className="flex items-center gap-2 bg-gray-100 rounded-full pe-3">
+
+                                  {/* Price */}
+                                  <div className="flex flex-col justify-center items-center text-center h-10 px-1 sm:px-3 min-w-[90px] sm:min-w-[110px]">
+                                    <p className="text-xs text-gray-600 font-medium leading-none">
+                                      {currency}{fmt(unitPrice)}
+                                    </p>
+                                    <p className="text-xs text-green-600 font-semibold leading-none mt-1">
+                                      {qty} {t("tickets")}
+                                    </p>
+                                  </div>
+
+                                  {/* Stepper */}
+                                  <div className="flex items-center bg-yellow-400 rounded-full px-2 sm:px-3 h-10 gap-1 sm:gap-3">
+                                    <Button
+                                      onClick={() => updateQty(item, key, -1)}
+                                      disabled={qty <= 1 || !!updatingKeys[key]}
+                                      className={`w-7 h-7 rounded-full flex items-center justify-center shadow-sm ${qty <= 1
+                                        ? "bg-gray-200 cursor-not-allowed opacity-50"
+                                        : "bg-white"
+                                        }`}
+                                    >
+                                      {updatingKeys[key] === "dec" ? (
+                                        <span className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                                      ) : (
+                                        <Minus className="w-4 h-4" />
+                                      )}
+                                    </Button>
+
+                                    <span className="font-bold text-base w-6 text-center">
+                                      {qty}
+                                    </span>
+
+                                    <Button
+                                      onClick={() => updateQty(item, key, 1)}
+                                      disabled={!!updatingKeys[key]}
+                                      className="w-7 h-7 rounded-full bg-white flex items-center justify-center shadow-sm"
+                                    >
+                                      {updatingKeys[key] === "inc" ? (
+                                        <span className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                                      ) : (
+                                        <Plus className="w-4 h-4" />
+                                      )}
+                                    </Button>
+                                  </div>
+                                  <button
+                                    onClick={() => handleRemoveItem(item, key)}
+                                    className="text-xs text-red-500 flex items-center gap-1 hover:cursor-pointer"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+
+                                {/* SUBTOTAL */}
+                                <p className="text-xs text-gray-500">
+                                  Sub Total {currency}{itemTotal}
+                                </p>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
                   )}
-                </div>
+                </SectionCard>
 
-                {cartItems.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400">
-                    <ShoppingBag className="w-10 h-10 opacity-30" />
-                    <p className="text-sm font-medium">Your cart is empty</p>
-                    <Button
-                      onClick={() => router.push("/")}
-                      variant="ghost"
-                      className="text-xs text-[var(--theme-color)] font-semibold"
-                    >
-                      Browse raffles
-                    </Button>
+                <SectionCard>
+                  <SectionHeading
+                    step={1}
+                    icon={<User className="w-4 h-4" />}
+                    title="Customer Details"
+                  />
+
+                  <ExpressRegisterForm
+                    form={form} // ✅ pass form
+                    cartId={(cartData as any)?._id}
+                    isRaffle={isRaffle}
+                    onSubmit={async (formData) => {
+                      await handleDynamicSubmit(formData);
+                    }}
+                  />
+                </SectionCard>
+
+              </div>
+
+              {/* ════════════════════════════
+                COL 2 — Order Summary + Payment
+                ════════════════════════════ */}
+              <div>
+                <div className="bg-white rounded-2xl border border-gray-100
+                              shadow-[0_2px_16px_rgba(0,0,0,0.06)] overflow-hidden sticky top-24">
+
+                  {/* Summary header */}
+                  <div className="px-6 pt-6 pb-4 border-b border-gray-100">
+                    <h2 className="font-bold text-gray-800 text-[15px]">Order Summary</h2>
                   </div>
-                ) : (
-                  <div className="max-h-[420px] overflow-y-auto sm:pr-2 custom-scroll">
-                    <ul className="space-y-3 ">
-                      {cartItems.map((item, idx) => {
+
+                  {/* Line items */}
+                  <div className="px-4 sm:px-6 py-4 sm:py-5 space-y-3 max-h-52 overflow-y-auto custom-scroll">
+                    {cartItems.length === 0 ? (
+                      <p className="text-sm text-gray-400 text-center py-4">Cart is empty</p>
+                    ) : (
+                      cartItems.map((item, idx) => {
                         const key = item._id || String(idx);
 
                         const qty = quantities[key] ?? getQty(item);
-
                         const unitPrice =
                           Number(item.accounting?.finalUnitPrice) ||
                           Number(item.accounting?.unitPrice) ||
                           Number(item.price) ||
                           0;
-
-                        const itemTotal = fmt(unitPrice * qty);
-
-
+                        const total = fmt(unitPrice * qty);
                         return (
-                          <li
-                            key={`${item._id}-${idx}`}
-                            className="flex items-center gap-5 p-3 sm:p-5 rounded-2xl bg-gray-50 border border-gray-200 flex-wrap xl:flex-nowrap justify-between"
-                          >
-                            {/* LEFT - IMAGE */}
-                            <div className="flex items-center gap-4 sm:gap-5">
-                              <div className="relative w-20 h-20 sm:w-28 sm:h-24 rounded-xl overflow-hidden bg-white flex items-center justify-center">
-                                <Image
-                                  src={getProductImage(item)}
-                                  alt={item.name || "Product"}
-                                  fill
-                                  className="object-contain"
-                                />
-                              </div>
-
-                              {/* CENTER */}
-                              <div className="flex-1">
-                                <p className="text-yellow-500 font-extrabold text-lg leading-none">
-                                  WIN
-                                </p>
-
-                                <p className="text-xs sm:text-sm font-semibold text-gray-800 mt-1">
-                                  {item.name || item.productName}
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* RIGHT */}
-                            <div className="flex flex-col-reverse sm:flex-row-reverse xl:flex-col items-start sm:items-center xl:items-end gap-3 justify-between xl:justify-items-start w-full xl:w-auto flex-wrap md:flex-nowrap">
-
-                              {/* <Countdown timestamp={item.drawDateTimeStemp} /> */}
-                              {/* PRICE + QTY */}
-                              <div className="flex items-center gap-2 bg-gray-100 rounded-full pe-3">
-
-                                {/* Price */}
-                                <div className="flex flex-col justify-center items-center text-center h-10 px-1 sm:px-3 min-w-[90px] sm:min-w-[110px]">
-                                  <p className="text-xs text-gray-600 font-medium leading-none">
-                                    {currency}{fmt(unitPrice)}
-                                  </p>
-                                  <p className="text-xs text-green-600 font-semibold leading-none mt-1">
-                                    {qty} {t("tickets")}
-                                  </p>
-                                </div>
-
-                                {/* Stepper */}
-                                <div className="flex items-center bg-yellow-400 rounded-full px-2 sm:px-3 h-10 gap-1 sm:gap-3">
-                                  <Button
-                                    onClick={() => updateQty(item, key, -1)}
-                                  disabled={qty <= 1 || !!updatingKeys[key]}
-                                    className={`w-7 h-7 rounded-full flex items-center justify-center shadow-sm ${qty <= 1
-                                      ? "bg-gray-200 cursor-not-allowed opacity-50"
-                                      : "bg-white"
-                                      }`}
-                                  >
-                                    {updatingKeys[key] === "dec" ? (
-                                      <span className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                                    ) : (
-                                      <Minus className="w-4 h-4" />
-                                    )}
-                                  </Button>
-
-                                  <span className="font-bold text-base w-6 text-center">
-                                    {qty}
-                                  </span>
-
-                                  <Button
-                                    onClick={() => updateQty(item, key, 1)}
-                                   disabled={!!updatingKeys[key]}
-                                    className="w-7 h-7 rounded-full bg-white flex items-center justify-center shadow-sm"
-                                  >
-                                    {updatingKeys[key] === "inc" ? (
-                                      <span className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                                    ) : (
-                                      <Plus className="w-4 h-4" />
-                                    )}
-                                  </Button>
-                                </div>
-                                <button
-                                  onClick={() => handleRemoveItem(item, key)}
-                                  className="text-xs text-red-500 flex items-center gap-1 hover:cursor-pointer"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-
-                              {/* SUBTOTAL */}
-                              <p className="text-xs text-gray-500">
-                                Sub Total {currency}{itemTotal}
-                              </p>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                )}
-              </SectionCard>
-
-              <SectionCard>
-                <SectionHeading
-                  step={1}
-                  icon={<User className="w-4 h-4" />}
-                  title="Customer Details"
-                />
-
-                <ExpressRegisterForm
-                  form={form} // ✅ pass form
-                  cartId={(cartData as any)?._id}
-                  isRaffle={isRaffle}
-                  onSubmit={async (formData) => {
-                    await handleDynamicSubmit(formData);
-                  }}
-                />
-              </SectionCard>
-
-            </div>
-
-            {/* ════════════════════════════
-                COL 2 — Order Summary + Payment
-                ════════════════════════════ */}
-            <div>
-              <div className="bg-white rounded-2xl border border-gray-100
-                              shadow-[0_2px_16px_rgba(0,0,0,0.06)] overflow-hidden sticky top-24">
-
-                {/* Summary header */}
-                <div className="px-6 pt-6 pb-4 border-b border-gray-100">
-                  <h2 className="font-bold text-gray-800 text-[15px]">Order Summary</h2>
-                </div>
-
-                {/* Line items */}
-                <div className="px-4 sm:px-6 py-4 sm:py-5 space-y-3 max-h-52 overflow-y-auto custom-scroll">
-                  {cartItems.length === 0 ? (
-                    <p className="text-sm text-gray-400 text-center py-4">Cart is empty</p>
-                  ) : (
-                    cartItems.map((item, idx) => {
-                      const key = item._id || String(idx);
-
-                      const qty = quantities[key] ?? getQty(item);
-                      const unitPrice =
-                        Number(item.accounting?.finalUnitPrice) ||
-                        Number(item.accounting?.unitPrice) ||
-                        Number(item.price) ||
-                        0;
-                      const total = fmt(unitPrice * qty);
-                      return (
-                        <div key={`${item._id}-${idx}`} className="flex items-center gap-3">
-                          <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-gray-100 shrink-0 bg-gray-50">
-                            <Image
-                              src={getProductImage(item)}
-                              alt={item.name || item.productName || "Product"}
-                              fill
-                              className="object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = "/placeholder-product.png";
-                              }}
-                            />
-                            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--footer-dark)]
+                          <div key={`${item._id}-${idx}`} className="flex items-center gap-3">
+                            <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-gray-100 shrink-0 bg-gray-50">
+                              <Image
+                                src={getProductImage(item)}
+                                alt={item.name || item.productName || "Product"}
+                                fill
+                                className="object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = "/placeholder-product.png";
+                                }}
+                              />
+                              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--footer-dark)]
                                              text-white text-[9px] font-bold flex items-center justify-center leading-none">
-                              {qty}
-                            </span>
+                                {qty}
+                              </span>
+                            </div>
+                            <p className="flex-1 text-xs text-gray-600 leading-tight line-clamp-2">
+                              {item.name || item.productName || "Product"}
+                            </p>
+                            <p className="text-xs font-semibold text-gray-800 shrink-0">
+                              {currency}{total}
+                            </p>
                           </div>
-                          <p className="flex-1 text-xs text-gray-600 leading-tight line-clamp-2">
-                            {item.name || item.productName || "Product"}
-                          </p>
-                          <p className="text-xs font-semibold text-gray-800 shrink-0">
-                            {currency}{total}
-                          </p>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {/* Totals */}
+                  <div className="px-4 sm:px-6 py-4 border-t border-gray-100 space-y-2.5">
+                    <div className="flex justify-between text-sm text-gray-500">
+                      <span>Subtotal</span>
+                      <span className="font-medium text-gray-700">
+                        {currency}{fmt(accounting.bagTotal ?? accounting.subTotal ?? subtotal)}
+                      </span>
+                    </div>
+
+                    {shipping > 0 && (
+                      <div className="flex justify-between text-sm text-gray-500">
+                        <span>Shipping</span>
+                        <span className="font-medium text-gray-700">{currency}{fmt(shipping)}</span>
+                      </div>
+                    )}
+
+                    {tax > 0 && (
+                      <div className="flex justify-between text-sm text-gray-500">
+                        <span>Tax</span>
+                        <span className="font-medium text-gray-700">{currency}{fmt(tax)}</span>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+                      <span className="font-bold text-gray-900">Total</span>
+                      <span className="text-lg font-extrabold text-gray-900 tracking-tight">
+                        {currency}{fmt(grandTotal)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Payment Method */}
+                  <div className="px-4 sm:px-6 py-4 sm:py-5 border-t border-gray-100">
+                    <div className="flex items-center gap-2 mb-4">
+                      <h3 className="font-semibold text-gray-800 text-[15px]">Select Method</h3>
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+
+                      {/* ATH Móvil */}
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod("athMovil")}
+                        className={`${baseCls} ${paymentMethod === "athMovil"
+                          ? "border-yellow-400 bg-yellow-50"
+                          : "border-gray-200 hover:border-gray-300 bg-white"
+                          }`}
+                      >
+                        {/* LEFT */}
+                        <div className="flex items-center gap-3">
+                          <span className={`min-w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "athMovil" ? "border-yellow-500" : "border-gray-300"
+                            }`}>
+                            {paymentMethod === "athMovil" && (
+                              <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                            )}
+                          </span>
+
+                          <span className="text-[12px] xl:text-sm font-medium text-start text-gray-700">
+                            {t("payWithATHMovil")}
+                          </span>
                         </div>
-                      );
-                    })
-                  )}
-                </div>
 
-                {/* Totals */}
-                <div className="px-4 sm:px-6 py-4 border-t border-gray-100 space-y-2.5">
-                  <div className="flex justify-between text-sm text-gray-500">
-                    <span>Subtotal</span>
-                    <span className="font-medium text-gray-700">
-                      {currency}{fmt(accounting.bagTotal ?? accounting.subTotal ?? subtotal)}
-                    </span>
-                  </div>
+                        {/* RIGHT */}
+                        <Image
+                          src="/images/icons/authmovil.png"
+                          alt="ATH"
+                          width={28}
+                          height={18}
+                        />
+                      </button>
+                      {paymentMethod === "athMovil" && isAthReady && athToken && athOrderId && (
+                        <div className="px-6 pb-6 pt-2 border-t border-gray-100 space-y-3 my-4 bg-gray-100 rounded-xl">
 
-                  {shipping > 0 && (
-                    <div className="flex justify-between text-sm text-gray-500">
-                      <span>Shipping</span>
-                      <span className="font-medium text-gray-700">{currency}{fmt(shipping)}</span>
+                          <p className="text-sm font-medium text-gray-700">
+                            Complete your payment
+                          </p>
+
+                          <p className="text-xs text-gray-500">
+                            Click below to pay securely with ATH Móvil
+                          </p>
+
+                          {/* 🔥 ATH BUTTON RENDERS HERE */}
+                          <div className="flex justify-start">
+                            <AthMovilPayment
+                              total={orderTotal || grandTotal}
+                              publicToken={athToken}
+                              orderId={athOrderId}
+                              userId={(getCookie("uid") as string) || ""}
+                              onSuccess={handleAthSuccess}
+                              onCancel={handleAthCancel}
+                            />
+                          </div>
+
+                        </div>
+                      )}
+                      { !isAthReady &&  !athToken && !athOrderId &&
+                        (<>
+                          {/* Manual Payment */}
+                          <button
+                            type="button"
+                            onClick={() => setPaymentMethod("manual")}
+                            className={`${baseCls} ${paymentMethod === "manual"
+                              ? "border-yellow-400 bg-yellow-50"
+                              : "border-gray-200 hover:border-gray-300 bg-white"
+                              }`}
+                          >
+                            {/* LEFT */}
+                            <div className="flex items-center gap-2 xl:gap-3">
+                              <span className={`min-w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "manual" ? "border-yellow-500" : "border-gray-300"
+                                }`}>
+                                {paymentMethod === "manual" && (
+                                  <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                                )}
+                              </span>
+
+                              <span className="text-[12px] xl:text-sm font-medium text-start text-gray-700">
+                                {t("manualPaymentMethods")}
+                              </span>
+                            </div>
+
+                            {/* RIGHT ICON */}
+                            <Image
+                              src="/images/icons/mannualPayment.png"
+                              alt="Manual"
+                              width={40}
+                              height={20}
+                              className="object-contain"
+                            />
+                          </button>
+                          {/* Credit / Debit Card (Square) */}
+                          <button
+                            type="button"
+                            onClick={() => setPaymentMethod("square")}
+                            className={`${baseCls} ${paymentMethod === "square"
+                              ? "border-yellow-400 bg-yellow-50"
+                              : "border-gray-200 hover:border-gray-300 bg-white"
+                              }`}
+                          >
+                            <div className="flex items-center gap-2 xl:gap-3">
+                              <span
+                                className={`min-w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "square"
+                                  ? "border-yellow-500"
+                                  : "border-gray-300"
+                                  }`}
+                              >
+                                {paymentMethod === "square" && (
+                                  <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                                )}
+                              </span>
+
+                              <span className="text-[12px] xl:text-sm font-medium text-start text-gray-700">
+                                {t("paySqr")}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              <Image src="/images/Profile_new/visa.svg" alt="VISA" width={40} height={25} className="h-5 w-auto object-contain" />
+                              <Image src="/images/Profile_new/mastercard.svg" alt="Mastercard" width={40} height={25} className="h-5 w-auto object-contain" />
+                              <Image src="/images/Profile_new/amex.jpg" alt="AMEX" width={40} height={25} className="h-5 w-auto object-contain" />
+                              <Image src={CDN_IMAGE + "card-8.svg"} alt="Discovery" width={40} height={25} className="h-5 w-auto object-contain" />
+                            </div>
+                          </button></>)
+                      }
+
                     </div>
-                  )}
-
-                  {tax > 0 && (
-                    <div className="flex justify-between text-sm text-gray-500">
-                      <span>Tax</span>
-                      <span className="font-medium text-gray-700">{currency}{fmt(tax)}</span>
-                    </div>
-                  )}
-
-                  <div className="flex justify-between items-center pt-3 border-t border-gray-200">
-                    <span className="font-bold text-gray-900">Total</span>
-                    <span className="text-lg font-extrabold text-gray-900 tracking-tight">
-                      {currency}{fmt(grandTotal)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Payment Method */}
-                <div className="px-4 sm:px-6 py-4 sm:py-5 border-t border-gray-100">
-                  <div className="flex items-center gap-2 mb-4">
-                    <h3 className="font-semibold text-gray-800 text-[15px]">Select Method</h3>
-                  </div>
-
-                  <div className="flex flex-col gap-3">
-
-                    {/* ATH Móvil */}
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("athMovil")}
-                      className={`${baseCls} ${paymentMethod === "athMovil"
-                        ? "border-yellow-400 bg-yellow-50"
-                        : "border-gray-200 hover:border-gray-300 bg-white"
-                        }`}
-                    >
-                      {/* LEFT */}
-                      <div className="flex items-center gap-3">
-                        <span className={`min-w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "athMovil" ? "border-yellow-500" : "border-gray-300"
-                          }`}>
-                          {paymentMethod === "athMovil" && (
-                            <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                          )}
-                        </span>
-
-                        <span className="text-[12px] xl:text-sm font-medium text-start text-gray-700">
-                          {t("payWithATHMovil")}
-                        </span>
-                      </div>
-
-                      {/* RIGHT */}
-                      <Image
-                        src="/images/icons/authmovil.png"
-                        alt="ATH"
-                        width={28}
-                        height={18}
-                      />
-                    </button>
-
-                    {/* Manual Payment */}
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("manual")}
-                      className={`${baseCls} ${paymentMethod === "manual"
-                        ? "border-yellow-400 bg-yellow-50"
-                        : "border-gray-200 hover:border-gray-300 bg-white"
-                        }`}
-                    >
-                      {/* LEFT */}
-                      <div className="flex items-center gap-2 xl:gap-3">
-                        <span className={`min-w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "manual" ? "border-yellow-500" : "border-gray-300"
-                          }`}>
-                          {paymentMethod === "manual" && (
-                            <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                          )}
-                        </span>
-
-                        <span className="text-[12px] xl:text-sm font-medium text-start text-gray-700">
-                          {t("manualPaymentMethods")}
-                        </span>
-                      </div>
-
-                      {/* RIGHT ICON */}
-                      <Image
-                        src="/images/icons/mannualPayment.png"
-                        alt="Manual"
-                        width={40}
-                        height={20}
-                        className="object-contain"
-                      />
-                    </button>
-                    {/* Credit / Debit Card (Square) */}
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("square")}
-                      className={`${baseCls} ${paymentMethod === "square"
-                        ? "border-yellow-400 bg-yellow-50"
-                        : "border-gray-200 hover:border-gray-300 bg-white"
-                        }`}
-                    >
-                      <div className="flex items-center gap-2 xl:gap-3">
-                        <span
-                          className={`min-w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "square"
-                            ? "border-yellow-500"
-                            : "border-gray-300"
-                            }`}
-                        >
-                          {paymentMethod === "square" && (
-                            <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                          )}
-                        </span>
-
-                        <span className="text-[12px] xl:text-sm font-medium text-start text-gray-700">
-                          {t("paySqr")}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        <Image src="/images/Profile_new/visa.svg" alt="VISA" width={40} height={25} className="h-5 w-auto object-contain" />
-                        <Image src="/images/Profile_new/mastercard.svg" alt="Mastercard" width={40} height={25} className="h-5 w-auto object-contain" />
-                        <Image src="/images/Profile_new/amex.jpg" alt="AMEX" width={40} height={25} className="h-5 w-auto object-contain" />
-                        <Image src={CDN_IMAGE + "card-8.svg"} alt="Discovery" width={40} height={25} className="h-5 w-auto object-contain" />
-                      </div>
-                    </button>
 
                   </div>
 
-                </div>
+                  {/* Pay button */}
+                  <div className="px-6 pb-6">
 
-                {/* Pay button */}
-                <div className="px-6 pb-6">
-
-                  <Button
-                    type="submit"
-                    form="express-form"
-                    disabled={placingOrder || cartItems.length === 0 || (paymentMethod === "athMovil" && isAthReady)}
-                    className="w-full h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2
+                    <Button
+                      type="submit"
+                      form="express-form"
+                      disabled={placingOrder || cartItems.length === 0 || (paymentMethod === "athMovil" && isAthReady)}
+                      className="w-full h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2
                                transition-all duration-200
                                "
-                  >
-                    {placingOrder ? (
-                      <>
-                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Placing Order…
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="w-4 h-4 opacity-70" />
-                        Pay {currency}{fmt(grandTotal)}
-                      </>
-                    )}
-                  </Button>
+                    >
+                      {placingOrder ? (
+                        <>
+                          <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          Placing Order…
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="w-4 h-4 opacity-70" />
+                          Pay {currency}{fmt(grandTotal)}
+                        </>
+                      )}
+                    </Button>
 
-                  {paymentMethod === "athMovil" && isAthReady && athToken && athOrderId && (
-                    <div className="px-6 pb-6 pt-2 border-t border-gray-100 space-y-3 my-4 bg-gray-100 rounded-xl">
 
-                      <p className="text-sm font-medium text-gray-700">
-                        Complete your payment
-                      </p>
+                  </div>
 
-                      <p className="text-xs text-gray-500">
-                        Click below to pay securely with ATH Móvil
-                      </p>
-
-                      {/* 🔥 ATH BUTTON RENDERS HERE */}
-                      <div className="flex justify-start">
-                        <AthMovilPayment
-                          total={orderTotal || grandTotal}
-                          publicToken={athToken}
-                          orderId={athOrderId}
-                          userId={(getCookie("uid") as string) || ""}
-                          onSuccess={handleAthSuccess}
-                          onCancel={handleAthCancel}
-                        />
-                      </div>
-
-                    </div>
-                  )}
                 </div>
-
               </div>
             </div>
-          </div>
+          )}
+
         </div>
       </main>
       {showManualModal && (
