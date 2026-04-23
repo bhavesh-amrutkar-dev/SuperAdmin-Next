@@ -30,7 +30,11 @@ export type ExpressRegisterFormRM = {
   latitude?: number;
   longitude?: number;
 };
-
+const addressOptions: { label: string; value: 1 | 2 | 3 }[] = [
+  { label: "Home", value: 1 },
+  { label: "Office", value: 2 },
+  { label: "Other", value: 3 },
+];
 export default function ExpressRegisterForm({
   form,
   onSubmit,
@@ -38,7 +42,7 @@ export default function ExpressRegisterForm({
   isExpressOrder = true,
   isRaffle
 }: {
-   form: UseFormReturn<ExpressRegisterFormRM>
+  form: UseFormReturn<ExpressRegisterFormRM>
   onSubmit: (payload: any) => Promise<void>;
   cartId?: string;
   isExpressOrder?: boolean;
@@ -276,11 +280,7 @@ export default function ExpressRegisterForm({
         </h2>
 
         <div className="grid grid-cols-3 gap-3">
-          {[
-            { label: "Home", value: 1 },
-            { label: "Office", value: 2 },
-            { label: "Other", value: 3 },
-          ].map((item) => (
+          {addressOptions.map((item) => (
             <Button
               key={item.value}
               type="button"
