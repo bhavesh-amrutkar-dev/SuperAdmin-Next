@@ -253,7 +253,7 @@ export default function SquarePayment({
               {googlePaySupported && (
                 <div
                   onClick={() => setIsProcessing(true)}
-                  className="h-20 rounded-xl overflow-hidden cursor-pointer"
+                  className="h-10 rounded-xl overflow-hidden cursor-pointer"
                 >
                   <GooglePay
                     buttonType="long"

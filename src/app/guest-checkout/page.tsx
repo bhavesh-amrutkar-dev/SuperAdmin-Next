@@ -309,7 +309,7 @@ export default function GuestCheckoutPage() {
       }));
 
     } catch (err: any) {
-      toast.error(err?.message || "Failed to update quantity");
+      toast.error(err?.message || t("guestCheckoutQuantityUpdateFailed"));
     } finally {
       setUpdatingKeys((prev) => ({ ...prev, [key]: null }));
     }
@@ -388,10 +388,10 @@ export default function GuestCheckoutPage() {
       // ✅ Update header cart count
       window.dispatchEvent(new Event("cartUpdated"));
 
-      toast.success("Item removed from cart");
+      toast.success(t("itemRemoved"));
     } catch (err: any) {
       console.warn("Remove failed", err);
-      toast.error("Failed to remove item");
+      toast.error(t("removeFailed"));
 
       // fallback reload
       fetchCart();
@@ -441,10 +441,10 @@ export default function GuestCheckoutPage() {
     return (
       <div className="flex items-center gap-4 text-center">
         {[
-          { label: "DAYS", value: time.days },
-          { label: "HRS", value: time.hours },
-          { label: "MINS", value: time.minutes },
-          { label: "SECS", value: time.seconds },
+          { label: t("days"), value: time.days },
+          { label: t("hrs"), value: time.hours },
+          { label: t("mins"), value: time.minutes },
+          { label: t("sec"), value: time.seconds },
         ].map((t, i, arr) => (
           <div key={i} className="flex items-center gap-2">
             <div>
@@ -525,7 +525,7 @@ export default function GuestCheckoutPage() {
       trackEvent("SQUARE_PAYMENT_SUCCESS", { order_id: orderId });
       handleSquareSuccess();
 
-      router.replace("/secure-checkout", { scroll: false });
+      router.replace("/guest-checkout", { scroll: false });
     }
 
     if (!handled && status === "FAILED") {
@@ -534,7 +534,7 @@ export default function GuestCheckoutPage() {
       trackEvent("SQUARE_PAYMENT_FAILURE", { order_id: orderId });
       handleSquareError({ orderId, message });
 
-      router.replace("/secure-checkout", { scroll: false });
+      router.replace("/guest-checkout", { scroll: false });
     }
 
     return () => {
@@ -542,8 +542,8 @@ export default function GuestCheckoutPage() {
     };
   }, []);
   const handleSquareSuccess = () => {
-    toast.success("Payment Successful", {
-      description: "Redirecting to order confirmation...",
+    toast.success(t("paymentSuccess"), {
+      description: t("redirecting"),
     });
 
     setTimeout(() => {
@@ -554,8 +554,8 @@ export default function GuestCheckoutPage() {
   const handleSquareError = (err: any) => {
     console.warn("Square payment failed:", err);
 
-    toast.error("Payment Failed", {
-      description: err?.message || "Please try again",
+    toast.error(t("paymentErrorTitle"), {
+      description: err?.message || t("tryAgain"),
     });
 
     fetchCart();
@@ -608,7 +608,7 @@ export default function GuestCheckoutPage() {
       const orderData = await res.json();
 
       if (!res.ok || !orderData?.orderId) {
-        throw new Error(orderData?.message || "Order failed");
+        throw new Error(orderData?.message || t("guestCheckoutOrderFailed"));
       }
 
       localStorage.setItem("orderId", orderData.orderId);
@@ -620,7 +620,7 @@ export default function GuestCheckoutPage() {
         const redirectUrl = orderData.checkoutUrl;
 
         if (!redirectUrl) {
-          throw new Error("Missing checkout URL");
+          throw new Error(t("guestCheckoutMissingCheckoutUrl"));
         }
 
         // ✅ redirect to Square
@@ -643,7 +643,7 @@ export default function GuestCheckoutPage() {
             (tokenRes as any)?.data?.publicToken;
 
           if (!publicToken) {
-            throw new Error("ATH token not received");
+            throw new Error(t("guestCheckoutAthTokenMissing"));
           }
 
           // ✅ Set state → triggers component
@@ -652,14 +652,14 @@ export default function GuestCheckoutPage() {
 
           return; // ❗ STOP here
         } catch (err: any) {
-          toast.error(err?.message || "ATH payment failed");
+          toast.error(err?.message || t("guestCheckoutAthPaymentFailed"));
           setPlacingOrder(false);
           return;
         }
       }
 
     } catch (err: any) {
-      toast.error(err?.message || "Something went wrong");
+      toast.error(err?.message || t("checkoutError"));
       setPlacingOrder(false);
     }
   };
@@ -688,7 +688,7 @@ export default function GuestCheckoutPage() {
       router.push("/thank-you?payment=athmovil");
 
     } catch (err) {
-      toast.error("Payment confirmation failed");
+      toast.error(t("guestCheckoutPaymentConfirmationFailed"));
     }
   };
   const handleAthCancel = async () => {
@@ -701,7 +701,7 @@ export default function GuestCheckoutPage() {
     setIsAthReady(false);
     setPlacingOrder(false);
 
-    toast.error("Payment cancelled");
+    toast.error(t("paymentCancelled"));
 
     await fetch("/api/orders/status-update", {
       method: "POST",
@@ -729,7 +729,7 @@ border text-sm transition-all cursor-pointer gap-1
         <Header />
         <div className="flex-1 flex flex-col items-center justify-center gap-4">
           <Loader />
-          <p className="text-sm text-gray-400 animate-pulse">Preparing your checkout…</p>
+          <p className="text-sm text-gray-400 animate-pulse">{t("guestCheckoutPreparing")}</p>
         </div>
         <Footer />
       </div>
@@ -753,18 +753,18 @@ border text-sm transition-all cursor-pointer gap-1
               <ShoppingBag className="w-12 h-12 text-gray-300 mb-4" />
 
               <h2 className="text-lg font-semibold text-gray-700">
-                Your cart is empty
+                {t("cartEmpty")}
               </h2>
 
               <p className="text-sm text-gray-400 mt-1 mb-4">
-                Looks like you haven’t added anything yet
+                {t("guestCheckoutEmptyDescription")}
               </p>
 
               <Button
                 onClick={() => router.push("/")}
                 className="mt-2"
               >
-                Browse Products
+                {t("browseRaffles")}
               </Button>
             </div>
           ) : (
@@ -780,11 +780,11 @@ border text-sm transition-all cursor-pointer gap-1
                   <div className="flex items-center justify-between mb-5 pb-4 border-b border-gray-100">
                     <div className="flex items-center gap-2">
                       <ShoppingBag className="w-4 h-4 text-gray-400" />
-                      <h2 className="font-semibold text-gray-800 text-[15px]">Your Items</h2>
+                      <h2 className="font-semibold text-gray-800 text-[15px]">{t("guestCheckoutYourItems")}</h2>
                     </div>
                     {cartItems.length > 0 && (
                       <span className="text-xs font-medium text-gray-400 bg-gray-100 rounded-full px-2.5 py-0.5">
-                        {cartItems.length} {cartItems.length === 1 ? "item" : "items"}
+                        {cartItems.length} {cartItems.length === 1 ? t("item") : t("items")}
                       </span>
                     )}
                   </div>
@@ -792,13 +792,13 @@ border text-sm transition-all cursor-pointer gap-1
                   {cartItems.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400">
                       <ShoppingBag className="w-10 h-10 opacity-30" />
-                      <p className="text-sm font-medium">Your cart is empty</p>
+                      <p className="text-sm font-medium">{t("cartEmpty")}</p>
                       <Button
                         onClick={() => router.push("/")}
                         variant="ghost"
                         className="text-xs text-[var(--theme-color)] font-semibold"
                       >
-                        Browse raffles
+                        {t("browseRaffles")}
                       </Button>
                     </div>
                   ) : (
@@ -828,7 +828,7 @@ border text-sm transition-all cursor-pointer gap-1
                                 <div className="relative w-20 h-20 sm:w-28 sm:h-24 rounded-xl overflow-hidden bg-white flex items-center justify-center">
                                   <Image
                                     src={getProductImage(item)}
-                                    alt={item.name || "Product"}
+                                    alt={item.name || t("product")}
                                     fill
                                     className="object-contain"
                                   />
@@ -837,7 +837,7 @@ border text-sm transition-all cursor-pointer gap-1
                                 {/* CENTER */}
                                 <div className="flex-1">
                                   <p className="text-yellow-500 font-extrabold text-lg leading-none">
-                                    WIN
+                                    {t("win")}
                                   </p>
 
                                   <p className="text-xs sm:text-sm font-semibold text-gray-800 mt-1">
@@ -906,7 +906,7 @@ border text-sm transition-all cursor-pointer gap-1
 
                                 {/* SUBTOTAL */}
                                 <p className="text-xs text-gray-500">
-                                  Sub Total {currency}{itemTotal}
+                                  {t("subTotal")} {currency}{itemTotal}
                                 </p>
                               </div>
                             </li>
@@ -921,7 +921,7 @@ border text-sm transition-all cursor-pointer gap-1
                   <SectionHeading
                     step={1}
                     icon={<User className="w-4 h-4" />}
-                    title="Customer Details"
+                    title={t("guestCheckoutCustomerDetails")}
                   />
 
                   <ExpressRegisterForm
@@ -945,13 +945,13 @@ border text-sm transition-all cursor-pointer gap-1
 
                   {/* Summary header */}
                   <div className="px-6 pt-6 pb-4 border-b border-gray-100">
-                    <h2 className="font-bold text-gray-800 text-[15px]">Order Summary</h2>
+                    <h2 className="font-bold text-gray-800 text-[15px]">{t("guestCheckoutOrderSummary")}</h2>
                   </div>
 
                   {/* Line items */}
                   <div className="px-4 sm:px-6 py-4 sm:py-5 space-y-3 max-h-52 overflow-y-auto custom-scroll">
                     {cartItems.length === 0 ? (
-                      <p className="text-sm text-gray-400 text-center py-4">Cart is empty</p>
+                      <p className="text-sm text-gray-400 text-center py-4">{t("cartEmpty")}</p>
                     ) : (
                       cartItems.map((item, idx) => {
                         const key = item._id || String(idx);
@@ -968,7 +968,7 @@ border text-sm transition-all cursor-pointer gap-1
                             <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-gray-100 shrink-0 bg-gray-50">
                               <Image
                                 src={getProductImage(item)}
-                                alt={item.name || item.productName || "Product"}
+                                alt={item.name || item.productName || t("product")}
                                 fill
                                 className="object-cover"
                                 onError={(e) => {
@@ -978,7 +978,7 @@ border text-sm transition-all cursor-pointer gap-1
                              
                             </div>
                             <p className="flex-1 text-xs text-gray-600 leading-tight line-clamp-2">
-                              {item.name || item.productName || "Product"}
+                              {item.name || item.productName || t("product")}
                             </p>
                             <p className="text-xs font-semibold text-gray-800 shrink-0">
                               {currency}{total}
@@ -992,7 +992,7 @@ border text-sm transition-all cursor-pointer gap-1
                   {/* Totals */}
                   <div className="px-4 sm:px-6 py-4 border-t border-gray-100 space-y-2.5">
                     <div className="flex justify-between text-sm text-gray-500">
-                      <span>Subtotal</span>
+                      <span>{t("subTotal")}</span>
                       <span className="font-medium text-gray-700">
                         {currency}{fmt(accounting.bagTotal ?? accounting.subTotal ?? subtotal)}
                       </span>
@@ -1000,20 +1000,20 @@ border text-sm transition-all cursor-pointer gap-1
 
                     {shipping > 0 && (
                       <div className="flex justify-between text-sm text-gray-500">
-                        <span>Shipping</span>
+                        <span>{t("shippingFee")}</span>
                         <span className="font-medium text-gray-700">{currency}{fmt(shipping)}</span>
                       </div>
                     )}
 
                     {tax > 0 && (
                       <div className="flex justify-between text-sm text-gray-500">
-                        <span>Tax</span>
+                        <span>{t("tax")}</span>
                         <span className="font-medium text-gray-700">{currency}{fmt(tax)}</span>
                       </div>
                     )}
 
                     <div className="flex justify-between items-center pt-3 border-t border-gray-200">
-                      <span className="font-bold text-gray-900">Total</span>
+                      <span className="font-bold text-gray-900">{t("total")}</span>
                       <span className="text-lg font-extrabold text-gray-900 tracking-tight">
                         {currency}{fmt(grandTotal)}
                       </span>
@@ -1023,7 +1023,7 @@ border text-sm transition-all cursor-pointer gap-1
                   {/* Payment Method */}
                   <div className="px-4 sm:px-6 py-4 sm:py-5 border-t border-gray-100">
                     <div className="flex items-center gap-2 mb-4">
-                      <h3 className="font-semibold text-gray-800 text-[15px]">Select Method</h3>
+                      <h3 className="font-semibold text-gray-800 text-[15px]">{t("selectMethod")}</h3>
                     </div>
 
                     <div className="flex flex-col gap-3">
@@ -1063,11 +1063,11 @@ border text-sm transition-all cursor-pointer gap-1
                         <div className="px-6 pb-6 pt-2 border-t border-gray-100 space-y-3 my-4 bg-gray-100 rounded-xl">
 
                           <p className="text-sm font-medium text-gray-700">
-                            Complete your payment
+                            {t("payment.title")}
                           </p>
 
                           <p className="text-xs text-gray-500">
-                            Click below to pay securely with ATH Móvil
+                            {t("guestCheckoutAthInstruction")}
                           </p>
 
                           {/* 🔥 ATH BUTTON RENDERS HERE */}
@@ -1171,12 +1171,12 @@ border text-sm transition-all cursor-pointer gap-1
                       {placingOrder ? (
                         <>
                           <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          Placing Order…
+                          {t("placingOrder")}
                         </>
                       ) : (
                         <>
                           <Lock className="w-4 h-4 opacity-70" />
-                          Pay {currency}{fmt(grandTotal)}
+                          {t("guestCheckoutPayAmount", { amount: `${currency}${fmt(grandTotal)}` })}
                         </>
                       )}
                     </Button>
@@ -1197,13 +1197,13 @@ border text-sm transition-all cursor-pointer gap-1
 
             {/* Title */}
             <h2 className="text-lg font-semibold text-gray-800">
-              Manual Payment
+              {t("manualPaymentTitle")}
             </h2>
 
             {/* Bank List */}
             <div className="space-y-3">
               <p className="text-sm text-gray-500">
-                Please select a bank to continue with your manual payment.
+                {t("selectBank")}
               </p>
 
               <div className="grid grid-cols-3 gap-3">
@@ -1237,13 +1237,13 @@ border text-sm transition-all cursor-pointer gap-1
             {/* Upload Receipt */}
 
             <FileUploader
-              title="Upload Receipt"
+              title={t("uploadReceipt")}
               maxFiles={1}
               acceptedTypes=".jpg,.png,.jpeg"
               helperText={
                 !selectedBank
-                  ? "Select a bank first"
-                  : "Upload payment receipt (Max 10MB)"
+                  ? t("guestCheckoutSelectBankFirst")
+                  : t("guestCheckoutUploadReceiptHelper")
               }
               currentFiles={receiptFile ? [receiptFile] : []}
               onFileChange={(files) => {
@@ -1263,7 +1263,7 @@ border text-sm transition-all cursor-pointer gap-1
                 }
               />
               <p className="text-sm text-gray-600">
-                I confirm this payment is completed
+                {t("guestCheckoutManualPaymentConfirmed")}
               </p>
             </div>
 
@@ -1274,7 +1274,7 @@ border text-sm transition-all cursor-pointer gap-1
                 className="w-full"
                 onClick={() => setShowManualModal(false)}
               >
-                Cancel
+                {t("cancel")}
               </Button>
               <Button
                 className="w-full"
@@ -1313,7 +1313,7 @@ border text-sm transition-all cursor-pointer gap-1
                     const orderData = await res.json();
 
                     if (!res.ok || !orderData?.orderId) {
-                      throw new Error(orderData?.message || "Order failed");
+                      throw new Error(orderData?.message || t("guestCheckoutOrderFailed"));
                     }
 
                     // ✅ 3. Upload receipt
@@ -1321,7 +1321,7 @@ border text-sm transition-all cursor-pointer gap-1
                     const country =
                       (getCookie("C_code") as string) || DEFAULT_COUNTRY_CODE;
                     if (!receiptFile) {
-                      throw new Error("Receipt file is missing");
+                      throw new Error(t("guestCheckoutReceiptMissing"));
                     }
                     formData.append("image", receiptFile);
                     formData.append("master_order_id", orderData.orderId);
@@ -1332,18 +1332,18 @@ border text-sm transition-all cursor-pointer gap-1
                     // ✅ 4. Success
                     localStorage.setItem("orderId", orderData.orderId);
 
-                    toast.success("Payment submitted successfully");
+                    toast.success(t("guestCheckoutPaymentSubmitted"));
 
                     router.push("/thank-you?payment=manual");
 
                   } catch (err: any) {
                     console.warn(err);
-                    toast.error(err?.message || "Manual payment failed");
+                    toast.error(err?.message || t("guestCheckoutManualPaymentFailed"));
                     setPlacingOrder(false);
                   }
                 }}
               >
-                {placingOrder ? "Processing..." : "Confirm"}
+                {placingOrder ? t("processing") : t("confirm")}
               </Button>
             </div>
           </div>
