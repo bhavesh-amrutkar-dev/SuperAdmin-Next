@@ -1,5 +1,6 @@
+import Footer from "@/src/components/layout/Footer";
+import Header from "@/src/components/layout/Header";
 import GuestProfileClient from "@/src/components/common/guestProfileClient";
-import { decryptPaymentToken } from "@/src/lib/security/paymentToken";
 
 export default async function GuestProfilePage({ searchParams }: any) {
   const params = await searchParams;
@@ -35,7 +36,13 @@ export default async function GuestProfilePage({ searchParams }: any) {
 
   // const { email, accessToken } = data;
   // console.log("accessToken");
-  console.log(token);
-
-  return <GuestProfileClient token={token} />;
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1">
+        <GuestProfileClient token={token} />
+      </main>
+      <Footer />
+    </div>
+  );
 }
