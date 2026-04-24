@@ -81,7 +81,35 @@ export default function Header() {
     };
   }, []);
 
+  useEffect(() => {
+    if (pathname !== "/") return;
 
+    const sections = document.querySelectorAll("#howItWorks, #raffles");
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        let visibleSection = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+        if (visibleSection) {
+          const id = visibleSection.target.getAttribute("id");
+          if (id && window.location.hash !== `#${id}`) {
+            history.replaceState(null, "", `#${id}`);
+          }
+        }
+      },
+      {
+        threshold: [0.3, 0.6, 0.9],
+      }
+    );
+
+    sections.forEach((section) => observer.observe(section));
+
+    return () => {
+      sections.forEach((section) => observer.unobserve(section));
+    };
+  }, [pathname]);
   useEffect(() => {
     // console.log("user", user);
 
@@ -246,8 +274,26 @@ export default function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                scroll={true}
+                scroll={false}
                 className="hover:text-[#FECB02] transition"
+                onClick={(e) => {
+                  const id = item.href.split("#")[1];
+
+                  // 👉 If NOT on homepage → allow normal navigation
+                  if (pathname !== "/") {
+
+                    return;
+                  }
+
+                  // 👉 If already on homepage → do smooth scroll
+                  e.preventDefault();
+
+                  const el = document.getElementById(id);
+                  if (el) {
+                    el.scrollIntoView({ behavior: "smooth" });
+                    history.replaceState(null, "", `#${id}`);
+                  }
+                }}
               >
                 {t(item.key)}
               </Link>

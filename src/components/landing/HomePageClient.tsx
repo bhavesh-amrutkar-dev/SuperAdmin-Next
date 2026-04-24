@@ -64,7 +64,24 @@ export default function HomePageClient({
   const [loadingRaffles, setLoadingRaffles] = useState(false);
 
   const { selectedCountryId } = useCountry();
+  useEffect(() => {
+    const scrollToHash = () => {
+      const hash = window.location.hash;
+      if (!hash) return;
 
+      const id = hash.replace("#", "");
+
+      // small delay ensures DOM is fully ready
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
+    };
+
+    scrollToHash();
+  }, []);
   /* ----------------------------- Fetch Banners ------------------------------ */
   const fetchBanners = useCallback(async () => {
     try {
