@@ -11,6 +11,7 @@ import PreFooterIconModule from "@/src/components/layout/PreFooterIconModule";
 import { RaffleService } from "@/src/lib/services/raffles";
 import { PRODUCT_CART } from "@/src/lib/config";
 import CountdownTimer from "@/src/components/CountdownTimer";
+import { trackEvent } from "@/src/lib/analytics";
 
 type LegacyRaffleItem = {
     _id: string;
@@ -190,7 +191,7 @@ export default function RafflesOnHome() {
 
     function RaffleSkeletonCard() {
         return (
-            <div  className="relative overflow-hidden bg-white rounded-4xl shadow-xl flex flex-col p-4">
+            <div className="relative overflow-hidden bg-white rounded-4xl shadow-xl flex flex-col p-4">
                 {/* shimmer layer */}
                 <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
 
@@ -317,6 +318,12 @@ export default function RafflesOnHome() {
                                     key={`${id}-${index}`}
                                     href={id ? `/raffles/${slug}?pid=${id}&cpid=${raffle.childProductId ?? ""}` : "#"}
                                     className="bg-white rounded-4xl shadow-xl flex flex-col p-4 hover:shadow-2xl transition-shadow"
+                                    onClick={() => {
+                                        trackEvent("CLICK_PRODUCT", {
+                                            product_id: id,
+                                            product_name: productName,
+                                        });
+                                    }}
                                 >
                                     <div className="aspect-video flex items-center justify-center w-full h-[250px] overflow-hidden rounded-4xl bg-white">
                                         <Image

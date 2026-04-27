@@ -179,7 +179,12 @@ export default function GuestCheckoutPage() {
     shouldUnregister: false, // ✅ IMPORTANT
   });
 
-
+  useEffect(() => {
+    trackEvent("VIEW_GUEST_CHECKOUT", {
+      item_count: cartItems.length,
+      cart_value: grandTotal,
+    });
+  }, []);
   useEffect(() => {
     if (showManualModal) {
       document.body.style.overflow = "hidden";
@@ -578,6 +583,10 @@ export default function GuestCheckoutPage() {
   };
 
   const handleDynamicSubmit = async (formData: any) => {
+    trackEvent("CLICK_PAY", {
+      payment_method: paymentMethod,
+      amount: grandTotal,
+    });
     try {
       setPlacingOrder(true);
 
@@ -626,12 +635,20 @@ export default function GuestCheckoutPage() {
       if (!res.ok || !orderData?.orderId) {
         throw new Error(orderData?.message || t("guestCheckoutOrderFailed"));
       }
-
+      trackEvent("ORDER_CREATED", {
+        order_id: orderData.orderId,
+        payment_method: paymentMethod,
+        amount: grandTotal,
+      });
       localStorage.setItem("orderId", orderData.orderId);
 
 
       if (orderData.paymentMethod === 21) {
-        trackEvent("GOTO_PAYMENT");
+        trackEvent("GOTO_PAYMENT", {
+          order_id: orderData.orderId,
+          payment_method: "square",
+          amount: grandTotal,
+        });
 
         const redirectUrl = orderData.checkoutUrl;
 
@@ -645,7 +662,10 @@ export default function GuestCheckoutPage() {
       }
       if (paymentMethod === "athMovil") {
         try {
-          trackEvent("GOTO_PAYMENT");
+          trackEvent("ATH_PAYMENT_INIT", {
+            order_id: orderData.orderId,
+            amount: grandTotal,
+          });
 
           // ✅ Save order info
           setAthOrderId(orderData.orderId);
@@ -1052,7 +1072,12 @@ border text-sm transition-all cursor-pointer gap-1
                       {/* ATH Móvil */}
                       <button
                         type="button"
-                        onClick={() => setPaymentMethod("athMovil")}
+                        onClick={() => {
+                          trackEvent("SELECT_PAYMENT_METHOD", {
+                            method: "athMovil",
+                          });
+                          setPaymentMethod("athMovil")
+                        }}
                         className={`${baseCls} ${paymentMethod === "athMovil"
                           ? "border-yellow-400 bg-yellow-50"
                           : "border-gray-200 hover:border-gray-300 bg-white"
@@ -1110,7 +1135,12 @@ border text-sm transition-all cursor-pointer gap-1
                           {/* Manual Payment */}
                           <button
                             type="button"
-                            onClick={() => setPaymentMethod("manual")}
+                            onClick={() => {
+                              trackEvent("SELECT_PAYMENT_METHOD", {
+                                method: "manual",
+                              });
+                              setPaymentMethod("manual")
+                            }}
                             className={`${baseCls} ${paymentMethod === "manual"
                               ? "border-yellow-400 bg-yellow-50"
                               : "border-gray-200 hover:border-gray-300 bg-white"
@@ -1142,7 +1172,12 @@ border text-sm transition-all cursor-pointer gap-1
                           {/* Credit / Debit Card (Square) */}
                           <button
                             type="button"
-                            onClick={() => setPaymentMethod("square")}
+                            onClick={() => {
+                              trackEvent("SELECT_PAYMENT_METHOD", {
+                                method: "square",
+                              });
+                              setPaymentMethod("square")
+                            }}
                             className={`${baseCls} ${paymentMethod === "square"
                               ? "border-yellow-400 bg-yellow-50"
                               : "border-gray-200 hover:border-gray-300 bg-white"
@@ -1279,9 +1314,13 @@ border text-sm transition-all cursor-pointer gap-1
               <input
                 type="checkbox"
                 checked={manualPaymentConfirmed}
-                onChange={(e) =>
+                onChange={(e) => {
+                  trackEvent("MANUAL_PAYMENT_SUBMIT", {
+                    bank_id: selectedBank?._id,
+                  });
                   setManualPaymentConfirmed(e.target.checked)
-                }
+                }}
+
               />
               <p className="text-sm text-gray-600">
                 {t("guestCheckoutManualPaymentConfirmed")}

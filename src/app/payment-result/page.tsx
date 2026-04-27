@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { trackEvent } from "@/src/lib/analytics";
 
 export default function PaymentResultPage() {
   const router = useRouter();
@@ -38,8 +39,17 @@ export default function PaymentResultPage() {
     const isGuest = !token;
 
     if (status === "SUCCESS") {
+      trackEvent("PAYMENT_SUCCESS", {
+        order_id: orderId,
+        payment_method: "square",
+      });
       router.replace(`/thank-you?payment=square&orderId=${orderId}`);
     } else {
+      trackEvent("PAYMENT_FAILED", {
+        order_id: orderId,
+        payment_method: "square",
+        error_message: error?.message || "Payment failed",
+      });
       const basePath = isGuest ? "/guest-checkout" : "/secure-checkout";
 
       router.replace(
