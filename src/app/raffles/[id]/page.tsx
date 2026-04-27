@@ -40,6 +40,29 @@ type Ticket = {
     numberOfTicket?: number;
 };
 
+type TicketOption = Ticket & {
+    id?: string;
+    _id?: string;
+    ticketPrice?: number;
+    numberOfTickets?: number;
+    quantity?: number;
+};
+
+type CartQuantityLike = number | {
+    value?: number;
+};
+
+type CartLineItem = {
+    quantity?: CartQuantityLike;
+    productId?: string;
+    centralProductId?: string;
+    _id?: string;
+    ticketId?: string | null;
+    ticketDetails?: {
+        ticketId?: string | null;
+    };
+};
+
 type TimelineDate = {
     key: string;
     date: number;
@@ -165,6 +188,11 @@ export default function RafflesDetailPage() {
         quantity: number;
     } | null>(null);
     const [participating, setParticipating] = useState(false);
+    const [cartQuantitiesByTicket, setCartQuantitiesByTicket] = useState<Record<string, number>>({});
+    const [variantUiStateByTicket, setVariantUiStateByTicket] = useState<Record<string, {
+        quantity: number;
+        showQuantitySelector: boolean;
+    }>>({});
     const maxQuestionLength = 1000;
     const [allRaffles, setAllRaffles] = useState<Array<LegacyRaffleDetail & { _id?: string }>>([]);
     const [displayedRafflesCount, setDisplayedRafflesCount] = useState(5);
@@ -178,7 +206,7 @@ export default function RafflesDetailPage() {
     const fetchingAllRafflesRef = useRef(false);
     const lastFetchedLotteryIdRef = useRef<string | null>(null);
     const lastFetchedLocaleRef = useRef<string | null>(null);
-    const hasRestoredFromCartRef = useRef(false);
+    const lastRestoredProductIdRef = useRef<string | null>(null);
     const restoringFromCartRef = useRef(false);
 
     const toggleSection = (section: keyof typeof openSections) => {
@@ -198,6 +226,131 @@ export default function RafflesDetailPage() {
         free: 0,
         mine: 0,
     });
+
+    const currentProductId = lotteryItem?.childProductId || lotteryItem?.productId || (params?.id as string);
+    const ticketsSource: TicketOption[] =
+        lotteryItem?.tickets ||
+        ((lotteryItem as LegacyRaffleDetail & {
+            ticketPackages?: TicketOption[];
+            ticketOptions?: TicketOption[];
+            entryOptions?: TicketOption[];
+        })?.ticketPackages) ||
+        ((lotteryItem as LegacyRaffleDetail & {
+            ticketPackages?: TicketOption[];
+            ticketOptions?: TicketOption[];
+            entryOptions?: TicketOption[];
+        })?.ticketOptions) ||
+        ((lotteryItem as LegacyRaffleDetail & {
+            ticketPackages?: TicketOption[];
+            ticketOptions?: TicketOption[];
+            entryOptions?: TicketOption[];
+        })?.entryOptions) ||
+        [];
+
+    const getTicketId = useCallback((ticket: TicketOption, index: number) => {
+        return ticket?.ticketId || ticket?.id || ticket?._id || index.toString();
+    }, []);
+
+    const getTicketPackageQuantity = useCallback((ticket: TicketOption) => {
+        return ticket?.numberOfTicket || ticket?.numberOfTickets || ticket?.quantity || 0;
+    }, []);
+
+    const getCartProductQuantity = useCallback((product: CartLineItem) => {
+        return typeof product?.quantity === "object" && product.quantity !== null
+            ? Number(product.quantity.value) || 0
+            : Number(product?.quantity) || 0;
+    }, []);
+
+    const setVariantUiState = useCallback((ticketId: string, quantity: number, showQuantitySelector: boolean) => {
+        setVariantUiStateByTicket((prev) => ({
+            ...prev,
+            [ticketId]: {
+                quantity,
+                showQuantitySelector,
+            },
+        }));
+    }, []);
+
+    const syncSelectedTicketState = useCallback((ticketId: string | null, quantityMap: Record<string, number>) => {
+        if (!ticketId) {
+            setShowQuantitySelector(false);
+            return;
+        }
+
+        const variantUiState = variantUiStateByTicket[ticketId];
+        if (variantUiState) {
+            setSelectedQuantity(variantUiState.quantity);
+            setShowQuantitySelector(variantUiState.showQuantitySelector);
+            return;
+        }
+
+        const quantityInCart = quantityMap[ticketId] || 0;
+        if (quantityInCart > 0) {
+            setSelectedQuantity(quantityInCart);
+            setShowQuantitySelector(true);
+            return;
+        }
+
+        const selectedTicketData = ticketsSource.find((ticket, index) => getTicketId(ticket, index) === ticketId);
+        const defaultQuantity = selectedTicketData ? getTicketPackageQuantity(selectedTicketData) || 1 : 1;
+        setSelectedQuantity(defaultQuantity);
+        setShowQuantitySelector(false);
+    }, [getTicketId, getTicketPackageQuantity, ticketsSource, variantUiStateByTicket]);
+
+    const buildCartQuantityMap = useCallback(async () => {
+        if (!currentProductId) {
+            setCartQuantitiesByTicket({});
+            return {};
+        }
+
+        try {
+            const cartResponse = await CartService.getCart();
+            const cartData = (cartResponse as { data?: { data?: { sellers?: Array<{ products?: CartLineItem[] }> } | { sellers?: Array<{ products?: CartLineItem[] }> } } })?.data?.data
+                || (cartResponse as { data?: { sellers?: Array<{ products?: CartLineItem[] }> } })?.data;
+            const nextQuantityMap: Record<string, number> = {};
+
+            if (cartData?.sellers) {
+                for (const seller of cartData.sellers) {
+                    if (!seller.products) continue;
+
+                    for (const product of seller.products) {
+                        const prodId = product.productId || product.centralProductId || product._id;
+                        const prodTicketId = product.ticketId || product.ticketDetails?.ticketId;
+
+                        if (prodId !== currentProductId || !prodTicketId) {
+                            continue;
+                        }
+
+                        const cartQuantity = getCartProductQuantity(product);
+                        if (cartQuantity > 0) {
+                            nextQuantityMap[prodTicketId] = cartQuantity;
+                        }
+                    }
+                }
+            }
+
+            setCartQuantitiesByTicket(nextQuantityMap);
+            setVariantUiStateByTicket((prev) => {
+                const nextState = { ...prev };
+
+                Object.entries(nextQuantityMap).forEach(([ticketId, quantity]) => {
+                    nextState[ticketId] = {
+                        quantity,
+                        showQuantitySelector: true,
+                    };
+                });
+
+                return nextState;
+            });
+            return nextQuantityMap;
+        } catch (error: any) {
+            if (error?.response?.status !== 404) {
+                console.warn("Could not sync raffle cart quantities:", error);
+            }
+            setCartQuantitiesByTicket({});
+            return {};
+        }
+    }, [currentProductId, getCartProductQuantity]);
 
     // Extract pid from searchParams outside useEffect for stable dependency
     const pid = searchParams?.get("pid");
@@ -292,6 +445,18 @@ export default function RafflesDetailPage() {
 
                     if (data) {
                         setLotteryItem(data);
+                        const initialTicketsSource: TicketOption[] =
+                            data.tickets ||
+                            ((data as LegacyRaffleDetail & { ticketPackages?: TicketOption[] }).ticketPackages) ||
+                            ((data as LegacyRaffleDetail & { ticketOptions?: TicketOption[] }).ticketOptions) ||
+                            ((data as LegacyRaffleDetail & { entryOptions?: TicketOption[] }).entryOptions) ||
+                            [];
+
+                        if (initialTicketsSource.length > 0) {
+                            setSelectedTicket(getTicketId(initialTicketsSource[0], 0));
+                        } else {
+                            setSelectedTicket(null);
+                        }
                         setNotFound(false);
                         // eslint-disable-next-line no-console
                     } else {
@@ -628,133 +793,40 @@ export default function RafflesDetailPage() {
         fetchAllRaffles();
     }, [lotteryItem, params?.id, locale]);
 
-    // Set default ticket on mount - MUST be before early returns
-    useEffect(() => {
-        if (lotteryItem?.tickets && lotteryItem.tickets.length > 0 && !selectedTicket) {
-
-            setSelectedTicket(lotteryItem.tickets[0].ticketId || null);
-        }
-    }, [lotteryItem, selectedTicket]);
-
-    // Reset quantity and hide quantity selector when ticket selection changes
-    // Skip this if we're restoring from cart
     useEffect(() => {
         if (restoringFromCartRef.current) {
             restoringFromCartRef.current = false;
-            return; // Skip reset when restoring from cart
+            return;
         }
 
-        setShowQuantitySelector(false); // Hide quantity selector when ticket changes
-        if (selectedTicket) {
-            const ticketsSource: any[] =
-                lotteryItem?.tickets ||
-                (lotteryItem as any)?.ticketPackages ||
-                (lotteryItem as any)?.ticketOptions ||
-                (lotteryItem as any)?.entryOptions ||
-                [];
+        syncSelectedTicketState(selectedTicket, cartQuantitiesByTicket);
+    }, [cartQuantitiesByTicket, lotteryItem, selectedTicket, syncSelectedTicketState]);
 
-            ticketsSource.forEach((ticket: any, index: number) => {
-                const ticketId = ticket.ticketId || ticket.id || ticket._id || index.toString();
-                if (selectedTicket === ticketId) {
-                    const numberOfTickets = ticket.numberOfTicket || ticket.numberOfTickets || ticket.quantity || 0;
-                    setSelectedQuantity(numberOfTickets || 1);
-                }
-            });
-        }
-    }, [selectedTicket, lotteryItem]);
-
-    // Restore quantity from cart when returning to page
     useEffect(() => {
         const restoreFromCart = async () => {
-            if (!lotteryItem || !lotteryItem.tickets || lotteryItem.tickets.length === 0) return;
+            if (!lotteryItem || ticketsSource.length === 0) return;
 
             try {
-                restoringFromCartRef.current = true; // Mark that we're restoring from cart
-
-                const cartResponse = await CartService.getCart();
-                const cartData = (cartResponse as any)?.data?.data || (cartResponse as any)?.data;
-                const productId = lotteryItem.childProductId || lotteryItem.productId || (params?.id as string);
-
-                if (cartData && cartData.sellers) {
-                    for (const seller of cartData.sellers) {
-                        if (seller.products) {
-                            for (const product of seller.products) {
-                                const prodId = product.productId || product.centralProductId || product._id;
-                                const prodTicketId = product.ticketId || (product.ticketDetails?.ticketId);
-
-                                // Match by productId
-                                if (prodId === productId) {
-                                    // Get quantity from cart
-                                    const cartQuantity = typeof product.quantity === 'object' && product.quantity !== null
-                                        ? Number(product.quantity.value) || 0
-                                        : Number(product.quantity) || 0;
-
-                                    if (cartQuantity > 0) {
-                                        // Restore ticket selection if ticketId matches
-                                        if (prodTicketId) {
-                                            // Check if this ticketId exists in available tickets
-                                            const ticketsSource: any[] =
-                                                lotteryItem.tickets ||
-                                                (lotteryItem as any)?.ticketPackages ||
-                                                (lotteryItem as any)?.ticketOptions ||
-                                                (lotteryItem as any)?.entryOptions ||
-                                                [];
-
-                                            const ticketExists = ticketsSource.some((ticket: any) => {
-                                                const ticketId = ticket.ticketId || ticket.id || ticket._id;
-                                                return ticketId === prodTicketId;
-                                            });
-
-                                            if (ticketExists) {
-                                                // Set ticket first, then quantity
-                                                setSelectedTicket(prodTicketId);
-                                                // Use setTimeout to ensure ticket is set before quantity
-                                                setTimeout(() => {
-                                                    setSelectedQuantity(cartQuantity);
-                                                    setShowQuantitySelector(true);
-                                                    restoringFromCartRef.current = false;
-                                                }, 100);
-                                            } else {
-                                                // Ticket doesn't exist, but restore quantity anyway
-                                                setSelectedQuantity(cartQuantity);
-                                                setShowQuantitySelector(true);
-                                                restoringFromCartRef.current = false;
-                                            }
-                                        } else {
-                                            // No ticketId in cart, restore quantity anyway
-                                            setSelectedQuantity(cartQuantity);
-                                            setShowQuantitySelector(true);
-                                            restoringFromCartRef.current = false;
-                                        }
-                                        return; // Exit early once found
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // If no cart item found, reset the flag
+                restoringFromCartRef.current = true;
+                const quantityMap = await buildCartQuantityMap();
+                syncSelectedTicketState(selectedTicket, quantityMap);
                 restoringFromCartRef.current = false;
             } catch (error) {
-                // Silently fail - cart might not be available
                 console.warn("Could not restore quantity from cart:", error);
                 restoringFromCartRef.current = false;
             }
         };
 
-        // Only restore if we have lotteryItem and tickets, and haven't already restored for this product
-        const productId = lotteryItem?.childProductId || lotteryItem?.productId || (params?.id as string);
-        if (lotteryItem && lotteryItem.tickets && lotteryItem.tickets.length > 0 && !hasRestoredFromCartRef.current) {
-            hasRestoredFromCartRef.current = true;
+        if (
+            lotteryItem &&
+            ticketsSource.length > 0 &&
+            currentProductId &&
+            lastRestoredProductIdRef.current !== currentProductId
+        ) {
+            lastRestoredProductIdRef.current = currentProductId;
             restoreFromCart();
         }
-
-        // Reset restore flag when product changes
-        return () => {
-            hasRestoredFromCartRef.current = false;
-        };
-    }, [lotteryItem, params?.id]);
+    }, [buildCartQuantityMap, currentProductId, lotteryItem, params?.id, selectedTicket, syncSelectedTicketState, ticketsSource.length]);
 
 
     if (loading) {
@@ -941,6 +1013,13 @@ export default function RafflesDetailPage() {
 
             // Dispatch event to update header cart count
             window.dispatchEvent(new Event('cartUpdated'));
+            setCartQuantitiesByTicket((prev) => ({
+                ...prev,
+                [ticketId]: finalQuantity,
+            }));
+            setVariantUiState(ticketId, finalQuantity, true);
+            setSelectedQuantity(finalQuantity);
+            setShowQuantitySelector(finalQuantity > 0);
 
             // Only redirect if redirectToCart is true
             if (redirectToCart) {
@@ -973,8 +1052,6 @@ export default function RafflesDetailPage() {
             setTimeout(async () => {
                 // Add to cart without redirect, then show quantity selector
                 await handleAddToCart(pendingCartData.ticketId, pendingCartData.quantity, false);
-                setSelectedQuantity(pendingCartData.quantity);
-                setShowQuantitySelector(true);
                 setPendingCartData(null);
             }, 500);
         }
@@ -1019,8 +1096,17 @@ export default function RafflesDetailPage() {
             }
 
             if (!existingItemId) {
-                // Item not found in cart, just hide the quantity selector
-                setShowQuantitySelector(false);
+                setCartQuantitiesByTicket((prev) => {
+                    const next = { ...prev };
+                    delete next[ticketId];
+                    return next;
+                });
+                setVariantUiStateByTicket((prev) => {
+                    const next = { ...prev };
+                    delete next[ticketId];
+                    return next;
+                });
+                syncSelectedTicketState(ticketId, {});
                 setApplyingTicket(false);
                 return;
             }
@@ -1053,9 +1139,17 @@ export default function RafflesDetailPage() {
             // Dispatch event to update header cart count
             window.dispatchEvent(new Event('cartUpdated'));
 
-            // Hide quantity selector after removal
-            setShowQuantitySelector(false);
-            setSelectedQuantity(1);
+            setCartQuantitiesByTicket((prev) => {
+                const next = { ...prev };
+                delete next[ticketId];
+                return next;
+            });
+            setVariantUiStateByTicket((prev) => {
+                const next = { ...prev };
+                delete next[ticketId];
+                return next;
+            });
+            syncSelectedTicketState(ticketId, {});
         } catch (err) {
             const errorMessage =
                 err instanceof Error
@@ -1080,8 +1174,6 @@ export default function RafflesDetailPage() {
             // Add to cart for both authenticated and guest users
             // Guest users will have items added to their guest cart
             await handleAddToCart(ticketId, quantity, false);
-            setSelectedQuantity(quantity);
-            setShowQuantitySelector(true);
         } catch (error) {
             // Error is already handled in handleAddToCart
             console.warn("Error in handleParticipateClick:", error);
@@ -1452,13 +1544,19 @@ export default function RafflesDetailPage() {
                                 {showQuantitySelector ? (
                                     <QuantitySelector
                                         selectedQuantity={selectedQuantity}
-                                        onQuantityChange={setSelectedQuantity}
+                                        onQuantityChange={(quantity) => {
+                                            setSelectedQuantity(quantity);
+                                            if (selectedTicket) {
+                                                setVariantUiState(selectedTicket, quantity, true);
+                                            }
+                                        }}
                                         onDecrease={async () => {
                                             const currentQty = Number(selectedQuantity) || 1;
                                             if (!applyingTicket && selectedTicket) {
                                                 if (currentQty > 1) {
                                                     const newQty = currentQty - 1;
                                                     setSelectedQuantity(newQty);
+                                                    setVariantUiState(selectedTicket, newQty, true);
                                                     await handleAddToCart(selectedTicket, newQty, false, true);
                                                 } else if (currentQty === 1) {
                                                     await handleRemoveFromCart(selectedTicket);
@@ -1469,6 +1567,9 @@ export default function RafflesDetailPage() {
                                             const currentQty = Number(selectedQuantity) || 1;
                                             const newQty = currentQty + 1;
                                             setSelectedQuantity(newQty);
+                                            if (selectedTicket) {
+                                                setVariantUiState(selectedTicket, newQty, true);
+                                            }
                                             if (!applyingTicket && selectedTicket) {
                                                 await handleAddToCart(selectedTicket, newQty, false, true);
                                             }
