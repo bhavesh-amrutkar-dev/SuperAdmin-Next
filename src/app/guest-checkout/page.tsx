@@ -592,7 +592,21 @@ export default function GuestCheckoutPage() {
 
     fetchCart();
   };
+  const validateCart = async () => {
+    try {
+      const res = await CartService.getCart();
+      const data = (res as any)?.data;
+console.log("data", data);
 
+      if (!data || !data.sellers || data.sellers.length === 0) {
+        throw new Error("CART_EMPTY");
+      }
+
+      return true;
+    } catch (err: any) {
+      throw new Error("CART_INVALID");
+    }
+  };
   const handleDynamicSubmit = async (formData: any) => {
     trackEvent("CLICK_PAY", {
       payment_method: paymentMethod,
@@ -601,8 +615,7 @@ export default function GuestCheckoutPage() {
     try {
       setPlacingOrder(true);
 
-      console.log("test", formData);
-
+      await validateCart();
       const ipAddress = await getMyIP();
 
       const onlinePaymentMethodCode =
@@ -706,7 +719,22 @@ export default function GuestCheckoutPage() {
       }
 
     } catch (err: any) {
-      toast.error(err?.message || t("checkoutError"));
+      const msg = err?.message || "";
+
+      // ✅ HANDLE MULTI-TAB CART ISSUE
+      if (
+        msg.includes("active cart not found") ||
+        msg.includes("CART_INVALID")
+      ) {
+        toast.error("Your cart session expired. Please review your cart again.");
+
+        await fetchCart(); 
+        router.replace("/guest-checkout"); 
+        return;
+      }
+
+      // ✅ normal errors
+      toast.error(msg || t("checkoutError"));
       setPlacingOrder(false);
     }
   };
