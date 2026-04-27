@@ -261,6 +261,11 @@ export default function RafflesDetailPage() {
             : Number(product?.quantity) || 0;
     }, []);
 
+    const getTicketDefaultQuantity = useCallback((ticketId: string) => {
+        const selectedTicketData = ticketsSource.find((ticket, index) => getTicketId(ticket, index) === ticketId);
+        return selectedTicketData ? getTicketPackageQuantity(selectedTicketData) || 1 : 1;
+    }, [getTicketId, getTicketPackageQuantity, ticketsSource]);
+
     const setVariantUiState = useCallback((ticketId: string, quantity: number, showQuantitySelector: boolean) => {
         setVariantUiStateByTicket((prev) => ({
             ...prev,
@@ -294,8 +299,37 @@ export default function RafflesDetailPage() {
         const selectedTicketData = ticketsSource.find((ticket, index) => getTicketId(ticket, index) === ticketId);
         const defaultQuantity = selectedTicketData ? getTicketPackageQuantity(selectedTicketData) || 1 : 1;
         setSelectedQuantity(defaultQuantity);
-        setShowQuantitySelector(false);
+            setShowQuantitySelector(false);
     }, [getTicketId, getTicketPackageQuantity, ticketsSource, variantUiStateByTicket]);
+
+    const restoreConfirmedVariantState = useCallback((ticketId: string, confirmedQuantity: number) => {
+        if (confirmedQuantity > 0) {
+            setVariantUiStateByTicket((prev) => ({
+                ...prev,
+                [ticketId]: {
+                    quantity: confirmedQuantity,
+                    showQuantitySelector: true,
+                },
+            }));
+
+            if (selectedTicket === ticketId) {
+                setSelectedQuantity(confirmedQuantity);
+                setShowQuantitySelector(true);
+            }
+            return;
+        }
+
+        setVariantUiStateByTicket((prev) => {
+            const next = { ...prev };
+            delete next[ticketId];
+            return next;
+        });
+
+        if (selectedTicket === ticketId) {
+            setSelectedQuantity(getTicketDefaultQuantity(ticketId));
+            setShowQuantitySelector(false);
+        }
+    }, [getTicketDefaultQuantity, selectedTicket]);
 
     const buildCartQuantityMap = useCallback(async () => {
         if (!currentProductId) {
@@ -927,10 +961,11 @@ export default function RafflesDetailPage() {
         quantity: number,
         redirectToCart: boolean = true,
         setExactQuantity: boolean = false
-    ) => {
-        if (!lotteryItem || applyingTicket || quantity <= 0) return;
+    ): Promise<boolean> => {
+        if (!lotteryItem || applyingTicket || quantity <= 0) return false;
 
         setApplyingTicket(true);
+        const confirmedQuantityBeforeUpdate = cartQuantitiesByTicket[ticketId] || 0;
 
         try {
             let existingItemId: string | undefined = undefined;
@@ -1029,17 +1064,25 @@ export default function RafflesDetailPage() {
                     router.push("/guest-checkout");
                 }
             }
+            return true;
         } catch (err) {
             const errorMessage =
                 err instanceof Error
                     ? err.message
                     : typeof err === "string"
                         ? err
-                        : err && typeof err === "object" && "message" in err
-                            ? String((err as any).message)
-                            : "Failed to add to cart";
-            // eslint-disable-next-line no-console
+                        : err && typeof err === "object" && "response" in err && (err as any).response?.data?.message
+                            ? String((err as any).response.data.message)
+                            : err && typeof err === "object" && "message" in err
+                                ? String((err as any).message)
+                                : "Failed to add to cart";
+            toast.error(errorMessage);
+            restoreConfirmedVariantState(ticketId, confirmedQuantityBeforeUpdate);
+            if (selectedTicket === ticketId) {
+                syncSelectedTicketState(ticketId, cartQuantitiesByTicket);
+            }
             console.warn("Add to cart failed:", errorMessage);
+            return false;
         } finally {
             setApplyingTicket(false);
         }
@@ -1051,8 +1094,10 @@ export default function RafflesDetailPage() {
             // Wait a bit for the token to be set in cookies
             setTimeout(async () => {
                 // Add to cart without redirect, then show quantity selector
-                await handleAddToCart(pendingCartData.ticketId, pendingCartData.quantity, false);
-                setPendingCartData(null);
+                const addedToCart = await handleAddToCart(pendingCartData.ticketId, pendingCartData.quantity, false);
+                if (addedToCart) {
+                    setPendingCartData(null);
+                }
             }, 500);
         }
     };
@@ -1158,7 +1203,7 @@ export default function RafflesDetailPage() {
                         ? err
                         : err && typeof err === "object" && "message" in err
                             ? String((err as any).message)
-                            : "Failed to remove from cart";
+                            : "Failed to add to cart";
             console.warn("Remove from cart failed:", errorMessage);
         } finally {
             setApplyingTicket(false);
@@ -1555,8 +1600,6 @@ export default function RafflesDetailPage() {
                                             if (!applyingTicket && selectedTicket) {
                                                 if (currentQty > 1) {
                                                     const newQty = currentQty - 1;
-                                                    setSelectedQuantity(newQty);
-                                                    setVariantUiState(selectedTicket, newQty, true);
                                                     await handleAddToCart(selectedTicket, newQty, false, true);
                                                 } else if (currentQty === 1) {
                                                     await handleRemoveFromCart(selectedTicket);
@@ -1566,10 +1609,6 @@ export default function RafflesDetailPage() {
                                         onIncrease={async () => {
                                             const currentQty = Number(selectedQuantity) || 1;
                                             const newQty = currentQty + 1;
-                                            setSelectedQuantity(newQty);
-                                            if (selectedTicket) {
-                                                setVariantUiState(selectedTicket, newQty, true);
-                                            }
                                             if (!applyingTicket && selectedTicket) {
                                                 await handleAddToCart(selectedTicket, newQty, false, true);
                                             }
@@ -1580,19 +1619,21 @@ export default function RafflesDetailPage() {
                                             trackEvent("RAFFLE_MANUAL_TICKET_FORCE_CHECKOUT");
                                             trackEvent("CALL_ADD_TO_CART_TICKETS");
                                             try {
-                                                await handleAddToCart(selectedTicket, selectedQuantity, false, true);
+                                                const updatedCart = await handleAddToCart(selectedTicket, selectedQuantity, false, true);
+                                                if (!updatedCart) {
+                                                    return;
+                                                }
                                                 await new Promise(resolve => setTimeout(resolve, 100));
                                             } catch (error) {
                                                 console.warn("Error updating cart before redirect:", error);
                                             } finally {
+                                                setContinuing(false);
+                                            }
 
-
-                                                if (user) {
-                                                    router.push("/cart");
-                                                } else {
-                                                    router.push("/guest-checkout");
-                                                }
-
+                                            if (user) {
+                                                router.push("/cart");
+                                            } else {
+                                                router.push("/guest-checkout");
                                             }
                                         }}
                                         applyingTicket={applyingTicket}
