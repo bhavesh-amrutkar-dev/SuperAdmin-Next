@@ -178,7 +178,18 @@ export default function GuestCheckoutPage() {
     },
     shouldUnregister: false, // ✅ IMPORTANT
   });
+  const [isAuthChecked, setIsAuthChecked] = useState(false);
 
+  useEffect(() => {
+    const accessToken = getCookie("access_token");
+
+    if (accessToken) {
+      router.replace("/");
+      return;
+    }
+
+    setIsAuthChecked(true);
+  }, []);
   useEffect(() => {
     trackEvent("VIEW_GUEST_CHECKOUT", {
       item_count: cartItems.length,
@@ -759,7 +770,7 @@ border text-sm transition-all cursor-pointer gap-1
 `;
 
 
-  if (loading) {
+  if (loading || !isAuthChecked) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
