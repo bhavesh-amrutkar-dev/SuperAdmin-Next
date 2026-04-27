@@ -84,7 +84,6 @@ export default function ExpressRegisterForm({
     handleSubmit,
     setValue,
     watch,
-    getValues,
     formState: { errors },
   } = form;
 
@@ -120,29 +119,23 @@ export default function ExpressRegisterForm({
   return (
     <form
       id="express-form"
-      onSubmit={async (e) => {
-        e.preventDefault();
+      noValidate
+      onSubmit={handleSubmit(async (data) => {
+        const cleaned = {
+          ...data,
+          firstName: safeTrim(data.firstName),
+          lastName: safeTrim(data.lastName),
+          email: safeTrim(data.email),
+          addLine1: safeTrim(data.addLine1),
+          city: safeTrim(data.city),
+          state: safeTrim(data.state),
+          country: safeTrim(data.country),
+          pincode: safeTrim(data.pincode),
+        };
 
-        const isValid = await form.trigger();
-        if (!isValid) return;
-
-        handleSubmit(async (data) => {
-          const cleaned = {
-            ...data,
-            firstName: safeTrim(data.firstName),
-            lastName: safeTrim(data.lastName),
-            email: safeTrim(data.email),
-            addLine1: safeTrim(data.addLine1),
-            city: safeTrim(data.city),
-            state: safeTrim(data.state),
-            country: safeTrim(data.country),
-            pincode: safeTrim(data.pincode),
-          };
-
-          const payload = buildPayload(cleaned);
-          await onSubmit(payload);
-        })();
-      }}
+        const payload = buildPayload(cleaned);
+        await onSubmit(payload);
+      })}
     >
       <section className=" p-1 rounded-2xl space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -278,7 +271,9 @@ export default function ExpressRegisterForm({
               <Input
                 placeholder={t("country")}
                 defaultValue="Puerto Rico"
-                {...register("country", { required: t("countryRequired") })}
+                {...register("country", {
+                  required: t("countryRequired"),
+                })}
               />
               <ErrorMessage message={errors.country?.message} />
             </div>

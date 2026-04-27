@@ -165,6 +165,9 @@ export default function GuestCheckoutPage() {
   const [updatingKeys, setUpdatingKeys] = useState<Record<string, "inc" | "dec" | null>>({});
   const [isRefreshingCart, setIsRefreshingCart] = useState(false);
   const form = useForm<ExpressRegisterFormRM>({
+    mode: "onBlur",              // ✅ change this
+    reValidateMode: "onBlur",    // ✅ change this
+    shouldFocusError: true,
     defaultValues: {
       addressType: 1,
       city: "San Juan",
@@ -820,7 +823,7 @@ border text-sm transition-all cursor-pointer gap-1
                       </Button>
                     </div>
                   ) : (
-                        <div className="max-h-[420px] overflow-y-auto sm:pr-2 custom-scroll">
+                    <div className="max-h-[420px] overflow-y-auto sm:pr-2 custom-scroll">
                       <ul className="space-y-3 ">
                         {cartItems.map((item, idx) => {
                           const key = getCartItemKey(item, idx);
@@ -993,7 +996,7 @@ border text-sm transition-all cursor-pointer gap-1
                                   (e.target as HTMLImageElement).src = "/placeholder-product.png";
                                 }}
                               />
-                             
+
                             </div>
                             <p className="flex-1 text-xs text-gray-600 leading-tight line-clamp-2">
                               {item.name || item.productName || t("product")}
@@ -1102,7 +1105,7 @@ border text-sm transition-all cursor-pointer gap-1
 
                         </div>
                       )}
-                      { !isAthReady &&  !athToken && !athOrderId &&
+                      {!isAthReady && !athToken && !athOrderId &&
                         (<>
                           {/* Manual Payment */}
                           <button
