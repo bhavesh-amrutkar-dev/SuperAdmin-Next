@@ -33,11 +33,17 @@ export default function PaymentResultPage() {
     window.postMessage(payload, window.location.origin);
 
     // existing redirects
+    const token = document.cookie.includes("access_token");
+
+    const isGuest = !token;
+
     if (status === "SUCCESS") {
       router.replace(`/thank-you?payment=square&orderId=${orderId}`);
     } else {
+      const basePath = isGuest ? "/guest-checkout" : "/secure-checkout";
+
       router.replace(
-        `/secure-checkout?status=FAILED&orderId=${orderId}&message=${encodeURIComponent(
+        `${basePath}?status=FAILED&orderId=${orderId}&message=${encodeURIComponent(
           error?.message || "Payment failed"
         )}`
       );
