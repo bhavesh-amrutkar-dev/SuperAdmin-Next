@@ -263,7 +263,7 @@ export default function SquarePayment({
                 </div>
               )}
 
-               {/* <div id="cash-app-pay" className="h-[48px]" /> */}
+               <div id="cash-app-pay" className="h-[48px]" />
             </div>
           </PaymentForm>
         </div>

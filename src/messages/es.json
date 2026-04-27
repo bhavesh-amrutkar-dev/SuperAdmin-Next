@@ -683,5 +683,6 @@
     "outerSrcPayment": "Vía pago externo",
     "pleaseWaitDoNotClose": "Por favor, espere... no actualice ni cierre",
     "cancelTransaction": "Cancelar transacción",
-    "cancelTransactionMsg": "¿Está seguro de que desea cancelar esta transacción?"
+    "cancelTransactionMsg": "¿Está seguro de que desea cancelar esta transacción?",
+    "sessionExpiryCountDownMessage": "Tu sesión caduca en"
 }

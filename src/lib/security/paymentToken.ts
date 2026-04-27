@@ -50,7 +50,7 @@ export function decryptPaymentToken(token: string) {
         return parsed;
 
     } catch (error: any) {
-        console.error("[decryptPaymentToken] Failed", {
+        console.warn("[decryptPaymentToken] Failed", {
             message: error?.message,
             stack: error?.stack,
             tokenPreview: token?.slice(0, 20) + "...",

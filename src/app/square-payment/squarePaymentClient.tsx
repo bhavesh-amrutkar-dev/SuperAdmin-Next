@@ -1,13 +1,15 @@
 "use client";
 
 import SquarePayment from "@/src/components/payments/SquarePayment";
-import { useEffect } from "react";
+import { useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
 
 export default function SquarePaymentClient({
   orderId,
   amount,
   accessToken,
-  deviceType
+  deviceType,
+  exp
 }: any) {
 
   // useEffect(() => {
@@ -19,7 +21,42 @@ export default function SquarePaymentClient({
   //     body: JSON.stringify({ token: accessToken }),
   //   });
   // }, [accessToken]);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const t = useTranslations();
+  // ⏳ Countdown logic
+  useEffect(() => {
+    const update = () => {
+      const diff = exp - Date.now();
 
+      if (diff <= 0) {
+        setTimeLeft(0);
+
+        // 🔥 Auto expire action
+        window.location.href = `/payment-result?status=FAILED&orderId=${orderId}&message=Session expired`;
+        return;
+      }
+
+      setTimeLeft(diff);
+    };
+
+    update();
+    const interval = setInterval(update, 1000);
+
+    return () => clearInterval(interval);
+  }, [exp, orderId]);
+
+  // ⏱ format mm:ss
+  const formatTime = () => {
+    const totalSeconds = Math.floor(timeLeft / 1000);
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+
+    return `${m.toString().padStart(2, "0")}:${s
+      .toString()
+      .padStart(2, "0")}`;
+  };
+
+  const isLow = timeLeft < 60000; // < 1 min
 
   const sendPaymentEvent = (payload: any) => {
     let sent = false;
@@ -111,7 +148,7 @@ export default function SquarePaymentClient({
   };
   const handleReturn = () => {
     console.log("handle return");
-    
+
     const message = "Payment not completed"; // ✅ correct semantic
     const mobileError = "USER_CANCELLED"; // ✅ machine-friendly
     const encodedError = encodeURIComponent(message);
@@ -148,13 +185,32 @@ export default function SquarePaymentClient({
     // ✅ Web fallback
     window.location.href = `/payment-result?status=FAILED&orderId=${orderId}&error=${encodedError}`;
   };
+
   return (
-    <SquarePayment
-      orderId={orderId}
-      amount={amount}
-      authToken={accessToken}
-      onSuccess={handleSuccess}
-      onError={handleError}
-    />
+    <div className="min-h-screen bg-[#f8fafc]">
+
+      {/* 🔥 Top countdown bar */}
+      <div
+        className={`sticky top-0 z-50 w-full text-center py-3 text-sm font-semibold shadow-sm backdrop-blur
+  ${isLow
+            ? "bg-red-500 text-white animate-pulse"
+            : "bg-yellow-100 text-yellow-800"
+          }`}
+      >
+        ⏳ {t("sessionExpiryCountDownMessage")} {formatTime()}
+      </div>
+
+      {/* Payment UI */}
+      <div className="max-w-3xl mx-auto p-4">
+        <SquarePayment
+          orderId={orderId}
+          amount={amount}
+          authToken={accessToken}
+          onSuccess={handleSuccess}
+          onError={handleError}
+        />
+      </div>
+    </div>
   );
+
 }
