@@ -720,7 +720,7 @@ export default function SecureCheckoutPage() {
     let uid = getCookie("uid") as string | undefined;
 
     if (!token) {
-      router.push(`/auth/login?redirect=${encodeURIComponent("/secure-checkout")}`);
+      router.push(`/auth/login-mobile?redirect=${encodeURIComponent("/secure-checkout")}`);
       return;
     }
 

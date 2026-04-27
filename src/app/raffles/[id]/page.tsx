@@ -299,7 +299,7 @@ export default function RafflesDetailPage() {
         const selectedTicketData = ticketsSource.find((ticket, index) => getTicketId(ticket, index) === ticketId);
         const defaultQuantity = selectedTicketData ? getTicketPackageQuantity(selectedTicketData) || 1 : 1;
         setSelectedQuantity(defaultQuantity);
-            setShowQuantitySelector(false);
+        setShowQuantitySelector(false);
     }, [getTicketId, getTicketPackageQuantity, ticketsSource, variantUiStateByTicket]);
 
     const restoreConfirmedVariantState = useCallback((ticketId: string, confirmedQuantity: number) => {
@@ -1676,7 +1676,10 @@ export default function RafflesDetailPage() {
                                             /* ✅ FREE TICKET FLOW */
                                             if (selectedTicketData && selectedTicketData.price === 0) {
                                                 if (!user) {
-                                                    setShowLoginModal(true);
+                                                    // setShowLoginModal(true);
+                                                    router.push(
+                                                        `/auth/login-mobile?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`
+                                                    );
                                                     return;
                                                 }
 

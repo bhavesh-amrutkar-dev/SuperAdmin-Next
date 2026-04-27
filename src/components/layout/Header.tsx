@@ -216,7 +216,7 @@ export default function Header() {
     await logoutUser();
 
     // Redirect
-    router.replace(`/auth/login?redirect=${encodeURIComponent(redirectPath)}`);
+    router.replace(`/auth/login-mobile?redirect=${encodeURIComponent(redirectPath)}`);
   };
 
   // Close user menu when clicking outside
@@ -316,7 +316,7 @@ export default function Header() {
 
             {!isLoggedIn && !displayUser ? (
               <Button asChild size="sm" className="hidden lg:inline-flex">
-                <Link href={`/auth/login?redirect=${encodeURIComponent(redirectPath)}`} className="btn-primary min-h-10">
+                <Link href={`/auth/login-mobile?redirect=${encodeURIComponent(redirectPath)}`} className="btn-primary min-h-10">
                   <User size={16} /> {t("login")}
                 </Link>
               </Button>
@@ -485,7 +485,7 @@ export default function Header() {
                     className="flex-1 btn-primary"
                     onClick={() => setMenuOpen(false)}
                   >
-                    <Link href={`/auth/login?redirect=${encodeURIComponent(redirectPath)}`}>
+                    <Link href={`/auth/login-mobile?redirect=${encodeURIComponent(redirectPath)}`}>
                       {t("login")}
                     </Link>
                   </Button>

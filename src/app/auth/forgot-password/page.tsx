@@ -66,7 +66,7 @@ export default function ForgotPasswordPage() {
             ? `?redirect=${encodeURIComponent(redirect)}`
             : "";
 
-        router.push(`/auth/login${redirectQuery}`);
+        router.push(`/auth/login-mobile${redirectQuery}`);
       }
 
       if (method === "mobile") {
@@ -212,7 +212,7 @@ export default function ForgotPasswordPage() {
         {/* Back to login */}
         <p className="text-center text-sm">
           <Link
-            href="/auth/login"
+            href="/auth/login-mobile"
             className="font-semibold hover:text-[#f3c200] hover:underline"
           >
             {t("backToLogin")}

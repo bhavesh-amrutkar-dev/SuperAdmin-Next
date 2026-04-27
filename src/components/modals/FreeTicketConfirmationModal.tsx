@@ -194,7 +194,10 @@ export default function FreeTicketConfirmationModal({
         if (!isAuthenticated) {
             // Store the purchase action and show login modal
             setPendingAction(() => executePurchase);
-            setShowLoginModal(true);
+            // setShowLoginModal(true);
+            router.push(
+                `/auth/login-mobile?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`
+            );
             return;
         }
 

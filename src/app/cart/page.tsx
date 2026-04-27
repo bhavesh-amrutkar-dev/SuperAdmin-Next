@@ -406,7 +406,7 @@ export default function CartPage() {
     }
   };
 
-  
+
 
   const handleRemoveClick = (item: CartItem) => {
     setItemToRemove(item);
@@ -619,7 +619,10 @@ export default function CartPage() {
 
     if (!isAuthenticated()) {
       // Show login modal if not authenticated
-      setShowLoginModal(true);
+      // setShowLoginModal(true);
+      router.push(
+        `/auth/login-mobile?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`
+      );
     } else {
       // User is authenticated, proceed to checkout
       setCheckoutLoading(true);

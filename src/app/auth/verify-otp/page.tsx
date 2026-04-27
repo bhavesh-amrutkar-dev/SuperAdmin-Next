@@ -141,7 +141,7 @@ export default function VerifyOtpPage() {
 
       if (flow === "forgotPassword" && method === "email") {
         toast.success("Password reset link sent to your email.");
-        router.push("/auth/login");
+        router.push("/auth/login-mobile");
         return;
       }
       if (flow === "forgotPassword" && method === "mobile") {
@@ -346,7 +346,7 @@ export default function VerifyOtpPage() {
                 });
 
                 toast.success(t("passwordResetSuccess"));
-                router.push("/auth/login");
+                router.push("/auth/login-mobile");
               } catch (err: any) {
                 toast.error(err?.message || t("passwordResetFailed"));
               } finally {

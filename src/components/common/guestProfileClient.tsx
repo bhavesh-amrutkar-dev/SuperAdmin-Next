@@ -130,7 +130,7 @@ export default function GuestProfileClient({ token }: GuestProfileClientProps) {
         throw new Error(data.message || t("passwordResetFailed"));
       }
 
-      router.push("/auth/login");
+      router.push("/auth/login-mobile");
     } catch (err: any) {
       setError(err.message || t("checkoutError"));
     } finally {

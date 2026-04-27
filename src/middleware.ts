@@ -5,7 +5,7 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get("access_token")?.value
 
   if (!token) {
-    const loginUrl = new URL("/auth/login", request.url)
+    const loginUrl = new URL("/auth/login-mobile", request.url)
     loginUrl.searchParams.set("redirect", request.nextUrl.pathname)
     return NextResponse.redirect(loginUrl)
   }

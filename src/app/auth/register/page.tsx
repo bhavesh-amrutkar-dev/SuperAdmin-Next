@@ -497,7 +497,7 @@ export default function RegisterPage() {
       <div className="mt-5 sm:mt-6 text-center">
         <p className="text-sm">
           {t("alreadyHaveAccount")}{" "}
-          <Link href={redirect ? `/auth/login?redirect=${encodeURIComponent(redirect)}` : "/auth/login"} className="font-semibold text-[#2f2f2f] hover:text-[#f3c200] hover:underline transition">
+          <Link href={redirect ? `/auth/login-mobile?redirect=${encodeURIComponent(redirect)}` : "/auth/login-mobile"} className="font-semibold text-[#2f2f2f] hover:text-[#f3c200] hover:underline transition">
             {t("signIn")}
           </Link>
         </p>

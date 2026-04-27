@@ -8,7 +8,7 @@ export default function LogoutButton() {
 
   const handleLogout = async () => {
     await logoutUser();
-    router.replace("/auth/login");
+    router.replace("/auth/login-mobile");
   };
 
   return (
