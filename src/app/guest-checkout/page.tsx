@@ -132,6 +132,7 @@ function getQty(item: CartItem): number {
 function getCartItemKey(item: CartItem, idx: number): string {
   return (
     item.addToCartOnId ||
+    `${item.productId || item.centralProductId || item._id || "item"}::${item.ticketDetails?.ticketId || item.ticketId || "no-ticket"}` ||
     item.ticketDetails?.ticketId ||
     item.ticketId ||
     `${item._id || item.productId || item.centralProductId || "item"}-${idx}`
@@ -162,6 +163,7 @@ export default function GuestCheckoutPage() {
   const [isAthReady, setIsAthReady] = useState(false);
   const [orderTotal, setOrderTotal] = useState(0);
   const [updatingKeys, setUpdatingKeys] = useState<Record<string, "inc" | "dec" | null>>({});
+  const [isRefreshingCart, setIsRefreshingCart] = useState(false);
   const form = useForm<ExpressRegisterFormRM>({
     defaultValues: {
       addressType: 1,
@@ -344,6 +346,7 @@ export default function GuestCheckoutPage() {
 
   const handleRemoveItem = async (item: CartItem, key: string) => {
     try {
+      setIsRefreshingCart(true);
       // ✅ Optimistic UI update (instant remove)
       setQuantities((prev) => {
         const updated = { ...prev };
@@ -359,9 +362,8 @@ export default function GuestCheckoutPage() {
           sellers: prev.sellers
             ?.map((seller) => ({
               ...seller,
-              products: seller.products?.filter((p) => {
-                const id = p._id;
-                return id !== item._id;
+              products: seller.products?.filter((p, idx) => {
+                return getCartItemKey(p, idx) !== key;
               }),
             }))
             .filter((s) => (s.products?.length ?? 0) > 0),
@@ -392,7 +394,7 @@ export default function GuestCheckoutPage() {
       await CartService.addToCart(payload);
 
       // ✅ Refresh silently
-      fetchCart();
+      await fetchCart();
 
       // ✅ Update header cart count
       window.dispatchEvent(new Event("cartUpdated"));
@@ -403,7 +405,9 @@ export default function GuestCheckoutPage() {
       toast.error(t("removeFailed"));
 
       // fallback reload
-      fetchCart();
+      await fetchCart();
+    } finally {
+      setIsRefreshingCart(false);
     }
   };
 
@@ -757,7 +761,7 @@ border text-sm transition-all cursor-pointer gap-1
                Mobile  → 1 col
                Desktop → 2 col (cart+forms | payment+summary)     ── */}
 
-          {isCartEmpty ? (
+          {isCartEmpty && !isRefreshingCart ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <ShoppingBag className="w-12 h-12 text-gray-300 mb-4" />
 
@@ -775,6 +779,11 @@ border text-sm transition-all cursor-pointer gap-1
               >
                 {t("browseRaffles")}
               </Button>
+            </div>
+          ) : isRefreshingCart ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <Loader />
+              <p className="mt-4 text-sm text-gray-500">{t("loading") || "Updating cart..."}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_420px] gap-5 items-start">
