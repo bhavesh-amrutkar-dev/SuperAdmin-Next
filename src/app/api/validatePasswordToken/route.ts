@@ -5,7 +5,7 @@ import { serverFetch } from "@/src/lib/api/server-api";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { token } = body;
+    const { token, validateType } = body;
 
     if (!token) {
       return NextResponse.json({ message: "Token is required" }, { status: 400 });
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await serverFetch("/validatePasswordToken", {
       method: "POST",
-      body: JSON.stringify({ token }),
+      body: JSON.stringify({ token, validateType }),
       baseUrl: API_NY_URL,
     });
 

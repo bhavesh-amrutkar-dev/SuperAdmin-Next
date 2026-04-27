@@ -18,6 +18,7 @@ import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Button } from "@/src/components/ui/button";
 import ErrorMessage from "@/src/components/ui/errorMessage";
+import { toast } from "sonner";
 
 type TokenStatus = "validating" | "valid" | "invalid";
 
@@ -45,7 +46,56 @@ export default function GuestProfileClient({ token }: GuestProfileClientProps) {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const getMessage = (data: any) => {
+    let msg = data?.message || data?.msg;
 
+    // 🔥 Handle stringified JSON
+    if (typeof msg === "string") {
+      try {
+        const parsed = JSON.parse(msg);
+        if (parsed?.msg) {
+          return parsed.msg;
+        }
+      } catch {
+        // not JSON, ignore
+      }
+    }
+
+    return msg || "Something went wrong";
+  };
+  const handleResendToken = async () => {
+    if (!token) return;
+
+    try {
+      setResendLoading(true);
+
+      const res = await fetch("/api/validatePasswordToken", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token,
+          validateType: 2,
+        }),
+      });
+      const data = await res.json();
+      const message = getMessage(data);
+
+      if (!res.ok) {
+        toast.error(message);
+        return;
+      }
+
+      toast.success(message);
+
+    } catch (err: any) {
+      toast.error(err.message || "Something went wrong");
+    } finally {
+      setResendLoading(false);
+    }
+  };
   useEffect(() => {
     const validateToken = async () => {
       if (!token) {
@@ -57,7 +107,11 @@ export default function GuestProfileClient({ token }: GuestProfileClientProps) {
         const res = await fetch("/api/validatePasswordToken", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token }),
+          body: JSON.stringify(
+            {
+              token,
+              validateType: 1,
+            }),
         });
 
         if (!res.ok) {
@@ -66,7 +120,7 @@ export default function GuestProfileClient({ token }: GuestProfileClientProps) {
         }
 
         const data = await res.json();
-        setEmail(data?.email || "");
+        setEmail(data?.emailId || "");
         setTokenStatus("valid");
       } catch {
         setTokenStatus("invalid");
@@ -182,12 +236,11 @@ export default function GuestProfileClient({ token }: GuestProfileClientProps) {
                   type="button"
                   size="lg"
                   className="flex-1"
-                  onClick={() => router.push("/auth/forgot-password")}
+                  onClick={handleResendToken}
+                  disabled={resendLoading}
                 >
-                  {t("guestProfileResetPassword")}
-                
+                  {resendLoading ? "Sending..." : t("guestProfileResetPassword")}
                 </Button>
-              
               </div>
             </div>
           </div>
