@@ -129,6 +129,15 @@ function getQty(item: CartItem): number {
   return item.quantity || 1;
 }
 
+function getCartItemKey(item: CartItem, idx: number): string {
+  return (
+    item.addToCartOnId ||
+    item.ticketDetails?.ticketId ||
+    item.ticketId ||
+    `${item._id || item.productId || item.centralProductId || "item"}-${idx}`
+  );
+}
+
 // ─────────────────────────────────────────────
 // Page
 // ─────────────────────────────────────────────
@@ -248,8 +257,8 @@ export default function GuestCheckoutPage() {
     setQuantities((prev) => {
       const next = { ...prev };
       items.forEach((item, idx) => {
-        const key = item._id || String(idx);
-        if (!(key in next)) next[key] = getQty(item);
+        const key = getCartItemKey(item, idx);
+        next[key] = getQty(item);
       });
       return next;
     });
@@ -317,7 +326,7 @@ export default function GuestCheckoutPage() {
   const subtotal = useMemo(
     () =>
       cartItems.reduce((sum, item, idx) => {
-        const key = item._id || String(idx);
+        const key = getCartItemKey(item, idx);
         const qty = quantities[key] ?? getQty(item);
         const unitPrice =
           Number(item.accounting?.finalUnitPrice) ||
@@ -802,10 +811,10 @@ border text-sm transition-all cursor-pointer gap-1
                       </Button>
                     </div>
                   ) : (
-                    <div className="max-h-[420px] overflow-y-auto sm:pr-2 custom-scroll">
+                        <div className="max-h-[420px] overflow-y-auto sm:pr-2 custom-scroll">
                       <ul className="space-y-3 ">
                         {cartItems.map((item, idx) => {
-                          const key = item._id || String(idx);
+                          const key = getCartItemKey(item, idx);
 
                           const qty = quantities[key] ?? getQty(item);
 
@@ -954,7 +963,7 @@ border text-sm transition-all cursor-pointer gap-1
                       <p className="text-sm text-gray-400 text-center py-4">{t("cartEmpty")}</p>
                     ) : (
                       cartItems.map((item, idx) => {
-                        const key = item._id || String(idx);
+                        const key = getCartItemKey(item, idx);
 
                         const qty = quantities[key] ?? getQty(item);
                         const unitPrice =
