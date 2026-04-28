@@ -710,5 +710,7 @@
     "cancelTransactionMsg": "Are you sure you want to cancel this transaction?",
     "sessionExpiryCountDownMessage": "Your session expires in",
     "noWinnerFound": "No Winner Found",
-    "winnerNotDeclaredYet": "This draw might not have a winner yet."
+    "winnerNotDeclaredYet": "This draw might not have a winner yet.",
+    "cartSessionExpired": "Your payment session has expired.",
+    "cartSessionExpiredDesc" : "Please review your cart again."
 }

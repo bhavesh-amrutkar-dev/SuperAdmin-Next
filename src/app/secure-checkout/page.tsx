@@ -279,6 +279,11 @@ export default function SecureCheckoutPage() {
     }
   };
   useEffect(() => {
+    if (!loading && cartItems.length === 0) {
+      router.replace("/cart"); // 👈 instant redirect, no extra click
+    }
+  }, [loading, cartItems, router]);
+  useEffect(() => {
     let handled = false; // 🔥 prevent duplicate triggers
 
     const handlePaymentMessage = (event: MessageEvent) => {
@@ -370,6 +375,7 @@ export default function SecureCheckoutPage() {
     );
 
     fetchCart();
+
     setShowSquarePayment(false);
   };
   const fetchAddresses = async () => {
@@ -515,7 +521,7 @@ export default function SecureCheckoutPage() {
     setIsUpdatingStatus(false);
 
     fetchCart()
-  }; 
+  };
   const handleAuthMovil = async () => {
     try {
       if (!selectedAddress) return;
@@ -586,11 +592,18 @@ export default function SecureCheckoutPage() {
       }
 
       const createdOrder = await response.json();
-      if (
-        createdOrder?.message &&
-        createdOrder.message.toLowerCase().includes("cart not found")
-      ) {
-        setConfirmOpen(true);
+      if (createdOrder?.message?.toLowerCase().includes("cart not found")) {
+        toast.error(
+          t("cartSessionExpired") || "Your payment session has expired.",
+          {
+            description:
+              t("cartSessionExpiredDesc") ||
+              "Please review your cart again.",
+          }
+        );
+
+        await fetchCart();
+        router.replace("/cart");
         setPlacingOrder(false);
         return;
       }
@@ -915,12 +928,27 @@ export default function SecureCheckoutPage() {
     } catch (error: any) {
       console.warn("Order error:", error);
 
-      setModalConfig({
-        title: t("checkoutError"),
-        message: error?.message?.message || "Something went wrong",
-        confirmText: t("tryAgain"),
-      });
+      const errorMsg = error?.message?.toLowerCase() || "";
 
+      if (
+        errorMsg.includes("cart not found") ||
+        errorMsg.includes("cart is empty") ||
+        errorMsg.includes("cart id not found")
+      ) {
+        toast.error(
+          t("cartSessionExpired") || "Your payment session has expired.",
+          {
+            description:
+              t("cartSessionExpiredDesc") ||
+              "Please review your cart and try again.",
+          }
+        );
+
+        await fetchCart(); // 🔥 refresh cart
+
+        router.replace("/cart"); // 🔥 or stay on checkout if you want
+        return;
+      }
       setConfirmOpen(true);
       setPlacingOrder(false);
     }
@@ -1103,24 +1131,11 @@ export default function SecureCheckoutPage() {
     );
   }
 
+
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-screen bg-[#ededed]">
-        <Header />
-        <div className="container mx-auto px-2 sm:px-4 py-6 sm:py-12">
-          <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 md:p-8 text-center">
-            <p className="text-sm sm:text-base text-gray-600">{t("cartEmpty") || "Your cart is empty"}</p>
-            <Button
-              onClick={() => router.push("/cart")}
-              variant="primary"
-              size="default"
-              className="mt-3 sm:mt-4 text-white font-semibold py-2 px-4 sm:px-6 rounded-lg transition-colors text-sm sm:text-base"
-            >
-              {t("backToCart") || "Back to Cart"}
-            </Button>
-          </div>
-        </div>
-        <Footer />
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-500">Redirecting to cart...</p>
       </div>
     );
   }
