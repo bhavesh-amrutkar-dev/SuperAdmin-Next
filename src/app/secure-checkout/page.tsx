@@ -592,11 +592,18 @@ export default function SecureCheckoutPage() {
       }
 
       const createdOrder = await response.json();
-      if (
-        createdOrder?.message &&
-        createdOrder.message.toLowerCase().includes("cart not found")
-      ) {
-        setConfirmOpen(true);
+      if (createdOrder?.message?.toLowerCase().includes("cart not found")) {
+        toast.error(
+          t("cartSessionExpired") || "Your payment session has expired.",
+          {
+            description:
+              t("cartSessionExpiredDesc") ||
+              "Please review your cart again.",
+          }
+        );
+
+        await fetchCart();
+        router.replace("/cart");
         setPlacingOrder(false);
         return;
       }
@@ -921,12 +928,27 @@ export default function SecureCheckoutPage() {
     } catch (error: any) {
       console.warn("Order error:", error);
 
-      setModalConfig({
-        title: t("checkoutError"),
-        message: error?.message?.message || "Something went wrong",
-        confirmText: t("tryAgain"),
-      });
+      const errorMsg = error?.message?.toLowerCase() || "";
 
+      if (
+        errorMsg.includes("cart not found") ||
+        errorMsg.includes("cart is empty") ||
+        errorMsg.includes("cart id not found")
+      ) {
+        toast.error(
+          t("cartSessionExpired") || "Your payment session has expired.",
+          {
+            description:
+              t("cartSessionExpiredDesc") ||
+              "Please review your cart and try again.",
+          }
+        );
+
+        await fetchCart(); // 🔥 refresh cart
+
+        router.replace("/cart"); // 🔥 or stay on checkout if you want
+        return;
+      }
       setConfirmOpen(true);
       setPlacingOrder(false);
     }

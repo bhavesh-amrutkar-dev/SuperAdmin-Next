@@ -686,5 +686,7 @@
     "cancelTransactionMsg": "¿Está seguro de que desea cancelar esta transacción?",
     "sessionExpiryCountDownMessage": "Tu sesión caduca en",
     "noWinnerFound": "No se encontró ganador",
-    "winnerNotDeclaredYet": "Este sorteo aún no tiene ganador."
+    "winnerNotDeclaredYet": "Este sorteo aún no tiene ganador.",
+    "cartSessionExpired": "Tu sesión de pago ha caducado.",
+    "cartSessionExpiredDesc": "Por favor, revise su carrito nuevamente."
 }
