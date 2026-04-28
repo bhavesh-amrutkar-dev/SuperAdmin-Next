@@ -60,11 +60,11 @@ export default function Header() {
 
   const navItems = [
     { key: "howItWorks", href: "/#howItWorks" },
-    { key: "raffles", href: "/#raffles" },
+    { key: "raffles", href: "/raffles" },
     { key: "winners", href: "/winners" },
     { key: "contact", href: "/contact" },
   ];
-  useEffect(() => {
+  useEffect(() => { 
     const handleClickOutside = (e: MouseEvent) => {
       if (
         userMenuRef.current &&
@@ -274,26 +274,26 @@ export default function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                scroll={false}
+                // scroll={false}
                 className="hover:text-[#FECB02] transition"
-                onClick={(e) => {
-                  const id = item.href.split("#")[1];
+                // onClick={(e) => {
+                //   const id = item.href.split("#")[1];
 
-                  // 👉 If NOT on homepage → allow normal navigation
-                  if (pathname !== "/") {
+                //   // 👉 If NOT on homepage → allow normal navigation
+                //   if (pathname !== "/") {
 
-                    return;
-                  }
+                //     return;
+                //   }
 
-                  // 👉 If already on homepage → do smooth scroll
-                  e.preventDefault();
+                //   // 👉 If already on homepage → do smooth scroll
+                //   e.preventDefault();
 
-                  const el = document.getElementById(id);
-                  if (el) {
-                    el.scrollIntoView({ behavior: "smooth" });
-                    history.replaceState(null, "", `#${id}`);
-                  }
-                }}
+                //   const el = document.getElementById(id);
+                //   if (el) {
+                //     el.scrollIntoView({ behavior: "smooth" });
+                //     history.replaceState(null, "", `#${id}`);
+                //   }
+                // }}
               >
                 {t(item.key)}
               </Link>
