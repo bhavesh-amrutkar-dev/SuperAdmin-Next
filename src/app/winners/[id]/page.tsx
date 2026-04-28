@@ -12,6 +12,7 @@ import Footer from "@/src/components/layout/Footer";
 import PreFooterIconModule from "@/src/components/layout/PreFooterIconModule";
 import { ChevronLeft } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import EmptyState from "@/src/components/common/EmptyState";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -40,7 +41,7 @@ export default async function WinnerDetailPage({ params }: { params: Promise<{ i
     }
 
     if (!campaign) {
-        return notFound();
+        return <EmptyState />;
     }
 
     const winner = campaign.winnersList && campaign.winnersList.length > 0 ? campaign.winnersList[0] : null;

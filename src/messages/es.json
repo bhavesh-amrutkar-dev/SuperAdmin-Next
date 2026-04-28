@@ -684,5 +684,7 @@
     "pleaseWaitDoNotClose": "Por favor, espere... no actualice ni cierre",
     "cancelTransaction": "Cancelar transacción",
     "cancelTransactionMsg": "¿Está seguro de que desea cancelar esta transacción?",
-    "sessionExpiryCountDownMessage": "Tu sesión caduca en"
+    "sessionExpiryCountDownMessage": "Tu sesión caduca en",
+    "noWinnerFound": "No se encontró ganador",
+    "winnerNotDeclaredYet": "Este sorteo aún no tiene ganador."
 }

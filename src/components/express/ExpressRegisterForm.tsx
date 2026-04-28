@@ -228,10 +228,9 @@ export default function ExpressRegisterForm({
                     // ✅ ONLY ONE SOURCE OF TRUTH
                     field.onChange(value);
 
-                    // ✅ update other fields WITHOUT validation loop
-                   setValue("countryCode", dialCode, { shouldValidate: false });
-setValue("mobileNumber", numberWithoutCode, { shouldValidate: false });
-setValue("mobileNumberSortCode", isoCode, { shouldValidate: false });
+                    setValue("countryCode", dialCode, { shouldValidate: false });
+                    setValue("mobileNumber", numberWithoutCode, { shouldValidate: false });
+                    setValue("mobileNumberSortCode", isoCode, { shouldValidate: false });
                   }}
                   inputClass="!w-full !h-[44px] !rounded-lg !border"
                 />
