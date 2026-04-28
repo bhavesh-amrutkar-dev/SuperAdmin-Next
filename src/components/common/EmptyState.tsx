@@ -11,8 +11,8 @@ type EmptyStateProps = {
 };
 
 export default function EmptyState({
-  titleKey = "noDataFound",
-  descriptionKey = "noWinnerDescription",
+  titleKey = "noWinnerFound",
+  descriptionKey = "winnerNotDeclaredYet",
   buttonKey = "backToWinners",
   redirectUrl = "/winners",
 }: EmptyStateProps) {
