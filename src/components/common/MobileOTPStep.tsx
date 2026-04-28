@@ -1,43 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   CheckCircle2,
   Loader2,
   Phone,
-  RefreshCw,
-  ShieldCheck,
 } from "lucide-react";
-import { Input } from "@/src/components/ui/input";
+
 import { Label } from "@/src/components/ui/label";
 import { Button } from "@/src/components/ui/button";
 import ErrorMessage from "@/src/components/ui/errorMessage";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/src/components/ui/input-otp";
+import { AuthService } from "@/src/lib/services/auth";
 
-const OTP_LENGTH = 6;
+const OTP_LENGTH = 4;
 
 type Props = {
   email: string;
+  mobileToken: string;
   onSuccess: () => void;
 };
 
-export default function MobileOTPStep({ email, onSuccess }: Props) {
+export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) {
   const t = useTranslations();
 
   const [countryCode, setCountryCode] = useState("+971");
   const [mobile, setMobile] = useState("");
-  const [otp, setOtp] = useState("");
+
+  const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
+  const [otpId, setOtpId] = useState("");
+
   const [otpSent, setOtpSent] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
   const [verifying, setVerifying] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
-
+const [countrySortCode, setCountrySortCode] = useState("us");
+  // ⏱ cooldown timer
   const startResendCooldown = () => {
     setResendCooldown(60);
     const interval = setInterval(() => {
@@ -51,8 +53,57 @@ export default function MobileOTPStep({ email, onSuccess }: Props) {
     }, 1000);
   };
 
+  // 🔢 OTP input handling (paste + auto focus)
+  const handleChange = (val: string, index: number) => {
+    if (!/^\d*$/.test(val)) return;
+
+    if (val.length > 1) {
+      const digits = val.slice(0, OTP_LENGTH).split("");
+      const newOtp = [...otp];
+      digits.forEach((d, i) => {
+        if (i < newOtp.length) newOtp[i] = d;
+      });
+      setOtp(newOtp);
+      return;
+    }
+
+    const next = [...otp];
+    next[index] = val;
+    setOtp(next);
+
+    if (val && index < OTP_LENGTH - 1) {
+      document.getElementById(`otp-${index + 1}`)?.focus();
+    }
+  };
+
+  // 📲 Auto OTP read (same as verify page)
+  useEffect(() => {
+    if (!("OTPCredential" in window)) return;
+
+    const ac = new AbortController();
+
+    navigator.credentials
+      .get({
+        otp: { transport: ["sms"] },
+        signal: ac.signal,
+      } as any)
+      .then((otp: any) => {
+        if (!otp?.code) return;
+
+        const code = otp.code.split("");
+        setOtp(code);
+
+        document.querySelector("form")?.requestSubmit();
+      })
+      .catch(() => {});
+
+    return () => ac.abort();
+  }, []);
+
+  // 📩 SEND OTP FLOW
   const handleSendOtp = async () => {
     const cleaned = mobile.replace(/\D/g, "");
+
     if (!cleaned) {
       setError(t("fieldRequired"));
       return;
@@ -62,21 +113,49 @@ export default function MobileOTPStep({ email, onSuccess }: Props) {
       setSendingOtp(true);
       setError(null);
 
-      // TODO: replace with actual endpoint when ready
-      const res = await fetch("/api/send-otp", {
+      // 1️⃣ set mobile
+      const res = await fetch("/api/setMobileNumber", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ countryCode, mobile: cleaned, email }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token: mobileToken,
+          phone: cleaned,
+          countryCode,
+          mobileNumberSortCode: countrySortCode.toUpperCase(),
+        }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || "Failed to send OTP");
+        throw new Error(data.message);
       }
 
+      // 2️⃣ send OTP
+      const otpRes = await fetch("/api/send-otp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          countryCode,
+          mobile: cleaned,
+          email,
+        }),
+      });
+
+      const otpData = await otpRes.json();
+
+      if (!otpRes.ok) {
+        throw new Error(otpData.message);
+      }
+
+      setOtpId(otpData?.data?.otpId); // 🔥 important
       setOtpSent(true);
       startResendCooldown();
+
     } catch (err: any) {
       setError(err.message || "Something went wrong");
     } finally {
@@ -84,11 +163,19 @@ export default function MobileOTPStep({ email, onSuccess }: Props) {
     }
   };
 
+  // ✅ VERIFY OTP
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (otp.length < OTP_LENGTH) {
+    const otpCode = otp.join("");
+
+    if (otpCode.length !== OTP_LENGTH) {
       setError(t("guestProfileOtpInvalid"));
+      return;
+    }
+
+    if (!otpId) {
+      setError("OTP session expired. Please resend OTP.");
       return;
     }
 
@@ -96,232 +183,119 @@ export default function MobileOTPStep({ email, onSuccess }: Props) {
       setVerifying(true);
       setError(null);
 
-      // TODO: replace with actual endpoint when ready
-      const res = await fetch("/api/verify-mobile-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          countryCode,
-          mobile: mobile.replace(/\D/g, ""),
-          email,
-          otp,
-        }),
+      const res = await AuthService.verifyOtp({
+        otpCode,
+        otpId,
+        verifyType: 2,
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || t("guestProfileOtpInvalid"));
+      if (!res?.data) {
+        throw new Error(t("guestProfileOtpInvalid"));
       }
 
       onSuccess();
+
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
+      setError(err?.message || "Invalid OTP");
     } finally {
       setVerifying(false);
     }
   };
 
   return (
-    <div className="grid w-full overflow-hidden rounded-[30px] border border-white/70 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.14)] lg:grid-cols-[0.95fr_1.05fr]">
-      {/* Left panel */}
-      <div className="bg-[linear-gradient(160deg,#111827_0%,#1f2937_35%,#374151_100%)] p-8 text-white sm:p-10">
-        <div className="flex h-full flex-col justify-between">
-          <div>
-            <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 text-[#FECB02] backdrop-blur-sm">
-              <Phone className="h-7 w-7" />
-            </div>
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#FECB02]">
-              {t("guestProfileBadge")}
-            </p>
-            <h1 className="mt-4 text-3xl font-bold leading-tight sm:text-4xl">
-              {t("guestProfileMobileTitle")}
-            </h1>
-            <p className="mt-4 max-w-md text-sm leading-7 text-white/70">
-              {t("guestProfileMobileSubtitle")}
-            </p>
+    <div className="p-8 max-w-md mx-auto">
 
-            {/* Step indicator */}
-            <div className="mt-8 flex items-center gap-3">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-xs font-bold text-white/60">
-                <CheckCircle2 className="h-4 w-4 text-green-400" />
-              </div>
-              <span className="text-sm text-white/60 line-through">
-                {t("guestProfileStepPassword")}
-              </span>
-            </div>
-            <div className="mt-3 ml-3.5 h-8 w-px bg-white/20" />
-            <div className="flex items-center gap-3">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FECB02] text-xs font-bold text-black">
-                2
-              </div>
-              <span className="text-sm font-semibold text-white">
-                {t("guestProfileStepMobile")}
-              </span>
-            </div>
-          </div>
+      <h2 className="text-xl font-bold mb-4">
+        {t("guestProfileMobileFormTitle")}
+      </h2>
 
-          <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
-              {t("guestProfileWhyMobileTitle")}
-            </p>
-            <p className="mt-3 text-sm leading-6 text-white/70">
-              {t("guestProfileWhyMobileDesc")}
-            </p>
-          </div>
+      <form onSubmit={handleVerifyOtp} className="space-y-5">
+
+        {/* 📱 Phone Input */}
+        <div>
+          <Label>{t("guestProfileMobileNumber")}</Label>
+          <PhoneInput
+            country="us"
+            value={`${countryCode.replace("+", "")}${mobile}`}
+            onChange={(value, data: any) => {
+              setCountryCode(`+${data.dialCode}`);
+              setMobile(value.slice(data.dialCode.length));
+               setCountrySortCode(data.countryCode);
+              setOtpSent(false);
+              setOtp(Array(OTP_LENGTH).fill(""));
+              setError(null);
+            }}
+            inputClass="!w-full !h-[44px]"
+          />
         </div>
-      </div>
 
-      {/* Right panel */}
-      <div className="p-8 sm:p-10">
-        <div className="mx-auto max-w-md">
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-[#111827]">
-              {t("guestProfileMobileFormTitle")}
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-gray-500">
-              {t("guestProfileMobileFormSubtitle")}
-            </p>
-          </div>
-
-          <form onSubmit={handleVerifyOtp} className="space-y-5">
-            {/* Mobile number row */}
-            <div>
-              <Label htmlFor="guest-mobile" required>
-                {t("guestProfileMobileNumber")}
-              </Label>
-              <div className="mt-1 flex gap-2">
-                <Input
-                  id="guest-country-code"
-                  value={countryCode}
-                  onChange={(e) => {
-                    setCountryCode(e.target.value);
-                    setError(null);
-                    setOtpSent(false);
-                  }}
-                  className="w-24 shrink-0"
-                  placeholder="+971"
-                  disabled={otpSent}
-                />
-                <Input
-                  id="guest-mobile"
-                  type="tel"
-                  value={mobile}
-                  onChange={(e) => {
-                    setMobile(e.target.value);
-                    setError(null);
-                    setOtpSent(false);
-                    setOtp("");
-                  }}
-                  placeholder={t("guestProfileMobilePlaceholder")}
-                  disabled={otpSent}
-                />
-              </div>
-            </div>
-
-            {/* Send OTP button — shown before OTP is sent */}
-            {!otpSent && (
-              <Button
-                type="button"
-                size="lg"
-                className="w-full"
-                onClick={handleSendOtp}
-                disabled={sendingOtp || !mobile}
-              >
-                {sendingOtp ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    {t("guestProfileOtpSending")}
-                  </>
-                ) : (
-                  t("guestProfileOtpSend")
-                )}
-              </Button>
-            )}
-
-            {/* OTP input — shown after OTP is sent */}
-            {otpSent && (
+        {/* SEND OTP */}
+        {!otpSent && (
+          <Button
+            type="button"
+            className="w-full"
+            onClick={handleSendOtp}
+            disabled={sendingOtp || !mobile}
+          >
+            {sendingOtp ? (
               <>
-                <div>
-                  <Label required>{t("guestProfileOtpLabel")}</Label>
-                  <p className="mb-3 mt-1 text-sm text-gray-500">
-                    {t("guestProfileOtpSentTo")} {countryCode} {mobile}
-                  </p>
-                  <div className="flex justify-center">
-                    <InputOTP
-                      maxLength={OTP_LENGTH}
-                      value={otp}
-                      onChange={(val) => {
-                        setOtp(val);
-                        setError(null);
-                      }}
-                    >
-                      <InputOTPGroup>
-                        {Array.from({ length: OTP_LENGTH }).map((_, i) => (
-                          <InputOTPSlot
-                            key={i}
-                            index={i}
-                            className="h-12 w-12 text-lg"
-                          />
-                        ))}
-                      </InputOTPGroup>
-                    </InputOTP>
-                  </div>
-                </div>
-
-                {/* Resend */}
-                <div className="flex items-center justify-between text-sm">
-                  <button
-                    type="button"
-                    onClick={handleSendOtp}
-                    disabled={resendCooldown > 0 || sendingOtp}
-                    className="flex items-center gap-1.5 font-semibold text-[#8a6a00] transition-colors hover:text-[#6f5600] disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    <RefreshCw
-                      className={`h-3.5 w-3.5 ${sendingOtp ? "animate-spin" : ""}`}
-                    />
-                    {resendCooldown > 0
-                      ? `${t("guestProfileOtpResendIn")} ${resendCooldown}s`
-                      : t("guestProfileOtpResend")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOtpSent(false);
-                      setOtp("");
-                      setError(null);
-                    }}
-                    className="text-gray-500 transition-colors hover:text-gray-700"
-                  >
-                    {t("guestProfileMobileChange")}
-                  </button>
-                </div>
-
-                <ErrorMessage message={error || undefined} />
-
-                <Button
-                  type="submit"
-                  size="lg"
-                  disabled={verifying || otp.length < OTP_LENGTH}
-                  className="w-full"
-                >
-                  {verifying ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      {t("guestProfileOtpVerifying")}
-                    </>
-                  ) : (
-                    t("guestProfileOtpVerify")
-                  )}
-                </Button>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {t("guestProfileOtpSending")}
               </>
+            ) : (
+              t("guestProfileOtpSend")
             )}
+          </Button>
+        )}
 
-            {/* Show error before OTP is sent */}
-            {!otpSent && <ErrorMessage message={error || undefined} />}
-          </form>
-        </div>
-      </div>
+        {/* OTP UI */}
+        {otpSent && (
+          <>
+            <div className="text-center">
+              <p className="text-sm text-gray-500 mb-3">
+                {t("guestProfileOtpSentTo")} {countryCode} {mobile}
+              </p>
+
+              <div className="flex justify-center gap-3">
+                {otp.map((digit, i) => (
+                  <input
+                    key={i}
+                    id={`otp-${i}`}
+                    type="text"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleChange(e.target.value, i)}
+                    className="h-12 w-12 rounded-xl border text-center text-lg"
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* RESEND */}
+            <div className="text-center text-sm">
+              {resendCooldown > 0 ? (
+                <span>{t("resendIn", { time: resendCooldown })}</span>
+              ) : (
+                <button type="button" onClick={handleSendOtp}>
+                  {t("resendOtp")}
+                </button>
+              )}
+            </div>
+
+            <ErrorMessage message={error || undefined} />
+
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={verifying || otp.some((d) => !d)}
+            >
+              {verifying ? "Verifying..." : t("guestProfileOtpVerify")}
+            </Button>
+          </>
+        )}
+
+        {!otpSent && <ErrorMessage message={error || undefined} />}
+      </form>
     </div>
   );
 }

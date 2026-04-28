@@ -26,7 +26,7 @@ const PASSWORD_RULES = {
 type Props = {
   email: string;
   token: string;
-  onSuccess: () => void;
+  onSuccess: (verifyMobileToken: string) => void;
 };
 
 export default function SetPasswordStep({ email, token, onSuccess }: Props) {
@@ -93,7 +93,7 @@ export default function SetPasswordStep({ email, token, onSuccess }: Props) {
         throw new Error(data.message || t("passwordResetFailed"));
       }
 
-      onSuccess();
+     onSuccess(data.verifyMobileToken);
     } catch (err: any) {
       setError(err.message || t("checkoutError"));
     } finally {

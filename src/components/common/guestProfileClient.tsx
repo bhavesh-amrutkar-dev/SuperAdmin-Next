@@ -29,7 +29,7 @@ export default function GuestProfileClient({ token }: GuestProfileClientProps) {
   const [email, setEmail] = useState("");
   const [step, setStep] = useState<Step>("password");
   const [resendLoading, setResendLoading] = useState(false);
-
+  const [mobileToken, setMobileToken] = useState<string>("");
   const getMessage = (data: any) => {
     let msg = data?.message || data?.msg;
     if (typeof msg === "string") {
@@ -200,13 +200,17 @@ export default function GuestProfileClient({ token }: GuestProfileClientProps) {
           <SetPasswordStep
             email={email}
             token={token!}
-            onSuccess={() => setStep("mobile")}
+            onSuccess={(verifyMobileToken) => {
+              setMobileToken(verifyMobileToken);
+              setStep("mobile");
+            }}
           />
         )}
 
         {step === "mobile" && (
           <MobileOTPStep
             email={email}
+            mobileToken={mobileToken} // 👈 NEW
             onSuccess={() => setStep("done")}
           />
         )}
