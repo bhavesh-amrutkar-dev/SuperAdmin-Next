@@ -165,8 +165,8 @@ export default function GuestCheckoutPage() {
   const [updatingKeys, setUpdatingKeys] = useState<Record<string, "inc" | "dec" | null>>({});
   const [isRefreshingCart, setIsRefreshingCart] = useState(false);
   const form = useForm<ExpressRegisterFormRM>({
-    mode: "onBlur",              // ✅ change this
-    reValidateMode: "onBlur",    // ✅ change this
+    mode: "onSubmit",              // ✅ change this
+    reValidateMode: "onChange",    // ✅ change this
     shouldFocusError: true,
     defaultValues: {
       addressType: 1,

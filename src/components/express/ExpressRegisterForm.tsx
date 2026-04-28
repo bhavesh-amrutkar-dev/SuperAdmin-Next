@@ -1,6 +1,6 @@
 "use client";
 
-import { Controller, UseFormReturn } from "react-hook-form";
+import { Controller, UseFormReturn, useFormState } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
@@ -84,9 +84,9 @@ export default function ExpressRegisterForm({
     handleSubmit,
     setValue,
     watch,
-    formState: { errors },
+    // formState: { errors },
   } = form;
-
+  const { errors } = useFormState({ control });
   const addressType = watch("addressType");
   const safeTrim = (value?: string) => value?.trim() || "";
   const buildPayload = (data: ExpressRegisterFormRM) => {
@@ -229,9 +229,9 @@ export default function ExpressRegisterForm({
                     field.onChange(value);
 
                     // ✅ update other fields WITHOUT validation loop
-                    setValue("countryCode", dialCode);
-                    setValue("mobileNumber", numberWithoutCode);
-                    setValue("mobileNumberSortCode", isoCode);
+                   setValue("countryCode", dialCode, { shouldValidate: false });
+setValue("mobileNumber", numberWithoutCode, { shouldValidate: false });
+setValue("mobileNumberSortCode", isoCode, { shouldValidate: false });
                   }}
                   inputClass="!w-full !h-[44px] !rounded-lg !border"
                 />
