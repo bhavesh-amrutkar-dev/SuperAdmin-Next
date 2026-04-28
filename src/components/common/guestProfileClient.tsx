@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -24,7 +24,7 @@ type GuestProfileClientProps = {
 export default function GuestProfileClient({ token }: GuestProfileClientProps) {
   const t = useTranslations();
   const router = useRouter();
-
+  const searchParams = useSearchParams();
   const [tokenStatus, setTokenStatus] = useState<TokenStatus>("validating");
   const [email, setEmail] = useState("");
   const [step, setStep] = useState<Step>("password");
@@ -45,7 +45,12 @@ export default function GuestProfileClient({ token }: GuestProfileClientProps) {
 
   useEffect(() => {
     const validateToken = async () => {
-      if (!token) {
+      const mobileTokenFromUrl = searchParams.get("mobileToken");
+
+      // 🔥 pick token dynamically
+      const effectiveToken = mobileTokenFromUrl || token;
+
+      if (!effectiveToken) {
         setTokenStatus("invalid");
         return;
       }
@@ -54,7 +59,10 @@ export default function GuestProfileClient({ token }: GuestProfileClientProps) {
         const res = await fetch("/api/validatePasswordToken", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token, validateType: 1 }),
+          body: JSON.stringify({
+            token: effectiveToken,
+            validateType: 1,
+          }),
         });
 
         if (!res.ok) {
@@ -63,16 +71,33 @@ export default function GuestProfileClient({ token }: GuestProfileClientProps) {
         }
 
         const data = await res.json();
+
         setEmail(data?.emailId || "");
         setTokenStatus("valid");
+
+        // 🔥 if mobileToken exists → go to mobile step
+        if (mobileTokenFromUrl) {
+          setMobileToken(mobileTokenFromUrl);
+          setStep("mobile");
+        }
+
       } catch {
         setTokenStatus("invalid");
       }
     };
 
     validateToken();
-  }, [token]);
+  }, [token, searchParams]);
+  useEffect(() => {
+    if (tokenStatus !== "valid") return; // 🔥 IMPORTANT
 
+    const tokenFromUrl = searchParams.get("mobileToken");
+
+    if (tokenFromUrl) {
+      setMobileToken(tokenFromUrl);
+      setStep("mobile");
+    }
+  }, [searchParams, tokenStatus]);
   // Auto-redirect after "done" step
   useEffect(() => {
     if (step !== "done") return;
@@ -203,6 +228,11 @@ export default function GuestProfileClient({ token }: GuestProfileClientProps) {
             onSuccess={(verifyMobileToken) => {
               setMobileToken(verifyMobileToken);
               setStep("mobile");
+
+              const params = new URLSearchParams(searchParams.toString());
+              params.set("mobileToken", verifyMobileToken);
+
+              router.replace(`?${params.toString()}`, { scroll: false });
             }}
           />
         )}

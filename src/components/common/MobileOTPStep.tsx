@@ -14,6 +14,7 @@ import { Label } from "@/src/components/ui/label";
 import { Button } from "@/src/components/ui/button";
 import ErrorMessage from "@/src/components/ui/errorMessage";
 import { AuthService } from "@/src/lib/services/auth";
+import { toast } from "sonner";
 
 const OTP_LENGTH = 4;
 
@@ -157,7 +158,7 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
       startResendCooldown();
 
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
+      toast.error(err.message || "Something went wrong");
     } finally {
       setSendingOtp(false);
     }
@@ -168,14 +169,13 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
     e.preventDefault();
 
     const otpCode = otp.join("");
-
     if (otpCode.length !== OTP_LENGTH) {
-      setError(t("guestProfileOtpInvalid"));
+      toast.error(t("guestProfileOtpInvalid"));
       return;
     }
 
     if (!otpId) {
-      setError("OTP session expired. Please resend OTP.");
+      toast.error("OTP session expired. Please resend OTP.");
       return;
     }
 
@@ -196,7 +196,7 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
       onSuccess();
 
     } catch (err: any) {
-      setError(err?.message || "Invalid OTP");
+      toast.error(err?.message || "Invalid OTP");
     } finally {
       setVerifying(false);
     }
@@ -321,7 +321,7 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
                     />
                   ))}
                 </div>
-
+{/* 
                 <div className="text-center text-sm text-gray-500">
                   {resendCooldown > 0 ? (
                     <span>{t("resendIn", { time: resendCooldown })}</span>
@@ -334,9 +334,9 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
                       {t("resendOtp")}
                     </button>
                   )}
-                </div>
+                </div> */}
 
-                <ErrorMessage message={error || undefined} />
+                {/* <ErrorMessage message={error || undefined} /> */}
 
                 <Button
                   type="submit"
@@ -348,7 +348,7 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
               </div>
             )}
 
-            {!otpSent && <ErrorMessage message={error || undefined} />}
+            {/* {!otpSent && <ErrorMessage message={error || undefined} />} */}
 
           </form>
         </div>
