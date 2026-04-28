@@ -104,7 +104,7 @@ export default function SetPasswordStep({ email, token, onSuccess }: Props) {
   return (
     <div className="grid w-full overflow-hidden rounded-[30px] border border-white/70 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.14)] lg:grid-cols-[0.95fr_1.05fr]">
       {/* Left panel */}
-      <div className="bg-[linear-gradient(160deg,#111827_0%,#1f2937_35%,#374151_100%)] p-8 text-white sm:p-10">
+      <div className="bg-[#2F2F2F] p-8 text-white sm:p-10">
         <div className="flex h-full flex-col justify-between">
           <div>
             <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 text-[#FECB02] backdrop-blur-sm">
