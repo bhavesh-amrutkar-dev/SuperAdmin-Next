@@ -13,12 +13,13 @@ import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { setCookie } from "cookies-next";
 import { Eye, EyeOff } from "lucide-react";
+import { useAuth } from "@/src/context/authContext";
 
 export default function VerifyOtpPage() {
   const t = useTranslations();
   const searchParams = useSearchParams();
   const router = useRouter();
-
+  const { setUser } = useAuth();
   const flow = searchParams?.get("flow") || "login";
   const method = searchParams?.get("method") || "mobile"; // email or mobile
   const value = searchParams?.get("value") || "";
@@ -162,6 +163,7 @@ export default function VerifyOtpPage() {
 
       const session = mapAuthSession(res.data);
       persistAuthSession(session);
+      setUser(session);
       const safeRedirect = redirect && !redirect.startsWith("/auth") ? redirect : "/";
       router.replace(safeRedirect);
     } catch (err: any) {
@@ -208,7 +210,7 @@ export default function VerifyOtpPage() {
       // Login / signup flow
       else {
         console.log(mobile, countryCode);
-        
+
         res = await fetch("/api/login-mobile", {
           method: "POST",
           headers: {
