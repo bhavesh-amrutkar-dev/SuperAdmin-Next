@@ -294,6 +294,7 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
                 <PhoneInput
                   country="us"
                   value={`${countryCode.replace("+", "")}${mobile}`}
+                  onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
                   onChange={(value, data: any) => {
                     setCountryCode(`+${data.dialCode}`);
                     setMobile(value.slice(data.dialCode.length));
