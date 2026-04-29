@@ -28,7 +28,7 @@ type Props = {
 export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) {
   const t = useTranslations();
 
-  const [countryCode, setCountryCode] = useState("+971");
+  const [countryCode, setCountryCode] = useState("");
   const [mobile, setMobile] = useState("");
 
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
