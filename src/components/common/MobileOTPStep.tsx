@@ -14,6 +14,8 @@ import { Label } from "@/src/components/ui/label";
 import { Button } from "@/src/components/ui/button";
 import ErrorMessage from "@/src/components/ui/errorMessage";
 import { AuthService } from "@/src/lib/services/auth";
+import { toast } from "sonner";
+import { CountryCurrency } from "@/src/models/api/response/auth";
 
 const OTP_LENGTH = 4;
 
@@ -38,7 +40,11 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
 
   const [error, setError] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
-const [countrySortCode, setCountrySortCode] = useState("us");
+
+  const [countries, setCountries] = useState<CountryCurrency[]>([]);
+  const [countriesLoading, setCountriesLoading] = useState(false);
+
+  const [countrySortCode, setCountrySortCode] = useState("us");
   // ⏱ cooldown timer
   const startResendCooldown = () => {
     setResendCooldown(60);
@@ -277,23 +283,23 @@ const [countrySortCode, setCountrySortCode] = useState("us");
 
           <form onSubmit={handleVerifyOtp} className="space-y-5">
 
-        {/* 📱 Phone Input */}
-        <div>
-          <Label>{t("guestProfileMobileNumber")}</Label>
-          <PhoneInput
-            country="us"
-            value={`${countryCode.replace("+", "")}${mobile}`}
-            onChange={(value, data: any) => {
-              setCountryCode(`+${data.dialCode}`);
-              setMobile(value.slice(data.dialCode.length));
-               setCountrySortCode(data.countryCode);
-              setOtpSent(false);
-              setOtp(Array(OTP_LENGTH).fill(""));
-              setError(null);
-            }}
-            inputClass="!w-full !h-[44px]"
-          />
-        </div>
+            {/* 📱 Phone Input */}
+            <div>
+              <Label>{t("guestProfileMobileNumber")}</Label>
+              <PhoneInput
+                country="us"
+                value={`${countryCode.replace("+", "")}${mobile}`}
+                onChange={(value, data: any) => {
+                  setCountryCode(`+${data.dialCode}`);
+                  setMobile(value.slice(data.dialCode.length));
+                  setCountrySortCode(data.countryCode);
+                  setOtpSent(false);
+                  setOtp(Array(OTP_LENGTH).fill(""));
+                  setError(null);
+                }}
+                inputClass="!w-full !h-[44px]"
+              />
+            </div>
 
             {/* SEND OTP */}
             {!otpSent && (
@@ -337,7 +343,7 @@ const [countrySortCode, setCountrySortCode] = useState("us");
                     />
                   ))}
                 </div>
-{/* 
+                {/* 
                 <div className="text-center text-sm text-gray-500">
                   {resendCooldown > 0 ? (
                     <span>{t("resendIn", { time: resendCooldown })}</span>
