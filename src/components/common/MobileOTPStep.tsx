@@ -286,19 +286,24 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
             {/* 📱 Phone Input */}
             <div>
               <Label>{t("guestProfileMobileNumber")}</Label>
-              <PhoneInput
-                country="us"
-                value={`${countryCode.replace("+", "")}${mobile}`}
-                onChange={(value, data: any) => {
-                  setCountryCode(`+${data.dialCode}`);
-                  setMobile(value.slice(data.dialCode.length));
-                  setCountrySortCode(data.countryCode);
-                  setOtpSent(false);
-                  setOtp(Array(OTP_LENGTH).fill(""));
-                  setError(null);
-                }}
-                inputClass="!w-full !h-[44px]"
-              />
+              {countriesLoading || countries.length === 0 ? (
+                <div className="w-full h-[44px] rounded-lg border border-[#2f2f2f] px-4 flex items-center text-sm text-gray-400">
+                  Loading...
+                </div>
+              ) : (
+                <PhoneInput
+                  country="us"
+                  value={`${countryCode.replace("+", "")}${mobile}`}
+                  onChange={(value, data: any) => {
+                    setCountryCode(`+${data.dialCode}`);
+                    setMobile(value.slice(data.dialCode.length));
+                    setCountrySortCode(data.countryCode);
+                    setOtpSent(false);
+                    setOtp(Array(OTP_LENGTH).fill(""));
+                    setError(null);
+                  }}
+                  inputClass="!w-full !h-[44px]"
+                />)}
             </div>
 
             {/* SEND OTP */}
