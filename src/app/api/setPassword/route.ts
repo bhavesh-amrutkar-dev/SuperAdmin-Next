@@ -8,11 +8,11 @@ export async function POST(request: NextRequest) {
 
     const { email, newPassword, token } = body;
 
-    console.log("[SetPassword API] Request received", {
-      email,
-      hasToken: !!token,
-      passwordLength: newPassword?.length,
-    });
+    // console.log("[SetPassword API] Request received", {
+    //   email,
+    //   hasToken: !!token,
+    //   passwordLength: newPassword?.length,
+    // });
 
     // ✅ Validation
     if (!email || !newPassword) {
@@ -33,9 +33,9 @@ export async function POST(request: NextRequest) {
       token
     };
 
-    console.log("[SetPassword API] Forwarding payload to backend", {
-      email,
-    });
+    // console.log("[SetPassword API] Forwarding payload to backend", {
+    //   email,
+    // });
 
     // ✅ Call backend
     const { data, error } = await serverFetch(
@@ -60,10 +60,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("[SetPassword API] Success response", {
-      email,
-      success: true,
-    });
+    // console.log("[SetPassword API] Success response", {
+    //   email,
+    //   success: true,
+    // });
 
     return NextResponse.json(data);
 
