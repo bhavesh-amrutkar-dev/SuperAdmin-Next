@@ -25,7 +25,7 @@ export const initAnalytics = async () => {
         const supported = await isSupported();
       if (supported) {
             analytics = initializeAnalytics(app);
-            console.log("✅ Firebase Analytics Initialized");
+            // console.log("✅ Firebase Analytics Initialized");
         }
  
         isInitializing = false;

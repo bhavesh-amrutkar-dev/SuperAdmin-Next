@@ -8,12 +8,12 @@ export async function POST(request: NextRequest) {
 
     const { token, phone, countryCode, mobileNumberSortCode } = body;
 
-    console.log("[SetMobileNumber API] Request received", {
-      hasToken: !!token,
-      phone,
-      countryCode,
-      mobileNumberSortCode,
-    });
+    // console.log("[SetMobileNumber API] Request received", {
+    //   hasToken: !!token,
+    //   phone,
+    //   countryCode,
+    //   mobileNumberSortCode,
+    // });
 
     // ✅ Validation
     if (!token || !phone || !countryCode || !mobileNumberSortCode) {
@@ -40,10 +40,10 @@ export async function POST(request: NextRequest) {
       mobileNumberSortCode,
     };
 
-    console.log("[SetMobileNumber API] Forwarding payload to backend", {
-      phone,
-      countryCode,
-    });
+    // console.log("[SetMobileNumber API] Forwarding payload to backend", {
+    //   phone,
+    //   countryCode,
+    // });
 
     // ✅ Call backend
     const { data, error } = await serverFetch("/setMobileNumber", {
@@ -65,10 +65,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("[SetMobileNumber API] Success response", {
-      phone,
-      success: true,
-    });
+    // console.log("[SetMobileNumber API] Success response", {
+    //   phone,
+    //   success: true,
+    // });
 
     return NextResponse.json(data);
 

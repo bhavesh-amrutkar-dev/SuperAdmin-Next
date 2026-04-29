@@ -388,7 +388,7 @@ export default function GuestCheckoutPage() {
             .filter((s) => (s.products?.length ?? 0) > 0),
         };
       });
-      console.log("item", item);
+      // console.log("item", item);
 
       // ✅ API CALL (same as cart page)
       const payload = {
@@ -596,7 +596,7 @@ export default function GuestCheckoutPage() {
     try {
       const res = await CartService.getCart();
       const data = (res as any)?.data;
-console.log("data", data);
+      // console.log("data", data);
 
       if (!data || !data.sellers || data.sellers.length === 0) {
         throw new Error("CART_EMPTY");
@@ -643,7 +643,7 @@ console.log("data", data);
         payByWallet: false,
         payByRewardWallet: false,
       };
-      console.log("orderPayload", orderPayload);
+      // console.log("orderPayload", orderPayload);
 
       const res = await fetch("/api/expressRegistration", {
         method: "POST",
@@ -652,7 +652,7 @@ console.log("data", data);
         },
         body: JSON.stringify(orderPayload),
       });
-      console.log("res", res);
+      // console.log("res", res);
 
       const orderData = await res.json();
 
@@ -728,8 +728,8 @@ console.log("data", data);
       ) {
         toast.error("Your cart session expired. Please review your cart again.");
 
-        await fetchCart(); 
-        router.replace("/guest-checkout"); 
+        await fetchCart();
+        router.replace("/guest-checkout");
         return;
       }
 
@@ -1252,33 +1252,37 @@ border text-sm transition-all cursor-pointer gap-1
 
                   </div>
 
-                  {/* Pay button */}
-                  <div className="px-6 pb-6">
 
-                    <Button
-                      type="submit"
-                      form="express-form"
-                      disabled={placingOrder || cartItems.length === 0 || (paymentMethod === "athMovil" && isAthReady)}
-                      className="w-full h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2
+                  {!isAthReady && !athToken && !athOrderId &&
+                    (<>
+                      {/* Pay button */}
+                      <div className="px-6 pb-6">
+
+                        <Button
+                          type="submit"
+                          form="express-form"
+                          disabled={placingOrder || cartItems.length === 0 || (paymentMethod === "athMovil" && isAthReady)}
+                          className="w-full h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2
                                transition-all duration-200
                                "
-                    >
-                      {placingOrder ? (
-                        <>
-                          <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          {t("placingOrder")}
-                        </>
-                      ) : (
-                        <>
-                          <Lock className="w-4 h-4 opacity-70" />
-                          {t("guestCheckoutPayAmount", { amount: `${currency}${fmt(grandTotal)}` })}
-                        </>
-                      )}
-                    </Button>
+                        >
+                          {placingOrder ? (
+                            <>
+                              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                              {t("placingOrder")}
+                            </>
+                          ) : (
+                            <>
+                              <Lock className="w-4 h-4 opacity-70" />
+                              {t("guestCheckoutPayAmount", { amount: `${currency}${fmt(grandTotal)}` })}
+                            </>
+                          )}
+                        </Button>
 
 
-                  </div>
-
+                      </div>
+                    </>)
+                  }
                 </div>
               </div>
             </div>
@@ -1449,7 +1453,7 @@ border text-sm transition-all cursor-pointer gap-1
         </div>
       )}
 
-      {paymentMethod === "athMovil" &&
+      {/* {paymentMethod === "athMovil" &&
         isAthReady &&
         athToken &&
         athOrderId && (
@@ -1461,7 +1465,7 @@ border text-sm transition-all cursor-pointer gap-1
             onSuccess={handleAthSuccess}
             onCancel={handleAthCancel}
           />
-        )}
+        )} */}
       {/* ── Mobile sticky Pay bar ──
            Visible only on small screens, fixed to bottom          ── */}
       {/* <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50
