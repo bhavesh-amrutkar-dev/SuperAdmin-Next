@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { toast } from "sonner";
@@ -10,6 +10,7 @@ import { useTranslations } from "next-intl";
 
 import { AuthService } from "@/src/lib/services/auth";
 import { IMobileLoginRM } from "@/src/models/api/request/auth";
+import { CountryCurrency } from "@/src/models/api/response/auth";
 
 export default function LoginMobilePage() {
   const router = useRouter();
@@ -20,7 +21,8 @@ export default function LoginMobilePage() {
   const [mobile, setMobile] = useState("");
   const [countryCode, setCountryCode] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const [countries, setCountries] = useState<CountryCurrency[]>([]);
+  const [countriesLoading, setCountriesLoading] = useState(false);
 
   const loginHref =
     redirect && !redirect.startsWith("/auth")
@@ -30,6 +32,19 @@ export default function LoginMobilePage() {
     redirect && !redirect.startsWith("/auth")
       ? `/auth/register?redirect=${encodeURIComponent(redirect)}`
       : "/auth/register";
+  useEffect(() => {
+    const fetchCountries = async () => {
+      setCountriesLoading(true);
+      try {
+        const res = await AuthService.getCurrency();
+        setCountries(res?.data ?? []);
+      } finally {
+        setCountriesLoading(false);
+      }
+    };
+    fetchCountries();
+  }, []);
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -39,7 +54,6 @@ export default function LoginMobilePage() {
     }
 
     setLoading(true);
-
     try {
       const res = await fetch("/api/login-mobile", {
         method: "POST",
@@ -94,17 +108,23 @@ export default function LoginMobilePage() {
             {t("mobileNumberLabel")}
           </label>
           <div className="phone-input">
-            <PhoneInput
-              country="us"
-              value={`${countryCode.replace("+", "")}${mobile}`}
-              onChange={(value, data: any) => {
-                setCountryCode(`+${data.dialCode}`);
-                setMobile(value.slice(data.dialCode.length));
-              }}
-              inputClass="!bg-transparent !w-full !h-[44px] !text-sm !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200]"
-              buttonClass="!border-[#2f2f2f]"
-              containerClass="!w-full"
-            />
+            {countriesLoading || countries.length === 0 ? (
+              <div className="w-full h-[44px] rounded-lg border border-[#2f2f2f] px-4 flex items-center text-sm text-gray-400">
+                Loading...
+              </div>
+            ) :
+              (<PhoneInput
+                country="us"
+                value={`${countryCode.replace("+", "")}${mobile}`}
+                onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
+                onChange={(value, data: any) => {
+                  setCountryCode(`+${data.dialCode}`);
+                  setMobile(value.slice(data.dialCode.length));
+                }}
+                inputClass="!bg-transparent !w-full !h-[44px] !text-sm !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200]"
+                buttonClass="!border-[#2f2f2f]"
+                containerClass="!w-full"
+              />)}
           </div>
         </div>
 
@@ -141,7 +161,7 @@ export default function LoginMobilePage() {
       <p className="mt-5 sm:mt-6 text-center text-sm text-foreground">
         {t("noAccount")}{" "}
         <Link
-           href={registerHref}
+          href={registerHref}
           className="font-semibold text-[#2f2f2f] hover:text-[#f3c200] hover:underline transition"
         >
           {t("signUp")}

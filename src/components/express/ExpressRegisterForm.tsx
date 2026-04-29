@@ -10,6 +10,9 @@ import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
+import { useEffect, useState } from "react";
+import { CountryCurrency } from "@/src/models/api/response/auth";
+import { AuthService } from "@/src/lib/services/auth";
 
 export type ExpressRegisterFormRM = {
   firstName: string;
@@ -77,6 +80,8 @@ export default function ExpressRegisterForm({
   isExpressOrder?: boolean;
   isRaffle: boolean;
 }) {
+  const [countries, setCountries] = useState<CountryCurrency[]>([]);
+  const [countriesLoading, setCountriesLoading] = useState(false);
   const t = useTranslations();
   const {
     control,
@@ -86,6 +91,22 @@ export default function ExpressRegisterForm({
     watch,
     // formState: { errors },
   } = form;
+  useEffect(() => {
+    const fetchCountries = async () => {
+
+      setCountriesLoading(true);
+      try {
+        const res = await AuthService.getCurrency();
+        setCountries(res?.data ?? []);
+      } catch {
+        console.log("Failed to load countries");
+      } finally {
+        setCountriesLoading(false);
+      }
+    };
+
+    fetchCountries();
+  }, []);
   const { errors } = useFormState({ control });
   const addressType = watch("addressType");
   const safeTrim = (value?: string) => value?.trim() || "";
@@ -198,43 +219,41 @@ export default function ExpressRegisterForm({
             <Controller
               control={control}
               name="mobileFullNumber"
-              defaultValue="" // ✅ VERY IMPORTANT
+              defaultValue=""
               rules={{
                 required: t("mobileRequired"),
                 validate: (value) => {
                   const clean = (value || "").replace(/\D/g, "");
-                  if (!/^\d{7,15}$/.test(clean)) {
-                    return t("invalidMobile");
-                  }
-                  if (!/^[0-9]{7,15}$/.test(clean)) return t("invalidMobile");
+                  if (!/^\d{7,15}$/.test(clean)) return t("invalidMobile");
                   return true;
                 },
               }}
-              render={({ field }) => (
-                <PhoneInput
-                  country="us"
-                  value={field.value || ""}
-                  onChange={(value, country: CountryData) => {
-                    const dialCode = country?.dialCode || "";
-                    const isoCode = country?.countryCode?.toUpperCase() || "";
+              render={({ field }) =>
+                countriesLoading || countries.length === 0 ? (
+                  <div className="w-full h-[44px] rounded-lg border border-[#2f2f2f] px-4 flex items-center text-sm text-gray-400">
+                    Loading...
+                  </div>
+                ) : (
+                  <PhoneInput
+                    country="us"
+                    value={field.value || ""}
+                    onlyCountries={countries.map((c) => c.countryCode.toLowerCase())}
+                    onChange={(value, country: CountryData) => {
+                      const dialCode = country?.dialCode || "";
+                      const isoCode = country?.countryCode || "";
+                      const numberWithoutCode = dialCode
+                        ? value.replace(/\D/g, "").slice(dialCode.length)
+                        : value.replace(/\D/g, "");
 
-                    const clean = value.replace(/\D/g, "");
-
-                    const numberWithoutCode =
-                      dialCode && clean.startsWith(dialCode)
-                        ? clean.slice(dialCode.length)
-                        : clean;
-
-                    // ✅ ONLY ONE SOURCE OF TRUTH
-                    field.onChange(value);
-
-                    setValue("countryCode", dialCode, { shouldValidate: false });
-                    setValue("mobileNumber", numberWithoutCode, { shouldValidate: false });
-                    setValue("mobileNumberSortCode", isoCode, { shouldValidate: false });
-                  }}
-                  inputClass="!w-full !h-[44px] !rounded-lg !border"
-                />
-              )}
+                      field.onChange(value);
+                      setValue("countryCode", dialCode, { shouldValidate: false });
+                      setValue("mobileNumber", numberWithoutCode, { shouldValidate: false });
+                      setValue("mobileNumberSortCode", isoCode.toUpperCase(), { shouldValidate: false });
+                    }}
+                    inputClass="!w-full !h-[44px] !rounded-lg !border"
+                  />
+                )
+              }
             />
 
             <ErrorMessage message={errors.mobileFullNumber?.message} />

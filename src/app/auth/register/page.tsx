@@ -408,30 +408,36 @@ export default function RegisterPage() {
             {t("mobile")}
           </Label>
           <div className="phone-input">
-            <PhoneInput
-              inputProps={{ id: "mobile" }}
-              country="us"
-              value={`${form.countryCode}${form.mobile}`}
-              onChange={(value, country) => {
-                if (!("dialCode" in country)) return;
+            {countriesLoading || countries.length === 0 ? (
+              <div className="w-full h-[44px] rounded-lg border border-[#2f2f2f] px-4 flex items-center text-sm text-gray-400">
+                Loading...
+              </div>
+            ) :
+              (<PhoneInput
+                inputProps={{ id: "mobile" }}
+                country="us"
+                value={`${form.countryCode}${form.mobile}`}
+                onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
+                onChange={(value, country) => {
+                  if (!("dialCode" in country)) return;
 
-                const dialCode = `+${country.dialCode}`;
-                const mobile = value.replace(country.dialCode, "");
+                  const dialCode = `+${country.dialCode}`;
+                  const mobile = value.replace(country.dialCode, "");
 
-                setForm((prev) => ({
-                  ...prev,
-                  countryCode: dialCode,
-                  mobile,
-                }));
-                setErrors((prev) => ({ ...prev, mobile: undefined }));
-              }}
-              inputClass={`
+                  setForm((prev) => ({
+                    ...prev,
+                    countryCode: dialCode,
+                    mobile,
+                  }));
+                  setErrors((prev) => ({ ...prev, mobile: undefined }));
+                }}
+                inputClass={`
         !bg-transparent !w-full !h-[44px] !text-sm !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200]
         !border ${errors.mobile ? "!border-red-500" : "!border-input"}
         !pl-14 !text-sm
         
       `}
-            />
+              />)}
           </div>
           {/* {errors.mobile && (
             <p className="text-xs text-red-500">{errors.mobile}</p>

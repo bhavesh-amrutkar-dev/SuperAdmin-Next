@@ -31,6 +31,8 @@ import { toast } from "sonner";
 import { ContactService } from "@/src/lib/services/contact";
 import { resolveIpAddress } from "@/src/lib/utils/ip-resolver";
 import { CustomerService } from "@/src/lib/services/customer.service";
+import { CountryCurrency } from "@/src/models/api/response/auth";
+import { AuthService } from "@/src/lib/services/auth";
 
 type ContactForm = {
     firstName: string;
@@ -55,6 +57,8 @@ export default function ContactPage() {
         phoneCode: "+1",
         query: "",
     });
+    const [countries, setCountries] = useState<CountryCurrency[]>([]);
+    const [countriesLoading, setCountriesLoading] = useState(false);
     const [contactDetails, setContactDetails] = useState<any[]>([]);
     const [errors, setErrors] = useState<Errors>({});
     const [loading, setLoading] = useState(false);
@@ -154,6 +158,21 @@ export default function ContactPage() {
     useEffect(() => {
         fetchContactFields();
     }, [fetchContactFields]);
+
+    useEffect(() => {
+        const fetchCountries = async () => {
+            setCountriesLoading(true);
+            try {
+                const res = await AuthService.getCurrency();
+
+                setCountries(res?.data ?? []);
+            } finally {
+                setCountriesLoading(false);
+            }
+        };
+        fetchCountries();
+    }, []);
+
     const handleChange = (id: string, value: string) => {
         const sanitized = value.replace(/^\s+/, "");
 
@@ -408,16 +427,21 @@ export default function ContactPage() {
                                                     <Label required={field.mandatory} error={!!fieldErrors[field._id]}>
                                                         {label}
                                                     </Label>
-
-                                                    <PhoneInput
-                                                        country="us"
-                                                        value={formValues[field._id] || ""}
-                                                        onChange={(value) => handleChange(field._id, value)}
-                                                        inputClass={`
+                                                    {countriesLoading || countries.length === 0 ? (
+                                                        <div className="w-full h-[44px] rounded-lg border border-[#2f2f2f] px-4 flex items-center text-sm text-gray-400">
+                                                            Loading...
+                                                        </div>
+                                                    ) : (
+                                                        <PhoneInput
+                                                            country="us"
+                                                            value={formValues[field._id] || ""}
+                                                            onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
+                                                            onChange={(value) => handleChange(field._id, value)}
+                                                            inputClass={`
             !bg-transparent !w-full !h-[44px] !text-sm !rounded-lg
             ${fieldErrors[field._id] ? "!border-red-500" : "!border-input"}
           `}
-                                                    />
+                                                        />)}
 
                                                     <ErrorMessage message={fieldErrors[field._id]} />
                                                 </div>

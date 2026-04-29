@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { useTranslations } from "next-intl";
 import { AuthService } from "@/src/lib/services/auth";
 import { toast } from "sonner";
 import { Input } from "@/src/components/ui/input";
+import { CountryCurrency } from "@/src/models/api/response/auth";
 
 type Method = "email" | "mobile" | "";
 
@@ -21,6 +22,8 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
   const [countryCode, setCountryCode] = useState("+1"); // default country code
+  const [countries, setCountries] = useState<CountryCurrency[]>([]);
+  const [countriesLoading, setCountriesLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const isDisabled =
     loading ||
@@ -105,7 +108,23 @@ export default function ForgotPasswordPage() {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    const fetchCountries = async () => {
 
+      setCountriesLoading(true);
+      try {
+        const res = await AuthService.getCurrency();
+
+        setCountries(res?.data ?? []);
+      } catch {
+        toast.error("Failed to load countries");
+      } finally {
+        setCountriesLoading(false);
+      }
+    };
+
+    fetchCountries();
+  }, []);
   return (
     <div className="w-full max-w-md rounded-2xl shadow-[inset_0_-6px_14px_0_#00000026] p-6 sm:p-8">
       {/* Header */}
@@ -181,17 +200,23 @@ export default function ForgotPasswordPage() {
             <label className="text-sm font-medium text-[#2f2f2f]">
               {t("mobileNumber")}
             </label>
-            <PhoneInput
-              country="us"
-              value={`${countryCode.replace("+", "")}${mobile}`}
-              onChange={(value, data: any) => {
-                setCountryCode(`+${data.dialCode}`);
-                setMobile(value.slice(data.dialCode.length));
-              }}
-              inputClass="!bg-transparent !w-full !h-[44px] !text-sm !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200]"
-              buttonClass="!border-[#2f2f2f]"
-              containerClass="!w-full"
-            />
+            {countriesLoading || countries.length === 0 ? (
+              <div className="w-full h-[44px] rounded-lg border border-[#2f2f2f] px-4 flex items-center text-sm text-gray-400">
+                Loading...
+              </div>
+            ) : (
+              <PhoneInput
+                country="us"
+                value={`${countryCode.replace("+", "")}${mobile}`}
+                onChange={(value, data: any) => {
+                  setCountryCode(`+${data.dialCode}`);
+                  setMobile(value.slice(data.dialCode.length));
+                }}
+                onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
+                inputClass="!bg-transparent !w-full !h-[44px] !text-sm !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200]"
+                buttonClass="!border-[#2f2f2f]"
+                containerClass="!w-full"
+              />)}
           </div>
         )}
 

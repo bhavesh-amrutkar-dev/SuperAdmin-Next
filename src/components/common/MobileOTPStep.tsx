@@ -14,6 +14,7 @@ import { Label } from "@/src/components/ui/label";
 import { Button } from "@/src/components/ui/button";
 import ErrorMessage from "@/src/components/ui/errorMessage";
 import { AuthService } from "@/src/lib/services/auth";
+import { CountryCurrency } from "@/src/models/api/response/auth";
 
 const OTP_LENGTH = 4;
 
@@ -38,7 +39,11 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
 
   const [error, setError] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
-const [countrySortCode, setCountrySortCode] = useState("us");
+  const [countrySortCode, setCountrySortCode] = useState("us");
+
+  const [countries, setCountries] = useState<CountryCurrency[]>([]);
+  const [countriesLoading, setCountriesLoading] = useState(false);
+
   // ⏱ cooldown timer
   const startResendCooldown = () => {
     setResendCooldown(60);
@@ -95,9 +100,26 @@ const [countrySortCode, setCountrySortCode] = useState("us");
 
         document.querySelector("form")?.requestSubmit();
       })
-      .catch(() => {});
+      .catch(() => { });
 
     return () => ac.abort();
+  }, []);
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+
+      setCountriesLoading(true);
+      try {
+        const res = await AuthService.getCurrency();
+        setCountries(res?.data ?? []);
+      } catch {
+        console.log("Failed to load countries");
+      } finally {
+        setCountriesLoading(false);
+      }
+    };
+
+    fetchCountries();
   }, []);
 
   // 📩 SEND OTP FLOW
@@ -214,19 +236,24 @@ const [countrySortCode, setCountrySortCode] = useState("us");
         {/* 📱 Phone Input */}
         <div>
           <Label>{t("guestProfileMobileNumber")}</Label>
-          <PhoneInput
-            country="us"
-            value={`${countryCode.replace("+", "")}${mobile}`}
-            onChange={(value, data: any) => {
-              setCountryCode(`+${data.dialCode}`);
-              setMobile(value.slice(data.dialCode.length));
-               setCountrySortCode(data.countryCode);
-              setOtpSent(false);
-              setOtp(Array(OTP_LENGTH).fill(""));
-              setError(null);
-            }}
-            inputClass="!w-full !h-[44px]"
-          />
+          {countriesLoading || countries.length === 0 ? (
+            <div className="w-full h-[44px] rounded-lg border border-[#2f2f2f] px-4 flex items-center text-sm text-gray-400">
+              Loading...
+            </div>
+          ) : (
+            <PhoneInput
+              country="us"
+              value={`${countryCode.replace("+", "")}${mobile}`}
+              onChange={(value, data: any) => {
+                setCountryCode(`+${data.dialCode}`);
+                setMobile(value.slice(data.dialCode.length));
+                setCountrySortCode(data.countryCode);
+                setOtpSent(false);
+                setOtp(Array(OTP_LENGTH).fill(""));
+                setError(null);
+              }}
+              inputClass="!w-full !h-[44px]"
+            />)}
         </div>
 
         {/* SEND OTP */}

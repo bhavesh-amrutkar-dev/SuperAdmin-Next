@@ -322,24 +322,30 @@ export default function AddressPage() {
                                 {/* Mobile */}
                                 <div className="md:col-span-2 space-y-2">
                                     <Label required>{t("mobile")}</Label>
-                                    <PhoneInput
-                                        country="us"
-                                        containerClass="!w-full"
-                                        inputClass="!w-full !h-[44px] !rounded-lg !border !border-gray-300 !text-sm !pl-14 focus:!border-[#f3c200] focus:!ring-2 focus:!ring-yellow-200"
-                                        onChange={(value, country: any) => {
-                                            const numberWithoutCode = value.replace(country.dialCode, "");
+                                    {countriesLoading || countries.length === 0 ? (
+                                        <div className="w-full h-[44px] rounded-lg border border-[#2f2f2f] px-4 flex items-center text-sm text-gray-400">
+                                            Loading...
+                                        </div>
+                                    ) : (
+                                        <PhoneInput
+                                            country="us"
+                                            containerClass="!w-full"
+                                            onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
+                                            inputClass="!w-full !h-[44px] !rounded-lg !border !border-gray-300 !text-sm !pl-14 focus:!border-[#f3c200] focus:!ring-2 focus:!ring-yellow-200"
+                                            onChange={(value, country: any) => {
+                                                const numberWithoutCode = value.replace(country.dialCode, "");
 
-                                            setValue("mobileNumber", numberWithoutCode, {
-                                                shouldValidate: true,
-                                            });
+                                                setValue("mobileNumber", numberWithoutCode, {
+                                                    shouldValidate: true,
+                                                });
 
-                                            setValue("mobileNumberCode", country.dialCode);
-                                            setValue("mobileNumberSortCode", country.countryCode);
+                                                setValue("mobileNumberCode", country.dialCode);
+                                                setValue("mobileNumberSortCode", country.countryCode);
 
-                                            // 🔥 trigger validation immediately
-                                            trigger("mobileNumber");
-                                        }}
-                                    />
+                                                // 🔥 trigger validation immediately
+                                                trigger("mobileNumber");
+                                            }}
+                                        />)}
                                     <ErrorMessage message={errors.mobileNumber?.message} />
                                 </div>
                                 <input
