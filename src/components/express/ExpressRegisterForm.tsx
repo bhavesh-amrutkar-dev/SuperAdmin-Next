@@ -13,6 +13,7 @@ import { Button } from "../ui/button";
 import { useEffect, useState } from "react";
 import { CountryCurrency } from "@/src/models/api/response/auth";
 import { AuthService } from "@/src/lib/services/auth";
+import { getCookie } from "cookies-next";
 
 export type ExpressRegisterFormRM = {
   firstName: string;
@@ -80,6 +81,7 @@ export default function ExpressRegisterForm({
   isExpressOrder?: boolean;
   isRaffle: boolean;
 }) {
+  const defaultCountry = (getCookie("C_code") as string || "pr").toLowerCase();
   const [countries, setCountries] = useState<CountryCurrency[]>([]);
   const [countriesLoading, setCountriesLoading] = useState(false);
   const t = useTranslations();
@@ -235,7 +237,7 @@ export default function ExpressRegisterForm({
                   </div>
                 ) : (
                   <PhoneInput
-                    country="us"
+                    country={defaultCountry}
                     value={field.value || ""}
                     onlyCountries={countries.map((c) => c.countryCode.toLowerCase())}
                     onChange={(value, country: CountryData) => {

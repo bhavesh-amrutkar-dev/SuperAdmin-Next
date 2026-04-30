@@ -11,13 +11,14 @@ import { useTranslations } from "next-intl";
 import { AuthService } from "@/src/lib/services/auth";
 import { IMobileLoginRM } from "@/src/models/api/request/auth";
 import { CountryCurrency } from "@/src/models/api/response/auth";
+import { getCookie } from "cookies-next";
 
 export default function LoginMobilePage() {
   const router = useRouter();
   const t = useTranslations();
   const searchParams = useSearchParams();
   const redirect = searchParams?.get("redirect");
-
+  const defaultCountry = (getCookie("C_code") as string || "pr").toLowerCase();
   const [mobile, setMobile] = useState("");
   const [countryCode, setCountryCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -114,7 +115,7 @@ export default function LoginMobilePage() {
               </div>
             ) :
               (<PhoneInput
-                country="us"
+                country={defaultCountry}
                 value={`${countryCode.replace("+", "")}${mobile}`}
                 onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
                 onChange={(value, data: any) => {

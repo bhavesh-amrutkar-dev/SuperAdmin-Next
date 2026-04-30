@@ -7,6 +7,7 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { useTranslations } from "next-intl";
 import { AuthService } from "@/src/lib/services/auth";
+import { getCookie } from "cookies-next";
 import { toast } from "sonner";
 import { Input } from "@/src/components/ui/input";
 import { CountryCurrency } from "@/src/models/api/response/auth";
@@ -18,6 +19,7 @@ export default function ForgotPasswordPage() {
   const t = useTranslations();
   const searchParams = useSearchParams();
   const redirect = searchParams?.get("redirect");
+  const defaultCountry = (getCookie("C_code") as string || "pr").toLowerCase();
   const [method, setMethod] = useState<Method>("email");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
@@ -206,7 +208,7 @@ export default function ForgotPasswordPage() {
               </div>
             ) : (
               <PhoneInput
-                country="us"
+                country={defaultCountry}
                 value={`${countryCode.replace("+", "")}${mobile}`}
                 onChange={(value, data: any) => {
                   setCountryCode(`+${data.dialCode}`);

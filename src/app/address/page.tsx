@@ -19,6 +19,7 @@ import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import { Textarea } from "@/src/components/ui/textarea";
 import { useProfile } from "@/src/lib/hooks/userProfile";
+import { getCookie } from "cookies-next";
 
 type AddressFormRM = {
     firstName: string;
@@ -66,6 +67,7 @@ const mapCountryCurrency = (data: any[]): CountryCurrency[] => {
 export default function AddressPage() {
     const t = useTranslations();
     const router = useRouter();
+    const defaultCountry = (getCookie("C_code") as string || "pr").toLowerCase();
 
     const [countries, setCountries] = useState<CountryCurrency[]>([]);
     const [countriesLoading, setCountriesLoading] = useState(false);
@@ -328,7 +330,7 @@ export default function AddressPage() {
                                         </div>
                                     ) : (
                                         <PhoneInput
-                                            country="us"
+                                            country={defaultCountry}
                                             containerClass="!w-full"
                                             onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
                                             inputClass="!w-full !h-[44px] !rounded-lg !border !border-gray-300 !text-sm !pl-14 focus:!border-[#f3c200] focus:!ring-2 focus:!ring-yellow-200"

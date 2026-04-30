@@ -33,6 +33,7 @@ import { resolveIpAddress } from "@/src/lib/utils/ip-resolver";
 import { CustomerService } from "@/src/lib/services/customer.service";
 import { CountryCurrency } from "@/src/models/api/response/auth";
 import { AuthService } from "@/src/lib/services/auth";
+import { getCookie } from "cookies-next";
 
 type ContactForm = {
     firstName: string;
@@ -49,6 +50,7 @@ type Errors = Partial<Record<keyof ContactForm, string>>;
 export default function ContactPage() {
     const locale = useLocale();
     const t = useTranslations();
+    const defaultCountry = (getCookie("C_code") as string || "pr").toLowerCase();
     const [formData, setFormData] = useState<ContactForm>({
         firstName: "",
         lastName: "",
@@ -433,7 +435,7 @@ export default function ContactPage() {
                                                         </div>
                                                     ) : (
                                                         <PhoneInput
-                                                            country="us"
+                                                            country={defaultCountry}
                                                             value={formValues[field._id] || ""}
                                                             onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
                                                             onChange={(value) => handleChange(field._id, value)}

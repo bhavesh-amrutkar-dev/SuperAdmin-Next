@@ -14,6 +14,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { useProfile } from "../lib/hooks/userProfile";
+import { getCookie } from "cookies-next";
 
 export type AddressFormRM = {
     // 👤 UI fields
@@ -66,7 +67,7 @@ const mapCountryCurrency = (data: any[]): CountryCurrency[] => {
         currencyCode: c.currencyShortCode,
         currencyName: "", // optional
         currencySymbol: c.currencySymbol,
-        countryCodeMobile: "", // optional
+        countryCodeMobile: c.countryCodeMobile || "",
         emoji: getFlagEmoji(c.countryCode),
         ioc: "", // optional
     }));
@@ -81,12 +82,16 @@ export default function AddressForm({
     loading?: boolean;
 }) {
     const t = useTranslations();
-
+    console.log("defaultValues", defaultValues);
     const [countries, setCountries] = useState<CountryCurrency[]>([]);
+    const [countryCode, setCountryCode] = useState("");
     const [countriesLoading, setCountriesLoading] = useState(false);
     const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
     const [loadingLocation, setLoadingLocation] = useState(false);
     const { user } = useProfile();
+    const defaultCountry = (getCookie("C_code") as string || "pr").toLowerCase();
+    console.log("defaultCountry", defaultCountry);
+    console.log("defaultValues ", defaultValues);
     const {
         register,
         handleSubmit,
@@ -116,22 +121,26 @@ export default function AddressForm({
             setValue("countryId", defaultValues.countryId);
         }
     }, [defaultValues, setValue]);
+
     useEffect(() => {
         if (!user || defaultValues) return;
 
         setValue("firstName", user.firstName || "");
         setValue("lastName", user.lastName || "");
-
-        if (user.mobile) {
-            setValue("mobileNumber", user.mobile);
-            setValue("mobileNumberCode", user.countryCode?.replace("+", "") || "");
-            setValue("mobileNumberSortCode", user.sortCountryCode || "");
-        }
+        console.log("user", user);
+        // if (user.mobile) {
+        //     console.log("user.mobile", user.mobile);
+        //     console.log("user.countryCode", user.countryCode);
+        //     console.log("user.sortCountryCode", user.sortCountryCode);
+        //     setValue("mobileNumber", user.mobile);
+        //     setValue("mobileNumberCode", user.countryCode?.replace("+", "") || "");
+        //     setValue("mobileNumberSortCode", user.sortCountryCode?.toLowerCase() || defaultCountry);
+        // }
     }, [user, defaultValues, setValue]);
 
     const taggedAs = watch("taggedAs");
     const mobileNumber = watch("mobileNumber");
-    const mobileCode = watch("mobileNumberCode");
+    const mobileSortCode = watch("mobileNumberSortCode");
     const askLocationPermission = () => {
         if (!("geolocation" in navigator)) return;
 
@@ -197,8 +206,20 @@ export default function AddressForm({
             setCountriesLoading(true);
             try {
                 const res = await AuthService.getCurrency();
+                const mapped = mapCountryCurrency(res?.data ?? []);
+                setCountries(mapped);
 
-                setCountries(mapCountryCurrency(res?.data ?? []));
+                if (!defaultValues && mapped.length > 0) {
+                    const allowedCodes = mapped.map(c => c.countryCode.toLowerCase());
+                    const validDefault = allowedCodes.includes(defaultCountry)
+                        ? defaultCountry
+                        : allowedCodes[0];
+                    setValue("mobileNumberSortCode", validDefault);
+                    const matchedCountry = mapped.find(c => c.countryCode.toLowerCase() === validDefault);
+                    if (matchedCountry) {
+                        setValue("mobileNumberCode", matchedCountry.countryCodeMobile.replace("+", ""));
+                    }
+                }
             } finally {
                 setCountriesLoading(false);
             }
@@ -340,27 +361,26 @@ export default function AddressForm({
                     <div className="md:col-span-2 space-y-2">
                         <Label required>{t("mobile")}</Label>
                         <div className="phone-input">
-                            {countriesLoading || countries.length === 0 ? (
+                            {countriesLoading || countries.length === 0 || !mobileSortCode ? (
                                 <div className="w-full h-[44px] rounded-lg border border-[#2f2f2f] px-4 flex items-center text-sm text-gray-400">
                                     Loading...
                                 </div>
                             ) : (
                                 <PhoneInput
-                                    country="us"
-                                    value={`${mobileCode || ""}${mobileNumber || ""}`}
+                                    key={mobileSortCode || defaultCountry}
+                                    country={mobileSortCode?.toLowerCase() || defaultCountry}
+                                    value={mobileNumber || ""}
                                     onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
+                                    // disableCountryCode={true}
                                     containerClass="!w-full"
                                     inputClass="!w-full !h-[44px] !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200] !text-sm !pl-14"
                                     onChange={(value, country: any) => {
                                         const numberWithoutCode = value.replace(country.dialCode, "");
-
-                                        setValue("mobileNumber", numberWithoutCode, {
-                                            shouldValidate: true,
-                                        });
-
+                                        setValue("mobileNumber", numberWithoutCode, { shouldValidate: true });
                                         setValue("mobileNumberCode", country.dialCode);
                                         setValue("mobileNumberSortCode", country.countryCode);
-
+                                        setCountryCode(country.countryCode.toLowerCase());
+                                        console.log("countryCode", country.countryCode.toLowerCase());
                                         trigger("mobileNumber");
                                     }}
                                 />

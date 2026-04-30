@@ -14,6 +14,7 @@ import { Label } from "@/src/components/ui/label";
 import { Button } from "@/src/components/ui/button";
 import ErrorMessage from "@/src/components/ui/errorMessage";
 import { AuthService } from "@/src/lib/services/auth";
+import { getCookie } from "cookies-next";
 import { CountryCurrency } from "@/src/models/api/response/auth";
 
 const OTP_LENGTH = 4;
@@ -26,6 +27,7 @@ type Props = {
 
 export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) {
   const t = useTranslations();
+  const defaultCountry = (getCookie("C_code") as string || "pr").toLowerCase();
 
   const [countryCode, setCountryCode] = useState("+971");
   const [mobile, setMobile] = useState("");
@@ -242,7 +244,7 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
             </div>
           ) : (
             <PhoneInput
-              country="us"
+              country={defaultCountry}
               value={`${countryCode.replace("+", "")}${mobile}`}
               onChange={(value, data: any) => {
                 setCountryCode(`+${data.dialCode}`);

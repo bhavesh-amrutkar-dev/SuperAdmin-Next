@@ -1,6 +1,7 @@
 "use client";
 
 import { useDebounce } from "@/src/lib/hooks/useDebounce";
+import { getCookie } from "cookies-next";
 import { AuthService } from "@/src/lib/services/auth";
 import { CountryCurrency } from "@/src/models/api/response/auth";
 import Link from "next/link";
@@ -30,6 +31,7 @@ type RegisterForm = {
 type Errors = Partial<Record<keyof RegisterForm, string>>;
 
 export default function RegisterPage() {
+  const defaultCountry = (getCookie("C_code") as string || "pr").toLowerCase();
   const [countries, setCountries] = useState<CountryCurrency[]>([]);
   const [countriesLoading, setCountriesLoading] = useState(false);
   const [countriesError, setCountriesError] = useState<string | null>(null);
@@ -415,7 +417,7 @@ export default function RegisterPage() {
             ) :
               (<PhoneInput
                 inputProps={{ id: "mobile" }}
-                country="us"
+                country={defaultCountry}
                 value={`${form.countryCode}${form.mobile}`}
                 onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
                 onChange={(value, country) => {
