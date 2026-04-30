@@ -30,7 +30,7 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
   const t = useTranslations();
   const defaultCountry = (getCookie("C_code") as string || "pr").toLowerCase();
 
-  const [countryCode, setCountryCode] = useState("+971");
+  const [countryCode, setCountryCode] = useState("");
   const [mobile, setMobile] = useState("");
 
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
@@ -296,6 +296,7 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
                 <PhoneInput
                   country="us"
                   value={`${countryCode.replace("+", "")}${mobile}`}
+                  onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
                   onChange={(value, data: any) => {
                     setCountryCode(`+${data.dialCode}`);
                     setMobile(value.slice(data.dialCode.length));
