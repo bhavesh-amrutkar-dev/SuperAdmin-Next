@@ -1108,8 +1108,7 @@ border text-sm transition-all cursor-pointer gap-1
 
                     <div className="flex flex-col gap-3">
 
-                      {/* ATH Móvil */}
-                      <button
+                      {/* <button
                         type="button"
                         onClick={() => {
                           trackEvent("SELECT_PAYMENT_METHOD", {
@@ -1122,7 +1121,7 @@ border text-sm transition-all cursor-pointer gap-1
                           : "border-gray-200 hover:border-gray-300 bg-white"
                           }`}
                       >
-                        {/* LEFT */}
+
                         <div className="flex items-center gap-3">
                           <span className={`min-w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "athMovil" ? "border-yellow-500" : "border-gray-300"
                             }`}>
@@ -1136,14 +1135,13 @@ border text-sm transition-all cursor-pointer gap-1
                           </span>
                         </div>
 
-                        {/* RIGHT */}
                         <Image
                           src="/images/icons/authmovil.png"
                           alt="ATH"
                           width={28}
                           height={18}
                         />
-                      </button>
+                      </button> */}
                       {paymentMethod === "athMovil" && isAthReady && athToken && athOrderId && (
                         <div className="px-6 pb-6 pt-2 border-t border-gray-100 space-y-3 my-4 bg-gray-100 rounded-xl">
 
