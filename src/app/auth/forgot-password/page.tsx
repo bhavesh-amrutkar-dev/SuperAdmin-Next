@@ -209,6 +209,7 @@ export default function ForgotPasswordPage() {
             ) : (
               <PhoneInput
                 country={defaultCountry}
+                countryCodeEditable={false}
                 value={`${countryCode.replace("+", "")}${mobile}`}
                 onChange={(value, data: any) => {
                   setCountryCode(`+${data.dialCode}`);

@@ -116,6 +116,7 @@ export default function LoginMobilePage() {
             ) :
               (<PhoneInput
                 country={defaultCountry}
+                countryCodeEditable={false}
                 value={`${countryCode.replace("+", "")}${mobile}`}
                 onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
                 onChange={(value, data: any) => {

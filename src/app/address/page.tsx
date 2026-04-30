@@ -332,6 +332,7 @@ export default function AddressPage() {
                                         <PhoneInput
                                             country={defaultCountry}
                                             containerClass="!w-full"
+                                            countryCodeEditable={false}
                                             onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
                                             inputClass="!w-full !h-[44px] !rounded-lg !border !border-gray-300 !text-sm !pl-14 focus:!border-[#f3c200] focus:!ring-2 focus:!ring-yellow-200"
                                             onChange={(value, country: any) => {

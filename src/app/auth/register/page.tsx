@@ -417,6 +417,7 @@ export default function RegisterPage() {
             ) :
               (<PhoneInput
                 inputProps={{ id: "mobile" }}
+                countryCodeEditable={false}
                 country={defaultCountry}
                 value={`${form.countryCode}${form.mobile}`}
                 onlyCountries={countries.map(c => c.countryCode.toLowerCase())}

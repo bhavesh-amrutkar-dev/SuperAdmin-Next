@@ -238,6 +238,7 @@ export default function ExpressRegisterForm({
                 ) : (
                   <PhoneInput
                     country={defaultCountry}
+                    countryCodeEditable={false}
                     value={field.value || ""}
                     onlyCountries={countries.map((c) => c.countryCode.toLowerCase())}
                     onChange={(value, country: CountryData) => {

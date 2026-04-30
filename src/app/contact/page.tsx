@@ -436,6 +436,7 @@ export default function ContactPage() {
                                                     ) : (
                                                         <PhoneInput
                                                             country={defaultCountry}
+                                                            countryCodeEditable={false}
                                                             value={formValues[field._id] || ""}
                                                             onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
                                                             onChange={(value) => handleChange(field._id, value)}
