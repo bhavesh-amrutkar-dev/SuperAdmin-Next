@@ -10,6 +10,8 @@ interface BackendOrderResponse {
     checkoutProcessUrl: string;
     onlinePaymentMethod: number;
     onlinePaymentMethodText: string;
+    totalAmount?: number;
+    timeOut?: number | string;
   };
 }
 

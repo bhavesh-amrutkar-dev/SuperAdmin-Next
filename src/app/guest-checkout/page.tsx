@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { getCookie, setCookie } from "cookies-next";
@@ -27,9 +27,15 @@ import { Button } from "@/src/components/ui/button";
 import { trackEvent } from "@/src/lib/analytics";
 import { BankDetail, PaymentService } from "@/src/lib/services/payment";
 import { FileUploader } from "@/src/components/ui/fileUploader";
-import AthMovilPayment from "@/src/components/payments/AuthMovilPayment";
 import { useForm } from "react-hook-form";
 import { getErrorMessage } from "@/src/lib/utils/errorMessage";
+import {
+  formatTimer,
+  handleAthMovilApiResponse,
+  hasStoredAthMovilNumber,
+  normalizeAthMovilNumber,
+} from "@/src/lib/utils/athMovil";
+import PhoneInput from "react-phone-input-2";
 
 // ─────────────────────────────────────────────
 // Types
@@ -160,11 +166,15 @@ export default function GuestCheckoutPage() {
   const [manualPaymentConfirmed, setManualPaymentConfirmed] = useState(false);
   const [pendingFormData, setPendingFormData] = useState<any>(null);
   const [athOrderId, setAthOrderId] = useState<string | null>(null);
-  const [athToken, setAthToken] = useState<string | null>(null);
-  const [isAthReady, setIsAthReady] = useState(false);
-  const [orderTotal, setOrderTotal] = useState(0);
   const [updatingKeys, setUpdatingKeys] = useState<Record<string, "inc" | "dec" | null>>({});
   const [isRefreshingCart, setIsRefreshingCart] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [timer, setTimer] = useState(0);
+  const [athNumberModalOpen, setAthNumberModalOpen] = useState(false);
+  const [athMobile, setAthMobile] = useState("");
+  const [athMobileError, setAthMobileError] = useState("");
+  const [pendingAthFormData, setPendingAthFormData] = useState<any>(null);
+  const pollingCancelledRef = useRef(false);
   const form = useForm<ExpressRegisterFormRM>({
     mode: "onSubmit",              // ✅ change this
     reValidateMode: "onChange",    // ✅ change this
@@ -608,6 +618,199 @@ export default function GuestCheckoutPage() {
       throw new Error("CART_INVALID");
     }
   };
+
+  useEffect(() => {
+    if (!isUpdatingStatus || timer <= 0) return;
+
+    const interval = window.setInterval(() => {
+      setTimer((value) => Math.max(value - 1, 0));
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [isUpdatingStatus, timer]);
+
+  const getAthPublicToken = async () => {
+    const tokenRes = await PaymentService.ATHMovileToken();
+    const publicToken =
+      (tokenRes as any)?.data?.data?.publicToken ||
+      (tokenRes as any)?.data?.publicToken;
+
+    if (!publicToken) {
+      throw new Error(t("guestCheckoutAthTokenMissing"));
+    }
+
+    return publicToken;
+  };
+
+  const validateAthMovilNumber = async (phoneNumber: string) => {
+    console.log("test", phoneNumber);
+
+    const publicToken = await getAthPublicToken();
+    const res = await fetch("/api/athmovil/validate-personal", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ publicToken, phoneNumber }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.message || t("guestCheckoutAthPaymentFailed"));
+    }
+
+    handleAthMovilApiResponse(data);
+  };
+
+  const checkStoredAthMovilNumber = async (email: string, athMovilNumber: string) => {
+    const params = new URLSearchParams({ email, athMovilNumber });
+    const res = await fetch(`/api/athmovil/check-number?${params.toString()}`);
+    const data = await res.json();
+
+    // if (!res.ok) {
+    //   throw new Error(data?.message || t("guestCheckoutAthPaymentFailed"));
+    // }
+
+    return hasStoredAthMovilNumber(data);
+  };
+
+  const updateStoredAthMovilNumber = async (email: string, athMovilNumber: string) => {
+    const res = await fetch("/api/athmovil/check-number", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, athMovilNumber }),
+    });
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      throw new Error(data?.message || t("guestCheckoutAthPaymentFailed"));
+    }
+  };
+
+  const openAthNumberPrompt = (formData: any, message?: string) => {
+    setPendingAthFormData(formData);
+    setAthMobile("");
+    setAthMobileError(message || "");
+    setAthNumberModalOpen(true);
+    setPlacingOrder(false);
+  };
+
+  const resolveGuestAthMovilNumber = async (formData: any) => {
+    const email = String(formData?.email || "").trim();
+    const candidateNumber = normalizeAthMovilNumber(`${formData?.countryCode || ""}${formData?.phone || ""}`);
+
+    if (!email || candidateNumber.length < 10) {
+      openAthNumberPrompt(formData);
+      return null;
+    }
+    console.log("stored");
+
+    const stored = await checkStoredAthMovilNumber(email, candidateNumber);
+    console.log("staored", stored);
+
+    if (stored) return candidateNumber;
+
+    try {
+      await validateAthMovilNumber(candidateNumber);
+      // await updateStoredAthMovilNumber(email, candidateNumber);
+      return candidateNumber;
+    } catch {
+      openAthNumberPrompt(formData, "Please enter your ATH Móvil number.");
+      return null;
+    }
+  };
+
+  const pollOrderStatus = async (orderId: string, timeoutSeconds: number) => {
+    const startTime = Date.now();
+    const maxTime = timeoutSeconds * 1000;
+    pollingCancelledRef.current = false;
+
+    while (!pollingCancelledRef.current && Date.now() - startTime < maxTime) {
+      try {
+        const res = await fetch("/api/orders/status-v2", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId, paymentMethod: 10 }),
+        });
+        const data = await res.json();
+        const status = String(
+          data?.statusText ||
+          data?.data?.statusText ||
+          data?.status ||
+          data?.data?.status ||
+          ""
+        ).toLowerCase();
+
+        if (status === "success") {
+          trackEvent("ATH_MOVIL_SUCCESS", { order_id: orderId });
+          setIsUpdatingStatus(false);
+          setPlacingOrder(false);
+          router.push("/thank-you?payment=athmovil");
+          return;
+        }
+
+        if (status === "cancelled" || status === "canceled" || status === "failed") {
+          trackEvent("ATH_MOVIL_CANCEL", { order_id: orderId });
+          setIsUpdatingStatus(false);
+          setPlacingOrder(false);
+          toast.error(t("paymentCancelled"));
+          await fetchCart();
+          return;
+        }
+      } catch (err) {
+        console.warn("Polling error:", err);
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 30000));
+    }
+
+    if (!pollingCancelledRef.current) {
+      setIsUpdatingStatus(false);
+      setPlacingOrder(false);
+      router.push("/");
+    }
+  };
+
+  const placeExpressOrder = async (formData: any, athMovilNumber?: string) => {
+    const ipAddress = await getMyIP();
+
+    const onlinePaymentMethodCode =
+      paymentMethod === "athMovil" ? 10 :
+        paymentMethod === "manual" ? 12 :
+          21;
+
+    const orderPayload = {
+      ...formData,
+      ...(athMovilNumber && {
+        athMovilNumber: `+1${athMovilNumber}`,
+      }),
+      ipAddress,
+      storeType: 8,
+      paymentType: 1,
+      onlinePaymentMethod: onlinePaymentMethodCode,
+
+      tip: 0,
+      extraNote: "",
+      orderImages: [],
+      payByWallet: false,
+      payByRewardWallet: false,
+    };
+
+    const res = await fetch("/api/expressRegistration", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(orderPayload),
+    });
+
+    const orderData = await res.json();
+
+    if (!res.ok || !orderData?.orderId) {
+      throw new Error(orderData?.message || t("guestCheckoutOrderFailed"));
+    }
+
+    return orderData;
+  };
+
   const handleDynamicSubmit = async (formData: any) => {
     trackEvent("CLICK_PAY", {
       payment_method: paymentMethod,
@@ -617,12 +820,7 @@ export default function GuestCheckoutPage() {
       setPlacingOrder(true);
 
       await validateCart();
-      const ipAddress = await getMyIP();
 
-      const onlinePaymentMethodCode =
-        paymentMethod === "athMovil" ? 10 :
-          paymentMethod === "manual" ? 12 :
-            21;
       // ✅ Manual payment
       if (paymentMethod === "manual") {
         setPendingFormData(formData); // store form
@@ -630,36 +828,16 @@ export default function GuestCheckoutPage() {
         setPlacingOrder(false);
         return;
       }
-      const orderPayload = {
-        ...formData, // ✅ comes from dynamic form
 
-        ipAddress,
-        storeType: 8,
-        paymentType: 1,
-        onlinePaymentMethod: onlinePaymentMethodCode,
-
-        tip: 0,
-        extraNote: "",
-        orderImages: [],
-        payByWallet: false,
-        payByRewardWallet: false,
-      };
-      // console.log("orderPayload", orderPayload);
-
-      const res = await fetch("/api/expressRegistration", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(orderPayload),
-      });
-      // console.log("res", res);
-
-      const orderData = await res.json();
-
-      if (!res.ok || !orderData?.orderId) {
-        throw new Error(orderData?.message || t("guestCheckoutOrderFailed"));
+      let athMovilNumber: string | undefined;
+      if (paymentMethod === "athMovil") {
+        const resolved = await resolveGuestAthMovilNumber(formData);
+        if (!resolved) return;
+        athMovilNumber = resolved;
       }
+
+      const orderData = await placeExpressOrder(formData, athMovilNumber);
+
       trackEvent("ORDER_CREATED", {
         order_id: orderData.orderId,
         payment_method: paymentMethod,
@@ -686,37 +864,18 @@ export default function GuestCheckoutPage() {
         return;
       }
       if (paymentMethod === "athMovil") {
-        try {
-          trackEvent("ATH_PAYMENT_INIT", {
-            order_id: orderData.orderId,
-            amount: grandTotal,
-          });
+        trackEvent("ATH_PAYMENT_INIT", {
+          order_id: orderData.orderId,
+          amount: grandTotal,
+        });
 
-          // ✅ Save order info
-          setAthOrderId(orderData.orderId);
-          setOrderTotal(orderData.totalAmount || grandTotal);
+        setAthOrderId(orderData.orderId);
+        const timeoutSeconds = Number(orderData?.timeOut) || 300;
 
-          // ✅ Get ATH token
-          const tokenRes = await PaymentService.ATHMovileToken();
-
-          const publicToken =
-            (tokenRes as any)?.data?.data?.publicToken ||
-            (tokenRes as any)?.data?.publicToken;
-
-          if (!publicToken) {
-            throw new Error(t("guestCheckoutAthTokenMissing"));
-          }
-
-          // ✅ Set state → triggers component
-          setAthToken(publicToken);
-          setIsAthReady(true);
-
-          return; // ❗ STOP here
-        } catch (err: any) {
-          toast.error(getErrorMessage(err, t("guestCheckoutAthPaymentFailed")));
-          setPlacingOrder(false);
-          return;
-        }
+        setTimer(timeoutSeconds);
+        setIsUpdatingStatus(true);
+        await pollOrderStatus(orderData.orderId, timeoutSeconds);
+        return;
       }
 
     } catch (err: any) {
@@ -739,58 +898,42 @@ export default function GuestCheckoutPage() {
       setPlacingOrder(false);
     }
   };
-  const handleAthSuccess = async () => {
-    trackEvent("ATH_MOVIL_SUCCESS", {
-      order_id: athOrderId
-    });
+  const handleUserCancelClick = () => {
+    pollingCancelledRef.current = true;
+    setIsUpdatingStatus(false);
+    setPlacingOrder(false);
+    router.push("/");
+  };
 
-    if (!athOrderId) return;
+  const handleAthNumberConfirm = async () => {
+    const normalized = normalizeAthMovilNumber(athMobile);
+
+    if (normalized.length < 10) {
+      setAthMobileError("Please enter valid mobile number for ATH Móvil");
+      return;
+    }
+
+    if (!pendingAthFormData) return;
 
     try {
-      setIsAthReady(false);
-      setPlacingOrder(false);
+      setAthMobileError("");
+      setPlacingOrder(true);
+      await validateAthMovilNumber(normalized);
+      // await updateStoredAthMovilNumber(String(pendingAthFormData.email || ""), normalized);
+      setAthNumberModalOpen(false);
 
-      await fetch("/api/orders/status-update", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          orderId: athOrderId,
-          paymentMethod: 10,
-        }),
-      });
+      const orderData = await placeExpressOrder(pendingAthFormData, normalized);
+      localStorage.setItem("orderId", orderData.orderId);
+      setAthOrderId(orderData.orderId);
 
-      router.push("/thank-you?payment=athmovil");
-
+      const timeoutSeconds = Number(orderData?.timeOut) || 300;
+      setTimer(timeoutSeconds);
+      setIsUpdatingStatus(true);
+      await pollOrderStatus(orderData.orderId, timeoutSeconds);
     } catch (err) {
-      toast.error(t("guestCheckoutPaymentConfirmationFailed"));
+      setAthMobileError(getErrorMessage(err, "ATH Móvil validation failed"));
+      setPlacingOrder(false);
     }
-  };
-  const handleAthCancel = async () => {
-    trackEvent("ATH_MOVIL_CANCEL", {
-      order_id: athOrderId
-    });
-
-    if (!athOrderId) return;
-
-    setIsAthReady(false);
-    setPlacingOrder(false);
-
-    toast.error(t("paymentCancelled"));
-
-    await fetch("/api/orders/status-update", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        orderId: athOrderId,
-        paymentMethod: 10,
-      }),
-    }).catch(() => { });
-
-    fetchCart();
   };
 
   const baseCls = `
@@ -813,7 +956,68 @@ border text-sm transition-all cursor-pointer gap-1
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#ededed]">
+    <div className={`min-h-screen flex flex-col bg-[#ededed] ${isUpdatingStatus ? "pointer-events-none select-none" : ""}`}>
+      {isUpdatingStatus && (
+        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center pointer-events-auto">
+          <div className="bg-white rounded-2xl shadow-2xl px-8 py-6 flex flex-col items-center gap-4 min-w-[260px]">
+            <div className="relative w-14 h-14">
+              <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-[#f3c200] border-t-transparent animate-spin"></div>
+            </div>
+
+            <h3 className="text-base font-semibold text-[#2f2f2f] text-center">
+              {t("processingPayment") || "Processing Payment"}
+            </h3>
+
+            <p className="text-xs text-gray-500 text-center">
+              {t("pleaseWaitDoNotClose") || "Please wait... do not refresh or close"}
+            </p>
+
+            <div className="text-sm font-semibold text-[#D4AF37]">
+              {formatTimer(timer)}
+            </div>
+
+            <button
+              onClick={handleUserCancelClick}
+              className="mt-2 text-sm text-red-500 hover:cursor-pointer"
+            >
+              {t("cancelTransaction") || "Cancel Transaction"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {athNumberModalOpen &&
+        (
+          <div className="fixed inset-0 z-[9998] bg-black/50 flex items-center justify-center p-4 pointer-events-auto">
+            <div className="bg-white w-full max-w-md rounded-2xl p-6 space-y-4 shadow-xl">
+              <h2 className="text-lg font-semibold text-gray-800"> ATH Móvil number </h2>
+              <p className="text-sm text-gray-500"> Please enter the ATH Móvil number registered to your account. </p>
+              <Input value={athMobile}
+                onChange={(event) => {
+                  setAthMobile(event.target.value);
+                  setAthMobileError("");
+                }}
+                placeholder="7871234567"
+                inputMode="tel" />
+              {athMobileError && (<p className="text-xs text-red-500">{athMobileError}</p>)}
+              <div className="flex gap-3">
+                <Button variant="outline" className="w-full"
+                  onClick={() => {
+                    setAthNumberModalOpen(false);
+                    setPendingAthFormData(null);
+                  }} >
+                  {t("cancel")}
+                </Button>
+                <Button className="w-full"
+                  disabled={placingOrder}
+                  onClick={handleAthNumberConfirm} >
+                  {placingOrder ? t("processing") : t("continue")}
+                </Button>
+              </div>
+            </div>
+          </div>)}
+
       <Header />
 
       <main className="flex-1 py-8 px-4 pb-8">
@@ -1145,145 +1349,113 @@ border text-sm transition-all cursor-pointer gap-1
                           height={18}
                         />
                       </button>
-                      {paymentMethod === "athMovil" && isAthReady && athToken && athOrderId && (
-                        <div className="px-6 pb-6 pt-2 border-t border-gray-100 space-y-3 my-4 bg-gray-100 rounded-xl">
+                      {/* Manual Payment */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          trackEvent("SELECT_PAYMENT_METHOD", {
+                            method: "manual",
+                          });
+                          setPaymentMethod("manual")
+                        }}
+                        className={`${baseCls} ${paymentMethod === "manual"
+                          ? "border-yellow-400 bg-yellow-50"
+                          : "border-gray-200 hover:border-gray-300 bg-white"
+                          }`}
+                      >
+                        {/* LEFT */}
+                        <div className="flex items-center gap-2 xl:gap-3">
+                          <span className={`min-w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "manual" ? "border-yellow-500" : "border-gray-300"
+                            }`}>
+                            {paymentMethod === "manual" && (
+                              <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                            )}
+                          </span>
 
-                          <p className="text-sm font-medium text-gray-700">
-                            {t("payment.title")}
-                          </p>
-
-                          <p className="text-xs text-gray-500">
-                            {t("guestCheckoutAthInstruction")}
-                          </p>
-
-                          {/* 🔥 ATH BUTTON RENDERS HERE */}
-                          <div className="flex justify-start">
-                            <AthMovilPayment
-                              total={orderTotal || grandTotal}
-                              publicToken={athToken}
-                              orderId={athOrderId}
-                              userId={(getCookie("uid") as string) || ""}
-                              onSuccess={handleAthSuccess}
-                              onCancel={handleAthCancel}
-                            />
-                          </div>
-
+                          <span className="text-[12px] xl:text-sm font-medium text-start text-gray-700">
+                            {t("manualPaymentMethods")}
+                          </span>
                         </div>
-                      )}
-                      {!isAthReady && !athToken && !athOrderId &&
-                        (<>
-                          {/* Manual Payment */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              trackEvent("SELECT_PAYMENT_METHOD", {
-                                method: "manual",
-                              });
-                              setPaymentMethod("manual")
-                            }}
-                            className={`${baseCls} ${paymentMethod === "manual"
-                              ? "border-yellow-400 bg-yellow-50"
-                              : "border-gray-200 hover:border-gray-300 bg-white"
+
+                        {/* RIGHT ICON */}
+                        <Image
+                          src="/images/icons/mannualPayment.png"
+                          alt="Manual"
+                          width={40}
+                          height={20}
+                          className="object-contain"
+                        />
+                      </button>
+                      {/* Credit / Debit Card (Square) */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          trackEvent("SELECT_PAYMENT_METHOD", {
+                            method: "square",
+                          });
+                          setPaymentMethod("square")
+                        }}
+                        className={`${baseCls} ${paymentMethod === "square"
+                          ? "border-yellow-400 bg-yellow-50"
+                          : "border-gray-200 hover:border-gray-300 bg-white"
+                          }`}
+                      >
+                        <div className="flex items-center gap-2 xl:gap-3">
+                          <span
+                            className={`min-w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "square"
+                              ? "border-yellow-500"
+                              : "border-gray-300"
                               }`}
                           >
-                            {/* LEFT */}
-                            <div className="flex items-center gap-2 xl:gap-3">
-                              <span className={`min-w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "manual" ? "border-yellow-500" : "border-gray-300"
-                                }`}>
-                                {paymentMethod === "manual" && (
-                                  <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                                )}
-                              </span>
+                            {paymentMethod === "square" && (
+                              <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                            )}
+                          </span>
 
-                              <span className="text-[12px] xl:text-sm font-medium text-start text-gray-700">
-                                {t("manualPaymentMethods")}
-                              </span>
-                            </div>
+                          <span className="text-[12px] xl:text-sm font-medium text-start text-gray-700">
+                            {t("paySqr")}
+                          </span>
+                        </div>
 
-                            {/* RIGHT ICON */}
-                            <Image
-                              src="/images/icons/mannualPayment.png"
-                              alt="Manual"
-                              width={40}
-                              height={20}
-                              className="object-contain"
-                            />
-                          </button>
-                          {/* Credit / Debit Card (Square) */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              trackEvent("SELECT_PAYMENT_METHOD", {
-                                method: "square",
-                              });
-                              setPaymentMethod("square")
-                            }}
-                            className={`${baseCls} ${paymentMethod === "square"
-                              ? "border-yellow-400 bg-yellow-50"
-                              : "border-gray-200 hover:border-gray-300 bg-white"
-                              }`}
-                          >
-                            <div className="flex items-center gap-2 xl:gap-3">
-                              <span
-                                className={`min-w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "square"
-                                  ? "border-yellow-500"
-                                  : "border-gray-300"
-                                  }`}
-                              >
-                                {paymentMethod === "square" && (
-                                  <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                                )}
-                              </span>
-
-                              <span className="text-[12px] xl:text-sm font-medium text-start text-gray-700">
-                                {t("paySqr")}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-2 shrink-0">
-                              <Image src="/images/Profile_new/visa.svg" alt="VISA" width={40} height={25} className="h-5 w-auto object-contain" />
-                              <Image src="/images/Profile_new/mastercard.svg" alt="Mastercard" width={40} height={25} className="h-5 w-auto object-contain" />
-                              <Image src="/images/Profile_new/amex.jpg" alt="AMEX" width={40} height={25} className="h-5 w-auto object-contain" />
-                              <Image src={CDN_IMAGE + "card-8.svg"} alt="Discovery" width={40} height={25} className="h-5 w-auto object-contain" />
-                            </div>
-                          </button></>)
-                      }
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Image src="/images/Profile_new/visa.svg" alt="VISA" width={40} height={25} className="h-5 w-auto object-contain" />
+                          <Image src="/images/Profile_new/mastercard.svg" alt="Mastercard" width={40} height={25} className="h-5 w-auto object-contain" />
+                          <Image src="/images/Profile_new/amex.jpg" alt="AMEX" width={40} height={25} className="h-5 w-auto object-contain" />
+                          <Image src={CDN_IMAGE + "card-8.svg"} alt="Discovery" width={40} height={25} className="h-5 w-auto object-contain" />
+                        </div>
+                      </button>
 
                     </div>
 
                   </div>
 
 
-                  {!isAthReady && !athToken && !athOrderId &&
-                    (<>
-                      {/* Pay button */}
-                      <div className="px-6 pb-6">
+                  {/* Pay button */}
+                  <div className="px-6 pb-6">
 
-                        <Button
-                          type="submit"
-                          form="express-form"
-                          disabled={placingOrder || cartItems.length === 0 || (paymentMethod === "athMovil" && isAthReady)}
-                          className="w-full h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2
+                    <Button
+                      type="submit"
+                      form="express-form"
+                      disabled={placingOrder || cartItems.length === 0}
+                      className="w-full h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2
                                transition-all duration-200
                                "
-                        >
-                          {placingOrder ? (
-                            <>
-                              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                              {t("placingOrder")}
-                            </>
-                          ) : (
-                            <>
-                              <Lock className="w-4 h-4 opacity-70" />
-                              {t("guestCheckoutPayAmount", { amount: `${currency}${fmt(grandTotal)}` })}
-                            </>
-                          )}
-                        </Button>
+                    >
+                      {placingOrder ? (
+                        <>
+                          <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          {t("placingOrder")}
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="w-4 h-4 opacity-70" />
+                          {t("guestCheckoutPayAmount", { amount: `${currency}${fmt(grandTotal)}` })}
+                        </>
+                      )}
+                    </Button>
 
 
-                      </div>
-                    </>)
-                  }
+                  </div>
                 </div>
               </div>
             </div>
@@ -1454,19 +1626,6 @@ border text-sm transition-all cursor-pointer gap-1
         </div>
       )}
 
-      {/* {paymentMethod === "athMovil" &&
-        isAthReady &&
-        athToken &&
-        athOrderId && (
-          <AthMovilPayment
-            total={orderTotal || grandTotal}
-            publicToken={athToken}
-            orderId={athOrderId}
-            userId={(getCookie("uid") as string) || ""}
-            onSuccess={handleAthSuccess}
-            onCancel={handleAthCancel}
-          />
-        )} */}
       {/* ── Mobile sticky Pay bar ──
            Visible only on small screens, fixed to bottom          ── */}
       {/* <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50

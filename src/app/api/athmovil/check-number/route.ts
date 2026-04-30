@@ -1,0 +1,133 @@
+import { NextRequest, NextResponse } from "next/server";
+import { API_NY_URL } from "@/src/lib/config";
+import { serverFetch } from "@/src/lib/api/server-api";
+
+const ENDPOINT = "/checkAthMovilNumber";
+
+export async function GET(request: NextRequest) {
+    const requestId = crypto.randomUUID(); // trace id
+
+    try {
+        console.log(`[${requestId}] 🔹 Incoming GET /api/...`);
+
+        const { searchParams } = new URL(request.url);
+        const email = searchParams.get("email");
+        const athMovilNumber = searchParams.get("athMovilNumber");
+
+        console.log(`[${requestId}] Params:`, {
+            email,
+            athMovilNumber,
+        });
+
+        // 🔸 Validation
+        if (!email || !athMovilNumber) {
+            console.warn(`[${requestId}] ❌ Missing params`);
+
+            return NextResponse.json(
+                { message: "email and athMovilNumber are required" },
+                { status: 400 }
+            );
+        }
+
+        const apiUrl = `${ENDPOINT}?email=${encodeURIComponent(email)}&athMovilNumber=${encodeURIComponent(athMovilNumber)}`;
+
+        console.log(`[${requestId}] 🔹 Calling external API`, {
+            url: apiUrl,
+            baseUrl: API_NY_URL,
+        });
+
+        const startTime = Date.now();
+
+        const { data, error } = await serverFetch(apiUrl, {
+            method: "GET",
+            baseUrl: API_NY_URL,
+        });
+
+        const duration = Date.now() - startTime;
+
+        console.log(`[${requestId}] ⏱ API response received in ${duration}ms`);
+
+        // 🔴 Handle API error
+        if (error) {
+            let parsedMessage = "Internal server error";
+
+            try {
+                // Try parsing stringified JSON
+                const parsed =
+                    typeof error.message === "string"
+                        ? JSON.parse(error.message)
+                        : error.message;
+
+                parsedMessage = parsed?.message || parsedMessage;
+            } catch {
+                // fallback if not JSON
+                parsedMessage =
+                    typeof error.message === "string"
+                        ? error.message
+                        : JSON.stringify(error.message);
+            }
+
+            return NextResponse.json(
+                {
+                    message: parsedMessage,
+                    success: false,
+                },
+                { status: error.status || 500 }
+            );
+        }
+
+        // ✅ Success
+        console.log(`[${requestId}] ✅ Success`, {
+            responsePreview: data ? JSON.stringify(data).slice(0, 200) : null,
+        });
+
+        return NextResponse.json(data);
+    } catch (err: any) {
+        console.error(`[${requestId}] 💥 Unhandled Error`, {
+            message: err?.message,
+            stack: err?.stack,
+            raw: err,
+        });
+
+        return NextResponse.json(
+            {
+                message: err?.message || "Internal server error",
+                requestId,
+            },
+            { status: 500 }
+        );
+    }
+}
+
+export async function PATCH(request: NextRequest) {
+    try {
+        const body = await request.json();
+
+        if (!body?.email || !body?.athMovilNumber) {
+            return NextResponse.json(
+                { message: "email and athMovilNumber are required" },
+                { status: 400 }
+            );
+        }
+
+        const { data, error } = await serverFetch(ENDPOINT, {
+            method: "PATCH",
+            body: JSON.stringify(body),
+            baseUrl: API_NY_URL,
+        });
+
+        if (error) {
+            return NextResponse.json(
+                { message: error.message },
+                { status: error.status || 500 }
+            );
+        }
+
+        return NextResponse.json(data);
+    } catch (err) {
+        return NextResponse.json(
+            { message: err instanceof Error ? err.message : "ATH Móvil number update failed" },
+            { status: 500 }
+        );
+    }
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
@@ -21,7 +21,6 @@ import { getCommonHeaders } from "@/src/lib/api/headers";
 import axios from "axios";
 import { Button } from "../../components/ui/button";
 import Loader from "@/src/components/loader";
-import AthMovilPayment from "@/src/components/payments/AuthMovilPayment";
 import { ConfirmationModal } from "@/src/components/ui/confirmationModal";
 import { getMyIP } from "@/src/lib/utils/getIp";
 import AthMovilCheckout from "@/src/components/checkout/authMovilCheckout";
@@ -31,6 +30,12 @@ import SquarePayment from "@/src/components/payments/SquarePayment";
 import SquareScript from "@/src/components/payments/SqaureScript";
 import { getSquareErrorMessage } from "@/src/lib/config/squareEnum";
 import { getErrorMessage } from "@/src/lib/utils/errorMessage";
+import {
+  formatTimer,
+  handleAthMovilApiResponse,
+  hasStoredAthMovilNumber,
+  normalizeAthMovilNumber,
+} from "@/src/lib/utils/athMovil";
 
 import { trackEvent } from "@/src/lib/analytics";
 
@@ -171,9 +176,17 @@ export default function SecureCheckoutPage() {
   const currency = cartData?.currencySymbol || "$";
   const accounting = cartData?.accounting || {};
   const [athOrderId, setAthOrderId] = useState<string | null>(null);
-  const [athToken, setAthToken] = useState<string | null>(null);
-  const [isAthReady, setIsAthReady] = useState(false);
-  const [orderTotal, setOrderTotal] = useState(0)
+  const [timer, setTimer] = useState(0);
+  const [athNumberModalOpen, setAthNumberModalOpen] = useState(false);
+  const [athMobile, setAthMobile] = useState("");
+  const [athMobileError, setAthMobileError] = useState("");
+  const pollingCancelledRef = useRef(false);
+  const pendingAthOrderContextRef = useRef<{
+    email: string;
+    cartId: string;
+    addressId: string;
+    uid?: string;
+  } | null>(null);
   const cartItems = useMemo(() => {
     const items: CartItem[] = [];
     const sellers = cartData?.sellers || [];
@@ -438,106 +451,172 @@ export default function SecureCheckoutPage() {
     router.push("/shipping-address");
   };
 
+  useEffect(() => {
+    if (!isUpdatingStatus || timer <= 0) return;
 
-  const handleAthSuccess = async (res?: any) => {
-    trackEvent("ATH_MOVIL_SUCCESS", {
-      order_id: athOrderId
+    const interval = window.setInterval(() => {
+      setTimer((value) => Math.max(value - 1, 0));
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [isUpdatingStatus, timer]);
+
+  const getAthPublicToken = async () => {
+    const tokenResponse = await PaymentService.ATHMovileToken();
+    const publicToken =
+      (tokenResponse as any)?.data?.data?.publicToken ||
+      (tokenResponse as any)?.data?.publicToken;
+
+    if (!publicToken) {
+      throw new Error("Public token not received");
+    }
+
+    return publicToken;
+  };
+
+  const validateAthMovilNumber = async (phoneNumber: string) => {
+    const publicToken = await getAthPublicToken();
+    const res = await fetch("/api/athmovil/validate-personal", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ publicToken, phoneNumber }),
     });
-    if (!athOrderId) return;
-    // console.log("Ath movil payment success log from handleAth success")
-    try {
-      setIsAthReady(false);
-      setPlacingOrder(false);
-      setIsUpdatingStatus(true);
+    const data = await res.json();
 
-      trackEvent("ORDER_API_STATUES");
-      await fetch("/api/orders/status-update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orderId: athOrderId,
-          paymentMethod: 10,
-        }),
-      });
+    if (!res.ok) {
+      throw new Error(data?.message || "ATH Móvil validation failed");
+    }
 
-      router.push("/thank-you?payment=athmovil");
-    } catch (error: any) {
-      console.warn("ATH Móvil success handler error:", error);
+    handleAthMovilApiResponse(data);
+  };
 
-      setModalConfig({
-        title: t("athPaymentConfirmationError"),
-        message: t("athPaymentConfirmationErrorDescription"),
-        confirmText: t("tryAgain"),
-        cancelText: t("close"),
-        onConfirm: () => {
-          setConfirmOpen(false);
-        },
-      });
+  const checkStoredAthMovilNumber = async (email: string, athMovilNumber: string) => {
+    const params = new URLSearchParams({ email, athMovilNumber });
+    const res = await fetch(`/api/athmovil/check-number?${params.toString()}`);
+    const data = await res.json();
 
-      setConfirmOpen(true);
-    } finally {
-      fetchCart()
-      setPlacingOrder(false);
-      setIsUpdatingStatus(false);
+    if (!res.ok) {
+      throw new Error(data?.message || "ATH Móvil number check failed");
+    }
 
+    return hasStoredAthMovilNumber(data);
+  };
+
+  const updateStoredAthMovilNumber = async (email: string, athMovilNumber: string) => {
+    const res = await fetch("/api/athmovil/check-number", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, athMovilNumber }),
+    });
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      throw new Error(data?.message || "ATH Móvil number update failed");
     }
   };
 
-  const handleAthCancel = async () => {
-    trackEvent("ATH_MOVIL_CANCEL", {
-      order_id: athOrderId
-    });
-    if (!athOrderId) return;
+  const getCheckoutUser = async () => {
+    const response = await AuthService.getCurrentUser();
+    const userData = (response as any)?.data?.data ?? (response as any)?.data ?? response;
 
-    // 1️⃣ Immediate UI response
-    setIsAthReady(false);
-    setPlacingOrder(false);
-
-    setModalConfig({
-      title: t("paymentCancelled"),
-      message: t("paymentCancelledDescription"),
-      confirmText: t("retryPayment"),
-      cancelText: t("chooseAnotherMethod"),
-      onConfirm: () => {
-        setConfirmOpen(false);
-      },
-    });
-
-    setConfirmOpen(true);
-
-    // 2️⃣ Background backend update (non-blocking)
-    setIsUpdatingStatus(true);
-
-    trackEvent("ORDER_API_STATUES");
-    await fetch("/api/orders/status-update", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        orderId: athOrderId,
-        paymentMethod: 10,
-      }),
-    }).catch((error) => {
-      console.warn("ATH cancel background update failed:", error);
-    });
-    setIsUpdatingStatus(false);
-
-    fetchCart()
+    return {
+      email: userData?.email || userData?.emailId || "",
+      mobile: userData?.mobile || userData?.phone || userData?.number || "",
+      countryCode: userData?.countryCode || "",
+      uid: userData?._id || userData?.id || userData?.userId || (getCookie("uid") as string) || "",
+    };
   };
+
+  const resolveLoggedInAthMovilNumber = async (email: string, candidateNumber: string) => {
+    const normalized = normalizeAthMovilNumber(candidateNumber);
+
+    if (!email || normalized.length < 10) {
+      setAthMobile("");
+      setAthMobileError("");
+      setAthNumberModalOpen(true);
+      setPlacingOrder(false);
+      return null;
+    }
+
+    const stored = await checkStoredAthMovilNumber(email, normalized);
+    if (stored) return normalized;
+
+    try {
+      await validateAthMovilNumber(normalized);
+      await updateStoredAthMovilNumber(email, normalized);
+      return normalized;
+    } catch {
+      setAthMobile("");
+      setAthMobileError("Please enter your ATH Móvil number.");
+      setAthNumberModalOpen(true);
+      setPlacingOrder(false);
+      return null;
+    }
+  };
+
+  const pollOrderStatus = async (orderId: string, timeoutSeconds: number) => {
+    const startTime = Date.now();
+    const maxTime = timeoutSeconds * 1000;
+    pollingCancelledRef.current = false;
+
+    while (!pollingCancelledRef.current && Date.now() - startTime < maxTime) {
+      try {
+        const res = await fetch("/api/orders/status-v2", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId, paymentMethod: 10 }),
+        });
+        const data = await res.json();
+        const status = String(
+          data?.statusText ||
+          data?.data?.statusText ||
+          data?.status ||
+          data?.data?.status ||
+          ""
+        ).toLowerCase();
+
+        if (status === "success") {
+          trackEvent("ATH_MOVIL_SUCCESS", { order_id: orderId });
+          setIsUpdatingStatus(false);
+          setPlacingOrder(false);
+          router.push("/thank-you?payment=athmovil");
+          return;
+        }
+
+        if (status === "cancelled" || status === "canceled" || status === "failed") {
+          trackEvent("ATH_MOVIL_CANCEL", { order_id: orderId });
+          setIsUpdatingStatus(false);
+          setPlacingOrder(false);
+          setModalConfig({
+            title: t("paymentCancelled"),
+            message: t("paymentCancelledDescription"),
+            confirmText: t("retryPayment"),
+            cancelText: t("chooseAnotherMethod"),
+          });
+          setConfirmOpen(true);
+          await fetchCart();
+          return;
+        }
+      } catch (err) {
+        console.warn("Polling error:", err);
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 30000));
+    }
+
+    if (!pollingCancelledRef.current) {
+      setIsUpdatingStatus(false);
+      setPlacingOrder(false);
+      router.push("/orders");
+    }
+  };
+
   const handleAuthMovil = async () => {
     try {
       if (!selectedAddress) return;
 
       setPlacingOrder(true);
-      // const freshCartResponse = await CartService.getCart();
 
-      // const freshCartData =
-      //   (freshCartResponse as any)?.data?.data ||
-      //   (freshCartResponse as any)?.data ||
-      //   freshCartResponse;
-
-      // const cartId =
-      //   (freshCartData as any)?._id ||
-      //   (freshCartData as any)?.cartId;
       const cartId = (cartData as any)?._id;
       if (!cartId) {
         console.warn("❌ Cart ID not found");
@@ -549,10 +628,27 @@ export default function SecureCheckoutPage() {
         (getCookie("addressid") as string) ||
         "";
 
-      const uid = getCookie("uid") as string;
+      const checkoutUser = await getCheckoutUser();
+      const uid = checkoutUser.uid || (getCookie("uid") as string);
       const latitude = (getCookie("lat") as string) || "0";
       const longitude = (getCookie("long") as string) || "0";
       const ipAddress = await getMyIP();
+      const selectedAddressNumber = normalizeAthMovilNumber(
+        `${selectedAddress.mobileNumberCode || ""}${selectedAddress.mobileNumber || ""}`
+      );
+      const profileNumber = normalizeAthMovilNumber(
+        `${checkoutUser.countryCode || ""}${checkoutUser.mobile || ""}`
+      );
+      const candidateNumber = selectedAddressNumber || profileNumber;
+      pendingAthOrderContextRef.current = {
+        email: checkoutUser.email,
+        cartId,
+        addressId,
+        uid,
+      };
+      const athMovilNumber = await resolveLoggedInAthMovilNumber(checkoutUser.email, candidateNumber);
+
+      if (!athMovilNumber) return;
 
 
       const orderPayload = {
@@ -577,8 +673,10 @@ export default function SecureCheckoutPage() {
         paymentType: 1,
         payByWallet: false,
         userId: uid || "1",
+        athMovilNumber,
+        athMovilMobile: athMovilNumber,
       };
-      // 1️⃣ Create order (your existing logic)
+
       trackEvent("GOTO_PAYEMNT");
 
       const response = await fetch("/api/orders/place", {
@@ -622,24 +720,14 @@ export default function SecureCheckoutPage() {
         }
       }
 
-      setOrderTotal(createdOrder?.totalAmount)
       const orderId = createdOrder.orderId;
 
-      // 2️⃣ Get public token
-      // const tokenResponse = await PaymentService.ATHMovileToken();
-      const tokenResponse = await PaymentService.ATHMovileToken();
-      const publicToken =
-        (tokenResponse as any)?.data?.data?.publicToken ||
-        (tokenResponse as any)?.data?.publicToken;
-
-      if (!publicToken) {
-        throw new Error("Public token not received");
-      }
-
-      // 3️⃣ Save to state (THIS triggers component mount)
       setAthOrderId(orderId);
-      setAthToken(publicToken);
-      setIsAthReady(true);
+      const timeoutSeconds = Number(createdOrder?.timeOut) || 300;
+
+      setTimer(timeoutSeconds);
+      setIsUpdatingStatus(true);
+      await pollOrderStatus(orderId, timeoutSeconds);
 
     } catch (error: any) {
       const errorMessage = getErrorMessage(error, "Failed to place order. Please try again.");
@@ -687,6 +775,81 @@ export default function SecureCheckoutPage() {
       }
 
       setPlacingOrder(false);
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const handleAthNumberConfirm = async () => {
+    const normalized = normalizeAthMovilNumber(athMobile);
+    const context = pendingAthOrderContextRef.current;
+
+    if (normalized.length < 10) {
+      setAthMobileError("Please enter valid mobile number for ATH Móvil");
+      return;
+    }
+
+    if (!context || !selectedAddress) return;
+
+    try {
+      setAthMobileError("");
+      setAthNumberModalOpen(false);
+      setPlacingOrder(true);
+
+      await validateAthMovilNumber(normalized);
+      await updateStoredAthMovilNumber(context.email, normalized);
+
+      const latitude = (getCookie("lat") as string) || "0";
+      const longitude = (getCookie("long") as string) || "0";
+      const ipAddress = await getMyIP();
+
+      const orderPayload = {
+        cartId: context.cartId,
+        addressId: context.addressId,
+        billingAddressId: context.addressId,
+        coupon: "",
+        promoId: "",
+        discount: 0,
+        latitude,
+        longitude,
+        ipAddress,
+        storeType: 8,
+        delivery: [],
+        orderType: 2,
+        extraNote: "",
+        tip: 0,
+        orderImages: [],
+        onlinePaymentMethod: 10,
+        payByRewardWallet: false,
+        cardId: "",
+        paymentType: 1,
+        payByWallet: false,
+        userId: context.uid || "1",
+        athMovilNumber: normalized,
+        athMovilMobile: normalized,
+      };
+
+      const response = await fetch("/api/orders/place", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderPayload),
+      });
+      const createdOrder = await response.json();
+
+      if (!response.ok || !createdOrder?.orderId) {
+        throw new Error(createdOrder?.message || "Order failed");
+      }
+
+      const orderId = createdOrder.orderId;
+      setAthOrderId(orderId);
+      const timeoutSeconds = Number(createdOrder?.timeOut) || 300;
+      setTimer(timeoutSeconds);
+      setIsUpdatingStatus(true);
+      await pollOrderStatus(orderId, timeoutSeconds);
+    } catch (err) {
+      setAthMobileError(getErrorMessage(err, "ATH Móvil validation failed"));
+      setAthNumberModalOpen(true);
+      setPlacingOrder(false);
+      setIsUpdatingStatus(false);
     }
   };
 
@@ -1028,20 +1191,6 @@ export default function SecureCheckoutPage() {
     if (method === "square") {
       setPaymentMethod("square");
     }
-    if (method === "athMovil") {
-      try {
-        const tokenResponse = await PaymentService.ATHMovileToken();
-        const publicToken =
-          (tokenResponse as any)?.data?.data?.publicToken ||
-          (tokenResponse as any)?.data?.publicToken;
-
-        if (publicToken) {
-          setAthToken(publicToken);
-        }
-      } catch (err) {
-        console.warn("Token preload failed", err);
-      }
-    }
   };
 
   const handleBankSelect = async (bank: BankDetail) => {
@@ -1084,6 +1233,13 @@ export default function SecureCheckoutPage() {
       return;
     }
     setManualPaymentConfirmed(true);
+  };
+
+  const handleUserCancelClick = () => {
+    pollingCancelledRef.current = true;
+    setIsUpdatingStatus(false);
+    setPlacingOrder(false);
+    router.push("/orders");
   };
 
   const shippingFee = Number((accounting as any).deliveryFee ?? (accounting as any).shippingFee ?? 0);
@@ -1172,17 +1328,17 @@ export default function SecureCheckoutPage() {
               </p>
 
               {/* Timer */}
-              {/* <div className="text-sm font-semibold text-[#D4AF37]">
+              <div className="text-sm font-semibold text-[#D4AF37]">
                 {formatTimer(timer)}
-              </div> */}
+              </div>
 
               {/* 🔥 CANCEL BUTTON */}
-              {/* <button
+              <button
                 onClick={handleUserCancelClick}
                 className="mt-2 text-sm text-red-500 hover:cursor-pointer"
               >
                 {t("cancelTransaction") || "Cancel Transaction"}
-              </button> */}
+              </button>
 
             </div>
           </div>
@@ -1190,6 +1346,51 @@ export default function SecureCheckoutPage() {
 
 
         {/* <SquareScript /> */}
+        {athNumberModalOpen && (
+          <div className="fixed inset-0 z-[9998] bg-black/50 flex items-center justify-center p-4 pointer-events-auto">
+            <div className="bg-white w-full max-w-md rounded-2xl p-6 space-y-4 shadow-xl">
+              <h2 className="text-lg font-semibold text-gray-800">
+                ATH Móvil number
+              </h2>
+              <p className="text-sm text-gray-500">
+                Please enter the ATH Móvil number registered to your account.
+              </p>
+              <input
+                value={athMobile}
+                onChange={(event) => {
+                  setAthMobile(event.target.value);
+                  setAthMobileError("");
+                }}
+                placeholder="Enter the mobile number which is registered with ath movil"
+                inputMode="tel"
+                className="w-full rounded-lg border px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-200 focus:border-[#f3c200]"
+              />
+              {athMobileError && (
+                <p className="text-xs text-red-500">{athMobileError}</p>
+              )}
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setAthNumberModalOpen(false);
+                    setAthMobileError("");
+                  }}
+                >
+                  {t("cancel")}
+                </Button>
+                <Button
+                  className="w-full"
+                  disabled={placingOrder}
+                  onClick={handleAthNumberConfirm}
+                >
+                  {placingOrder ? t("processing") : t("continue")}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <ConfirmationModal
           open={confirmOpen}
           onCancel={() => setConfirmOpen(false)}
@@ -1685,8 +1886,7 @@ export default function SecureCheckoutPage() {
                     {/* //#region Place Order */}
                     {paymentMethod !== "" && !(paymentMethod === "square" && showSquarePayment) && (
                       <>
-                        {!(paymentMethod === "athMovil" && isAthReady) && (
-                          <Button
+                        <Button
                             onClick={handlePlaceOrder}
                             disabled={!selectedAddress || placingOrder}
                             className="w-full h-11 btn-primary text-white py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg text-sm md:text-default flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1702,21 +1902,9 @@ export default function SecureCheckoutPage() {
                                     : paymentMethod === "creditCard" && ENABLE_PLACE_TO_PAY
                                       ? t("payWithPlaceToPay") || "PAY WITH PLACE TO PAY"
                                       : t("pay") || "PAY"}
-                          </Button>
-                        )}
+                        </Button>
 
                         {/* #endregion */}
-                        {/* AFTER ORDER CREATION — SHOW REAL ATH BUTTON */}
-                        {paymentMethod === "athMovil" && isAthReady && athToken && athOrderId && (
-                          <AthMovilPayment
-                            total={orderTotal || grandTotal}
-                            publicToken={athToken}
-                            orderId={athOrderId}
-                            userId={(getCookie("uid") as string) || ""}
-                            onSuccess={handleAthSuccess}
-                            onCancel={handleAthCancel}
-                          />
-                        )}
                       </>
                     )}
                   </div>

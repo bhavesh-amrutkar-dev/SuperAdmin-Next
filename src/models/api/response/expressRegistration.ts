@@ -9,6 +9,7 @@ export interface BackendOrderResponse {
         onlinePaymentMethodText: string;
         checkoutProcessUrl: string;
         cartId: string;
+        timeOut?: number | string;
 
     };
 }
