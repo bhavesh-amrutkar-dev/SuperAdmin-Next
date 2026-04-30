@@ -35,7 +35,11 @@ export default function ForgotPasswordPage() {
 
     if (method === "email") {
       if (!email) {
-        toast.error(t("invalidEmail"));
+        toast.error(t("emailRequired"));
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        toast.error(t("emailInvalid"));
         return;
       }
     }
@@ -138,7 +142,7 @@ export default function ForgotPasswordPage() {
         </p>
       </div>
 
-      <form onSubmit={onSubmit} className="space-y-6">
+      <form onSubmit={onSubmit} noValidate className="space-y-6">
         {/* Method Selection */}
         <div className="space-y-3">
           <label className="text-sm font-medium text-[#2f2f2f]">
@@ -190,7 +194,6 @@ export default function ForgotPasswordPage() {
               onKeyDown={(e) => {
                 if (e.key === " ") e.preventDefault();
               }}
-              required
             />
           </div>
         )}
