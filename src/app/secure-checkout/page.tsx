@@ -30,6 +30,7 @@ import Script from "next/script";
 import SquarePayment from "@/src/components/payments/SquarePayment";
 import SquareScript from "@/src/components/payments/SqaureScript";
 import { getSquareErrorMessage } from "@/src/lib/config/squareEnum";
+import { getErrorMessage } from "@/src/lib/utils/errorMessage";
 
 import { trackEvent } from "@/src/lib/analytics";
 
@@ -641,13 +642,7 @@ export default function SecureCheckoutPage() {
       setIsAthReady(true);
 
     } catch (error: any) {
-      // Extract error message from various possible locations
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        error?.data?.message ||
-        (typeof error === "string" ? error : null) ||
-        "Failed to place order. Please try again.";
+      const errorMessage = getErrorMessage(error, "Failed to place order. Please try again.");
 
       console.warn("Error placing order:", {
         message: errorMessage,

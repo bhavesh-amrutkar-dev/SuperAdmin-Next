@@ -29,6 +29,7 @@ import { BankDetail, PaymentService } from "@/src/lib/services/payment";
 import { FileUploader } from "@/src/components/ui/fileUploader";
 import AthMovilPayment from "@/src/components/payments/AuthMovilPayment";
 import { useForm } from "react-hook-form";
+import { getErrorMessage } from "@/src/lib/utils/errorMessage";
 
 // ─────────────────────────────────────────────
 // Types
@@ -339,7 +340,7 @@ export default function GuestCheckoutPage() {
       }));
 
     } catch (err: any) {
-      toast.error(err?.message || t("guestCheckoutQuantityUpdateFailed"));
+      toast.error(getErrorMessage(err, t("guestCheckoutQuantityUpdateFailed")));
     } finally {
       setUpdatingKeys((prev) => ({ ...prev, [key]: null }));
     }
@@ -587,7 +588,7 @@ export default function GuestCheckoutPage() {
     console.warn("Square payment failed:", err);
 
     toast.error(t("paymentErrorTitle"), {
-      description: err?.message || t("tryAgain"),
+      description: getErrorMessage(err, t("tryAgain")),
     });
 
     fetchCart();
@@ -712,14 +713,14 @@ export default function GuestCheckoutPage() {
 
           return; // ❗ STOP here
         } catch (err: any) {
-          toast.error(err?.message || t("guestCheckoutAthPaymentFailed"));
+          toast.error(getErrorMessage(err, t("guestCheckoutAthPaymentFailed")));
           setPlacingOrder(false);
           return;
         }
       }
 
     } catch (err: any) {
-      const msg = err?.message || "";
+      const msg = getErrorMessage(err, "");
 
       // ✅ HANDLE MULTI-TAB CART ISSUE
       if (
@@ -1441,7 +1442,7 @@ border text-sm transition-all cursor-pointer gap-1
 
                   } catch (err: any) {
                     console.warn(err);
-                    toast.error(err?.message || t("guestCheckoutManualPaymentFailed"));
+                    toast.error(getErrorMessage(err, t("guestCheckoutManualPaymentFailed")));
                     setPlacingOrder(false);
                   }
                 }}

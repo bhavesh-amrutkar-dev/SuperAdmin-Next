@@ -13,6 +13,7 @@ import { Button } from "@/src/components/ui/button";
 import { ConfirmationModal } from "@/src/components/ui/confirmationModal";
 import { useProfile } from "@/src/lib/hooks/userProfile";
 import { useRouter } from "next/navigation";
+import { getErrorMessage } from "@/src/lib/utils/errorMessage";
 
 interface UserAddress {
   _id?: string;
@@ -60,7 +61,7 @@ export default function AddressesPage() {
       const data = (res as any)?.data?.data || (res as any)?.data || [];
       setAddresses(Array.isArray(data) ? data : []);
     } catch (err: any) {
-      toast.error(err?.message || t("loadAddressesFailed"));
+      toast.error(getErrorMessage(err, t("loadAddressesFailed")));
     } finally {
       setLoading(false);
     }
@@ -94,7 +95,7 @@ export default function AddressesPage() {
       setConfirmOpen(false);
       setSelectedId(null);
     } catch (err: any) {
-      toast.error(err?.message || t("deleteFailed"));
+      toast.error(getErrorMessage(err, t("deleteFailed")));
     } finally {
       setConfirmLoading(false);
     }
@@ -118,7 +119,7 @@ export default function AddressesPage() {
 
       toast.success(t("defaultAddressUpdated"));
     } catch (err: any) {
-      toast.error(err?.message || t("defaultUpdateFailed"));
+      toast.error(getErrorMessage(err, t("defaultUpdateFailed")));
     }
   };
 

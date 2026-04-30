@@ -16,6 +16,7 @@ import ErrorMessage from "@/src/components/ui/errorMessage";
 import CountrySelect from "@/src/components/common/CountrySelect";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
+import { getErrorMessage } from "@/src/lib/utils/errorMessage";
 type RegisterForm = {
   firstName: string;
   lastName: string;
@@ -122,8 +123,10 @@ export default function RegisterPage() {
         )}&otpId=${otpId}&expiry=${otpExpiryTime}&flow=signup${redirect ? `&redirect=${encodeURIComponent(redirect)}` : ""}`
       );
     } catch (err: any) {
-      toast.error(err?.message)
-      setOtpError(err?.message || "Something went wrong");
+      const message = getErrorMessage(err, "Something went wrong");
+
+      toast.error(message)
+      setOtpError(message);
     } finally {
       setOtpLoading(false);
     }

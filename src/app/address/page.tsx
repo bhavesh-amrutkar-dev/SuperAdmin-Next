@@ -19,6 +19,7 @@ import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import { Textarea } from "@/src/components/ui/textarea";
 import { useProfile } from "@/src/lib/hooks/userProfile";
+import { getErrorMessage } from "@/src/lib/utils/errorMessage";
 
 type AddressFormRM = {
     firstName: string;
@@ -264,7 +265,7 @@ export default function AddressPage() {
 
             router.replace("/");
         } catch (err: any) {
-            toast.error(err?.message || t("addressSaveFailed"));
+            toast.error(getErrorMessage(err, t("addressSaveFailed")));
         }
     };
 

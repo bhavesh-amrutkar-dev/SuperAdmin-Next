@@ -16,6 +16,7 @@ import { Input } from "@/src/components/ui/input";
 import { useAuth } from "@/src/context/authContext";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { getErrorMessage } from "@/src/lib/utils/errorMessage";
 
 export default function LoginPage() {
     const t = useTranslations();
@@ -67,8 +68,9 @@ export default function LoginPage() {
                     : "/";
 
             router.replace(safeRedirect);
-        } catch (err: any) {
-            toast.error(err?.message || t("loginFailed"));
+        }
+        catch (parseError) {
+            toast.error(getErrorMessage(parseError, t("loginFailed")));
         }
     };
 

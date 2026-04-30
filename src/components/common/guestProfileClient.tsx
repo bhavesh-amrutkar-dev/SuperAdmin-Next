@@ -13,6 +13,7 @@ import { Button } from "@/src/components/ui/button";
 import { toast } from "sonner";
 import SetPasswordStep from "@/src/components/common/SetPasswordStep";
 import MobileOTPStep from "@/src/components/common/MobileOTPStep";
+import { getErrorMessage } from "@/src/lib/utils/errorMessage";
 
 type TokenStatus = "validating" | "valid" | "invalid";
 type Step = "password" | "mobile" | "done";
@@ -124,7 +125,7 @@ export default function GuestProfileClient({ token }: GuestProfileClientProps) {
       }
       toast.success(message);
     } catch (err: any) {
-      toast.error(err.message || "Something went wrong");
+      toast.error(getErrorMessage(err, "Something went wrong"));
     } finally {
       setResendLoading(false);
     }

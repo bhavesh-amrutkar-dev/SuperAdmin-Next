@@ -10,6 +10,7 @@ import { AuthService } from "@/src/lib/services/auth";
 import { toast } from "sonner";
 import { Input } from "@/src/components/ui/input";
 import { CountryCurrency } from "@/src/models/api/response/auth";
+import { getErrorMessage } from "@/src/lib/utils/errorMessage";
 
 type Method = "email" | "mobile" | "";
 
@@ -103,7 +104,7 @@ export default function ForgotPasswordPage() {
         );
       }
     } catch (err: any) {
-      toast.error(err?.message || "Something went wrong");
+      toast.error(getErrorMessage(err, "Something went wrong"));
     } finally {
       setLoading(false);
     }

@@ -11,6 +11,7 @@ import { UserAddressService } from "@/src/lib/services/userAddress";
 import { AuthService } from "../lib/services/auth";
 import AddressForm, { AddressFormRM } from "./addressForm";
 import { useTranslations } from "next-intl";
+import { getErrorMessage } from "../lib/utils/errorMessage";
 
 export default function AddressFormModal({
   open,
@@ -85,7 +86,7 @@ export default function AddressFormModal({
       onSuccess?.();
       onClose?.();
     } catch (err: any) {
-      toast.error(err?.message || "Save failed");
+      toast.error(getErrorMessage(err, "Save failed"));
     }
   };
   return (

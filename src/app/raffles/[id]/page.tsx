@@ -33,6 +33,7 @@ import QuantitySelector from "@/src/components/raffle-detail/QuantitySelector";
 import AccordionSection from "@/src/components/raffle-detail/AccordionSection";
 import QuestionsSection from "@/src/components/raffle-detail/QuestionsSection";
 import HighlightsSection from "@/src/components/raffle-detail/HighlightsSection";
+import { getErrorMessage } from "@/src/lib/utils/errorMessage";
 
 type Ticket = {
     ticketId?: string;
@@ -1066,16 +1067,7 @@ export default function RafflesDetailPage() {
             }
             return true;
         } catch (err) {
-            const errorMessage =
-                err instanceof Error
-                    ? err.message
-                    : typeof err === "string"
-                        ? err
-                        : err && typeof err === "object" && "response" in err && (err as any).response?.data?.message
-                            ? String((err as any).response.data.message)
-                            : err && typeof err === "object" && "message" in err
-                                ? String((err as any).message)
-                                : "Failed to add to cart";
+            const errorMessage = getErrorMessage(err, "Failed to add to cart");
             toast.error(errorMessage);
             restoreConfirmedVariantState(ticketId, confirmedQuantityBeforeUpdate);
             if (selectedTicket === ticketId) {
