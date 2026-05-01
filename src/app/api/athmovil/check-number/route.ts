@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json(data);
     } catch (err: any) {
-        console.error(`[${requestId}] 💥 Unhandled Error`, {
+        console.warn(`[${requestId}] 💥 Unhandled Error`, {
             message: err?.message,
             stack: err?.stack,
             raw: err,

@@ -1,5 +1,17 @@
 export function normalizeAthMovilNumber(value?: string | null) {
-    return (value || "").replace(/\D/g, "");
+    const digits = (value || "").replace(/\D/g, "");
+
+    const normalized = digits.length > 10
+        ? digits.slice(-10)
+        : digits;
+
+    console.log("📱 normalizeAthMovilNumber:", {
+        input: value,
+        digits,
+        normalized,
+    });
+
+    return normalized;
 }
 
 export function formatTimer(totalSeconds: number) {
@@ -79,4 +91,14 @@ function isTruthyFlag(value: unknown) {
     }
 
     return false;
+}
+
+export function formatAthMovilNumber(
+  number: string,
+  countryCode?: string
+) {
+  const digits = normalizeAthMovilNumber(number);
+  const code = countryCode || "1";
+
+  return `+${code}${digits}`;
 }

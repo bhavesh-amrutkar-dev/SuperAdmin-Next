@@ -30,12 +30,14 @@ import { FileUploader } from "@/src/components/ui/fileUploader";
 import { useForm } from "react-hook-form";
 import { getErrorMessage } from "@/src/lib/utils/errorMessage";
 import {
+  formatAthMovilNumber,
   formatTimer,
   handleAthMovilApiResponse,
   hasStoredAthMovilNumber,
   normalizeAthMovilNumber,
 } from "@/src/lib/utils/athMovil";
 import PhoneInput from "react-phone-input-2";
+import { ConfirmationModal } from "@/src/components/ui/confirmationModal";
 
 // ─────────────────────────────────────────────
 // Types
@@ -190,7 +192,17 @@ export default function GuestCheckoutPage() {
     shouldUnregister: false, // ✅ IMPORTANT
   });
   const [isAuthChecked, setIsAuthChecked] = useState(false);
-
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm?: () => void;
+  }>({
+    title: "",
+    message: "",
+  });
   useEffect(() => {
     const accessToken = getCookie("access_token");
 
@@ -208,16 +220,28 @@ export default function GuestCheckoutPage() {
     });
   }, []);
   useEffect(() => {
-    if (showManualModal) {
+    const isAnyModalOpen =
+      showManualModal ||
+      athNumberModalOpen ||
+      confirmOpen ||
+      isUpdatingStatus;
+
+    if (isAnyModalOpen) {
+      const scrollBarWidth =
+        window.innerWidth - document.documentElement.clientWidth;
+
       document.body.style.overflow = "hidden";
+      document.body.style.paddingRight = `${scrollBarWidth}px`; // prevents layout jump
     } else {
       document.body.style.overflow = "auto";
+      document.body.style.paddingRight = "0px";
     }
 
     return () => {
       document.body.style.overflow = "auto";
+      document.body.style.paddingRight = "0px";
     };
-  }, [showManualModal]);
+  }, [showManualModal, athNumberModalOpen, confirmOpen, isUpdatingStatus]);
   // ── Init guest session & load cart ──────────────────
   useEffect(() => {
     initAndLoad();
@@ -354,6 +378,23 @@ export default function GuestCheckoutPage() {
     } finally {
       setUpdatingKeys((prev) => ({ ...prev, [key]: null }));
     }
+  };
+  const handleAthCancel = () => {
+    // ✅ close ATH modal immediately
+    setAthNumberModalOpen(false);
+    toast.info("ATH Móvil payment cancelled");
+    setModalConfig({
+      title: t("paymentCancelled"),
+      message: t("paymentCancelledDescription"),
+      confirmText: t("retryPayment"),
+      cancelText: t("chooseAnotherMethod"),
+      onConfirm: () => {
+        setPendingAthFormData(null);
+        setConfirmOpen(false);
+      },
+    });
+
+    setConfirmOpen(true);
   };
   const subtotal = useMemo(
     () =>
@@ -643,7 +684,7 @@ export default function GuestCheckoutPage() {
   };
 
   const validateAthMovilNumber = async (phoneNumber: string) => {
-    console.log("test", phoneNumber);
+
 
     const publicToken = await getAthPublicToken();
     const res = await fetch("/api/athmovil/validate-personal", {
@@ -694,26 +735,58 @@ export default function GuestCheckoutPage() {
   };
 
   const resolveGuestAthMovilNumber = async (formData: any) => {
+    const requestId = crypto.randomUUID();
+
+    console.log(`[${requestId}] 🔹 Resolve ATH START`);
+
     const email = String(formData?.email || "").trim();
-    const candidateNumber = normalizeAthMovilNumber(`${formData?.countryCode || ""}${formData?.phone || ""}`);
+
+    const rawInput = `${formData?.countryCode || ""}${formData?.phone || ""}`;
+    const candidateNumber = normalizeAthMovilNumber(rawInput);
+
+    console.log(`[${requestId}] 📩 Email:`, email);
+    console.log(`[${requestId}] 📱 Raw input:`, rawInput);
+    console.log(`[${requestId}] 📱 Normalized:`, candidateNumber);
 
     if (!email || candidateNumber.length < 10) {
+      console.warn(`[${requestId}] ❌ Missing email or invalid number`);
       openAthNumberPrompt(formData);
       return null;
     }
-    console.log("stored");
-
-    const stored = await checkStoredAthMovilNumber(email, candidateNumber);
-    console.log("staored", stored);
-
-    if (stored) return candidateNumber;
 
     try {
+      console.log(`[${requestId}] 🔹 Step 1: Check stored ATH number`);
+
+      const stored = await checkStoredAthMovilNumber(email, candidateNumber);
+
+      console.log(`[${requestId}] 📦 Stored check result:`, stored);
+
+      if (stored) {
+        console.log(`[${requestId}] ✅ Step 1 Result: Number already stored`);
+        return candidateNumber;
+      }
+
+      console.log(`[${requestId}] 🔹 Step 2: Validate ATH number`);
+
       await validateAthMovilNumber(candidateNumber);
+      toast.success("ATH Móvil number verified");
+      console.log(`[${requestId}] ✅ Step 2 Success: Number validated`);
+
+      // Optional
+      // console.log(`[${requestId}] 🔹 Step 3: Update stored number`);
       // await updateStoredAthMovilNumber(email, candidateNumber);
+
+      console.log(`[${requestId}] 🔹 Resolve ATH END (validated)`);
       return candidateNumber;
-    } catch {
-      openAthNumberPrompt(formData, "Please enter your ATH Móvil number.");
+
+    } catch (err: any) {
+      toast.error(getErrorMessage(err, "ATH Móvil validation failed"));
+
+      openAthNumberPrompt(
+        formData,
+        "Please enter your ATH Móvil number."
+      );
+
       return null;
     }
   };
@@ -776,12 +849,16 @@ export default function GuestCheckoutPage() {
       paymentMethod === "athMovil" ? 10 :
         paymentMethod === "manual" ? 12 :
           21;
-
+    // if (!athMovilNumber) {
+    //   throw new Error("ATH Móvil number is required");
+    // }
     const orderPayload = {
       ...formData,
-      ...(athMovilNumber && {
-        athMovilNumber: `+1${athMovilNumber}`,
-      }),
+      athMovilNumber: formatAthMovilNumber(
+        athMovilNumber || "",
+        formData?.mobileNumberCode
+        || formData?.countryCode
+      ),
       ipAddress,
       storeType: 8,
       paymentType: 1,
@@ -906,36 +983,76 @@ export default function GuestCheckoutPage() {
   };
 
   const handleAthNumberConfirm = async () => {
+    const requestId = crypto.randomUUID();
+
+    console.log(`[${requestId}] 🔹 ATH Confirm START`);
+
     const normalized = normalizeAthMovilNumber(athMobile);
 
+    console.log(`[${requestId}] 📱 Raw number:`, athMobile);
+    console.log(`[${requestId}] 📱 Normalized number:`, normalized);
+
     if (normalized.length < 10) {
-      setAthMobileError("Please enter valid mobile number for ATH Móvil");
+      toast.error("Please enter valid mobile number for ATH Móvil");
       return;
     }
-
-    if (!pendingAthFormData) return;
+    if (!pendingAthFormData) {
+      console.warn(`[${requestId}] ❌ Missing form data`);
+      return;
+    }
 
     try {
       setAthMobileError("");
       setPlacingOrder(true);
+
+      console.log(`[${requestId}] 🔹 Step 1: Validate ATH number`);
+
       await validateAthMovilNumber(normalized);
+
+      console.log(`[${requestId}] ✅ Step 1 Success: ATH validated`);
+
+      // Optional step
+      // console.log(`[${requestId}] 🔹 Step 2: Update stored number`);
       // await updateStoredAthMovilNumber(String(pendingAthFormData.email || ""), normalized);
+
+      console.log(`[${requestId}] 🔹 Step 2: Closing modal`);
       setAthNumberModalOpen(false);
 
+      console.log(`[${requestId}] 🔹 Step 3: Placing order`, {
+        email: pendingAthFormData.email,
+        athMovilNumber: normalized,
+      });
+
       const orderData = await placeExpressOrder(pendingAthFormData, normalized);
+
+      console.log(`[${requestId}] ✅ Step 3 Success: Order created`, {
+        orderId: orderData?.orderId,
+        timeout: orderData?.timeOut,
+      });
+
       localStorage.setItem("orderId", orderData.orderId);
       setAthOrderId(orderData.orderId);
 
       const timeoutSeconds = Number(orderData?.timeOut) || 300;
+
+      console.log(`[${requestId}] 🔹 Step 4: Start polling`, {
+        timeoutSeconds,
+      });
+
       setTimer(timeoutSeconds);
       setIsUpdatingStatus(true);
+
       await pollOrderStatus(orderData.orderId, timeoutSeconds);
-    } catch (err) {
-      setAthMobileError(getErrorMessage(err, "ATH Móvil validation failed"));
+
+      console.log(`[${requestId}] ✅ Step 4 Completed: Polling finished`);
+
+    } catch (err: any) {
+      toast.error(getErrorMessage(err, "ATH Móvil validation failed"));
       setPlacingOrder(false);
+    } finally {
+      console.log(`[${requestId}] 🔹 ATH Confirm END`);
     }
   };
-
   const baseCls = `
 flex items-center justify-between w-full px-3 xl:px-4 py-3 rounded-xl
 border text-sm transition-all cursor-pointer gap-1
@@ -986,7 +1103,15 @@ border text-sm transition-all cursor-pointer gap-1
           </div>
         </div>
       )}
-
+      <ConfirmationModal
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        confirmText={modalConfig.confirmText}
+        cancelText={modalConfig.cancelText}
+        onConfirm={modalConfig.onConfirm || (() => setConfirmOpen(false))}
+      />
       {athNumberModalOpen &&
         (
           <div className="fixed inset-0 z-[9998] bg-black/50 flex items-center justify-center p-4 pointer-events-auto">
@@ -998,14 +1123,13 @@ border text-sm transition-all cursor-pointer gap-1
                   setAthMobile(event.target.value);
                   setAthMobileError("");
                 }}
-                placeholder="7871234567"
+                placeholder="Enter your ATH Móvil number"
                 inputMode="tel" />
-              {athMobileError && (<p className="text-xs text-red-500">{athMobileError}</p>)}
+              {/* {athMobileError && (<p className="text-xs text-red-500">{athMobileError}</p>)} */}
               <div className="flex gap-3">
                 <Button variant="outline" className="w-full"
                   onClick={() => {
-                    setAthNumberModalOpen(false);
-                    setPendingAthFormData(null);
+                    handleAthCancel();
                   }} >
                   {t("cancel")}
                 </Button>
