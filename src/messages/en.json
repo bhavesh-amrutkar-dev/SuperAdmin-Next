@@ -719,5 +719,12 @@
     "athMovilValidationFailed": "ATH Móvil validation failed",
     "invalidAthMobile": "Please enter a valid ATH Móvil number",
     "nameFormatError": "Only letters allowed (2–50 chars)",
-    "pincodeInvalid": "Invalid postal code"
+    "pincodeInvalid": "Invalid postal code",
+    "paymentTimedOut": "Payment timed out. Please try again or check your orders.",
+    "receiptUploadFailed": "Receipt upload failed. Please try again.",
+    "paymentInitFailed": "Payment initialization failed. Try again.",
+    "invalidImageFormat": "Please upload a valid image file (JPEG, PNG, or WebP)",
+    "selectBankAndUploadReceipt": "Please select a bank and upload proof of payment",
+    "redirectingToCart": "Redirecting to cart...",
+    "athMovilPlaceholder": "Enter the mobile number registered with ATH Móvil"
 }

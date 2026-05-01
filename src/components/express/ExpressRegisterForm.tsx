@@ -46,7 +46,7 @@ const validators = {
   name: (value: string, msg: string, nameFormatError: string) => {
     if (!value || value.trim().length === 0) return msg;
     if (value.trim().length < 2 || value.trim().length > 50) {
-      return "Must be between 2 and 50 characters";
+      return nameFormatError;
     }
     return true;
   },
@@ -201,7 +201,7 @@ export default function ExpressRegisterForm({
             <Input
               id="email"
               type="email"
-              placeholder="you@example.com"
+              placeholder={t("emailPlaceholder")}
               error={!!errors.email}
               {...register("email", {
                 required: t("emailRequired"),
