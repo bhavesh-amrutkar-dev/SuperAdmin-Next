@@ -495,9 +495,9 @@ export default function SecureCheckoutPage() {
     const res = await fetch(`/api/athmovil/check-number?${params.toString()}`);
     const data = await res.json();
 
-    if (!res.ok) {
-      throw new Error(data?.message || "ATH Móvil number check failed");
-    }
+    // if (!res.ok) {
+    //   throw new Error(data?.message || "ATH Móvil number check failed");
+    // }
 
     return hasStoredAthMovilNumber(data);
   };
@@ -527,10 +527,18 @@ export default function SecureCheckoutPage() {
     };
   };
 
-  const resolveLoggedInAthMovilNumber = async (email: string, candidateNumber: string) => {
-    const normalized = normalizeAthMovilNumber(candidateNumber);
+  const resolveLoggedInAthMovilNumber = async (
+    email: string,
+    candidateNumber: string,
+    countryCode?: string
+  ) => {
+    // ✅ Extract clean local number
+    const localNumber = candidateNumber.replace(/\D/g, "");
 
-    if (!email || normalized.length < 10) {
+    // ✅ Full number with country code (for DB check)
+    const fullNumber = `${countryCode || ""}${localNumber}`;
+
+    if (!email || localNumber.length < 10) {
       setAthMobile("");
       setAthMobileError("");
       setAthNumberModalOpen(true);
@@ -538,14 +546,25 @@ export default function SecureCheckoutPage() {
       return null;
     }
 
-    const stored = await checkStoredAthMovilNumber(email, normalized);
-    if (stored) return normalized;
-
     try {
-      await validateAthMovilNumber(normalized);
-      await updateStoredAthMovilNumber(email, normalized);
-      return normalized;
-    } catch {
+      // ✅ Step 1: Check stored number (WITH country code)
+      const stored = await checkStoredAthMovilNumber(email, fullNumber);
+
+      if (stored) {
+        return localNumber; // ✅ return WITHOUT country code
+      }
+
+      // ✅ Step 2: Validate ATH (WITHOUT country code)
+      await validateAthMovilNumber(localNumber);
+
+      // ✅ Step 3: UPDATE stored number (THIS WAS MISSING)
+      await updateStoredAthMovilNumber(email, fullNumber);
+
+      toast.success("ATH Móvil number verified");
+
+      return localNumber;
+
+    } catch (err: any) {
       setAthMobile("");
       setAthMobileError("Please enter your ATH Móvil number.");
       setAthNumberModalOpen(true);
@@ -640,6 +659,7 @@ export default function SecureCheckoutPage() {
         `${checkoutUser.countryCode || ""}${checkoutUser.mobile || ""}`
       );
       const candidateNumber = selectedAddressNumber || profileNumber;
+
       pendingAthOrderContextRef.current = {
         email: checkoutUser.email,
         cartId,
@@ -780,14 +800,15 @@ export default function SecureCheckoutPage() {
   };
 
   const handleAthNumberConfirm = async () => {
-    const normalized = normalizeAthMovilNumber(athMobile);
+    const localNumber = athMobile.replace(/\D/g, "");
     const context = pendingAthOrderContextRef.current;
 
-    if (normalized.length < 10) {
+    if (localNumber.length < 10) {
       setAthMobileError("Please enter valid mobile number for ATH Móvil");
       return;
     }
 
+    const fullNumber = `${selectedAddress?.mobileNumberCode || ""}${localNumber}`;
     if (!context || !selectedAddress) return;
 
     try {
@@ -795,8 +816,8 @@ export default function SecureCheckoutPage() {
       setAthNumberModalOpen(false);
       setPlacingOrder(true);
 
-      await validateAthMovilNumber(normalized);
-      await updateStoredAthMovilNumber(context.email, normalized);
+      await validateAthMovilNumber(localNumber);
+      await updateStoredAthMovilNumber(context.email, fullNumber);
 
       const latitude = (getCookie("lat") as string) || "0";
       const longitude = (getCookie("long") as string) || "0";
@@ -824,8 +845,7 @@ export default function SecureCheckoutPage() {
         paymentType: 1,
         payByWallet: false,
         userId: context.uid || "1",
-        athMovilNumber: normalized,
-        athMovilMobile: normalized,
+        athMovilNumber: fullNumber,
       };
 
       const response = await fetch("/api/orders/place", {
@@ -1887,21 +1907,21 @@ export default function SecureCheckoutPage() {
                     {paymentMethod !== "" && !(paymentMethod === "square" && showSquarePayment) && (
                       <>
                         <Button
-                            onClick={handlePlaceOrder}
-                            disabled={!selectedAddress || placingOrder}
-                            className="w-full h-11 btn-primary text-white py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg text-sm md:text-default flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {placingOrder
-                              ? t("placingOrder") || "Placing Order..."
-                              : paymentMethod === "manual"
-                                ? t("placeOrder") || "PLACE ORDER"
-                                : paymentMethod === "athMovil"
-                                  ? t("payWithATHMovil") || "PAY WITH ATH MÓVIL"
-                                  : paymentMethod === "square" && ENABLE_SQUARE_PAY
-                                    ? t("paySqr")
-                                    : paymentMethod === "creditCard" && ENABLE_PLACE_TO_PAY
-                                      ? t("payWithPlaceToPay") || "PAY WITH PLACE TO PAY"
-                                      : t("pay") || "PAY"}
+                          onClick={handlePlaceOrder}
+                          disabled={!selectedAddress || placingOrder}
+                          className="w-full h-11 btn-primary text-white py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg text-sm md:text-default flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {placingOrder
+                            ? t("placingOrder") || "Placing Order..."
+                            : paymentMethod === "manual"
+                              ? t("placeOrder") || "PLACE ORDER"
+                              : paymentMethod === "athMovil"
+                                ? t("payWithATHMovil") || "PAY WITH ATH MÓVIL"
+                                : paymentMethod === "square" && ENABLE_SQUARE_PAY
+                                  ? t("paySqr")
+                                  : paymentMethod === "creditCard" && ENABLE_PLACE_TO_PAY
+                                    ? t("payWithPlaceToPay") || "PAY WITH PLACE TO PAY"
+                                    : t("pay") || "PAY"}
                         </Button>
 
                         {/* #endregion */}
