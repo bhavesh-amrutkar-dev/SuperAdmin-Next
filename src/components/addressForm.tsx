@@ -406,17 +406,26 @@ export default function AddressForm({
                                             placeholder="Phone Number"
                                             className="flex-1 min-w-0 border-0 shadow-none outline-none ring-0 text-sm px-3 bg-transparent focus:outline-none focus:ring-0"
                                             maxLength={10}
-                                            {...register("mobileNumber", {
-                                                required: t("mobileRequired"),
-                                                minLength: {
-                                                    value: 7,
-                                                    message: t("invalidMobile"),
-                                                },
-                                                maxLength: {
-                                                    value: 10,
-                                                    message: t("invalidMobile"),
-                                                },
-                                            })}
+                                            {...(() => {
+                                                const { onChange, ...rest } = register("mobileNumber", {
+                                                    required: t("mobileRequired"),
+                                                    minLength: {
+                                                        value: 10,
+                                                        message: t("invalidMobile"),
+                                                    },
+                                                    maxLength: {
+                                                        value: 10,
+                                                        message: t("invalidMobile"),
+                                                    },
+                                                });
+                                                return {
+                                                    ...rest,
+                                                    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+                                                        e.target.value = e.target.value.replace(/\D/g, "");
+                                                        return onChange(e);
+                                                    },
+                                                };
+                                            })()}
                                         />
                                     </div>
                                 </Fragment>
