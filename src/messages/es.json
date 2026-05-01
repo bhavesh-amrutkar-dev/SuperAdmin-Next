@@ -712,5 +712,12 @@
     "noWinnerFound": "No se encontró ganador",
     "winnerNotDeclaredYet": "Este sorteo aún no tiene ganador.",
     "cartSessionExpired": "Tu sesión de pago ha caducado.",
-    "cartSessionExpiredDesc": "Por favor, revise su carrito nuevamente."
+    "cartSessionExpiredDesc": "Por favor, revise su carrito nuevamente.",
+    "athMovilNumberTitle": "Número ATH Móvil",
+    "athMovilNumberDescription": "Por favor ingresa el número ATH Móvil registrado en tu cuenta.",
+    "athMovilNumberVerified": "Número ATH Móvil verificado",
+    "athMovilValidationFailed": "Error al validar ATH Móvil",
+    "invalidAthMobile": "Por favor ingresa un número ATH Móvil válido",
+    "nameFormatError": "Solo letras permitidas (2–50 caracteres)",
+    "pincodeInvalid": "Código postal inválido"
 }
