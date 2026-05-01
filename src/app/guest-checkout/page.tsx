@@ -149,6 +149,29 @@ function getCartItemKey(item: CartItem, idx: number): string {
 }
 
 // ─────────────────────────────────────────────
+// Sub-components (must live outside the page to keep stable references)
+// ─────────────────────────────────────────────
+
+const SectionCard = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
+  <div className={`bg-white rounded-2xl border border-gray-100 shadow-[0_2px_16px_rgba(0,0,0,0.06)] p-4 sm:p-6 ${className}`}>
+    {children}
+  </div>
+);
+
+const SectionHeading = ({
+  step, icon, title,
+}: {
+  step: number;
+  icon: React.ReactNode;
+  title: string;
+}) => (
+  <div className="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
+    <span className="text-gray-400">{icon}</span>
+    <h2 className="font-semibold text-gray-800 text-[15px]">{title}</h2>
+  </div>
+);
+
+// ─────────────────────────────────────────────
 // Page
 // ─────────────────────────────────────────────
 
@@ -383,7 +406,7 @@ export default function GuestCheckoutPage() {
   const handleAthCancel = () => {
     // ✅ close ATH modal immediately
     setAthNumberModalOpen(false);
-    toast.info("ATH Móvil payment cancelled");
+    toast.info(t("paymentCancelled"));
     setModalConfig({
       title: t("paymentCancelled"),
       message: t("paymentCancelledDescription"),
@@ -551,26 +574,6 @@ export default function GuestCheckoutPage() {
     );
   };
 
-  // ── section card wrapper ──
-  const SectionCard = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-    <div className={`bg-white rounded-2xl border border-gray-100 shadow-[0_2px_16px_rgba(0,0,0,0.06)] p-4 sm:p-6 ${className}`}>
-      {children}
-    </div>
-  );
-
-  // ── section heading ──
-  const SectionHeading = ({
-    step, icon, title,
-  }: {
-    step: number;
-    icon: React.ReactNode;
-    title: string;
-  }) => (
-    <div className="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
-      <span className="text-gray-400">{icon}</span>
-      <h2 className="font-semibold text-gray-800 text-[15px]">{title}</h2>
-    </div>
-  );
   useEffect(() => {
     let handled = false;
 
@@ -766,7 +769,7 @@ export default function GuestCheckoutPage() {
       // ✅ Step 2: Validate with ATH (WITHOUT country code)
       await validateAthMovilNumber(localNumber);
 
-      toast.success("ATH Móvil number verified");
+      toast.success(t("athMovilNumberVerified"));
 
       // Optional: store number
       // await updateStoredAthMovilNumber(email, fullNumber);
@@ -774,11 +777,11 @@ export default function GuestCheckoutPage() {
       return localNumber;
 
     } catch (err: any) {
-      toast.error(getErrorMessage(err, "ATH Móvil validation failed"));
+      toast.error(getErrorMessage(err, t("athMovilValidationFailed")));
 
       openAthNumberPrompt(
         formData,
-        "Please enter your ATH Móvil number."
+        t("athMovilNumberDescription")
       );
 
       return null;
@@ -957,7 +960,7 @@ export default function GuestCheckoutPage() {
         msg.includes("active cart not found") ||
         msg.includes("CART_INVALID")
       ) {
-        toast.error("Your cart session expired. Please review your cart again.");
+        toast.error(t("cartSessionExpired"), { description: t("cartSessionExpiredDesc") });
 
         await fetchCart();
         router.replace("/guest-checkout");
@@ -987,7 +990,7 @@ export default function GuestCheckoutPage() {
     console.log(`[${requestId}] 📱 Normalized number:`, normalized);
 
     if (normalized.length < 10) {
-      toast.error("Please enter valid mobile number for ATH Móvil");
+      toast.error(t("invalidAthMobile"));
       return;
     }
     if (!pendingAthFormData) {
@@ -1041,7 +1044,7 @@ export default function GuestCheckoutPage() {
       console.log(`[${requestId}] ✅ Step 4 Completed: Polling finished`);
 
     } catch (err: any) {
-      toast.error(getErrorMessage(err, "ATH Móvil validation failed"));
+      toast.error(getErrorMessage(err, t("athMovilValidationFailed")));
       setPlacingOrder(false);
     } finally {
       console.log(`[${requestId}] 🔹 ATH Confirm END`);
@@ -1077,11 +1080,11 @@ border text-sm transition-all cursor-pointer gap-1
             </div>
 
             <h3 className="text-base font-semibold text-[#2f2f2f] text-center">
-              {t("processingPayment") || "Processing Payment"}
+              {t("processingPayment")}
             </h3>
 
             <p className="text-xs text-gray-500 text-center">
-              {t("pleaseWaitDoNotClose") || "Please wait... do not refresh or close"}
+              {t("pleaseWaitDoNotClose")}
             </p>
 
             <div className="text-sm font-semibold text-[#D4AF37]">
@@ -1092,7 +1095,7 @@ border text-sm transition-all cursor-pointer gap-1
               onClick={handleUserCancelClick}
               className="mt-2 text-sm text-red-500 hover:cursor-pointer"
             >
-              {t("cancelTransaction") || "Cancel Transaction"}
+              {t("cancelTransaction")}
             </button>
           </div>
         </div>
@@ -1110,8 +1113,8 @@ border text-sm transition-all cursor-pointer gap-1
         (
           <div className="fixed inset-0 z-[9998] bg-black/50 flex items-center justify-center p-4 pointer-events-auto">
             <div className="bg-white w-full max-w-md rounded-2xl p-6 space-y-4 shadow-xl">
-              <h2 className="text-lg font-semibold text-gray-800"> ATH Móvil number </h2>
-              <p className="text-sm text-gray-500"> Please enter the ATH Móvil number registered to your account. </p>
+              <h2 className="text-lg font-semibold text-gray-800">{t("athMovilNumberTitle")}</h2>
+              <p className="text-sm text-gray-500">{t("athMovilNumberDescription")}</p>
               <Input
                 value={athMobile}
                 onChange={(e) => {
@@ -1178,7 +1181,7 @@ border text-sm transition-all cursor-pointer gap-1
           ) : isRefreshingCart ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <Loader />
-              <p className="mt-4 text-sm text-gray-500">{t("loading") || "Updating cart..."}</p>
+              <p className="mt-4 text-sm text-gray-500">{t("loading")}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_420px] gap-5 items-start">
