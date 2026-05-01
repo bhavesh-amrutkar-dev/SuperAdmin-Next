@@ -115,7 +115,19 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
       setCountriesLoading(true);
       try {
         const res = await AuthService.getCurrency();
-        setCountries(res?.data ?? []);
+
+        const list = res?.data ?? [];
+        setCountries(list);
+
+        // Set default country short code and country code to form field
+        const phoneCountry = list.find(
+          c => c.countryCode.toLowerCase() === defaultCountry
+        );
+        if (phoneCountry) {
+          setCountryCode(`+${(phoneCountry.countryDialCode || "1").replace(/\D/g, "")}`);
+          setCountrySortCode(phoneCountry.countryCode);
+        }
+
       } catch {
         console.log("Failed to load countries");
       } finally {
@@ -294,21 +306,57 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
                   Loading...
                 </div>
               ) : (
-                <PhoneInput
-                  country={defaultCountry}
-                  countryCodeEditable={false}
-                  value={`${countryCode.replace("+", "")}${mobile}`}
-                  onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
-                  onChange={(value, data: any) => {
-                    setCountryCode(`+${data.dialCode}`);
-                    setMobile(value.slice(data.dialCode.length));
-                    setCountrySortCode(data.countryCode);
-                    setOtpSent(false);
-                    setOtp(Array(OTP_LENGTH).fill(""));
-                    setError(null);
-                  }}
-                  inputClass="!w-full !h-[44px]"
-                />)}
+                <div
+                  className="flex items-center rounded-lg border border-[#2f2f2f] hover:border-[#f3c200] focus-within:border-[#f3c200] transition-colors duration-200"
+                  style={{ height: "44px", overflow: "visible", width: "100%" }}
+                >
+                  <div className="shrink-0 flex items-center pl-2">
+                    <PhoneInput
+                      key={defaultCountry}
+                      country={defaultCountry}
+                      onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
+                      containerStyle={{ height: "44px", width: "40px", flexShrink: 0 }}
+                      containerClass="!h-full"
+                      countryCodeEditable={false}
+                      disableCountryCode={false}
+                      inputStyle={{ display: "none" }}
+                      buttonStyle={{
+                        height: "44px",
+                        width: "40px",
+                        border: "none",
+                        backgroundColor: "transparent",
+                        position: "static",
+                      }}
+                      buttonClass="!border-0 !bg-transparent !shadow-none !static"
+                      dropdownStyle={{ zIndex: 9999 }}
+                      onChange={(_value, data: any) => {
+                        setCountryCode(`+${data.dialCode}`);
+                        setCountrySortCode(data.countryCode);
+                        setOtpSent(false);
+                        setOtp(Array(OTP_LENGTH).fill(""));
+                        setError(null);
+                      }}
+                    />
+                  </div>
+                  <span className="text-sm text-gray-700 shrink-0 mx-1">
+                    {countryCode || "+1"}
+                  </span>
+                  <input
+                    style={{ height: "44px" }}
+                    placeholder="Phone Number"
+                    className="flex-1 min-w-0 border-0 shadow-none outline-none ring-0 text-sm px-3 bg-transparent focus:outline-none focus:ring-0"
+                    maxLength={10}
+                    value={mobile}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "");
+                      setMobile(digits);
+                      setOtpSent(false);
+                      setOtp(Array(OTP_LENGTH).fill(""));
+                      setError(null);
+                    }}
+                  />
+                </div>
+              )}
             </div>
 
             {/* SEND OTP */}
