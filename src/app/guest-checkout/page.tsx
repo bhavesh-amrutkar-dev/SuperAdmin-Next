@@ -738,47 +738,40 @@ export default function GuestCheckoutPage() {
   const resolveGuestAthMovilNumber = async (formData: any) => {
     const requestId = crypto.randomUUID();
 
-    console.log(`[${requestId}] 🔹 Resolve ATH START`);
-
     const email = String(formData?.email || "").trim();
 
-    const rawInput = `${formData?.countryCode || ""}${formData?.phone || ""}`;
-    const candidateNumber = normalizeAthMovilNumber(rawInput);
+    const countryCode = formData?.countryCode || "";
+    const phone = formData?.phone || "";
 
-    console.log(`[${requestId}] 📩 Email:`, email);
-    console.log(`[${requestId}] 📱 Raw input:`, rawInput);
-    console.log(`[${requestId}] 📱 Normalized:`, candidateNumber);
+    // ✅ Local number (ATH API expects this)
+    const localNumber = phone.replace(/\D/g, "");
 
-    if (!email || candidateNumber.length < 10) {
+    // ✅ Full number (for stored check)
+    const fullNumber = `${countryCode}${localNumber}`;
+
+    if (!email || localNumber.length < 10) {
       console.warn(`[${requestId}] ❌ Missing email or invalid number`);
       openAthNumberPrompt(formData);
       return null;
     }
 
     try {
-      console.log(`[${requestId}] 🔹 Step 1: Check stored ATH number`);
-
-      const stored = await checkStoredAthMovilNumber(email, candidateNumber);
-
-      console.log(`[${requestId}] 📦 Stored check result:`, stored);
+      // ✅ Step 1: Check stored number (WITH country code)
+      const stored = await checkStoredAthMovilNumber(email, fullNumber);
 
       if (stored) {
-        console.log(`[${requestId}] ✅ Step 1 Result: Number already stored`);
-        return candidateNumber;
+        return localNumber; // ✅ return WITHOUT country code
       }
 
-      console.log(`[${requestId}] 🔹 Step 2: Validate ATH number`);
+      // ✅ Step 2: Validate with ATH (WITHOUT country code)
+      await validateAthMovilNumber(localNumber);
 
-      await validateAthMovilNumber(candidateNumber);
       toast.success("ATH Móvil number verified");
-      console.log(`[${requestId}] ✅ Step 2 Success: Number validated`);
 
-      // Optional
-      // console.log(`[${requestId}] 🔹 Step 3: Update stored number`);
-      // await updateStoredAthMovilNumber(email, candidateNumber);
+      // Optional: store number
+      // await updateStoredAthMovilNumber(email, fullNumber);
 
-      console.log(`[${requestId}] 🔹 Resolve ATH END (validated)`);
-      return candidateNumber;
+      return localNumber;
 
     } catch (err: any) {
       toast.error(getErrorMessage(err, "ATH Móvil validation failed"));
