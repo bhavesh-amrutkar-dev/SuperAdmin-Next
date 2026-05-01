@@ -134,7 +134,12 @@ export default function RegisterPage() {
 
 
   useEffect(() => {
-    if (!debouncedEmail || errors.email) return;
+    if (!debouncedEmail) return;
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(debouncedEmail)) {
+      setErrors((prev) => ({ ...prev, email: t("emailInvalid") }));
+      return;
+    }
 
     const validateEmail = async () => {
       setEmailValidating(true);
@@ -291,7 +296,7 @@ export default function RegisterPage() {
           {t("createAccount")}
         </h1>
       </div>
-      <form onSubmit={onSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <form onSubmit={onSubmit} noValidate className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
         {/* First Name */}
         <div className="space-y-2">

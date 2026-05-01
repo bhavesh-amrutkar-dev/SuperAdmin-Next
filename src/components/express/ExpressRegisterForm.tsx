@@ -45,8 +45,8 @@ const validators = {
 
   name: (value: string, msg: string, nameFormatError: string) => {
     if (!value || value.trim().length === 0) return msg;
-    if (!/^[A-Za-z\s]{2,50}$/.test(value.trim())) {
-      return nameFormatError;
+    if (value.trim().length < 2 || value.trim().length > 50) {
+      return "Must be between 2 and 50 characters";
     }
     return true;
   },
@@ -166,6 +166,7 @@ export default function ExpressRegisterForm({
             </Label>
             <Input
               id="firstName"
+              maxLength={50}
               placeholder={t("firstNamePlaceholder")}
               error={!!errors.firstName}
               {...register("firstName", {
@@ -182,6 +183,7 @@ export default function ExpressRegisterForm({
             </Label>
             <Input
               id="lastName"
+              maxLength={50}
               placeholder={t("lastNamePlaceholder")}
               error={!!errors.lastName}
               {...register("lastName", {
