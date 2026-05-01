@@ -584,7 +584,7 @@ export default function SecureCheckoutPage() {
       // ✅ Step 3: update stored
       await updateStoredAthMovilNumber(email, `1${localNumber}`);
 
-      toast.success("ATH Móvil number verified");
+      toast.success(t("athMovilNumberVerified"));
 
       return localNumber;
 
@@ -654,7 +654,7 @@ export default function SecureCheckoutPage() {
       setPlacingOrder(false);
 
       // ✅ Inform user
-      toast.error("Payment timed out. Please try again or check your orders.");
+      toast.error(t("paymentTimedOut"));
       router.push("/orders");
       // ✅ Show actionable modal
       // setModalConfig({
@@ -863,7 +863,7 @@ export default function SecureCheckoutPage() {
     const context = pendingAthOrderContextRef.current;
 
     if (localNumber.length < 10) {
-      toast.error("Please enter valid mobile number for ATH Móvil");
+      toast.error(t("invalidAthMobile"));
       return;
     }
 
@@ -931,8 +931,7 @@ export default function SecureCheckoutPage() {
 
     } catch (err: any) {
       // ✅ TOAST ONLY
-      toast.error(getErrorMessage(err, "ATH Móvil validation failed"));
-
+      toast.error(getErrorMessage(err, t("athMovilValidationFailed")));
 
       setPlacingOrder(false);
       setIsUpdatingStatus(false);
@@ -1116,7 +1115,7 @@ export default function SecureCheckoutPage() {
         } catch (err) {
           console.warn("❌ Receipt upload failed:", err);
 
-          toast.error("Receipt upload failed. Please try again.");
+          toast.error(t("receiptUploadFailed"));
           setPlacingOrder(false);
           return;
         }
@@ -1148,7 +1147,7 @@ export default function SecureCheckoutPage() {
         } catch (err) {
           console.error("Square redirect error:", err);
 
-          toast.error("Payment initialization failed. Try again.");
+          toast.error(t("paymentInitFailed"));
           setPlacingOrder(false);
           return;
         }
@@ -1302,7 +1301,7 @@ export default function SecureCheckoutPage() {
         setReceiptFile(file);
         setManualPaymentConfirmed(false);
       } else {
-        toast.error("Please upload a valid image file (JPEG, PNG, or WebP)");
+        toast.error(t("invalidImageFormat"));
       }
     }
   };
@@ -1314,7 +1313,7 @@ export default function SecureCheckoutPage() {
 
   const handleManualPaymentConfirm = () => {
     if (!selectedBank || !receiptFile) {
-      toast.error("Please select a bank and upload proof of payment");
+      toast.error(t("selectBankAndUploadReceipt"));
       return;
     }
     setManualPaymentConfirmed(true);
@@ -1371,7 +1370,7 @@ export default function SecureCheckoutPage() {
   if (cartItems.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Redirecting to cart...</p>
+        <p className="text-gray-500">{t("redirectingToCart")}</p>
       </div>
     );
   }
@@ -1405,11 +1404,11 @@ export default function SecureCheckoutPage() {
               </div>
 
               <h3 className="text-base font-semibold text-[#2f2f2f] text-center">
-                {t("processingPayment") || "Processing Payment"}
+                {t("processingPayment")}
               </h3>
 
               <p className="text-xs text-gray-500 text-center">
-                {t("pleaseWaitDoNotClose") || "Please wait... do not refresh or close"}
+                {t("pleaseWaitDoNotClose")}
               </p>
 
               {/* Timer */}
@@ -1422,7 +1421,7 @@ export default function SecureCheckoutPage() {
                 onClick={handleUserCancelClick}
                 className="mt-2 text-sm text-red-500 hover:cursor-pointer"
               >
-                {t("cancelTransaction") || "Cancel Transaction"}
+                {t("cancelTransaction")}
               </button>
 
             </div>
@@ -1449,7 +1448,7 @@ export default function SecureCheckoutPage() {
 
                   setAthMobileError("");
                 }}
-                placeholder="Enter the mobile number registered with ATH Móvil"
+                placeholder={t("athMovilPlaceholder")}
                 inputMode="tel"
                 maxLength={10}
                 className="w-full rounded-lg border px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-200 focus:border-[#f3c200]"
@@ -1716,14 +1715,14 @@ export default function SecureCheckoutPage() {
                   {/* Loading State */}
                   {loadingBankDetails && (
                     <div className="text-center py-4">
-                      <p className="text-sm text-gray-600">{t("loading") || "Loading..."}</p>
+                      <p className="text-sm text-gray-600">{t("loading")}</p>
                     </div>
                   )}
 
                   {/* Bank Selection */}
                   {!loadingBankDetails && bankDetails.length > 0 && (
                     <div>
-                      <p className="text-xs sm:text-sm text-gray-600 mb-3">{t("selectBank") || "Select a bank:"}</p>
+                      <p className="text-xs sm:text-sm text-gray-600 mb-3">{t("selectBank")}</p>
                       <div className="flex flex-wrap gap-3 sm:gap-4">
                         {bankDetails.map((bank) => (
                           <div
@@ -1755,7 +1754,7 @@ export default function SecureCheckoutPage() {
                   {/* No Banks Available */}
                   {!loadingBankDetails && bankDetails.length === 0 && (
                     <div className="text-center py-4">
-                      <p className="text-sm text-gray-600">{t("noBanksAvailable") || "No banks available for manual payment"}</p>
+                      <p className="text-sm text-gray-600">{t("noBanksAvailable")}</p>
                     </div>
                   )}
 
@@ -1767,13 +1766,13 @@ export default function SecureCheckoutPage() {
 
                         {selectedBank.bankPaymentNumber ? (
                           <div className="mb-3">
-                            <p className="text-xs text-gray-500 mb-1 font-semibold">{t("accountNumber") || "Account Number"}:</p>
+                            <p className="text-xs text-gray-500 mb-1 font-semibold">{t("accountNumber")}:</p>
                             <div className="flex items-center gap-2">
                               <p className="text-sm sm:text-base font-semibold text-[#2f2f2f]">{selectedBank.bankPaymentNumber}</p>
                               <button
                                 onClick={() => handleCopyToClipboard(selectedBank.bankPaymentNumber || "")}
                                 className="p-1 hover:bg-gray-300 rounded transition-colors cursor-pointer"
-                                title={t("copy") || "Copy"}
+                                title={t("copy")}
                               >
                                 <Copy className="w-4 h-4 text-gray-600" />
                               </button>
@@ -1781,7 +1780,7 @@ export default function SecureCheckoutPage() {
                           </div>
                         ) : selectedBank.bankPaymentURL ? (
                           <div className="mb-3">
-                            <p className="text-xs text-gray-500 mb-1 font-semibold">{t("paymentURL") || "Payment URL"}:</p>
+                            <p className="text-xs text-gray-500 mb-1 font-semibold">{t("paymentURL")}:</p>
                             <a
                               href={selectedBank.bankPaymentURL}
                               target="_blank"
@@ -1795,13 +1794,13 @@ export default function SecureCheckoutPage() {
 
                         {selectedBank.accountHolderID && (
                           <div className="mb-3">
-                            <p className="text-xs text-gray-500 mb-1 font-semibold">{t("ID") || "ID"}:</p>
+                            <p className="text-xs text-gray-500 mb-1 font-semibold">{t("ID")}:</p>
                             <div className="flex items-center gap-2">
                               <p className="text-sm sm:text-base font-semibold text-gray-800">{selectedBank.accountHolderID}</p>
                               <button
                                 onClick={() => handleCopyToClipboard(selectedBank.accountHolderID || "")}
                                 className="p-1 hover:bg-gray-300 rounded transition-colors cursor-pointer"
-                                title={t("copy") || "Copy"}
+                                title={t("copy")}
                               >
                                 <Copy className="w-4 h-4 text-gray-600" />
                               </button>
@@ -1811,14 +1810,14 @@ export default function SecureCheckoutPage() {
 
                         {selectedBank.accountHolderName && (
                           <div className="mb-3">
-                            <p className="text-xs text-gray-500 mb-1 font-semibold">{t("Holder") || "Account Holder"}:</p>
+                            <p className="text-xs text-gray-500 mb-1 font-semibold">{t("Holder")}:</p>
                             <p className="text-sm sm:text-base font-semibold text-gray-800">{selectedBank.accountHolderName}</p>
                           </div>
                         )}
 
                         {convertedAmount && (
                           <div className="mt-4">
-                            <p className="text-xs text-gray-600 mb-1">{t("Total") || "Total"}:</p>
+                            <p className="text-xs text-gray-600 mb-1">{t("total")}:</p>
                             <p className="text-base sm:text-lg font-bold text-[#D4AF37] bg-yellow-50 px-3 py-1 rounded inline-block">
                               {convertedAmount.convertedCurrencySymbol}
                               {Number(convertedAmount.TotalconvertedValue || 0).toFixed(2)} {convertedAmount.to_currency}
@@ -1830,7 +1829,7 @@ export default function SecureCheckoutPage() {
                       {/* Receipt Upload */}
                       <div>
                         <label className="block text-xs sm:text-sm font-semibold text-gray-800 mb-2">
-                          {t("ProofOfPayment") || "Proof of Payment"}
+                          {t("ProofOfPayment")}
                         </label>
                         <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6 text-center min-h-37.5 flex items-center justify-center">
                           <input
@@ -1843,7 +1842,7 @@ export default function SecureCheckoutPage() {
                           {!receiptImage ? (
                             <div className="flex flex-col items-center gap-2">
                               <Upload className="w-8 h-8 text-gray-400" />
-                              <p className="text-xs sm:text-sm text-gray-600">{t("PHOTOSCREENSHOT") || "Upload Photo/Screenshot"}</p>
+                              <p className="text-xs sm:text-sm text-gray-600">{t("PHOTOSCREENSHOT")}</p>
                             </div>
                           ) : (
                             <div className="space-y-2">
@@ -1860,7 +1859,7 @@ export default function SecureCheckoutPage() {
                                 }}
                                 className="text-xs text-red-600 hover:underline"
                               >
-                                {t("remove") || "Remove"}
+                                {t("remove")}
                               </button>
                             </div>
                           )}
@@ -1870,7 +1869,7 @@ export default function SecureCheckoutPage() {
                             onClick={handleManualPaymentConfirm}
                             className="mt-4 w-full btn-primary text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg uppercase text-sm md:text-default flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {t("confirm") || "Confirm"}
+                            {t("confirm")}
                           </Button>
                         )}
                       </div>
@@ -1905,15 +1904,15 @@ export default function SecureCheckoutPage() {
                         : Number(item.price ?? item.unitPrice ?? item.ticketPrice ?? 0);
 
                     const ticketCount = item.ticketCount || item.ticketDetails?.numberOfTicket || 0;
-                    const sellerName = item.sellerName || item.storeName || "Unknown";
+                    const sellerName = item.sellerName || item.storeName || t("unknown");
 
                     return (
                       <div key={idx} className="flex gap-2 sm:gap-3 md:gap-4 pb-3 sm:pb-4 border-b border-gray-100 last:border-0">
                         <div className="w-14 h-14 sm:w-22 sm:h-22 rounded bg-white overflow-hidden shrink-0">
-                          <Image src={getProductImage(item)} alt={item.name || item.productName || "Product"} width={80} height={80} className="w-full h-full object-contain p-1" />
+                          <Image src={getProductImage(item)} alt={item.name || item.productName || t("product")} width={80} height={80} className="w-full h-full object-contain p-1" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs sm:text-sm font-semibold text-[#2f2f2f] mb-1 line-clamp-2">{item.name || item.productName || "Product"}</p>
+                          <p className="text-xs sm:text-sm font-semibold text-[#2f2f2f] mb-1 line-clamp-2">{item.name || item.productName || t("product")}</p>
                           <p className="text-xs text-gray-600 mb-1">
                             {t("soldBy")}: <span className="text-[#D4AF37] font-semibold">{sellerName}</span>
                           </p>
@@ -1982,16 +1981,16 @@ export default function SecureCheckoutPage() {
                           className="w-full h-11 btn-primary text-white py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg text-sm md:text-default flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {placingOrder
-                            ? t("placingOrder") || "Placing Order..."
+                            ? t("placingOrder")
                             : paymentMethod === "manual"
-                              ? t("placeOrder") || "PLACE ORDER"
+                              ? t("placeOrder")
                               : paymentMethod === "athMovil"
-                                ? t("payWithATHMovil") || "PAY WITH ATH MÓVIL"
+                                ? t("payWithATHMovil")
                                 : paymentMethod === "square" && ENABLE_SQUARE_PAY
                                   ? t("paySqr")
                                   : paymentMethod === "creditCard" && ENABLE_PLACE_TO_PAY
-                                    ? t("payWithPlaceToPay") || "PAY WITH PLACE TO PAY"
-                                    : t("pay") || "PAY"}
+                                    ? t("payWithPlaceToPay")
+                                    : t("pay")}
                         </Button>
 
                         {/* #endregion */}
