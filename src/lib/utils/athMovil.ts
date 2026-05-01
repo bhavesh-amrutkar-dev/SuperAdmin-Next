@@ -102,3 +102,14 @@ export function formatAthMovilNumber(
 
     return `+${code}${digits}`;
 }
+
+
+export function buildAthMovilFullNumber(
+  localNumber: string,
+  countryCode?: string
+) {
+  const digits = normalizeAthMovilNumber(localNumber);
+  const code = (countryCode || "1").replace("+", "");
+
+  return `${code}${digits}`; // ✅ NO +
+}

@@ -31,6 +31,7 @@ import SquareScript from "@/src/components/payments/SqaureScript";
 import { getSquareErrorMessage } from "@/src/lib/config/squareEnum";
 import { getErrorMessage } from "@/src/lib/utils/errorMessage";
 import {
+  buildAthMovilFullNumber,
   formatTimer,
   handleAthMovilApiResponse,
   hasStoredAthMovilNumber,
@@ -555,11 +556,8 @@ export default function SecureCheckoutPage() {
     candidateNumber: string,
     countryCode?: string
   ) => {
-    // ✅ Extract clean local number
     const localNumber = candidateNumber.replace(/\D/g, "");
 
-    // ✅ Full number with country code (for DB check)
-    const fullNumber = `${countryCode || ""}${localNumber}`;
     if (!email || localNumber.length < 10) {
       toast.error(t("invalidAthMobile"));
       setAthMobile("");
@@ -568,18 +566,22 @@ export default function SecureCheckoutPage() {
       setPlacingOrder(false);
       return null;
     }
+
     try {
-      // ✅ Step 1: Check stored number (WITH country code)
+      // ✅ build once
+      const fullNumber = buildAthMovilFullNumber(localNumber, countryCode);
+
+      // ✅ Step 1: check stored
       const stored = await checkStoredAthMovilNumber(email, fullNumber);
 
       if (stored) {
-        return localNumber; // ✅ return WITHOUT country code
+        return localNumber;
       }
 
-      // ✅ Step 2: Validate ATH (WITHOUT country code)
+      // ✅ Step 2: validate
       await validateAthMovilNumber(localNumber);
 
-      // ✅ Step 3: UPDATE stored number (THIS WAS MISSING)
+      // ✅ Step 3: update stored
       await updateStoredAthMovilNumber(email, `1${localNumber}`);
 
       toast.success("ATH Móvil number verified");
@@ -595,7 +597,6 @@ export default function SecureCheckoutPage() {
       setPlacingOrder(false);
     }
   };
-
   const pollOrderStatus = async (orderId: string, timeoutSeconds: number) => {
     const startTime = Date.now();
     const maxTime = timeoutSeconds * 1000;
@@ -647,9 +648,27 @@ export default function SecureCheckoutPage() {
     }
 
     if (!pollingCancelledRef.current) {
+      trackEvent("ATH_MOVIL_TIMEOUT", { order_id: orderId });
+
       setIsUpdatingStatus(false);
       setPlacingOrder(false);
+
+      // ✅ Inform user
+      toast.error("Payment timed out. Please try again or check your orders.");
       router.push("/orders");
+      // ✅ Show actionable modal
+      // setModalConfig({
+      //   title: "Payment Timeout",
+      //   message: "We couldn't confirm your payment in time. You can retry or check your order status.",
+      //   confirmText: "Retry Payment",
+      //   cancelText: "View Orders",
+      //   onConfirm: () => {
+      //     setConfirmOpen(false);
+      //     handleAuthMovil(); // 🔁 retry flow
+      //   },
+      // });
+
+      // setConfirmOpen(true);
     }
   };
   const handleAthCancel = () => {
@@ -702,7 +721,11 @@ export default function SecureCheckoutPage() {
         addressId,
         uid,
       };
-      const athMovilNumber = await resolveLoggedInAthMovilNumber(checkoutUser.email, candidateNumber);
+      const athMovilNumber = await resolveLoggedInAthMovilNumber(
+        checkoutUser.email,
+        candidateNumber,
+        selectedAddress?.mobileNumberCode || checkoutUser.countryCode
+      );
 
       if (!athMovilNumber) return;
 
@@ -852,7 +875,6 @@ export default function SecureCheckoutPage() {
 
       // ✅ validate
       await validateAthMovilNumber(localNumber);
-
       // ✅ update stored number
       await updateStoredAthMovilNumber(context.email, `1${localNumber}`);
 
