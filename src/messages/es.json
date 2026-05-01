@@ -712,5 +712,20 @@
     "noWinnerFound": "No se encontró ganador",
     "winnerNotDeclaredYet": "Este sorteo aún no tiene ganador.",
     "cartSessionExpired": "Tu sesión de pago ha caducado.",
-    "cartSessionExpiredDesc": "Por favor, revise su carrito nuevamente."
+    "cartSessionExpiredDesc": "Por favor, revise su carrito nuevamente.",
+    "athMovilNumberTitle": "Número ATH Móvil",
+    "athMovilNumberDescription": "Por favor ingresa el número ATH Móvil registrado en tu cuenta.",
+    "athMovilNumberVerified": "Número ATH Móvil verificado",
+    "athMovilValidationFailed": "Error al validar ATH Móvil",
+    "invalidAthMobile": "Por favor ingresa un número ATH Móvil válido",
+    "nameFormatError": "Solo letras permitidas (2–50 caracteres)",
+    "pincodeInvalid": "Código postal inválido",
+    "paymentTimedOut": "El pago ha expirado. Por favor intente de nuevo o consulte sus pedidos.",
+    "receiptUploadFailed": "Error al subir el comprobante. Por favor intente de nuevo.",
+    "paymentInitFailed": "Error al inicializar el pago. Inténtelo de nuevo.",
+    "invalidImageFormat": "Por favor suba un archivo de imagen válido (JPEG, PNG o WebP)",
+    "selectBankAndUploadReceipt": "Por favor seleccione un banco y suba el comprobante de pago",
+    "redirectingToCart": "Redirigiendo al carrito...",
+    "athMovilPlaceholder": "Ingresa el número de móvil registrado con ATH Móvil",
+    "athMovilErrMsg": "Este número no está registrado en ATH Móvil. Ingrese un número registrado válido."
 }

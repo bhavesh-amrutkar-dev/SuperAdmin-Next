@@ -10,6 +10,8 @@ interface BackendOrderResponse {
     checkoutProcessUrl: string;
     onlinePaymentMethod: number;
     onlinePaymentMethodText: string;
+    totalAmount?: number;
+    timeOut?: number | string;
   };
 }
 
@@ -18,7 +20,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     const { data, error } = await serverFetch<BackendOrderResponse>(
-      "/order/V2",
+      "/order/web",
       {
         method: "POST",
         body: JSON.stringify(body),

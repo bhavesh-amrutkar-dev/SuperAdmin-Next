@@ -43,26 +43,26 @@ const validators = {
     return true;
   },
 
-  name: (value: string, msg: string) => {
+  name: (value: string, msg: string, nameFormatError: string) => {
     if (!value || value.trim().length === 0) return msg;
     if (value.trim().length < 2 || value.trim().length > 50) {
-      return "Must be between 2 and 50 characters";
+      return nameFormatError;
     }
     return true;
   },
 
-  email: (value: string, msg: string) => {
+  email: (value: string, msg: string, emailInvalid: string) => {
     if (!value || value.trim().length === 0) return msg;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-      return "Invalid email format";
+      return emailInvalid;
     }
     return true;
   },
 
-  pincode: (value: string, msg: string) => {
+  pincode: (value: string, msg: string, pincodeInvalid: string) => {
     if (!value || value.trim().length === 0) return msg;
     if (!/^[0-9]{4,10}$/.test(value)) {
-      return "Invalid pincode";
+      return pincodeInvalid;
     }
     return true;
   },
@@ -171,7 +171,7 @@ export default function ExpressRegisterForm({
               error={!!errors.firstName}
               {...register("firstName", {
                 required: t("firstNameRequired"),
-                validate: (v) => validators.name(v, t("firstNameRequired")),
+                validate: (v) => validators.name(v, t("firstNameRequired"), t("nameFormatError")),
               })}
             />
             <ErrorMessage message={errors.firstName?.message} />
@@ -188,7 +188,7 @@ export default function ExpressRegisterForm({
               error={!!errors.lastName}
               {...register("lastName", {
                 required: t("lastNameRequired"),
-                validate: (v) => validators.name(v, t("lastNameRequired")),
+                validate: (v) => validators.name(v, t("lastNameRequired"), t("nameFormatError")),
               })}
             />
             <ErrorMessage message={errors.lastName?.message} />
@@ -201,11 +201,11 @@ export default function ExpressRegisterForm({
             <Input
               id="email"
               type="email"
-              placeholder="you@example.com"
+              placeholder={t("emailPlaceholder")}
               error={!!errors.email}
               {...register("email", {
                 required: t("emailRequired"),
-                validate: (v) => validators.email(v, t("emailRequired")),
+                validate: (v) => validators.email(v, t("emailRequired"), t("emailInvalid")),
               })}
               onKeyDown={(e) => {
                 if (e.key === " ") e.preventDefault();
@@ -233,7 +233,7 @@ export default function ExpressRegisterForm({
               render={({ field }) =>
                 countriesLoading || countries.length === 0 ? (
                   <div className="w-full h-[44px] rounded-lg border border-[#2f2f2f] px-4 flex items-center text-sm text-gray-400">
-                    Loading...
+                    {t("loading")}
                   </div>
                 ) : (
                   <PhoneInput
@@ -337,7 +337,7 @@ export default function ExpressRegisterForm({
                 error={!!errors.pincode}
                 {...register("pincode", {
                   required: t("pincodeRequired"),
-                  validate: (v) => validators.pincode(v, t("pincodeRequired")),
+                  validate: (v) => validators.pincode(v, t("pincodeRequired"), t("pincodeInvalid")),
                 })}
               />
               <ErrorMessage message={errors.pincode?.message} />
