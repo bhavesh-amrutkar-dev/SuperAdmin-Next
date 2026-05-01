@@ -829,7 +829,7 @@ export default function GuestCheckoutPage() {
         console.warn("Polling error:", err);
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 30000));
+      await new Promise((resolve) => setTimeout(resolve, 5000));
     }
 
     if (!pollingCancelledRef.current) {
