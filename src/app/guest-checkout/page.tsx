@@ -1126,7 +1126,7 @@ border text-sm transition-all cursor-pointer gap-1
                     setAthMobile(value);
                   }
                 }}
-                placeholder="787 123 4567"
+                placeholder="Enter the mobile number which is registered with ath movil"
                 inputMode="tel"
                 maxLength={10}
               />
