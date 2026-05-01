@@ -11,6 +11,7 @@ import { useTranslations } from "next-intl";
 import { AuthService } from "@/src/lib/services/auth";
 import { IMobileLoginRM } from "@/src/models/api/request/auth";
 import { CountryCurrency } from "@/src/models/api/response/auth";
+import { getErrorMessage } from "@/src/lib/utils/errorMessage";
 import { getCookie } from "cookies-next";
 
 export default function LoginMobilePage() {
@@ -84,7 +85,7 @@ export default function LoginMobilePage() {
         )}&otpId=${otpId}&expiry=${otpExpiryTime}${redirectQuery}`
       );
     } catch (err: any) {
-      toast.error(err?.message || t("otpSendFailed"));
+      toast.error(getErrorMessage(err, t("otpSendFailed")));
     } finally {
       setLoading(false);
     }

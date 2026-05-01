@@ -14,6 +14,7 @@ import { getCookie } from "cookies-next";
 import { Button } from "../../components/ui/button";
 import Loader from "@/src/components/loader";
 import { trackEvent } from "@/src/lib/analytics";
+import { getErrorMessage } from "@/src/lib/utils/errorMessage";
 
 export interface CartItem {
   _id?: string;
@@ -400,7 +401,7 @@ export default function CartPage() {
       // Revert optimistic update on error
       fetchCart();
       console.warn("Error updating cart:", error);
-      toast.error(error?.response?.data?.message || error?.message || t("cartUpdateFailed") || "Failed to update cart");
+      toast.error(getErrorMessage(error, t("cartUpdateFailed") || "Failed to update cart"));
     } finally {
       setUpdating(null);
     }
@@ -525,7 +526,7 @@ export default function CartPage() {
       // Revert optimistic update on error by refreshing cart
       fetchCart();
       console.warn("Error removing item from cart:", error);
-      toast.error(error?.response?.data?.message || error?.message || t("removeFailed") || "Failed to remove item");
+      toast.error(getErrorMessage(error, t("removeFailed") || "Failed to remove item"));
     } finally {
       setUpdating(null);
       setItemToRemove(null);

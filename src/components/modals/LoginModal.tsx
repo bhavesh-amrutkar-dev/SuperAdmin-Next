@@ -16,6 +16,7 @@ import { persistAuthSession } from "@/src/lib/session/auth";
 import { useAuth } from "@/src/context/authContext";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
+import { getErrorMessage } from "@/src/lib/utils/errorMessage";
 
 interface LoginModalProps {
     isOpen: boolean;
@@ -90,7 +91,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                 }
             }
         } catch (err: any) {
-            toast.error(err?.message || t("loginFailed"));
+            toast.error(getErrorMessage(err, t("loginFailed")));
         }
     };
 

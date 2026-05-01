@@ -17,6 +17,7 @@ import { AuthService } from "@/src/lib/services/auth";
 import { toast } from "sonner";
 import { getCookie } from "cookies-next";
 import { CountryCurrency } from "@/src/models/api/response/auth";
+import { getErrorMessage } from "@/src/lib/utils/errorMessage";
 
 const OTP_LENGTH = 4;
 
@@ -182,7 +183,7 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
       startResendCooldown();
 
     } catch (err: any) {
-      toast.error(err.message || "Something went wrong");
+      toast.error(getErrorMessage(err, "Something went wrong"));
     } finally {
       setSendingOtp(false);
     }
@@ -220,7 +221,7 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
       onSuccess();
 
     } catch (err: any) {
-      toast.error(err?.message || "Invalid OTP");
+      toast.error(getErrorMessage(err, "Invalid OTP"));
     } finally {
       setVerifying(false);
     }

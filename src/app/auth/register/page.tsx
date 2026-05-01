@@ -17,6 +17,7 @@ import ErrorMessage from "@/src/components/ui/errorMessage";
 import CountrySelect from "@/src/components/common/CountrySelect";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
+import { getErrorMessage } from "@/src/lib/utils/errorMessage";
 type RegisterForm = {
   firstName: string;
   lastName: string;
@@ -124,8 +125,10 @@ export default function RegisterPage() {
         )}&otpId=${otpId}&expiry=${otpExpiryTime}&flow=signup${redirect ? `&redirect=${encodeURIComponent(redirect)}` : ""}`
       );
     } catch (err: any) {
-      toast.error(err?.message)
-      setOtpError(err?.message || "Something went wrong");
+      const message = getErrorMessage(err, "Something went wrong");
+
+      toast.error(message)
+      setOtpError(message);
     } finally {
       setOtpLoading(false);
     }
@@ -133,7 +136,12 @@ export default function RegisterPage() {
 
 
   useEffect(() => {
-    if (!debouncedEmail || errors.email) return;
+    if (!debouncedEmail) return;
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(debouncedEmail)) {
+      setErrors((prev) => ({ ...prev, email: t("emailInvalid") }));
+      return;
+    }
 
     const validateEmail = async () => {
       setEmailValidating(true);
@@ -290,7 +298,7 @@ export default function RegisterPage() {
           {t("createAccount")}
         </h1>
       </div>
-      <form onSubmit={onSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <form onSubmit={onSubmit} noValidate className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
         {/* First Name */}
         <div className="space-y-2">

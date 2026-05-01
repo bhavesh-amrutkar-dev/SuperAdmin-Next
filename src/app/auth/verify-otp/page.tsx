@@ -14,6 +14,7 @@ import { Label } from "@/src/components/ui/label";
 import { setCookie } from "cookies-next";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/src/context/authContext";
+import { getErrorMessage } from "@/src/lib/utils/errorMessage";
 
 export default function VerifyOtpPage() {
   const t = useTranslations();
@@ -167,7 +168,7 @@ export default function VerifyOtpPage() {
       const safeRedirect = redirect && !redirect.startsWith("/auth") ? redirect : "/";
       router.replace(safeRedirect);
     } catch (err: any) {
-      toast.error(err?.message || t("otpInvalidGeneric"));
+      toast.error(getErrorMessage(err, t("otpInvalidGeneric")));
     } finally {
       setLoading(false);
     }
@@ -252,7 +253,7 @@ export default function VerifyOtpPage() {
 
       toast.success(t("otpResent"));
     } catch (err: any) {
-      toast.error(err?.message || t("otpSendFailed"));
+      toast.error(getErrorMessage(err, t("otpSendFailed")));
     } finally {
       setLoading(false);
     }
@@ -350,7 +351,7 @@ export default function VerifyOtpPage() {
                 toast.success(t("passwordResetSuccess"));
                 router.push("/auth/login-mobile");
               } catch (err: any) {
-                toast.error(err?.message || t("passwordResetFailed"));
+                toast.error(getErrorMessage(err, t("passwordResetFailed")));
               } finally {
                 setLoading(false);
               }

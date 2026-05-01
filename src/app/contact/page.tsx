@@ -33,6 +33,7 @@ import { resolveIpAddress } from "@/src/lib/utils/ip-resolver";
 import { CustomerService } from "@/src/lib/services/customer.service";
 import { CountryCurrency } from "@/src/models/api/response/auth";
 import { AuthService } from "@/src/lib/services/auth";
+import { getErrorMessage } from "@/src/lib/utils/errorMessage";
 import { getCookie } from "cookies-next";
 
 type ContactForm = {
@@ -252,7 +253,7 @@ export default function ContactPage() {
             setFormValues(reset);
 
         } catch (err: any) {
-            toast.error(err?.message || t("sendFailed"));
+            toast.error(getErrorMessage(err, t("sendFailed")));
         } finally {
             setSubmitting(false);
         }
