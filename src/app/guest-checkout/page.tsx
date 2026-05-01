@@ -191,6 +191,7 @@ export default function GuestCheckoutPage() {
     },
     shouldUnregister: false, // ✅ IMPORTANT
   });
+  const isValidAthNumber = athMobile.length === 10;
   const [isAuthChecked, setIsAuthChecked] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [modalConfig, setModalConfig] = useState<{
@@ -1118,13 +1119,21 @@ border text-sm transition-all cursor-pointer gap-1
             <div className="bg-white w-full max-w-md rounded-2xl p-6 space-y-4 shadow-xl">
               <h2 className="text-lg font-semibold text-gray-800"> ATH Móvil number </h2>
               <p className="text-sm text-gray-500"> Please enter the ATH Móvil number registered to your account. </p>
-              <Input value={athMobile}
-                onChange={(event) => {
-                  setAthMobile(event.target.value);
-                  setAthMobileError("");
+              <Input
+                value={athMobile}
+                onChange={(e) => {
+                  // ✅ allow only digits
+                  const value = e.target.value.replace(/\D/g, "");
+
+                  // ✅ limit to 10 digits
+                  if (value.length <= 10) {
+                    setAthMobile(value);
+                  }
                 }}
-                placeholder="Enter your ATH Móvil number"
-                inputMode="tel" />
+                placeholder="787 123 4567"
+                inputMode="tel"
+                maxLength={10}
+              />
               {/* {athMobileError && (<p className="text-xs text-red-500">{athMobileError}</p>)} */}
               <div className="flex gap-3">
                 <Button variant="outline" className="w-full"
@@ -1133,9 +1142,11 @@ border text-sm transition-all cursor-pointer gap-1
                   }} >
                   {t("cancel")}
                 </Button>
-                <Button className="w-full"
-                  disabled={placingOrder}
-                  onClick={handleAthNumberConfirm} >
+                <Button
+                  className="w-full"
+                  disabled={placingOrder || !isValidAthNumber}
+                  onClick={handleAthNumberConfirm}
+                >
                   {placingOrder ? t("processing") : t("continue")}
                 </Button>
               </div>
