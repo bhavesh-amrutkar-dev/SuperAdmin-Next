@@ -1336,10 +1336,10 @@ export default function SecureCheckoutPage() {
                   {/* Payment Options */}
                   <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
                     {[
-                      {
-                        value: "athMovil",
-                        label: t("payWithATHMovil"),
-                      },
+                      // {
+                      //   value: "athMovil",
+                      //   label: t("payWithATHMovil"),
+                      // },
                       ...(ENABLE_PLACE_TO_PAY
                         ? [
                           {
