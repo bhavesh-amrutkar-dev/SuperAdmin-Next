@@ -52,7 +52,7 @@ export function handleAthMovilApiResponse(response: unknown) {
     }
 
     if (!payload.data.validUser) {
-        throw new Error("User validation failed: user is not valid");
+        throw new Error("This number is not registered with ATH Móvil. Please enter a valid registered number.");
     }
 
     return true;
@@ -94,11 +94,11 @@ function isTruthyFlag(value: unknown) {
 }
 
 export function formatAthMovilNumber(
-  number: string,
-  countryCode?: string
+    number: string,
+    countryCode?: string
 ) {
-  const digits = normalizeAthMovilNumber(number);
-  const code = countryCode || "1";
+    const digits = normalizeAthMovilNumber(number);
+    const code = countryCode || "1";
 
-  return `+${code}${digits}`;
+    return `+${code}${digits}`;
 }
