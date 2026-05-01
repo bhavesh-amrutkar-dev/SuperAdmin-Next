@@ -1101,8 +1101,8 @@ border text-sm transition-all cursor-pointer gap-1
         </div>
       )}
       <ConfirmationModal
-        isOpen={confirmOpen}
-        onClose={() => setConfirmOpen(false)}
+        open={confirmOpen}
+        onCancel={() => setConfirmOpen(false)}
         title={modalConfig.title}
         message={modalConfig.message}
         confirmText={modalConfig.confirmText}
