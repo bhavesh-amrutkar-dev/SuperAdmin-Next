@@ -297,6 +297,29 @@ export default function SecureCheckoutPage() {
       router.replace("/cart"); // 👈 instant redirect, no extra click
     }
   }, [loading, cartItems, router]);
+
+  useEffect(() => {
+    const isAnyModalOpen =
+      athNumberModalOpen ||
+      confirmOpen ||
+      isUpdatingStatus;
+
+    if (isAnyModalOpen) {
+      const scrollBarWidth =
+        window.innerWidth - document.documentElement.clientWidth;
+
+      document.body.style.overflow = "hidden";
+      document.body.style.paddingRight = `${scrollBarWidth}px`;
+    } else {
+      document.body.style.overflow = "auto";
+      document.body.style.paddingRight = "0px";
+    }
+
+    return () => {
+      document.body.style.overflow = "auto";
+      document.body.style.paddingRight = "0px";
+    };
+  }, [athNumberModalOpen, confirmOpen, isUpdatingStatus]);
   useEffect(() => {
     let handled = false; // 🔥 prevent duplicate triggers
 
@@ -503,7 +526,7 @@ export default function SecureCheckoutPage() {
   };
 
   const updateStoredAthMovilNumber = async (email: string, athMovilNumber: string) => {
-    const res = await fetch("/api/athmovil/check-number", {
+    const res = await fetch("/api/athmovil/update-number", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, athMovilNumber }),
@@ -537,15 +560,14 @@ export default function SecureCheckoutPage() {
 
     // ✅ Full number with country code (for DB check)
     const fullNumber = `${countryCode || ""}${localNumber}`;
-
     if (!email || localNumber.length < 10) {
+      toast.error(t("invalidAthMobile"));
       setAthMobile("");
       setAthMobileError("");
       setAthNumberModalOpen(true);
       setPlacingOrder(false);
       return null;
     }
-
     try {
       // ✅ Step 1: Check stored number (WITH country code)
       const stored = await checkStoredAthMovilNumber(email, fullNumber);
@@ -558,18 +580,19 @@ export default function SecureCheckoutPage() {
       await validateAthMovilNumber(localNumber);
 
       // ✅ Step 3: UPDATE stored number (THIS WAS MISSING)
-      await updateStoredAthMovilNumber(email, fullNumber);
+      await updateStoredAthMovilNumber(email, `1${localNumber}`);
 
       toast.success("ATH Móvil number verified");
 
       return localNumber;
 
     } catch (err: any) {
+      toast.error(getErrorMessage(err, t("athMovilValidationFailed")));
+
       setAthMobile("");
-      setAthMobileError("Please enter your ATH Móvil number.");
+      setAthMobileError(t("athMovilNumberDescription"));
       setAthNumberModalOpen(true);
       setPlacingOrder(false);
-      return null;
     }
   };
 
@@ -629,7 +652,20 @@ export default function SecureCheckoutPage() {
       router.push("/orders");
     }
   };
+  const handleAthCancel = () => {
+    setAthNumberModalOpen(false);
 
+    toast.info(t("paymentCancelled"));
+
+    setModalConfig({
+      title: t("paymentCancelled"),
+      message: t("paymentCancelledDescription"),
+      confirmText: t("retryPayment"),
+      cancelText: t("chooseAnotherMethod"),
+    });
+
+    setConfirmOpen(true);
+  };
   const handleAuthMovil = async () => {
     try {
       if (!selectedAddress) return;
@@ -770,7 +806,7 @@ export default function SecureCheckoutPage() {
           cancelText: t("continueShopping"),
           onConfirm: () => router.push("/cart"),
         });
-        setConfirmOpen(true);
+        // setConfirmOpen(true);
         router.push("/cart");
       } else if (
         errorMsgLower.includes("cart id not found") ||
@@ -804,7 +840,7 @@ export default function SecureCheckoutPage() {
     const context = pendingAthOrderContextRef.current;
 
     if (localNumber.length < 10) {
-      setAthMobileError("Please enter valid mobile number for ATH Móvil");
+      toast.error("Please enter valid mobile number for ATH Móvil");
       return;
     }
 
@@ -812,17 +848,20 @@ export default function SecureCheckoutPage() {
     if (!context || !selectedAddress) return;
 
     try {
-      setAthMobileError("");
-      setAthNumberModalOpen(false);
       setPlacingOrder(true);
 
+      // ✅ validate
       await validateAthMovilNumber(localNumber);
-      await updateStoredAthMovilNumber(context.email, fullNumber);
+
+      // ✅ update stored number
+      await updateStoredAthMovilNumber(context.email, `1${localNumber}`);
+
+      // ✅ ONLY NOW close modal
+      setAthNumberModalOpen(false);
 
       const latitude = (getCookie("lat") as string) || "0";
       const longitude = (getCookie("long") as string) || "0";
       const ipAddress = await getMyIP();
-
       const orderPayload = {
         cartId: context.cartId,
         addressId: context.addressId,
@@ -847,12 +886,12 @@ export default function SecureCheckoutPage() {
         userId: context.uid || "1",
         athMovilNumber: fullNumber,
       };
-
       const response = await fetch("/api/orders/place", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderPayload),
       });
+
       const createdOrder = await response.json();
 
       if (!response.ok || !createdOrder?.orderId) {
@@ -861,18 +900,22 @@ export default function SecureCheckoutPage() {
 
       const orderId = createdOrder.orderId;
       setAthOrderId(orderId);
+
       const timeoutSeconds = Number(createdOrder?.timeOut) || 300;
       setTimer(timeoutSeconds);
       setIsUpdatingStatus(true);
+
       await pollOrderStatus(orderId, timeoutSeconds);
-    } catch (err) {
-      setAthMobileError(getErrorMessage(err, "ATH Móvil validation failed"));
-      setAthNumberModalOpen(true);
+
+    } catch (err: any) {
+      // ✅ TOAST ONLY
+      toast.error(getErrorMessage(err, "ATH Móvil validation failed"));
+
+
       setPlacingOrder(false);
       setIsUpdatingStatus(false);
     }
   };
-
   const handlePlaceOrder = async () => {
     trackEvent("CONTINUE_AND_CONFIRM_ORDER");
     if (!selectedAddress || !cartData) return;
@@ -1369,39 +1412,44 @@ export default function SecureCheckoutPage() {
         {athNumberModalOpen && (
           <div className="fixed inset-0 z-[9998] bg-black/50 flex items-center justify-center p-4 pointer-events-auto">
             <div className="bg-white w-full max-w-md rounded-2xl p-6 space-y-4 shadow-xl">
-              <h2 className="text-lg font-semibold text-gray-800">
-                ATH Móvil number
-              </h2>
-              <p className="text-sm text-gray-500">
-                Please enter the ATH Móvil number registered to your account.
-              </p>
+              <h2 className="text-lg font-semibold text-gray-800">{t("athMovilNumberTitle")}</h2>
+              <p className="text-sm text-gray-500">{t("athMovilNumberDescription")}</p>
               <input
                 value={athMobile}
                 onChange={(event) => {
-                  setAthMobile(event.target.value);
+                  // ✅ only digits
+                  const value = event.target.value.replace(/\D/g, "");
+
+                  // ✅ limit to 10 digits
+                  if (value.length <= 10) {
+                    setAthMobile(value);
+                  }
+
                   setAthMobileError("");
                 }}
-                placeholder="Enter the mobile number which is registered with ath movil"
+                placeholder="Enter the mobile number registered with ATH Móvil"
                 inputMode="tel"
+                maxLength={10}
                 className="w-full rounded-lg border px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-200 focus:border-[#f3c200]"
               />
-              {athMobileError && (
+
+              {/* ✅ SAME error handling as guest */}
+              {/* {athMobileError && (
                 <p className="text-xs text-red-500">{athMobileError}</p>
-              )}
+              )} */}
+
               <div className="flex gap-3">
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => {
-                    setAthNumberModalOpen(false);
-                    setAthMobileError("");
-                  }}
+                  onClick={handleAthCancel}
                 >
                   {t("cancel")}
                 </Button>
+
                 <Button
                   className="w-full"
-                  disabled={placingOrder}
+                  disabled={placingOrder || athMobile.length < 10}
                   onClick={handleAthNumberConfirm}
                 >
                   {placingOrder ? t("processing") : t("continue")}

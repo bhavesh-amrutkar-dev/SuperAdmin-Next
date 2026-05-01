@@ -99,35 +99,3 @@ export async function GET(request: NextRequest) {
     }
 }
 
-export async function PATCH(request: NextRequest) {
-    try {
-        const body = await request.json();
-
-        if (!body?.email || !body?.athMovilNumber) {
-            return NextResponse.json(
-                { message: "email and athMovilNumber are required" },
-                { status: 400 }
-            );
-        }
-
-        const { data, error } = await serverFetch(ENDPOINT, {
-            method: "PATCH",
-            body: JSON.stringify(body),
-            baseUrl: API_NY_URL,
-        });
-
-        if (error) {
-            return NextResponse.json(
-                { message: error.message },
-                { status: error.status || 500 }
-            );
-        }
-
-        return NextResponse.json(data);
-    } catch (err) {
-        return NextResponse.json(
-            { message: err instanceof Error ? err.message : "ATH Móvil number update failed" },
-            { status: 500 }
-        );
-    }
-}
