@@ -884,7 +884,7 @@ export default function SecureCheckoutPage() {
         paymentType: 1,
         payByWallet: false,
         userId: context.uid || "1",
-        athMovilNumber: fullNumber,
+        athMovilNumber: `1${localNumber}`,
       };
       const response = await fetch("/api/orders/place", {
         method: "POST",
