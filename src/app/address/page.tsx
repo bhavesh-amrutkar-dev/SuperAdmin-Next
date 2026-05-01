@@ -62,6 +62,7 @@ const mapCountryCurrency = (data: any[]): CountryCurrency[] => {
         countryCodeMobile: "", // optional
         emoji: getFlagEmoji(c.countryCode),
         ioc: "", // optional
+        countryDialCode: c.countryDialCode,
     }));
 };
 
@@ -72,6 +73,7 @@ export default function AddressPage() {
 
     const [countries, setCountries] = useState<CountryCurrency[]>([]);
     const [countriesLoading, setCountriesLoading] = useState(false);
+    const [displayCountryCode, setDisplayCountryCode] = useState("+1");
     const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
     const [loadingLocation, setLoadingLocation] = useState(false);
     const { user } = useProfile();
@@ -175,19 +177,31 @@ export default function AddressPage() {
         defaultValues: { taggedAs: "Home" },
     });
     useEffect(() => {
-        if (countries.length > 0) {
-            const countryId = user?.countryId || "633a6c3dd17f0000ea00102e";
+        debugger;
+        if (countries.length === 0) return;
 
-            setValue("countryId", countryId);
+        const countryId = user?.countryId || "633a6c3dd17f0000ea00102e";
+        setValue("countryId", countryId);
+        const selectedCountry = countries.find(c => c._id === countryId);
+        if (selectedCountry) {
+            setValue("country", selectedCountry.name);
+        }
 
-            const selectedCountry = countries.find(c => c._id === countryId);
-
-            if (selectedCountry) {
-                setValue("country", selectedCountry.name);
+        // Set initial phone country codes if user hasn't provided their own
+        if (!user?.mobile) {
+            const phoneCountry = countries.find(
+                c => c.countryCode.toLowerCase() === defaultCountry
+            );
+            if (phoneCountry) {
+                const dialCode = phoneCountry.countryDialCode?.replace("+", "") || "";
+                setValue("mobileNumberCode", dialCode);
+                setValue("mobileNumberSortCode", defaultCountry);
+                setDisplayCountryCode(phoneCountry.countryDialCode || `+${dialCode}`);
             }
         }
-    }, [countries, user, setValue]);
+    }, [countries, user, setValue, defaultCountry]);
     useEffect(() => {
+        debugger;
         if (!user) return;
         setValue("firstName", user.firstName || "");
         setValue("lastName", user.lastName || "");
@@ -196,6 +210,7 @@ export default function AddressPage() {
             setValue("mobileNumber", user.mobile);
             setValue("mobileNumberCode", user.countryCode?.replace("+", "") || "");
             setValue("mobileNumberSortCode", user.sortCountryCode || "");
+            if (user.countryCode) setDisplayCountryCode(user.countryCode);
         }
     }, [user, setValue]);
 
@@ -206,7 +221,7 @@ export default function AddressPage() {
             setCountriesLoading(true);
             try {
                 const res = await AuthService.getCurrency();
-
+                debugger;
                 setCountries(mapCountryCurrency(res?.data ?? []));
             } catch {
                 toast.error("Failed to load countries");
@@ -330,26 +345,53 @@ export default function AddressPage() {
                                             Loading...
                                         </div>
                                     ) : (
-                                        <PhoneInput
-                                            country={defaultCountry}
-                                            containerClass="!w-full"
-                                            countryCodeEditable={false}
-                                            onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
-                                            inputClass="!w-full !h-[44px] !rounded-lg !border !border-gray-300 !text-sm !pl-14 focus:!border-[#f3c200] focus:!ring-2 focus:!ring-yellow-200"
-                                            onChange={(value, country: any) => {
-                                                const numberWithoutCode = value.replace(country.dialCode, "");
-
-                                                setValue("mobileNumber", numberWithoutCode, {
-                                                    shouldValidate: true,
-                                                });
-
-                                                setValue("mobileNumberCode", country.dialCode);
-                                                setValue("mobileNumberSortCode", country.countryCode);
-
-                                                // 🔥 trigger validation immediately
-                                                trigger("mobileNumber");
-                                            }}
-                                        />)}
+                                        <div
+                                            className="flex items-center rounded-lg border border-[#2f2f2f] hover:border-[#f3c200] focus-within:border-[#f3c200] transition-colors duration-200"
+                                            style={{ height: "44px", overflow: "visible", width: "100%" }}
+                                        >
+                                            <div className="shrink-0 flex items-center pl-2">
+                                                <PhoneInput
+                                                    key={defaultCountry}
+                                                    country={defaultCountry}
+                                                    onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
+                                                    containerStyle={{ height: "44px", width: "40px", flexShrink: 0 }}
+                                                    containerClass="!h-full"
+                                                    countryCodeEditable={false}
+                                                    disableCountryCode={false}
+                                                    inputStyle={{ display: "none" }}
+                                                    buttonStyle={{
+                                                        height: "44px",
+                                                        width: "40px",
+                                                        border: "none",
+                                                        backgroundColor: "transparent",
+                                                        position: "static",
+                                                    }}
+                                                    buttonClass="!border-0 !bg-transparent !shadow-none !static"
+                                                    dropdownStyle={{ zIndex: 9999 }}
+                                                    onChange={(_value, country: any) => {
+                                                        setDisplayCountryCode(`+${country.dialCode}`);
+                                                        setValue("mobileNumberCode", country.dialCode);
+                                                        setValue("mobileNumberSortCode", country.countryCode);
+                                                        trigger("mobileNumber");
+                                                    }}
+                                                />
+                                            </div>
+                                            <span className="text-sm text-gray-700 shrink-0 mx-1">
+                                                {displayCountryCode}
+                                            </span>
+                                            <input
+                                                style={{ height: "44px" }}
+                                                placeholder="Phone Number"
+                                                className="flex-1 min-w-0 border-0 shadow-none outline-none ring-0 text-sm px-3 bg-transparent focus:outline-none focus:ring-0"
+                                                maxLength={10}
+                                                value={watch("mobileNumber") || ""}
+                                                onChange={(e) => {
+                                                    setValue("mobileNumber", e.target.value, { shouldValidate: true });
+                                                    trigger("mobileNumber");
+                                                }}
+                                            />
+                                        </div>
+                                    )}
                                     <ErrorMessage message={errors.mobileNumber?.message} />
                                 </div>
                                 <input
