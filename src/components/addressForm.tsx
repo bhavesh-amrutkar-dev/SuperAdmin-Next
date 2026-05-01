@@ -70,6 +70,7 @@ const mapCountryCurrency = (data: any[]): CountryCurrency[] => {
         countryCodeMobile: "", // optional
         emoji: getFlagEmoji(c.countryCode),
         ioc: "", // optional
+        countryDialCode: c.countryDialCode
     }));
 };
 export default function AddressForm({
@@ -202,8 +203,17 @@ export default function AddressForm({
             setCountriesLoading(true);
             try {
                 const res = await AuthService.getCurrency();
+                const list = mapCountryCurrency(res?.data ?? []);
+                setCountries(list);
 
-                setCountries(mapCountryCurrency(res?.data ?? []));
+                // Set default country short code and country code to form field
+                const phoneCountry = list.find(
+                    c => c.countryCode.toLowerCase() === defaultCountry
+                );
+                if (phoneCountry) {
+                    setValue("mobileNumberCode", (phoneCountry.countryDialCode || "1").replace(/\D/g, ""));
+                    setValue("mobileNumberSortCode", phoneCountry.countryCode);
+                }
             } finally {
                 setCountriesLoading(false);
             }

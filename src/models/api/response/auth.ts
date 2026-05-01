@@ -61,6 +61,7 @@ export type CountryCurrency = {
   countryCodeMobile: string;  // "+61"
   emoji: string;              // 🇦🇺
   ioc: string;
+  countryDialCode?: string;
 };
 
 export interface IMobileLoginResponse {
