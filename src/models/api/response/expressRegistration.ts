@@ -10,6 +10,7 @@ export interface BackendOrderResponse {
         checkoutProcessUrl: string;
         cartId: string;
         timeOut?: number | string;
+        ecommerceId?: string
 
     };
 }
