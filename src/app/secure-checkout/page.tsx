@@ -806,7 +806,9 @@ export default function SecureCheckoutPage() {
       const orderId = createdOrder.orderId;
 
       setAthOrderId(orderId);
-      setAthDeepLink("https://pagos.athmovilapp.com/pagoPorCodigo.html?id=243feb66-a82e-4fef-b2b1-fe67da6db5ac");
+      setAthDeepLink(
+        `https://pagos.athmovilapp.com/pagoPorCodigo.html?id=${createdOrder?.ecommerceId}`
+      );
       const timeoutSeconds = Number(createdOrder?.timeOut) || 300;
 
       setTimer(timeoutSeconds);
@@ -927,7 +929,9 @@ export default function SecureCheckoutPage() {
 
       const orderId = createdOrder.orderId;
       setAthOrderId(orderId);
-      setAthDeepLink("https://pagos.athmovilapp.com/pagoPorCodigo.html?id=243feb66-a82e-4fef-b2b1-fe67da6db5ac");
+      setAthDeepLink(
+        `https://pagos.athmovilapp.com/pagoPorCodigo.html?id=${createdOrder?.ecommerceId}`
+      );
 
       const timeoutSeconds = Number(createdOrder?.timeOut) || 300;
       setTimer(timeoutSeconds);
