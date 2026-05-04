@@ -17,7 +17,6 @@ import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
 import { Button } from "@/src/components/ui/button";
 import { AuthService } from "@/src/lib/services/auth";
 import { CountryCurrency } from "@/src/models/api/response/auth";
-import { getCookie } from "cookies-next";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/src/lib/utils/errorMessage";
 
@@ -60,7 +59,6 @@ export default function ProfileClient() {
   // ── Phone input state ─────────────────────────────────────────────────────
   const [countryCode, setCountryCode] = useState("");
   const [mobile, setMobile] = useState("");
-  const [countrySortCode, setCountrySortCode] = useState("us");
   const [countries, setCountries] = useState<CountryCurrency[]>([]);
   const [countriesLoading, setCountriesLoading] = useState(false);
 
@@ -86,7 +84,6 @@ export default function ProfileClient() {
     setShowVerifyModal(false);
     setMobile("");
     setCountryCode("");
-    setCountrySortCode("us");
     setOtp(Array(OTP_LENGTH).fill(""));
     setOtpId("");
     setOtpSent(false);
@@ -121,31 +118,14 @@ export default function ProfileClient() {
     }
     try {
       setSendingOtp(true);
-      const token = getCookie("token") as string;
-      console.log("mobileToken", token);
-
-      const setRes = await fetch("/api/setMobileNumber", {
+      const res = await fetch("/api/em-patch-send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token: token,
-          phone: cleaned,
-          countryCode,
-          mobileNumberSortCode: countrySortCode.toUpperCase(),
-        }),
+        body: JSON.stringify({ mobile: cleaned, countryCode }),
       });
-      const setData = await setRes.json();
-      if (!setRes.ok) throw new Error(setData.message);
-
-      const otpRes = await fetch("/api/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ countryCode, mobile: cleaned, email: user.email }),
-      });
-      const otpData = await otpRes.json();
-      if (!otpRes.ok) throw new Error(otpData.message);
-
-      setOtpId(otpData?.data?.otpId);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      setOtpId(data?.data?.otpId);
       setOtpSent(true);
     } catch (err: any) {
       toast.error(getErrorMessage(err, "Something went wrong"));
@@ -161,8 +141,14 @@ export default function ProfileClient() {
     if (!otpId) { toast.error("OTP session expired. Please resend."); return; }
     try {
       setVerifying(true);
-      const res = await AuthService.verifyOtp({ otpCode, otpId, verifyType: 2 });
-      if (!res?.data) throw new Error(t("guestProfileOtpInvalid"));
+      const fullMobile = `${countryCode.replace("+", "")}${mobile.replace(/\D/g, "")}`;
+      const res = await fetch("/api/em-patch-verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ otpCode, otpId, mobile: fullMobile, countryCode }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
       toast.success(t("verified"));
       closeModal();
       refetch();
@@ -472,7 +458,6 @@ export default function ProfileClient() {
                     onChange={(value, data: any) => {
                       setCountryCode(`+${data.dialCode}`);
                       setMobile(value.slice(data.dialCode.length));
-                      setCountrySortCode(data.countryCode);
                     }}
                     inputClass="!w-full !h-[44px]"
                   />
