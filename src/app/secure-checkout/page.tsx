@@ -182,6 +182,7 @@ export default function SecureCheckoutPage() {
   const [athMobile, setAthMobile] = useState("");
   const [athMobileError, setAthMobileError] = useState("");
   const pollingCancelledRef = useRef(false);
+  const [paymentConfig, setPaymentConfig] = useState<any>(null);
   const pendingAthOrderContextRef = useRef<{
     email: string;
     cartId: string;
@@ -385,6 +386,50 @@ export default function SecureCheckoutPage() {
       window.removeEventListener("message", handlePaymentMessage);
     };
   }, []);
+
+  useEffect(() => {
+    fetchPaymentConfig();
+  }, []);
+
+  const fetchPaymentConfig = async () => {
+    try {
+      const res = await fetch("/api/customer/config"); // adjust base URL if needed
+      const data = await res.json();
+
+      setPaymentConfig(data?.data?.paymentGatewayStatus);
+    } catch (err) {
+      console.error("Payment config fetch failed", err);
+    }
+  };
+  const isEnabled = (value: string) => value === "true";
+  const paymentOptions = useMemo(() => {
+    if (!paymentConfig) return [];
+
+    return [
+      isEnabled(paymentConfig.ATHMovil) && {
+        key: "athMovil",
+        label: "ATH Móvil",
+      },
+      isEnabled(paymentConfig.ManualPaymentMethod) && {
+        key: "manual",
+        label: "Manual Payment",
+      },
+      isEnabled(paymentConfig.CreditOrDebitCard) && {
+        key: "card",
+        label: "Credit / Debit Card",
+      },
+      isEnabled(paymentConfig.Square) && {
+        key: "square",
+        label: "Square",
+      },
+    ].filter(Boolean);
+  }, [paymentConfig]);
+
+  // useEffect(() => {
+  //   if (paymentOptions?.length > 0) {
+  //     setPaymentMethod(paymentOptions[0].key);
+  //   }
+  // }, [paymentOptions]);
   const handleSquareSuccess = () => {
     trackEvent("PAYMENT_SUCCESS");
     toast.success(
