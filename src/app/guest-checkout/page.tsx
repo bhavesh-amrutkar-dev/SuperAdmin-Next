@@ -987,12 +987,7 @@ export default function GuestCheckoutPage() {
   const handleAthNumberConfirm = async () => {
     const requestId = crypto.randomUUID();
 
-    console.log(`[${requestId}] 🔹 ATH Confirm START`);
-
     const normalized = normalizeAthMovilNumber(athMobile);
-
-    console.log(`[${requestId}] 📱 Raw number:`, athMobile);
-    console.log(`[${requestId}] 📱 Normalized number:`, normalized);
 
     if (normalized.length < 10) {
       toast.error(t("invalidAthMobile"));
@@ -1007,30 +1002,19 @@ export default function GuestCheckoutPage() {
       setAthMobileError("");
       setPlacingOrder(true);
 
-      console.log(`[${requestId}] 🔹 Step 1: Validate ATH number`);
 
       await validateAthMovilNumber(normalized);
 
-      console.log(`[${requestId}] ✅ Step 1 Success: ATH validated`);
 
       // Optional step
       // console.log(`[${requestId}] 🔹 Step 2: Update stored number`);
       // await updateStoredAthMovilNumber(String(pendingAthFormData.email || ""), normalized);
 
-      console.log(`[${requestId}] 🔹 Step 2: Closing modal`);
       setAthNumberModalOpen(false);
 
-      console.log(`[${requestId}] 🔹 Step 3: Placing order`, {
-        email: pendingAthFormData.email,
-        athMovilNumber: normalized,
-      });
 
       const orderData = await placeExpressOrder(pendingAthFormData, normalized);
 
-      console.log(`[${requestId}] ✅ Step 3 Success: Order created`, {
-        orderId: orderData?.orderId,
-        timeout: orderData?.timeOut,
-      });
 
       localStorage.setItem("orderId", orderData.orderId);
       setAthOrderId(orderData.orderId);
@@ -1038,22 +1022,16 @@ export default function GuestCheckoutPage() {
 
       const timeoutSeconds = Number(orderData?.timeOut) || 300;
 
-      console.log(`[${requestId}] 🔹 Step 4: Start polling`, {
-        timeoutSeconds,
-      });
 
       setTimer(timeoutSeconds);
       setIsUpdatingStatus(true);
 
       await pollOrderStatus(orderData.orderId, timeoutSeconds);
 
-      console.log(`[${requestId}] ✅ Step 4 Completed: Polling finished`);
-
     } catch (err: any) {
       toast.error(getErrorMessage(err, t("athMovilValidationFailed")));
       setPlacingOrder(false);
     } finally {
-      console.log(`[${requestId}] 🔹 ATH Confirm END`);
     }
   };
   const baseCls = `

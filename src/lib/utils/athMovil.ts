@@ -5,11 +5,6 @@ export function normalizeAthMovilNumber(value?: string | null) {
         ? digits.slice(-10)
         : digits;
 
-    console.log("📱 normalizeAthMovilNumber:", {
-        input: value,
-        digits,
-        normalized,
-    });
 
     return normalized;
 }

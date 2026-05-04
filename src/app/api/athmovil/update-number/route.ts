@@ -7,10 +7,8 @@ export async function PATCH(request: NextRequest) {
     const requestId = crypto.randomUUID(); // ✅ track each request
 
     try {
-        console.log(`[ATH][${requestId}] 🔹 PATCH request received`);
 
         const body = await request.json();
-        console.log(`[ATH][${requestId}] 📦 Request body:`, body);
 
         // ✅ Step 1: Validate input
         if (!body?.email || !body?.athMovilNumber) {
@@ -25,10 +23,7 @@ export async function PATCH(request: NextRequest) {
             );
         }
 
-        console.log(`[ATH][${requestId}] ✅ Validation passed`);
 
-        // ✅ Step 2: Call backend API
-        console.log(`[ATH][${requestId}] 🌐 Calling serverFetch...`);
 
         const { data, error } = await serverFetch(ENDPOINT, {
             method: "PATCH",
@@ -49,13 +44,12 @@ export async function PATCH(request: NextRequest) {
             );
         }
 
-        console.log(`[ATH][${requestId}] ✅ Backend success`, data);
 
         // ✅ Step 4: Success response
         return NextResponse.json(data);
 
     } catch (err) {
-        console.error(`[ATH][${requestId}] 💥 Exception occurred`, err);
+        console.warn(`[ATH][${requestId}] 💥 Exception occurred`, err);
 
         return NextResponse.json(
             {
