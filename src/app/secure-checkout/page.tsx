@@ -1399,7 +1399,7 @@ export default function SecureCheckoutPage() {
   return (
     <div className={`min-h-screen bg-[#ededed] ${isUpdatingStatus ? "pointer-events-none select-none" : ""}`}>
       <>
-        {!isUpdatingStatus && (
+        {isUpdatingStatus && (
           <PaymentProcessingATHMovil
             deepLinkUrl={athDeepLink ?? undefined}
             formattedTimer={formatTimer(timer)}
