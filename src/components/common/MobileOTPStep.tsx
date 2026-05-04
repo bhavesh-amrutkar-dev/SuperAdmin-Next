@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
@@ -143,7 +143,12 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
     const cleaned = mobile.replace(/\D/g, "");
 
     if (!cleaned) {
-      setError(t("fieldRequired"));
+      setError(t("mobileRequired"));
+      return;
+    }
+
+    if (cleaned.length < 10) {
+      setError(t("invalidMobile"));
       return;
     }
 
@@ -428,7 +433,7 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
               </div>
             )}
 
-            {/* {!otpSent && <ErrorMessage message={error || undefined} />} */}
+            {!otpSent && <ErrorMessage message={error || undefined} />}
 
           </form>
         </div>
