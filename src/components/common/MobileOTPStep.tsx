@@ -94,31 +94,29 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
   useEffect(() => {
     if (!debouncedMobile || debouncedMobile.length < 6) return;
 
-    const validatePhone = async () => {
-      setPhoneValidating(true);
-      try {
-        await AuthService.emailPhoneValidate({
-          verifyType: 2,
-          countryCode,
-          mobile: debouncedMobile,
-          email,
-        });
-
-        setErrors((prev) => ({ ...prev, mobile: undefined }));
-      } catch (err: any) {
-        setErrors((prev) => ({
-          ...prev,
-          mobile:
-            err?.response?.data?.message || "Mobile number already exists",
-        }));
-      } finally {
-        setPhoneValidating(false);
-      }
-    };
-
     validatePhone();
   }, [debouncedMobile, countryCode, email]);
+  const validatePhone = async () => {
+    setPhoneValidating(true);
+    try {
+      await AuthService.emailPhoneValidate({
+        verifyType: 2,
+        countryCode,
+        mobile: debouncedMobile,
+        email,
+      });
 
+      setErrors((prev) => ({ ...prev, mobile: undefined }));
+    } catch (err: any) {
+      setErrors((prev) => ({
+        ...prev,
+        mobile:
+          err?.response?.data?.message || "Mobile number already exists",
+      }));
+    } finally {
+      setPhoneValidating(false);
+    }
+  };
   // 📲 Auto OTP read (same as verify page)
   useEffect(() => {
     if (!("OTPCredential" in window)) return;
@@ -173,25 +171,7 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
       setSendingOtp(true);
       setError(null);
 
-      // 1️⃣ set mobile
-      // const res = await fetch("/api/setMobileNumber", {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //   },
-      //   body: JSON.stringify({
-      //     token: mobileToken,
-      //     phone: cleaned,
-      //     countryCode,
-      //     mobileNumberSortCode: countrySortCode.toUpperCase(),
-      //   }),
-      // });
-
-      // const data = await res.json();
-
-      // if (!res.ok) {
-      //   throw new Error(data.message);
-      // }
+      await validatePhone();
 
       // 2️⃣ send OTP
       const otpRes = await fetch("/api/send-otp", {
