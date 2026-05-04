@@ -44,7 +44,9 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
 
   const [countries, setCountries] = useState<CountryCurrency[]>([]);
   const [countriesLoading, setCountriesLoading] = useState(false);
-
+  const [debouncedMobile, setDebouncedMobile] = useState("");
+  const [phoneValidating, setPhoneValidating] = useState(false);
+  const [errors, setErrors] = useState<{ mobile?: string }>({});
   const [countrySortCode, setCountrySortCode] = useState("us");
   // ⏱ cooldown timer
   const startResendCooldown = () => {
@@ -82,6 +84,40 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
       document.getElementById(`otp-${index + 1}`)?.focus();
     }
   };
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedMobile(mobile);
+    }, 500); // ⏱ 500ms debounce
+
+    return () => clearTimeout(timer);
+  }, [mobile]);
+  useEffect(() => {
+    if (!debouncedMobile || debouncedMobile.length < 6) return;
+
+    const validatePhone = async () => {
+      setPhoneValidating(true);
+      try {
+        await AuthService.emailPhoneValidate({
+          verifyType: 2,
+          countryCode,
+          mobile: debouncedMobile,
+          email,
+        });
+
+        setErrors((prev) => ({ ...prev, mobile: undefined }));
+      } catch (err: any) {
+        setErrors((prev) => ({
+          ...prev,
+          mobile:
+            err?.response?.data?.message || "Mobile number already exists",
+        }));
+      } finally {
+        setPhoneValidating(false);
+      }
+    };
+
+    validatePhone();
+  }, [debouncedMobile, countryCode, email]);
 
   // 📲 Auto OTP read (same as verify page)
   useEffect(() => {
@@ -138,24 +174,24 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
       setError(null);
 
       // 1️⃣ set mobile
-      const res = await fetch("/api/setMobileNumber", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          token: mobileToken,
-          phone: cleaned,
-          countryCode,
-          mobileNumberSortCode: countrySortCode.toUpperCase(),
-        }),
-      });
+      // const res = await fetch("/api/setMobileNumber", {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //   },
+      //   body: JSON.stringify({
+      //     token: mobileToken,
+      //     phone: cleaned,
+      //     countryCode,
+      //     mobileNumberSortCode: countrySortCode.toUpperCase(),
+      //   }),
+      // });
 
-      const data = await res.json();
+      // const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.message);
-      }
+      // if (!res.ok) {
+      //   throw new Error(data.message);
+      // }
 
       // 2️⃣ send OTP
       const otpRes = await fetch("/api/send-otp", {
@@ -206,6 +242,7 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
       setVerifying(true);
       setError(null);
 
+      // ✅ 1. Verify OTP
       const res = await AuthService.verifyOtp({
         otpCode,
         otpId,
@@ -216,6 +253,29 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
         throw new Error(t("guestProfileOtpInvalid"));
       }
 
+      // ✅ 2. NOW set mobile (AFTER verification)
+      const cleaned = mobile.replace(/\D/g, "");
+
+      const setMobileRes = await fetch("/api/setMobileNumber", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token: mobileToken,
+          phone: cleaned,
+          countryCode,
+          mobileNumberSortCode: countrySortCode.toUpperCase(),
+        }),
+      });
+
+      const data = await setMobileRes.json();
+
+      if (!setMobileRes.ok) {
+        throw new Error(data.message || "Failed to set mobile number");
+      }
+
+      // ✅ 3. Success
       onSuccess();
 
     } catch (err: any) {
@@ -297,24 +357,40 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
                   value={`${countryCode.replace("+", "")}${mobile}`}
                   onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
                   onChange={(value, data: any) => {
+                    const rawMobile = value.slice(data.dialCode.length);
+
                     setCountryCode(`+${data.dialCode}`);
-                    setMobile(value.slice(data.dialCode.length));
+                    setMobile(rawMobile);
                     setCountrySortCode(data.countryCode);
+
+                    // reset states
                     setOtpSent(false);
                     setOtp(Array(OTP_LENGTH).fill(""));
                     setError(null);
+
+                    // reset validation
+                    setErrors((prev) => ({ ...prev, mobile: undefined }));
                   }}
                   inputClass="!w-full !h-[44px]"
                 />)}
             </div>
+            {phoneValidating && (
+              <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Checking number...
+              </p>
+            )}
 
+            {errors.mobile && (
+              <p className="text-sm text-red-500 mt-1">{errors.mobile}</p>
+            )}
             {/* SEND OTP */}
             {!otpSent && (
               <Button
                 type="button"
                 className="w-full"
                 onClick={handleSendOtp}
-                disabled={sendingOtp || !mobile}
+                disabled={sendingOtp || !mobile || !!errors.mobile || phoneValidating}
               >
                 {sendingOtp ? (
                   <>
