@@ -1,13 +1,27 @@
 "use client";
 
-import Image from "next/image";
+import { useEffect, useState } from "react";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
 import { useProfile } from "@/src/lib/hooks/userProfile";
-import { CheckCircle2, XCircle, Mail, Phone, MapPin, Calendar, User, Shield, Wallet, Activity } from "lucide-react";
+import {
+  CheckCircle2, XCircle, Mail, Phone, MapPin,
+  Calendar, User, Shield, Wallet, Activity, Loader2,
+} from "lucide-react";
 import Header from "@/src/components/layout/Header";
 import Footer from "@/src/components/layout/Footer";
 import { useTranslations } from "next-intl";
 import Avatar from "@/src/components/ui/avatar";
 import Loader from "@/src/components/loader";
+import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
+import { Button } from "@/src/components/ui/button";
+import { AuthService } from "@/src/lib/services/auth";
+import { CountryCurrency } from "@/src/models/api/response/auth";
+import { getCookie } from "cookies-next";
+import { toast } from "sonner";
+import { getErrorMessage } from "@/src/lib/utils/errorMessage";
+
+const OTP_LENGTH = 4;
 
 const InfoItem = ({ label, value, icon }: { label: string; value?: any; icon?: React.ReactNode }) => (
   <div className="group relative p-3 lg:p-4 sm:min-h-[82px] rounded-xl border border-gray-200 bg-gradient-to-br from-white to-gray-50/50 hover:border-[#D4AF37]/30 hover:shadow-md transition-all duration-200 flex items-center">
@@ -37,18 +51,134 @@ const StatusBadge = ({ children, variant = "default" }: { children: React.ReactN
 );
 
 export default function ProfileClient() {
-  const { user, loading } = useProfile();
+  const { user, loading, refetch } = useProfile();
   const t = useTranslations();
 
+  // ── Modal open/close ──────────────────────────────────────────────────────
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+
+  // ── Phone input state ─────────────────────────────────────────────────────
+  const [countryCode, setCountryCode] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [countrySortCode, setCountrySortCode] = useState("us");
+  const [countries, setCountries] = useState<CountryCurrency[]>([]);
+  const [countriesLoading, setCountriesLoading] = useState(false);
+
+  // ── OTP state ─────────────────────────────────────────────────────────────
+  const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
+  const [otpId, setOtpId] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+
+  // Load country list when modal opens
+  useEffect(() => {
+    if (!showVerifyModal) return;
+    setCountriesLoading(true);
+    AuthService.getCurrency()
+      .then((res) => setCountries(res?.data ?? []))
+      .catch(() => { })
+      .finally(() => setCountriesLoading(false));
+  }, [showVerifyModal]);
+
+  // Reset modal state on close
+  const closeModal = () => {
+    setShowVerifyModal(false);
+    setMobile("");
+    setCountryCode("");
+    setCountrySortCode("us");
+    setOtp(Array(OTP_LENGTH).fill(""));
+    setOtpId("");
+    setOtpSent(false);
+    setSendingOtp(false);
+    setVerifying(false);
+  };
+
+  // ── OTP digit handler ─────────────────────────────────────────────────────
+  const handleOtpChange = (val: string, index: number) => {
+    if (!/^\d*$/.test(val)) return;
+    if (val.length > 1) {
+      const digits = val.slice(0, OTP_LENGTH).split("");
+      const next = [...otp];
+      digits.forEach((d, i) => { if (i < next.length) next[i] = d; });
+      setOtp(next);
+      return;
+    }
+    const next = [...otp];
+    next[index] = val;
+    setOtp(next);
+    if (val && index < OTP_LENGTH - 1) {
+      document.getElementById(`profile-otp-${index + 1}`)?.focus();
+    }
+  };
+
+  // ── Send OTP ──────────────────────────────────────────────────────────────
+  const handleSendOtp = async () => {
+    const cleaned = mobile.replace(/\D/g, "");
+    if (!cleaned) {
+      toast.error(t("fieldRequired"));
+      return;
+    }
+    try {
+      setSendingOtp(true);
+      const token = getCookie("token") as string;
+      console.log("mobileToken", token);
+
+      const setRes = await fetch("/api/setMobileNumber", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: token,
+          phone: cleaned,
+          countryCode,
+          mobileNumberSortCode: countrySortCode.toUpperCase(),
+        }),
+      });
+      const setData = await setRes.json();
+      if (!setRes.ok) throw new Error(setData.message);
+
+      const otpRes = await fetch("/api/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ countryCode, mobile: cleaned, email: user.email }),
+      });
+      const otpData = await otpRes.json();
+      if (!otpRes.ok) throw new Error(otpData.message);
+
+      setOtpId(otpData?.data?.otpId);
+      setOtpSent(true);
+    } catch (err: any) {
+      toast.error(getErrorMessage(err, "Something went wrong"));
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  // ── Verify OTP ────────────────────────────────────────────────────────────
+  const handleVerifyOtp = async () => {
+    const otpCode = otp.join("");
+    if (otpCode.length !== OTP_LENGTH) { toast.error(t("guestProfileOtpInvalid")); return; }
+    if (!otpId) { toast.error("OTP session expired. Please resend."); return; }
+    try {
+      setVerifying(true);
+      const res = await AuthService.verifyOtp({ otpCode, otpId, verifyType: 2 });
+      if (!res?.data) throw new Error(t("guestProfileOtpInvalid"));
+      toast.success(t("verified"));
+      closeModal();
+      refetch();
+    } catch (err: any) {
+      toast.error(getErrorMessage(err, "Invalid OTP"));
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  // ─────────────────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <Header />
         <div className="flex justify-center items-center min-h-[60vh]">
-          {/* <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#D4AF37] border-t-transparent mx-auto"></div>
-            <p className="mt-6 text-gray-600 text-lg font-medium">Loading profile…</p>
-          </div> */}
           <Loader />
         </div>
         <Footer />
@@ -77,27 +207,20 @@ export default function ProfileClient() {
 
         {/* ===== Profile Header Card ===== */}
         <div className="relative bg-gradient-to-br from-white via-white to-gray-50 rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-200/50 overflow-hidden">
-          {/* Decorative background elements */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#D4AF37]/5 to-transparent rounded-full blur-2xl"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-[#D4AF37]/5 to-transparent rounded-full blur-2xl"></div>
 
           <div className="relative flex flex-col md:flex-row gap-4 md:gap-5">
-            {/* Profile Picture */}
             <div className="relative flex-shrink-0">
-              <div>
-                <Avatar
-                  src={user.profilePic}
-                  firstName={user.firstName}
-                  lastName={user.lastName}
-                  size={80}
-                  className="btn-primary pointer-events-none shadow-lg w-20 h-20 sm:w-24 sm:h-24 ring-2 ring-white ring-offset-2 ring-offset-gray-50 w-full h-full !overflow-visible"
-                />
-
-                {/* <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div> */}
-              </div>
+              <Avatar
+                src={user.profilePic}
+                firstName={user.firstName}
+                lastName={user.lastName}
+                size={80}
+                className="btn-primary pointer-events-none shadow-lg w-20 h-20 sm:w-24 sm:h-24 ring-2 ring-white ring-offset-2 ring-offset-gray-50 w-full h-full !overflow-visible"
+              />
             </div>
 
-            {/* Profile Info */}
             <div className="flex-1 min-w-0">
               <div className="mb-3">
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 tracking-tight">
@@ -108,20 +231,14 @@ export default function ProfileClient() {
                 </p>
               </div>
 
-              {/* Status Badges */}
               <div className="flex flex-wrap gap-2 mb-3">
                 <StatusBadge variant={user.statusMsg?.toLowerCase() === "approved" ? "success" : "default"}>
                   {user.statusMsg}
                 </StatusBadge>
-                <StatusBadge variant="default">
-                  {user.userTypeText}
-                </StatusBadge>
-                <StatusBadge variant="default">
-                  {user.customerTypeText}
-                </StatusBadge>
+                <StatusBadge variant="default">{user.userTypeText}</StatusBadge>
+                <StatusBadge variant="default">{user.customerTypeText}</StatusBadge>
               </div>
 
-              {/* Bio Quote */}
               {user.statusBio && (
                 <div className="relative mt-3 p-3 bg-gradient-to-r from-[#D4AF37]/10 via-[#D4AF37]/5 to-transparent rounded-lg border-l-3 border-[#D4AF37] shadow-sm">
                   <p className="text-sm sm:text-base text-gray-800 italic font-medium leading-relaxed">
@@ -155,18 +272,11 @@ export default function ProfileClient() {
                 <InfoItem
                   label={t("emailVerified")}
                   value={
-                    <span className={`flex items-center gap-2 font-semibold ${user.emailVerified ? "text-green-600" : "text-red-600"
-                      }`}>
+                    <span className={`flex items-center gap-2 font-semibold ${user.emailVerified ? "text-green-600" : "text-red-600"}`}>
                       {user.emailVerified ? (
-                        <>
-                          <CheckCircle2 className="w-5 h-5" />
-                          {t("verified")}
-                        </>
+                        <><CheckCircle2 className="w-5 h-5" />{t("verified")}</>
                       ) : (
-                        <>
-                          <XCircle className="w-5 h-5" />
-                          {t("notVerified")}
-                        </>
+                        <><XCircle className="w-5 h-5" />{t("notVerified")}</>
                       )}
                     </span>
                   }
@@ -179,22 +289,31 @@ export default function ProfileClient() {
                 />
                 <InfoItem
                   label={t("mobileVerified")}
-                  value={
-                    <span className={`flex items-center gap-2 font-semibold ${user.mobileVerified ? "text-green-600" : "text-red-600"
-                      }`}>
-                      {user.mobileVerified ? (
-                        <>
-                          <CheckCircle2 className="w-5 h-5" />
-                          {t("verified")}
-                        </>
-                      ) : (
-                        <>
-                          <XCircle className="w-5 h-5" />
-                          {t("notVerified")}
-                        </>
-                      )}
-                    </span>
-                  }
+                  value={(() => {
+                    const isVerified = user.source === "guest"
+                      ? Boolean(user.isMobileVerified)
+                      : Boolean(user.mobileVerified);
+                    return (
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span className={`flex items-center gap-2 font-semibold ${isVerified ? "text-green-600" : "text-red-600"}`}>
+                          {isVerified ? (
+                            <><CheckCircle2 className="w-5 h-5" />{t("verified")}</>
+                          ) : (
+                            <><XCircle className="w-5 h-5" />{t("notVerified")}</>
+                          )}
+                        </span>
+                        {!isVerified && (
+                          <Button
+                            size="sm"
+                            className="h-7 px-3 text-xs"
+                            onClick={() => setShowVerifyModal(true)}
+                          >
+                            {t("verifyNow")}
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })()}
                   icon={<Phone className="w-4 h-4" />}
                 />
                 <InfoItem
@@ -222,21 +341,9 @@ export default function ProfileClient() {
                 <span>{t("accountDetails")}</span>
               </h2>
               <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
-                <InfoItem
-                  label={t("gender")}
-                  value={user.genderText}
-                  icon={<User className="w-4 h-4" />}
-                />
-                <InfoItem
-                  label={t("dateOfBirth")}
-                  value={user.dateOfBirth}
-                  icon={<Calendar className="w-4 h-4" />}
-                />
-                <InfoItem
-                  label={t("loginType")}
-                  value={user.loginTypeText}
-                  icon={<Shield className="w-4 h-4" />}
-                />
+                <InfoItem label={t("gender")} value={user.genderText} icon={<User className="w-4 h-4" />} />
+                <InfoItem label={t("dateOfBirth")} value={user.dateOfBirth} icon={<Calendar className="w-4 h-4" />} />
+                <InfoItem label={t("loginType")} value={user.loginTypeText} icon={<Shield className="w-4 h-4" />} />
                 <InfoItem
                   label={t("kycStatus")}
                   value={
@@ -251,12 +358,12 @@ export default function ProfileClient() {
                 />
                 <InfoItem
                   label={t("registeredOn")}
-                  value={new Date(user.createdISOdate).toLocaleDateString()}
+                  value={user.createdISOdate ? new Date(user.createdISOdate as string).toLocaleDateString() : undefined}
                   icon={<Calendar className="w-4 h-4" />}
                 />
                 <InfoItem
                   label={t("lastLogin")}
-                  value={new Date(user.mobileDevices?.lastISOdate).toLocaleString()}
+                  value={user.mobileDevices?.lastISOdate ? new Date(user.mobileDevices.lastISOdate as string).toLocaleString() : undefined}
                   icon={<Calendar className="w-4 h-4" />}
                 />
               </div>
@@ -283,16 +390,8 @@ export default function ProfileClient() {
                   }
                   icon={<Wallet className="w-4 h-4" />}
                 />
-                <InfoItem
-                  label={t("hardLimit")}
-                  value={user.wallet?.hardLimit}
-                  icon={<Wallet className="w-4 h-4" />}
-                />
-                <InfoItem
-                  label={t("softLimit")}
-                  value={user.wallet?.softLimit}
-                  icon={<Wallet className="w-4 h-4" />}
-                />
+                <InfoItem label={t("hardLimit")} value={user.wallet?.hardLimit} icon={<Wallet className="w-4 h-4" />} />
+                <InfoItem label={t("softLimit")} value={user.wallet?.softLimit} icon={<Wallet className="w-4 h-4" />} />
                 <InfoItem
                   label={t("kycApproved")}
                   value={
@@ -322,38 +421,22 @@ export default function ProfileClient() {
               <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
                 <InfoItem
                   label={t("followers")}
-                  value={
-                    <span className="text-2xl font-extrabold text-gray-900">
-                      {user.count?.followerCount || 0}
-                    </span>
-                  }
+                  value={<span className="text-2xl font-extrabold text-gray-900">{user.count?.followerCount || 0}</span>}
                   icon={<Activity className="w-4 h-4" />}
                 />
                 <InfoItem
                   label={t("following")}
-                  value={
-                    <span className="text-2xl font-extrabold text-gray-900">
-                      {user.count?.followeeCount || 0}
-                    </span>
-                  }
+                  value={<span className="text-2xl font-extrabold text-gray-900">{user.count?.followeeCount || 0}</span>}
                   icon={<Activity className="w-4 h-4" />}
                 />
                 <InfoItem
                   label={t("posts")}
-                  value={
-                    <span className="text-2xl font-extrabold text-gray-900">
-                      {user.count?.postsCount || 0}
-                    </span>
-                  }
+                  value={<span className="text-2xl font-extrabold text-gray-900">{user.count?.postsCount || 0}</span>}
                   icon={<Activity className="w-4 h-4" />}
                 />
                 <InfoItem
                   label={t("channels")}
-                  value={
-                    <span className="text-2xl font-extrabold text-gray-900">
-                      {user.count?.totalChannel || 0}
-                    </span>
-                  }
+                  value={<span className="text-2xl font-extrabold text-gray-900">{user.count?.totalChannel || 0}</span>}
                   icon={<Activity className="w-4 h-4" />}
                 />
               </div>
@@ -362,6 +445,107 @@ export default function ProfileClient() {
         </div>
       </div>
       <Footer />
+
+      {/* ===== Mobile Verification Modal ===== */}
+      <Dialog open={showVerifyModal} onOpenChange={(open) => { if (!open) closeModal(); }}>
+        <DialogContent showCloseButton={true} className="max-w-sm w-[95%]">
+          <DialogTitle className="text-xl font-bold text-gray-900 mb-5">
+            {t("addYourMobileNumber")}
+          </DialogTitle>
+
+          {!otpSent ? (
+            /* ── Step 1: Phone input ── */
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  {t("guestProfileMobileNumber")}
+                </label>
+                {countriesLoading || countries.length === 0 ? (
+                  <div className="w-full h-[44px] rounded-lg border border-gray-300 px-4 flex items-center text-sm text-gray-400">
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" /> Loading…
+                  </div>
+                ) : (
+                  <PhoneInput
+                    country="us"
+                    value={`${countryCode.replace("+", "")}${mobile}`}
+                    onlyCountries={countries.map((c) => c.countryCode.toLowerCase())}
+                    onChange={(value, data: any) => {
+                      setCountryCode(`+${data.dialCode}`);
+                      setMobile(value.slice(data.dialCode.length));
+                      setCountrySortCode(data.countryCode);
+                    }}
+                    inputClass="!w-full !h-[44px]"
+                  />
+                )}
+              </div>
+
+              <Button
+                className="w-full"
+                onClick={handleSendOtp}
+                disabled={sendingOtp || !mobile}
+              >
+                {sendingOtp ? (
+                  <><Loader2 className="w-4 h-4 animate-spin mr-2" />{t("guestProfileOtpSending")}</>
+                ) : (
+                  t("guestProfileOtpSend")
+                )}
+              </Button>
+            </div>
+          ) : (
+            /* ── Step 2: OTP input ── */
+            <div className="space-y-5">
+              <p className="text-sm text-gray-500 text-center">
+                {t("guestProfileOtpSentTo")} {countryCode} {mobile}
+              </p>
+
+              <div className="flex justify-center gap-3">
+                {otp.map((digit, i) => (
+                  <input
+                    key={i}
+                    id={`profile-otp-${i}`}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleOtpChange(e.target.value, i)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Backspace" && !otp[i] && i > 0) {
+                        document.getElementById(`profile-otp-${i - 1}`)?.focus();
+                      }
+                    }}
+                    className="h-12 w-12 rounded-xl border border-gray-300 text-center text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
+                  />
+                ))}
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setOtpSent(false);
+                    setOtp(Array(OTP_LENGTH).fill(""));
+                    setOtpId("");
+                  }}
+                >
+                  {t("back")}
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={handleVerifyOtp}
+                  disabled={verifying || otp.some((d) => !d)}
+                >
+                  {verifying ? (
+                    <><Loader2 className="w-4 h-4 animate-spin mr-2" />Verifying…</>
+                  ) : (
+                    t("guestProfileOtpVerify")
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
