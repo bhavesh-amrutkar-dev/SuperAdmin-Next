@@ -727,5 +727,19 @@
     "selectBankAndUploadReceipt": "Please select a bank and upload proof of payment",
     "redirectingToCart": "Redirecting to cart...",
     "athMovilPlaceholder": "Enter the mobile number registered with ATH Móvil",
-    "athMovilErrMsg": "This number is not registered with ATH Móvil. Please enter a valid registered number."
+    "athMovilErrMsg": "This number is not registered with ATH Móvil. Please enter a valid registered number.",
+    "nameCharLimitError": "Must be between 2 and 50 characters",
+    "phonePlaceholder": "Phone Number",
+    "athMovilPhonePlaceholder": "Enter your ATH Móvil number",
+    "athMovilCompletePayment": "Complete your payment at ATH Móvil",
+    "athMovilStep1": "Open your ATH Móvil app",
+    "athMovilStep2": "Authorize the payment to {merchant}",
+    "athMovilStep3": "Come back here to finish",
+    "athMovilOpenApp": "Open ATH Móvil",
+    "athMovilDoNotClose": "Do not close this window",
+    "athMovilClosingWarning": "Closing this page may interrupt your payment.",
+    "athMovilNoNotification": "Didn't receive a notification?",
+    "athMovilOpenManually": "Open the app manually.",
+    "athMovilYesCancelPayment": "Yes, cancel my payment",
+    "athMovilKeepWaiting": "Keep waiting"
 }

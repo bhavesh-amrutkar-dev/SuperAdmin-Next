@@ -28,6 +28,7 @@ import { trackEvent } from "@/src/lib/analytics";
 import { BankDetail, PaymentService } from "@/src/lib/services/payment";
 import { FileUploader } from "@/src/components/ui/fileUploader";
 import { useForm } from "react-hook-form";
+import PaymentProcessingATHMovil from "@/src/components/payments/PaymentProcessingATHMovil";
 import { getErrorMessage } from "@/src/lib/utils/errorMessage";
 import {
   formatAthMovilNumber,
@@ -191,6 +192,7 @@ export default function GuestCheckoutPage() {
   const [manualPaymentConfirmed, setManualPaymentConfirmed] = useState(false);
   const [pendingFormData, setPendingFormData] = useState<any>(null);
   const [athOrderId, setAthOrderId] = useState<string | null>(null);
+  const [athDeepLink, setAthDeepLink] = useState<string | null>(null);
   const [updatingKeys, setUpdatingKeys] = useState<Record<string, "inc" | "dec" | null>>({});
   const [isRefreshingCart, setIsRefreshingCart] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
@@ -702,7 +704,7 @@ export default function GuestCheckoutPage() {
       throw new Error(data?.message || t("guestCheckoutAthPaymentFailed"));
     }
 
-   handleAthMovilApiResponse(data, {
+    handleAthMovilApiResponse(data, {
       invalidUser: t("athMovilErrMsg") ?? "This number is not registered",
     });
   };
@@ -946,6 +948,7 @@ export default function GuestCheckoutPage() {
         });
 
         setAthOrderId(orderData.orderId);
+        setAthDeepLink("https://pagos.athmovilapp.com/pagoPorCodigo.html?id=243feb66-a82e-4fef-b2b1-fe67da6db5ac");
         const timeoutSeconds = Number(orderData?.timeOut) || 300;
 
         setTimer(timeoutSeconds);
@@ -1031,6 +1034,7 @@ export default function GuestCheckoutPage() {
 
       localStorage.setItem("orderId", orderData.orderId);
       setAthOrderId(orderData.orderId);
+      setAthDeepLink("https://pagos.athmovilapp.com/pagoPorCodigo.html?id=243feb66-a82e-4fef-b2b1-fe67da6db5ac");
 
       const timeoutSeconds = Number(orderData?.timeOut) || 300;
 
@@ -1074,33 +1078,11 @@ border text-sm transition-all cursor-pointer gap-1
   return (
     <div className={`min-h-screen flex flex-col bg-[#ededed] ${isUpdatingStatus ? "pointer-events-none select-none" : ""}`}>
       {isUpdatingStatus && (
-        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center pointer-events-auto">
-          <div className="bg-white rounded-2xl shadow-2xl px-8 py-6 flex flex-col items-center gap-4 min-w-[260px]">
-            <div className="relative w-14 h-14">
-              <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
-              <div className="absolute inset-0 rounded-full border-4 border-[#f3c200] border-t-transparent animate-spin"></div>
-            </div>
-
-            <h3 className="text-base font-semibold text-[#2f2f2f] text-center">
-              {t("processingPayment")}
-            </h3>
-
-            <p className="text-xs text-gray-500 text-center">
-              {t("pleaseWaitDoNotClose")}
-            </p>
-
-            <div className="text-sm font-semibold text-[#D4AF37]">
-              {formatTimer(timer)}
-            </div>
-
-            <button
-              onClick={handleUserCancelClick}
-              className="mt-2 text-sm text-red-500 hover:cursor-pointer"
-            >
-              {t("cancelTransaction")}
-            </button>
-          </div>
-        </div>
+        <PaymentProcessingATHMovil
+          deepLinkUrl={athDeepLink ?? undefined}
+          formattedTimer={formatTimer(timer)}
+          onCancel={handleUserCancelClick}
+        />
       )}
       <ConfirmationModal
         open={confirmOpen}
@@ -1446,7 +1428,7 @@ border text-sm transition-all cursor-pointer gap-1
 
                     <div className="flex flex-col gap-3">
 
-                     <button
+                      <button
                         type="button"
                         onClick={() => {
                           trackEvent("SELECT_PAYMENT_METHOD", {

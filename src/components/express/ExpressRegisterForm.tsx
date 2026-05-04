@@ -43,7 +43,7 @@ const validators = {
     return true;
   },
 
-  name: (value: string, msg: string, nameFormatError: string) => {
+  name: (value: string, msg: string, nameFormatError: string, nameCharLimitError: string) => {
     if (!value || value.trim().length === 0) return msg;
     if (value.trim().length < 2 || value.trim().length > 50) {
       return nameFormatError;
@@ -171,7 +171,7 @@ export default function ExpressRegisterForm({
               error={!!errors.firstName}
               {...register("firstName", {
                 required: t("firstNameRequired"),
-                validate: (v) => validators.name(v, t("firstNameRequired"), t("nameFormatError")),
+                validate: (v) => validators.name(v, t("firstNameRequired"), t("nameFormatError"), t("nameCharLimitError")),
               })}
             />
             <ErrorMessage message={errors.firstName?.message} />
@@ -188,7 +188,7 @@ export default function ExpressRegisterForm({
               error={!!errors.lastName}
               {...register("lastName", {
                 required: t("lastNameRequired"),
-                validate: (v) => validators.name(v, t("lastNameRequired"), t("nameFormatError")),
+                validate: (v) => validators.name(v, t("lastNameRequired"), t("nameFormatError"), t("nameCharLimitError")),
               })}
             />
             <ErrorMessage message={errors.lastName?.message} />
