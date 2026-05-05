@@ -34,6 +34,7 @@ import { CustomerService } from "@/src/lib/services/customer.service";
 import { CountryCurrency } from "@/src/models/api/response/auth";
 import { AuthService } from "@/src/lib/services/auth";
 import { getErrorMessage } from "@/src/lib/utils/errorMessage";
+import { getCookie } from "cookies-next";
 
 type ContactForm = {
     firstName: string;
@@ -50,6 +51,7 @@ type Errors = Partial<Record<keyof ContactForm, string>>;
 export default function ContactPage() {
     const locale = useLocale();
     const t = useTranslations();
+    const defaultCountry = (getCookie("C_code") as string || "pr").toLowerCase();
     const [formData, setFormData] = useState<ContactForm>({
         firstName: "",
         lastName: "",
@@ -60,6 +62,7 @@ export default function ContactPage() {
     });
     const [countries, setCountries] = useState<CountryCurrency[]>([]);
     const [countriesLoading, setCountriesLoading] = useState(false);
+    const [phoneCountryCode, setPhoneCountryCode] = useState("1");
     const [contactDetails, setContactDetails] = useState<any[]>([]);
     const [errors, setErrors] = useState<Errors>({});
     const [loading, setLoading] = useState(false);
@@ -165,8 +168,15 @@ export default function ContactPage() {
             setCountriesLoading(true);
             try {
                 const res = await AuthService.getCurrency();
+                const list = (res?.data ?? []);
+                setCountries(list);
+                const phoneCountry = list.find(
+                    c => c.countryCode.toLowerCase() === defaultCountry
+                );
+                if (phoneCountry) {
+                    setPhoneCountryCode((phoneCountry.countryDialCode || "1").replace(/\D/g, ""));
+                }
 
-                setCountries(res?.data ?? []);
             } finally {
                 setCountriesLoading(false);
             }
@@ -209,7 +219,7 @@ export default function ContactPage() {
             }
 
             if (field.type === 1 && value) {
-                if (value.length < 6) {
+                if (value.length < 10) {
                     newErrors[field._id] = t("invalidMobile");
                 }
             }
@@ -235,7 +245,9 @@ export default function ContactPage() {
                 form: fields.map((field) => ({
                     fieldId: field._id,
                     title: field.title,
-                    value: formValues[field._id] || "",
+                    value: field.type === 1
+                        ? `${phoneCountryCode}${formValues[field._id] || ""}`
+                        : formValues[field._id] || "",
                     titleLan: {
                         en: field.titleLan?.en || field.title,
                     },
@@ -433,16 +445,56 @@ export default function ContactPage() {
                                                             Loading...
                                                         </div>
                                                     ) : (
-                                                        <PhoneInput
-                                                            country="us"
-                                                            value={formValues[field._id] || ""}
-                                                            onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
-                                                            onChange={(value) => handleChange(field._id, value)}
-                                                            inputClass={`
-            !bg-transparent !w-full !h-[44px] !text-sm !rounded-lg
-            ${fieldErrors[field._id] ? "!border-red-500" : "!border-input"}
-          `}
-                                                        />)}
+                                                        <div
+                                                            className={`flex items-center rounded-lg border hover:border-[#f3c200] focus-within:border-[#f3c200] transition-colors duration-200 ${fieldErrors[field._id] ? "border-red-500" : "border-[#2f2f2f]"}`}
+                                                            style={{ height: "44px", overflow: "visible", width: "100%" }}
+                                                        >
+                                                            <div className="shrink-0 flex items-center pl-2">
+                                                                <PhoneInput
+                                                                    key={defaultCountry}
+                                                                    country={defaultCountry}
+                                                                    onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
+                                                                    containerStyle={{ height: "44px", width: "40px", flexShrink: 0 }}
+                                                                    containerClass="!h-full"
+                                                                    countryCodeEditable={false}
+                                                                    disableCountryCode={false}
+                                                                    inputStyle={{ display: "none" }}
+                                                                    buttonStyle={{
+                                                                        height: "44px",
+                                                                        width: "40px",
+                                                                        border: "none",
+                                                                        backgroundColor: "transparent",
+                                                                        position: "static",
+                                                                    }}
+                                                                    buttonClass="!border-0 !bg-transparent !shadow-none !static [&]:hover:!bg-transparent [&_.selected-flag]:!bg-transparent [&_.selected-flag:hover]:!bg-transparent [&_.selected-flag:focus]:!bg-transparent"
+                                                                    dropdownStyle={{ zIndex: 9999 }}
+                                                                    onChange={(_value, data: any) => {
+                                                                        setPhoneCountryCode(`${data.dialCode}`);
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                            <span className="text-sm text-gray-700 shrink-0 mx-1">
+                                                                +{phoneCountryCode}
+                                                            </span>
+                                                            <input
+                                                                style={{ height: "44px" }}
+                                                                placeholder="Phone Number"
+                                                                className="flex-1 min-w-0 border-0 shadow-none outline-none ring-0 text-sm px-3 bg-transparent focus:outline-none focus:ring-0"
+                                                                maxLength={10}
+                                                                value={formValues[field._id] || ""}
+                                                                onChange={(e) => {
+                                                                    const digits = e.target.value.replace(/\D/g, "");
+                                                                    handleChange(field._id, digits);
+                                                                }}
+                                                                onBlur={() => {
+                                                                    const val = formValues[field._id] || "";
+                                                                    if (val && val.length < 10) {
+                                                                        setFieldErrors((prev) => ({ ...prev, [field._id]: t("invalidMobile") }));
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    )}
 
                                                     <ErrorMessage message={fieldErrors[field._id]} />
                                                 </div>

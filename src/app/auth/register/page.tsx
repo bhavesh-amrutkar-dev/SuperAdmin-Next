@@ -1,13 +1,13 @@
 "use client";
 
 import { useDebounce } from "@/src/lib/hooks/useDebounce";
+import { getCookie } from "cookies-next";
 import { AuthService } from "@/src/lib/services/auth";
 import { CountryCurrency } from "@/src/models/api/response/auth";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
-import type { CountryData } from "react-phone-input-2";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Input } from "@/src/components/ui/input";
@@ -31,6 +31,7 @@ type RegisterForm = {
 type Errors = Partial<Record<keyof RegisterForm, string>>;
 
 export default function RegisterPage() {
+  const defaultCountry = (getCookie("C_code") as string || "pr").toLowerCase();
   const [countries, setCountries] = useState<CountryCurrency[]>([]);
   const [countriesLoading, setCountriesLoading] = useState(false);
   const [countriesError, setCountriesError] = useState<string | null>(null);
@@ -213,6 +214,12 @@ export default function RegisterPage() {
         if (mounted) {
           setCountries(list);
         }
+        const defaultEntry = list.find(
+          (c) => c.countryCode.toLowerCase() === defaultCountry
+        );
+        if (defaultEntry) {
+          setForm((prev) => ({ ...prev, countryCode: defaultEntry.countryDialCode || "+1" }));// default to +1 if not found
+        }
       } catch (err) {
         console.warn("Currency fetch failed", err);
         if (mounted) {
@@ -261,8 +268,11 @@ export default function RegisterPage() {
     //   if (age < 18) newErrors.dob = t("ageRestriction");
     // }
 
-    if (!mobile)
+    if (!mobile) {
       newErrors.mobile = t("mobileRequired");
+    } else if (mobile.length < 10) {
+      newErrors.mobile = t("invalidMobile");
+    }
 
     // if (!form.country)
     //   newErrors.country = t("countryRequired");
@@ -415,37 +425,65 @@ export default function RegisterPage() {
           >
             {t("mobile")}
           </Label>
-          <div className="phone-input">
+          <div className="phone-input w-full">
             {countriesLoading || countries.length === 0 ? (
               <div className="w-full h-[44px] rounded-lg border border-[#2f2f2f] px-4 flex items-center text-sm text-gray-400">
                 Loading...
               </div>
-            ) :
-              (<PhoneInput
-                inputProps={{ id: "mobile" }}
-                country="us"
-                value={`${form.countryCode}${form.mobile}`}
-                onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
-                onChange={(value, country) => {
-                  if (!("dialCode" in country)) return;
-
-                  const dialCode = `+${country.dialCode}`;
-                  const mobile = value.replace(country.dialCode, "");
-
-                  setForm((prev) => ({
-                    ...prev,
-                    countryCode: dialCode,
-                    mobile,
-                  }));
-                  setErrors((prev) => ({ ...prev, mobile: undefined }));
-                }}
-                inputClass={`
-        !bg-transparent !w-full !h-[44px] !text-sm !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200]
-        !border ${errors.mobile ? "!border-red-500" : "!border-input"}
-        !pl-14 !text-sm
-        
-      `}
-              />)}
+            ) : (
+              <div
+                className={`flex items-center rounded-lg border hover:border-[#f3c200] focus-within:border-[#f3c200] transition-colors duration-200 ${errors.mobile ? "border-red-500" : "border-[#2f2f2f]"}`}
+                style={{ height: "44px", overflow: "visible", width: "100%" }}
+              >
+                <div className="shrink-0 flex items-center pl-2">
+                  <PhoneInput
+                    key={defaultCountry}
+                    country={defaultCountry}
+                    onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
+                    containerStyle={{ height: "44px", width: "40px", flexShrink: 0 }}
+                    containerClass="!h-full"
+                    countryCodeEditable={false}
+                    disableCountryCode={false}
+                    inputStyle={{ display: "none" }}
+                    buttonStyle={{
+                      height: "44px",
+                      width: "40px",
+                      border: "none",
+                      backgroundColor: "transparent",
+                      position: "static",
+                    }}
+                    buttonClass="!border-0 !bg-transparent !shadow-none !static"
+                    dropdownStyle={{ zIndex: 9999 }}
+                    onChange={(_value, data: any) => {
+                      const dialCode = `+${data.dialCode}`;
+                      setForm((prev) => ({ ...prev, countryCode: dialCode }));
+                      setErrors((prev) => ({ ...prev, mobile: undefined }));
+                    }}
+                  />
+                </div>
+                <span className="text-sm text-gray-700 shrink-0 mx-1">
+                  {form.countryCode || "+1"}
+                </span>
+                <input
+                  id="mobile"
+                  style={{ height: "44px" }}
+                  placeholder="Phone Number"
+                  className="flex-1 min-w-0 border-0 shadow-none outline-none ring-0 text-sm px-3 bg-transparent focus:outline-none focus:ring-0"
+                  maxLength={10}
+                  value={form.mobile}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, "");
+                    setForm((prev) => ({ ...prev, mobile: digits }));
+                    setErrors((prev) => ({ ...prev, mobile: undefined }));
+                  }}
+                  onBlur={() => {
+                    if (form.mobile && form.mobile.length < 10) {
+                      setErrors((prev) => ({ ...prev, mobile: t("invalidMobile") }));
+                    }
+                  }}
+                />
+              </div>
+            )}
           </div>
           {/* {errors.mobile && (
             <p className="text-xs text-red-500">{errors.mobile}</p>
