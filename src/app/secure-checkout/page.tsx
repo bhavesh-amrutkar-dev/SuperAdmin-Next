@@ -401,7 +401,7 @@ export default function SecureCheckoutPage() {
       console.error("Payment config fetch failed", err);
     }
   };
-  const isEnabled = (value: string) => value === "true";
+  const isEnabled = (value?: string) => value === "true";
   const paymentOptions = useMemo(() => {
     if (!paymentConfig) return [];
 
@@ -425,11 +425,19 @@ export default function SecureCheckoutPage() {
     ].filter(Boolean);
   }, [paymentConfig]);
 
-  // useEffect(() => {
-  //   if (paymentOptions?.length > 0) {
-  //     setPaymentMethod(paymentOptions[0].key);
-  //   }
-  // }, [paymentOptions]);
+  useEffect(() => {
+    if (paymentOptions.length > 0 && !paymentMethod) {
+      setPaymentMethod(paymentOptions[0].key);
+    }
+  }, [paymentOptions]);
+  const paymentMethodMap: Record<string, number> = {
+    athMovil: 10,
+    manual: 12,
+    square: 21,
+    card: 21, // adjust if backend differs
+  };
+
+  const onlinePaymentMethod = paymentMethodMap[paymentMethod];
   const handleSquareSuccess = () => {
     trackEvent("PAYMENT_SUCCESS");
     toast.success(
@@ -1672,49 +1680,25 @@ export default function SecureCheckoutPage() {
                 <div className="pt-3 sm:pt-4">
                   {/* Payment Options */}
                   <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
-                    {[
-                      {
-                        value: "athMovil",
-                        label: t("payWithATHMovil"),
-                      },
-                      ...(ENABLE_PLACE_TO_PAY
-                        ? [
-                          {
-                            value: "creditCard",
-                            label: t("payWithCreditCard"),
-                            icons: true,
-                          },
-                        ]
-                        : []),
-                      {
-                        value: "manual",
-                        label: t("manualPaymentMethods"),
-                      },
-                      ...(ENABLE_SQUARE_PAY
-                        ? [
-                          {
-                            value: "square",
-                            label: t("paySqr"),
-                            icons: true,
-                          },
-                        ]
-                        : []),
-                    ].map((method) => {
-                      const isSelected = paymentMethod === method.value;
+                    {paymentOptions.map((method: any) => {
+                      const isSelected = paymentMethod === method.key;
                       const isDisabled = grandTotal <= 0;
+
+                      const showIcons =
+                        method.key === "square" || method.key === "card";
 
                       return (
                         <label
-                          key={method.value}
-                          className={`relative flex-1 min-w-45 cursor-pointer`}
+                          key={method.key}
+                          className="relative flex-1 min-w-45 cursor-pointer"
                         >
                           <input
                             type="radio"
                             name="paymentMethod"
-                            value={method.value}
+                            value={method.key}
                             checked={isSelected}
                             onChange={(e) =>
-                              method.value === "manual"
+                              method.key === "manual"
                                 ? handleManualPaymentSelect()
                                 : handlePaymentMethodChange(e.target.value)
                             }
@@ -1724,20 +1708,22 @@ export default function SecureCheckoutPage() {
 
                           <div
                             className={`px-3 py-3 h-full inline-flex items-center w-full border-2 border-dashed rounded-lg transition-all 
-            ${isSelected
-                                ? "border-[#f3c200] border-dashed bg-yellow-50"
+          ${isSelected
+                                ? "border-[#f3c200] bg-yellow-50"
                                 : "border-gray-300 hover:shadow-md"
                               }
-            ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}
-          `}
+          ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+        `}
                           >
                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-wrap">
 
+                              {/* LABEL */}
                               <span className="text-[13px] text-gray-800 font-semibold">
                                 {method.label}
                               </span>
 
-                              {method.icons && (
+                              {/* CARD ICONS */}
+                              {showIcons && (
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <Image src="/images/Profile_new/visa.svg" alt="VISA" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
                                   <Image src="/images/Profile_new/mastercard.svg" alt="Mastercard" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
@@ -1751,7 +1737,6 @@ export default function SecureCheckoutPage() {
                       );
                     })}
                   </div>
-
                 </div>
               </div>
               {/* Manual Payment Bank Details Section */}
