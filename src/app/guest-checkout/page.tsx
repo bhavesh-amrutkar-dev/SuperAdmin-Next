@@ -94,7 +94,10 @@ export interface CartItem {
     ticketPrice?: number | string;
   };
 }
-
+interface TaxItem {
+  taxName?: string;
+  totalValue?: number | string;
+}
 type CartData = {
   _id?: string;
   currencySymbol?: string;
@@ -105,12 +108,16 @@ type CartData = {
   }>;
   accounting?: {
     bagTotal?: number | string;
+    unitPrice?: number | string;
     subTotal?: number | string;
-    tax?: number | string;
-    deliveryFee?: number | string;
+    taxableAmount?: number | string;
+    tax?: number | string | TaxItem[];
+    taxAmount?: number | string;
     shippingFee?: number | string;
+    deliveryFee?: number | string;
     finalTotal?: number | string;
-    grandTotal?: number | string;
+    offerDiscount?: number | string;
+    serviceFeeTotal?: number | string;
   };
 };
 
@@ -426,8 +433,8 @@ export default function GuestCheckoutPage() {
         const key = getCartItemKey(item, idx);
         const qty = quantities[key] ?? getQty(item);
         const unitPrice =
-          Number(item.accounting?.finalUnitPrice) ||
           Number(item.accounting?.unitPrice) ||
+          Number(item.accounting?.finalUnitPrice) ||
           Number(item.price) ||
           0;
         return sum + unitPrice * qty;
@@ -702,7 +709,7 @@ export default function GuestCheckoutPage() {
       throw new Error(data?.message || t("guestCheckoutAthPaymentFailed"));
     }
 
-   handleAthMovilApiResponse(data, {
+    handleAthMovilApiResponse(data, {
       invalidUser: t("athMovilErrMsg") ?? "This number is not registered",
     });
   };
@@ -1228,8 +1235,8 @@ border text-sm transition-all cursor-pointer gap-1
                           const qty = quantities[key] ?? getQty(item);
 
                           const unitPrice =
-                            Number(item.accounting?.finalUnitPrice) ||
                             Number(item.accounting?.unitPrice) ||
+                            Number(item.accounting?.finalUnitPrice) ||
                             Number(item.price) ||
                             0;
 
@@ -1376,8 +1383,8 @@ border text-sm transition-all cursor-pointer gap-1
 
                         const qty = quantities[key] ?? getQty(item);
                         const unitPrice =
-                          Number(item.accounting?.finalUnitPrice) ||
                           Number(item.accounting?.unitPrice) ||
+                          Number(item.accounting?.finalUnitPrice) ||
                           Number(item.price) ||
                           0;
                         const total = fmt(unitPrice * qty);
@@ -1412,7 +1419,7 @@ border text-sm transition-all cursor-pointer gap-1
                     <div className="flex justify-between text-sm text-gray-500">
                       <span>{t("subTotal")}</span>
                       <span className="font-medium text-gray-700">
-                        {currency}{fmt(accounting.bagTotal ?? accounting.subTotal ?? subtotal)}
+                        {currency}{fmt(accounting.taxableAmount || accounting.subTotal)}
                       </span>
                     </div>
 
@@ -1446,7 +1453,7 @@ border text-sm transition-all cursor-pointer gap-1
 
                     <div className="flex flex-col gap-3">
 
-                     <button
+                      <button
                         type="button"
                         onClick={() => {
                           trackEvent("SELECT_PAYMENT_METHOD", {
