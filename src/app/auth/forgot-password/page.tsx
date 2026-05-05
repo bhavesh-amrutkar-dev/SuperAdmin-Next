@@ -129,13 +129,6 @@ export default function ForgotPasswordPage() {
         const list = res?.data ?? [];
         setCountries(list);
 
-        // Set default country short code and country code to form field
-        const phoneCountry = list.find(
-          c => c.countryCode.toLowerCase() === defaultCountry
-        );
-        if (phoneCountry) {
-          setCountryCode((phoneCountry.countryDialCode || "+1"));
-        }
 
       } catch {
         toast.error("Failed to load countries");
@@ -248,6 +241,9 @@ export default function ForgotPasswordPage() {
                     }}
                     buttonClass="!border-0 !bg-transparent !shadow-none !static"
                     dropdownStyle={{ zIndex: 9999 }}
+                    onMount={(_value, data: any) => {
+                      setCountryCode(`+${data.dialCode}`);
+                    }}
                     onChange={(_value, data: any) => {
                       setCountryCode(`+${data.dialCode}`);
                     }}
