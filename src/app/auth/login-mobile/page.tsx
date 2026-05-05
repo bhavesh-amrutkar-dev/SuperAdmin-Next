@@ -43,12 +43,6 @@ export default function LoginMobilePage() {
         const res = await AuthService.getCurrency();
         const list = res?.data ?? [];
         setCountries(list);
-        const defaultEntry = list.find(
-          (c) => c.countryCode.toLowerCase() === defaultCountry
-        );
-        if (defaultEntry) {
-          setCountryCode(defaultEntry.countryDialCode || "+1"); // default to +1 if not found
-        }
       } finally {
         setCountriesLoading(false);
       }
@@ -149,6 +143,9 @@ export default function LoginMobilePage() {
                     }}
                     buttonClass="!border-0 !bg-transparent !shadow-none !static"
                     dropdownStyle={{ zIndex: 9999 }}
+                    onMount={(_value, data: any) => {
+                      setCountryCode(`+${data.dialCode}`);
+                    }}
                     onChange={(_value, data: any) => {
                       setCountryCode(`+${data.dialCode}`);
                     }}

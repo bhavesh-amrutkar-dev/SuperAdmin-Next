@@ -119,14 +119,6 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
         const list = res?.data ?? [];
         setCountries(list);
 
-        // Set default country short code and country code to form field
-        const phoneCountry = list.find(
-          c => c.countryCode.toLowerCase() === defaultCountry
-        );
-        if (phoneCountry) {
-          setCountryCode(`+${(phoneCountry.countryDialCode || "1").replace(/\D/g, "")}`);
-          setCountrySortCode(phoneCountry.countryCode);
-        }
 
       } catch {
         console.log("Failed to load countries");
@@ -334,6 +326,10 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
                       }}
                       buttonClass="!border-0 !bg-transparent !shadow-none !static"
                       dropdownStyle={{ zIndex: 9999 }}
+                      onMount={(_value, data: any) => {
+                        setCountryCode(`+${data.dialCode}`);
+                        setCountrySortCode(data.countryCode);
+                      }}
                       onChange={(_value, data: any) => {
                         setCountryCode(`+${data.dialCode}`);
                         setCountrySortCode(data.countryCode);

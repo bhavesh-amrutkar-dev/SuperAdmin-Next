@@ -101,14 +101,6 @@ export default function ExpressRegisterForm({
         const list = res?.data ?? [];
         setCountries(list);
 
-        // Set default country short code and country code to form field
-        const phoneCountry = list.find(
-          c => c.countryCode.toLowerCase() === defaultCountry
-        );
-        if (phoneCountry) {
-          setValue("countryCode", (phoneCountry.countryDialCode || "1").replace(/\D/g, ""), { shouldValidate: false });
-          setValue("mobileNumberSortCode", phoneCountry.countryCode, { shouldValidate: false });
-        }
       } catch {
         console.log("Failed to load countries");
       } finally {
@@ -270,6 +262,12 @@ export default function ExpressRegisterForm({
                         }}
                         buttonClass="!border-0 !bg-transparent !shadow-none !static"
                         dropdownStyle={{ zIndex: 9999 }}
+                        onMount={(_value, data: any) => {
+                          const dialCode = data.dialCode || "";
+                          const isoCode = data.countryCode || "";
+                          setValue("countryCode", dialCode, { shouldValidate: false });
+                          setValue("mobileNumberSortCode", isoCode.toUpperCase(), { shouldValidate: false });
+                        }}
                         onChange={(_value, data: any) => {
                           const dialCode = data.dialCode || "";
                           const isoCode = data.countryCode || "";

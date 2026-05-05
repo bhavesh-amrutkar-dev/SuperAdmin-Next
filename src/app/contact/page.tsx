@@ -170,12 +170,6 @@ export default function ContactPage() {
                 const res = await AuthService.getCurrency();
                 const list = (res?.data ?? []);
                 setCountries(list);
-                const phoneCountry = list.find(
-                    c => c.countryCode.toLowerCase() === defaultCountry
-                );
-                if (phoneCountry) {
-                    setPhoneCountryCode((phoneCountry.countryDialCode || "1").replace(/\D/g, ""));
-                }
 
             } finally {
                 setCountriesLoading(false);
@@ -468,6 +462,9 @@ export default function ContactPage() {
                                                                     }}
                                                                     buttonClass="!border-0 !bg-transparent !shadow-none !static [&]:hover:!bg-transparent [&_.selected-flag]:!bg-transparent [&_.selected-flag:hover]:!bg-transparent [&_.selected-flag:focus]:!bg-transparent"
                                                                     dropdownStyle={{ zIndex: 9999 }}
+                                                                    onMount={(_value, data: any) => {
+                                                                        setPhoneCountryCode(`${data.dialCode}`);
+                                                                    }}
                                                                     onChange={(_value, data: any) => {
                                                                         setPhoneCountryCode(`${data.dialCode}`);
                                                                     }}

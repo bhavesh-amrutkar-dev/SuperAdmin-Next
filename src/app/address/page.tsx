@@ -186,20 +186,7 @@ export default function AddressPage() {
         if (selectedCountry) {
             setValue("country", selectedCountry.name);
         }
-
-        // Set initial phone country codes if user hasn't provided their own
-        if (!user?.mobile) {
-            const phoneCountry = countries.find(
-                c => c.countryCode.toLowerCase() === defaultCountry
-            );
-            if (phoneCountry) {
-                const dialCode = phoneCountry.countryDialCode?.replace("+", "") || "";
-                setValue("mobileNumberCode", dialCode);
-                setValue("mobileNumberSortCode", defaultCountry);
-                setDisplayCountryCode(phoneCountry.countryDialCode || `+${dialCode}`);
-            }
-        }
-    }, [countries, user, setValue, defaultCountry]);
+    }, [countries, user, setValue]);
     useEffect(() => {
         debugger;
         if (!user) return;
@@ -368,6 +355,11 @@ export default function AddressPage() {
                                                     }}
                                                     buttonClass="!border-0 !bg-transparent !shadow-none !static"
                                                     dropdownStyle={{ zIndex: 9999 }}
+                                                    onMount={(_value, country: any) => {
+                                                        setDisplayCountryCode(`+${country.dialCode}`);
+                                                        setValue("mobileNumberCode", country.dialCode);
+                                                        setValue("mobileNumberSortCode", country.countryCode);
+                                                    }}
                                                     onChange={(_value, country: any) => {
                                                         setDisplayCountryCode(`+${country.dialCode}`);
                                                         setValue("mobileNumberCode", country.dialCode);
