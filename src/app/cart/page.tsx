@@ -918,7 +918,7 @@ export default function CartPage() {
                   )}
 
                   {/* Sub Total */}
-                  <div className="flex justify-between text-gray-700 pt-1 text-sm sm:text-base">
+                  <div className=" flex justify-between text-gray-700 pt-1 text-sm sm:text-base">
                     <span>{t("subTotal")}</span>
                     <span className="font-semibold">
                       {currency} {formatCurrency(accounting.taxableAmount || accounting.subTotal)}
