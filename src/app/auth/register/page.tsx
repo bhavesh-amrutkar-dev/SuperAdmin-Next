@@ -44,7 +44,7 @@ export default function RegisterPage() {
     dob: "",
     mobile: "",
     countryCode: "",
-    country: "",
+    country: defaultCountry.toUpperCase(),
     password: "",
   });
 
@@ -218,7 +218,11 @@ export default function RegisterPage() {
           (c) => c.countryCode.toLowerCase() === defaultCountry
         );
         if (defaultEntry) {
-          setForm((prev) => ({ ...prev, countryCode: defaultEntry.countryDialCode || "+1" }));// default to +1 if not found
+          setForm((prev) => ({
+            ...prev,
+            countryCode: defaultEntry.countryDialCode || "+1",
+            country: defaultEntry.countryCode.toUpperCase(),
+          }));
         }
       } catch (err) {
         console.warn("Currency fetch failed", err);
@@ -456,7 +460,11 @@ export default function RegisterPage() {
                     dropdownStyle={{ zIndex: 9999 }}
                     onChange={(_value, data: any) => {
                       const dialCode = `+${data.dialCode}`;
-                      setForm((prev) => ({ ...prev, countryCode: dialCode }));
+                      setForm((prev) => ({
+                        ...prev,
+                        countryCode: dialCode,
+                        country: (data.countryCode as string).toUpperCase(),
+                      }));
                       setErrors((prev) => ({ ...prev, mobile: undefined }));
                     }}
                   />
