@@ -741,5 +741,6 @@
     "athMovilNoNotification": "¿No recibiste una notificación?",
     "athMovilOpenManually": "Abre la app manualmente.",
     "athMovilYesCancelPayment": "Sí, cancelar mi pago",
-    "athMovilKeepWaiting": "Seguir esperando"
+    "athMovilKeepWaiting": "Seguir esperando",
+    "pincodeMaxLength": "El código PIN debe tener como máximo 15 caracteres."
 }

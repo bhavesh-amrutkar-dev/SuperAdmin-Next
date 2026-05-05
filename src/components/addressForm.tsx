@@ -125,9 +125,9 @@ export default function AddressForm({
         setValue("lastName", user.lastName || "");
 
         if (user.mobile) {
-            // setValue("mobileNumber", user.mobile);
-            // setValue("mobileNumberCode", user.countryCode?.replace("+", "") || "");
-            // setValue("mobileNumberSortCode", user.sortCountryCode || "");
+            setValue("mobileNumber", user.mobile);
+            setValue("mobileNumberCode", user.countryCode?.replace("+", "") || "");
+            setValue("mobileNumberSortCode", user.sortCountryCode || "");
         }
     }, [user, defaultValues, setValue]);
 
@@ -557,8 +557,13 @@ export default function AddressForm({
                             <Input
                                 placeholder={t("pincodePlaceholder")}
                                 error={!!errors.pincode}
+                                maxLength={15} 
                                 {...register("pincode", {
                                     required: t("pincodeRequired"),
+                                    maxLength: {
+                                        value: 15,
+                                        message: t("pincodeMaxLength") || "Pincode must be at most 15 characters",
+                                    },
                                     validate: (value) =>
                                         noWhiteSpaceOnly(value, t("pincodeRequired")),
                                 })}

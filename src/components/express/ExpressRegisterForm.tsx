@@ -380,14 +380,26 @@ export default function ExpressRegisterForm({
               <Label required error={!!errors.pincode}>
                 {t("pincode")}
               </Label>
+
               <Input
                 placeholder={t("pincodePlaceholder")}
                 error={!!errors.pincode}
+                maxLength={15} // ✅ UI limit
                 {...register("pincode", {
                   required: t("pincodeRequired"),
-                  validate: (v) => validators.pincode(v, t("pincodeRequired"), t("pincodeInvalid")),
+                  maxLength: {
+                    value: 15,
+                    message: t("pincodeMaxLength") || "Pincode must be at most 15 characters",
+                  },
+                  validate: (v) =>
+                    validators.pincode(
+                      v,
+                      t("pincodeRequired"),
+                      t("pincodeInvalid")
+                    ),
                 })}
               />
+
               <ErrorMessage message={errors.pincode?.message} />
             </div>
           </div>

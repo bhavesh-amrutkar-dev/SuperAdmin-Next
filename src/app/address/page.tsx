@@ -529,14 +529,20 @@ export default function AddressPage() {
                                         <Input
                                             placeholder={t("pincodePlaceholder")}
                                             error={!!errors.pincode}
+                                            maxLength={15} // ✅ UI limit
                                             {...register("pincode", {
                                                 required: t("pincodeRequired"),
+                                                maxLength: {
+                                                    value: 15,
+                                                    message: t("pincodeMaxLength") || "Pincode must be at most 15 characters",
+                                                },
+                                                validate: (value) =>
+                                                    value.trim().length > 0 || t("pincodeRequired"),
                                             })}
                                         />
 
                                         <ErrorMessage message={errors.pincode?.message} />
                                     </div>
-
                                     {/* Landmark */}
                                     <div className="space-y-2">
                                         <Label required error={!!errors.landmark}>
