@@ -192,7 +192,7 @@ export default function GuestCheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [cartData, setCartData] = useState<CartData | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"square" | "athMovil" | "manual">("athMovil");
+  const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [showManualModal, setShowManualModal] = useState(false);
   const [bankDetails, setBankDetails] = useState<BankDetail[]>([]);
@@ -239,6 +239,44 @@ export default function GuestCheckoutPage() {
     title: "",
     message: "",
   });
+  const [paymentConfig, setPaymentConfig] = useState<any>(null);
+
+  const fetchPaymentConfig = async () => {
+    try {
+      const res = await fetch("/api/customer/config");
+      const data = await res.json();
+
+      setPaymentConfig(data?.data?.paymentGatewayStatus);
+    } catch (err) {
+      console.error("Payment config fetch failed", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchPaymentConfig();
+  }, []);
+  const isEnabled = (value?: boolean | string) => Boolean(value);
+
+  const paymentOptions = useMemo(() => {
+    if (!paymentConfig) return [];
+
+    return [
+      isEnabled(paymentConfig.ATHMovil) && {
+        key: "athMovil",
+        label: t("payWithATHMovil"),
+      },
+
+      isEnabled(paymentConfig.ManualPaymentMethod) && {
+        key: "manual",
+        label: t("manualPaymentMethods"),
+      },
+
+      isEnabled(paymentConfig.Square) && {
+        key: "square",
+        label: t("paySqr"),
+      },
+    ].filter(Boolean);
+  }, [paymentConfig, t]);
   useEffect(() => {
     const accessToken = getCookie("access_token");
 
@@ -249,6 +287,11 @@ export default function GuestCheckoutPage() {
 
     setIsAuthChecked(true);
   }, []);
+  useEffect(() => {
+    if (paymentOptions.length > 0 && !paymentMethod) {
+      setPaymentMethod(paymentOptions[0].key);
+    }
+  }, [paymentOptions, paymentMethod]);
   useEffect(() => {
     trackEvent("VIEW_GUEST_CHECKOUT", {
       item_count: cartItems.length,
@@ -1425,121 +1468,105 @@ border text-sm transition-all cursor-pointer gap-1
                     <div className="flex items-center gap-2 mb-4">
                       <h3 className="font-semibold text-gray-800 text-[15px]">{t("selectMethod")}</h3>
                     </div>
-
                     <div className="flex flex-col gap-3">
+                      {paymentOptions.map((option: any) => {
+                        const isSelected = paymentMethod === option.key;
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          trackEvent("SELECT_PAYMENT_METHOD", {
-                            method: "athMovil",
-                          });
-                          setPaymentMethod("athMovil")
-                        }}
-                        className={`${baseCls} ${paymentMethod === "athMovil"
-                          ? "border-yellow-400 bg-yellow-50"
-                          : "border-gray-200 hover:border-gray-300 bg-white"
-                          }`}
-                      >
+                        return (
+                          <button
+                            key={option.key}
+                            type="button"
+                            onClick={() => {
+                              trackEvent("SELECT_PAYMENT_METHOD", {
+                                method: option.key,
+                              });
 
-                        <div className="flex items-center gap-3">
-                          <span className={`min-w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "athMovil" ? "border-yellow-500" : "border-gray-300"
-                            }`}>
-                            {paymentMethod === "athMovil" && (
-                              <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                            )}
-                          </span>
-
-                          <span className="text-[12px] xl:text-sm font-medium text-start text-gray-700">
-                            {t("payWithATHMovil")}
-                          </span>
-                        </div>
-
-                        <Image
-                          src="/images/icons/authmovil.png"
-                          alt="ATH"
-                          width={28}
-                          height={18}
-                        />
-                      </button>
-                      {/* Manual Payment */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          trackEvent("SELECT_PAYMENT_METHOD", {
-                            method: "manual",
-                          });
-                          setPaymentMethod("manual")
-                        }}
-                        className={`${baseCls} ${paymentMethod === "manual"
-                          ? "border-yellow-400 bg-yellow-50"
-                          : "border-gray-200 hover:border-gray-300 bg-white"
-                          }`}
-                      >
-                        {/* LEFT */}
-                        <div className="flex items-center gap-2 xl:gap-3">
-                          <span className={`min-w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "manual" ? "border-yellow-500" : "border-gray-300"
-                            }`}>
-                            {paymentMethod === "manual" && (
-                              <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                            )}
-                          </span>
-
-                          <span className="text-[12px] xl:text-sm font-medium text-start text-gray-700">
-                            {t("manualPaymentMethods")}
-                          </span>
-                        </div>
-
-                        {/* RIGHT ICON */}
-                        <Image
-                          src="/images/icons/mannualPayment.png"
-                          alt="Manual"
-                          width={40}
-                          height={20}
-                          className="object-contain"
-                        />
-                      </button>
-                      {/* Credit / Debit Card (Square) */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          trackEvent("SELECT_PAYMENT_METHOD", {
-                            method: "square",
-                          });
-                          setPaymentMethod("square")
-                        }}
-                        className={`${baseCls} ${paymentMethod === "square"
-                          ? "border-yellow-400 bg-yellow-50"
-                          : "border-gray-200 hover:border-gray-300 bg-white"
-                          }`}
-                      >
-                        <div className="flex items-center gap-2 xl:gap-3">
-                          <span
-                            className={`min-w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "square"
-                              ? "border-yellow-500"
-                              : "border-gray-300"
+                              setPaymentMethod(option.key);
+                            }}
+                            className={`${baseCls} ${isSelected
+                                ? "border-yellow-400 bg-yellow-50"
+                                : "border-gray-200 hover:border-gray-300 bg-white"
                               }`}
                           >
-                            {paymentMethod === "square" && (
-                              <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                            )}
-                          </span>
+                            {/* LEFT */}
+                            <div className="flex items-center gap-2 xl:gap-3">
+                              <span
+                                className={`min-w-4 h-4 rounded-full border flex items-center justify-center ${isSelected
+                                    ? "border-yellow-500"
+                                    : "border-gray-300"
+                                  }`}
+                              >
+                                {isSelected && (
+                                  <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                                )}
+                              </span>
 
-                          <span className="text-[12px] xl:text-sm font-medium text-start text-gray-700">
-                            {t("paySqr")}
-                          </span>
-                        </div>
+                              <span className="text-[12px] xl:text-sm font-medium text-start text-gray-700">
+                                {option.label}
+                              </span>
+                            </div>
 
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Image src="/images/Profile_new/visa.svg" alt="VISA" width={40} height={25} className="h-5 w-auto object-contain" />
-                          <Image src="/images/Profile_new/mastercard.svg" alt="Mastercard" width={40} height={25} className="h-5 w-auto object-contain" />
-                          <Image src="/images/Profile_new/amex.jpg" alt="AMEX" width={40} height={25} className="h-5 w-auto object-contain" />
-                          <Image src={CDN_IMAGE + "card-8.svg"} alt="Discovery" width={40} height={25} className="h-5 w-auto object-contain" />
-                        </div>
-                      </button>
+                            {/* RIGHT ICON */}
+                            <div className="flex items-center gap-2 shrink-0">
+                              {option.key === "athMovil" && (
+                                <Image
+                                  src="/images/icons/authmovil.png"
+                                  alt="ATH"
+                                  width={28}
+                                  height={18}
+                                />
+                              )}
 
+                              {option.key === "manual" && (
+                                <Image
+                                  src="/images/icons/mannualPayment.png"
+                                  alt="Manual"
+                                  width={40}
+                                  height={20}
+                                  className="object-contain"
+                                />
+                              )}
+
+                              {option.key === "square" && (
+                                <>
+                                  <Image
+                                    src="/images/Profile_new/visa.svg"
+                                    alt="VISA"
+                                    width={40}
+                                    height={25}
+                                    className="h-5 w-auto object-contain"
+                                  />
+
+                                  <Image
+                                    src="/images/Profile_new/mastercard.svg"
+                                    alt="Mastercard"
+                                    width={40}
+                                    height={25}
+                                    className="h-5 w-auto object-contain"
+                                  />
+
+                                  <Image
+                                    src="/images/Profile_new/amex.jpg"
+                                    alt="AMEX"
+                                    width={40}
+                                    height={25}
+                                    className="h-5 w-auto object-contain"
+                                  />
+
+                                  <Image
+                                    src={CDN_IMAGE + "card-8.svg"}
+                                    alt="Discovery"
+                                    width={40}
+                                    height={25}
+                                    className="h-5 w-auto object-contain"
+                                  />
+                                </>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
-
                   </div>
 
 

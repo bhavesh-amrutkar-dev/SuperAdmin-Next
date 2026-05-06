@@ -403,35 +403,40 @@ export default function SecureCheckoutPage() {
       console.error("Payment config fetch failed", err);
     }
   };
-  const isEnabled = (value?: string) => value === "true";
+  const isEnabled = (value?: boolean | string) => Boolean(value);
   const paymentOptions = useMemo(() => {
+    console.log("paymentConfig", paymentConfig);
+
+
     if (!paymentConfig) return [];
 
     return [
       isEnabled(paymentConfig.ATHMovil) && {
         key: "athMovil",
-        label: "ATH Móvil",
+        label: t("payWithATHMovil"),
       },
       isEnabled(paymentConfig.ManualPaymentMethod) && {
         key: "manual",
-        label: "Manual Payment",
+        label: t("manualPaymentMethods"),
       },
       isEnabled(paymentConfig.CreditOrDebitCard) && {
         key: "card",
-        label: "Credit / Debit Card",
+        label: t("paySqr"),
       },
       isEnabled(paymentConfig.Square) && {
         key: "square",
-        label: "Square",
+        label: t("paySqr"),
       },
     ].filter(Boolean);
-  }, [paymentConfig]);
+  }, [paymentConfig, t]);
 
   useEffect(() => {
+    console.log("paymentOptions", paymentOptions);
+
     if (paymentOptions.length > 0 && !paymentMethod) {
       setPaymentMethod(paymentOptions[0].key);
     }
-  }, [paymentOptions]);
+  }, [paymentOptions, paymentConfig]);
   const paymentMethodMap: Record<string, number> = {
     athMovil: 10,
     manual: 12,
