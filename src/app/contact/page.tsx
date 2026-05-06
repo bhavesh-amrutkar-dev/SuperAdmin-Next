@@ -66,7 +66,11 @@ export default function ContactPage() {
     const [contactDetails, setContactDetails] = useState<any[]>([]);
     const [errors, setErrors] = useState<Errors>({});
     const [loading, setLoading] = useState(false);
-    const { user } = useProfile();
+    const accessToken = getCookie("access_token");
+
+    const { user } = useProfile({
+        enabled: !!accessToken,
+    });
     const [fields, setFields] = useState<ContactField[]>([]);
     const [formValues, setFormValues] = useState<Record<string, string>>({});
     const [submitting, setSubmitting] = useState(false);
