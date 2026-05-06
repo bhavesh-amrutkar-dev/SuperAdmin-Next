@@ -5,11 +5,12 @@ import { useEffect, useState } from "react";
 import { AuthService } from "@/src/lib/services/auth";
 import { IUserDTO } from "@/src/models/api/response/auth";
 
-export function useProfile() {
+export function useProfile({ enabled = true } = {}) {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!enabled) return;
     AuthService.getCurrentUser()
       .then((res) => {
         setUser(res?.data);
