@@ -192,7 +192,7 @@ export default function GuestCheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [cartData, setCartData] = useState<CartData | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"square" | "athMovil" | "manual">("square");
+  const [paymentMethod, setPaymentMethod] = useState<"square" | "athMovil" | "manual">("athMovil");
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [showManualModal, setShowManualModal] = useState(false);
   const [bankDetails, setBankDetails] = useState<BankDetail[]>([]);
@@ -367,17 +367,7 @@ export default function GuestCheckoutPage() {
   const isCartEmpty = cartItems.length === 0;
   const accounting = cartData?.accounting || {};
   const currency = cartData?.currencySymbol || "$";
-  useEffect(() => {
-    console.log("🟡 FULL CART DATA:", cartData);
-    console.log("🟡 ACCOUNTING:", accounting);
-    console.log("🟡 TAX RAW:", accounting.tax);
-    console.log("🟡 TAX TYPE:", typeof accounting.tax);
-    console.log("🟡 IS ARRAY:", Array.isArray(accounting.tax));
-    console.log("🟡 TAX AMOUNT:", accounting.taxAmount);
-    console.log("🟡 SUBTOTAL:", accounting.subTotal);
-    console.log("🟡 TAXABLE:", accounting.taxableAmount);
-    console.log("🟡 FINAL TOTAL:", accounting.finalTotal);
-  }, [cartData]);
+
   const updateQty = async (item: CartItem, key: string, delta: number) => {
     if (updatingKeys[key]) return;
 
