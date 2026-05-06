@@ -8,16 +8,10 @@ export async function GET(request: NextRequest) {
     const requestId = crypto.randomUUID(); // trace id
 
     try {
-        console.log(`[${requestId}] 🔹 Incoming GET /api/...`);
 
         const { searchParams } = new URL(request.url);
         const email = searchParams.get("email");
         const athMovilNumber = searchParams.get("athMovilNumber");
-
-        console.log(`[${requestId}] Params:`, {
-            email,
-            athMovilNumber,
-        });
 
         // 🔸 Validation
         if (!email || !athMovilNumber) {
@@ -31,11 +25,6 @@ export async function GET(request: NextRequest) {
 
         const apiUrl = `${ENDPOINT}?email=${encodeURIComponent(email)}&athMovilNumber=${encodeURIComponent(athMovilNumber)}`;
 
-        console.log(`[${requestId}] 🔹 Calling external API`, {
-            url: apiUrl,
-            baseUrl: API_NY_URL,
-        });
-
         const startTime = Date.now();
 
         const { data, error } = await serverFetch(apiUrl, {
@@ -45,7 +34,6 @@ export async function GET(request: NextRequest) {
 
         const duration = Date.now() - startTime;
 
-        console.log(`[${requestId}] ⏱ API response received in ${duration}ms`);
 
         // 🔴 Handle API error
         if (error) {
@@ -76,10 +64,6 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // ✅ Success
-        console.log(`[${requestId}] ✅ Success`, {
-            responsePreview: data ? JSON.stringify(data).slice(0, 200) : null,
-        });
 
         return NextResponse.json(data);
     } catch (err: any) {

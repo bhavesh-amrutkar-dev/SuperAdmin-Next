@@ -12,6 +12,7 @@ interface BackendOrderResponse {
     onlinePaymentMethodText: string;
     totalAmount?: number;
     timeOut?: number | string;
+    ecommerceId?: string
   };
 }
 

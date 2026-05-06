@@ -28,6 +28,7 @@ import { trackEvent } from "@/src/lib/analytics";
 import { BankDetail, PaymentService } from "@/src/lib/services/payment";
 import { FileUploader } from "@/src/components/ui/fileUploader";
 import { useForm } from "react-hook-form";
+import PaymentProcessingATHMovil from "@/src/components/payments/PaymentProcessingATHMovil";
 import { getErrorMessage } from "@/src/lib/utils/errorMessage";
 import {
   formatAthMovilNumber,
@@ -78,6 +79,7 @@ export interface CartItem {
   ticketCount?: number;
   ticketDetails?: {
     numberOfTicket?: number;
+    price?: number;
     ticketId?: string;
   };
   numberOfFreeTickets?: number;
@@ -87,14 +89,19 @@ export interface CartItem {
     finalUnitPrice?: number | string;
     unitPrice?: number | string;
     subTotal?: number | string;
+    finalTotal?: number | string
   };
   sellerSingleUnitPrice?: {
     unitPrice?: number | string;
     price?: number | string;
     ticketPrice?: number | string;
   };
-}
 
+}
+interface TaxItem {
+  taxName?: string;
+  totalValue?: number | string;
+}
 type CartData = {
   _id?: string;
   currencySymbol?: string;
@@ -105,12 +112,16 @@ type CartData = {
   }>;
   accounting?: {
     bagTotal?: number | string;
+    unitPrice?: number | string;
     subTotal?: number | string;
-    tax?: number | string;
-    deliveryFee?: number | string;
+    taxableAmount?: number | string;
+    tax?: number | string | TaxItem[];
+    taxAmount?: number | string;
     shippingFee?: number | string;
+    deliveryFee?: number | string;
     finalTotal?: number | string;
-    grandTotal?: number | string;
+    offerDiscount?: number | string;
+    serviceFeeTotal?: number | string;
   };
 };
 
@@ -181,7 +192,7 @@ export default function GuestCheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [cartData, setCartData] = useState<CartData | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"square" | "athMovil" | "manual">("square");
+  const [paymentMethod, setPaymentMethod] = useState<"square" | "athMovil" | "manual">("athMovil");
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [showManualModal, setShowManualModal] = useState(false);
   const [bankDetails, setBankDetails] = useState<BankDetail[]>([]);
@@ -191,6 +202,7 @@ export default function GuestCheckoutPage() {
   const [manualPaymentConfirmed, setManualPaymentConfirmed] = useState(false);
   const [pendingFormData, setPendingFormData] = useState<any>(null);
   const [athOrderId, setAthOrderId] = useState<string | null>(null);
+  const [athDeepLink, setAthDeepLink] = useState<string | null>(null);
   const [updatingKeys, setUpdatingKeys] = useState<Record<string, "inc" | "dec" | null>>({});
   const [isRefreshingCart, setIsRefreshingCart] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
@@ -391,7 +403,7 @@ export default function GuestCheckoutPage() {
       };
 
       await CartService.addToCart(payload);
-
+      await fetchCart();
       setQuantities((prev) => ({
         ...prev,
         [key]: newQty,
@@ -420,25 +432,23 @@ export default function GuestCheckoutPage() {
 
     setConfirmOpen(true);
   };
-  const subtotal = useMemo(
-    () =>
-      cartItems.reduce((sum, item, idx) => {
-        const key = getCartItemKey(item, idx);
-        const qty = quantities[key] ?? getQty(item);
-        const unitPrice =
-          Number(item.accounting?.finalUnitPrice) ||
-          Number(item.accounting?.unitPrice) ||
-          Number(item.price) ||
-          0;
-        return sum + unitPrice * qty;
-      }, 0),
-    [cartItems, quantities]
-  );
+  const subtotal =
+    Number(accounting.taxableAmount) ||
+    Number(accounting.subTotal) ||
+    Number(accounting.bagTotal) ||
+    0;
 
-  const tax = Number(accounting.tax) || 0;
+  const tax = useMemo(() => {
+    const t = accounting.tax;
+
+    if (Array.isArray(t)) {
+      return t.reduce((sum, item) => sum + Number(item.totalValue || 0), 0);
+    }
+
+    return Number(t || accounting.taxAmount || 0);
+  }, [accounting]);
   const shipping = Number(accounting.deliveryFee ?? accounting.shippingFee ?? 0);
-  const grandTotal = subtotal + tax + shipping;
-
+  const grandTotal = Number(accounting.finalTotal) || (subtotal + tax + shipping)
   const handleRemoveItem = async (item: CartItem, key: string) => {
     try {
       setIsRefreshingCart(true);
@@ -702,7 +712,7 @@ export default function GuestCheckoutPage() {
       throw new Error(data?.message || t("guestCheckoutAthPaymentFailed"));
     }
 
-   handleAthMovilApiResponse(data, {
+    handleAthMovilApiResponse(data, {
       invalidUser: t("athMovilErrMsg") ?? "This number is not registered",
     });
   };
@@ -946,6 +956,9 @@ export default function GuestCheckoutPage() {
         });
 
         setAthOrderId(orderData.orderId);
+        setAthDeepLink(
+          `https://pagos.athmovilapp.com/pagoPorCodigo.html?id=${orderData.ecommerceId}`
+        );
         const timeoutSeconds = Number(orderData?.timeOut) || 300;
 
         setTimer(timeoutSeconds);
@@ -984,12 +997,7 @@ export default function GuestCheckoutPage() {
   const handleAthNumberConfirm = async () => {
     const requestId = crypto.randomUUID();
 
-    console.log(`[${requestId}] 🔹 ATH Confirm START`);
-
     const normalized = normalizeAthMovilNumber(athMobile);
-
-    console.log(`[${requestId}] 📱 Raw number:`, athMobile);
-    console.log(`[${requestId}] 📱 Normalized number:`, normalized);
 
     if (normalized.length < 10) {
       toast.error(t("invalidAthMobile"));
@@ -1004,52 +1012,38 @@ export default function GuestCheckoutPage() {
       setAthMobileError("");
       setPlacingOrder(true);
 
-      console.log(`[${requestId}] 🔹 Step 1: Validate ATH number`);
 
       await validateAthMovilNumber(normalized);
 
-      console.log(`[${requestId}] ✅ Step 1 Success: ATH validated`);
 
       // Optional step
       // console.log(`[${requestId}] 🔹 Step 2: Update stored number`);
       // await updateStoredAthMovilNumber(String(pendingAthFormData.email || ""), normalized);
 
-      console.log(`[${requestId}] 🔹 Step 2: Closing modal`);
       setAthNumberModalOpen(false);
 
-      console.log(`[${requestId}] 🔹 Step 3: Placing order`, {
-        email: pendingAthFormData.email,
-        athMovilNumber: normalized,
-      });
 
       const orderData = await placeExpressOrder(pendingAthFormData, normalized);
 
-      console.log(`[${requestId}] ✅ Step 3 Success: Order created`, {
-        orderId: orderData?.orderId,
-        timeout: orderData?.timeOut,
-      });
 
       localStorage.setItem("orderId", orderData.orderId);
       setAthOrderId(orderData.orderId);
+      setAthDeepLink(
+        `https://pagos.athmovilapp.com/pagoPorCodigo.html?id=${orderData.ecommerceId}`
+      );
 
       const timeoutSeconds = Number(orderData?.timeOut) || 300;
 
-      console.log(`[${requestId}] 🔹 Step 4: Start polling`, {
-        timeoutSeconds,
-      });
 
       setTimer(timeoutSeconds);
       setIsUpdatingStatus(true);
 
       await pollOrderStatus(orderData.orderId, timeoutSeconds);
 
-      console.log(`[${requestId}] ✅ Step 4 Completed: Polling finished`);
-
     } catch (err: any) {
       toast.error(getErrorMessage(err, t("athMovilValidationFailed")));
       setPlacingOrder(false);
     } finally {
-      console.log(`[${requestId}] 🔹 ATH Confirm END`);
     }
   };
   const baseCls = `
@@ -1074,33 +1068,11 @@ border text-sm transition-all cursor-pointer gap-1
   return (
     <div className={`min-h-screen flex flex-col bg-[#ededed] ${isUpdatingStatus ? "pointer-events-none select-none" : ""}`}>
       {isUpdatingStatus && (
-        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center pointer-events-auto">
-          <div className="bg-white rounded-2xl shadow-2xl px-8 py-6 flex flex-col items-center gap-4 min-w-[260px]">
-            <div className="relative w-14 h-14">
-              <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
-              <div className="absolute inset-0 rounded-full border-4 border-[#f3c200] border-t-transparent animate-spin"></div>
-            </div>
-
-            <h3 className="text-base font-semibold text-[#2f2f2f] text-center">
-              {t("processingPayment")}
-            </h3>
-
-            <p className="text-xs text-gray-500 text-center">
-              {t("pleaseWaitDoNotClose")}
-            </p>
-
-            <div className="text-sm font-semibold text-[#D4AF37]">
-              {formatTimer(timer)}
-            </div>
-
-            <button
-              onClick={handleUserCancelClick}
-              className="mt-2 text-sm text-red-500 hover:cursor-pointer"
-            >
-              {t("cancelTransaction")}
-            </button>
-          </div>
-        </div>
+        <PaymentProcessingATHMovil
+          deepLinkUrl={athDeepLink ?? undefined}
+          formattedTimer={formatTimer(timer)}
+          onCancel={handleUserCancelClick}
+        />
       )}
       <ConfirmationModal
         open={confirmOpen}
@@ -1228,8 +1200,9 @@ border text-sm transition-all cursor-pointer gap-1
                           const qty = quantities[key] ?? getQty(item);
 
                           const unitPrice =
-                            Number(item.accounting?.finalUnitPrice) ||
+                            Number(item.ticketDetails?.price) ||
                             Number(item.accounting?.unitPrice) ||
+                            Number(item.accounting?.finalUnitPrice) ||
                             Number(item.price) ||
                             0;
 
@@ -1274,11 +1247,11 @@ border text-sm transition-all cursor-pointer gap-1
                                   {/* Price */}
                                   <div className="flex flex-col justify-center items-center text-center h-10 px-1 sm:px-3 min-w-[90px] sm:min-w-[110px]">
                                     <p className="text-xs text-gray-600 font-medium leading-none">
-                                      {currency}{fmt(unitPrice)}
+                                      {currency}{fmt(unitPrice)} {t("perUnit")}
                                     </p>
-                                    <p className="text-xs text-green-600 font-semibold leading-none mt-1">
+                                    {/* <p className="text-xs text-green-600 font-semibold leading-none mt-1">
                                       {qty} {t("tickets")}
-                                    </p>
+                                    </p> */}
                                   </div>
 
                                   {/* Stepper */}
@@ -1324,7 +1297,7 @@ border text-sm transition-all cursor-pointer gap-1
 
                                 {/* SUBTOTAL */}
                                 <p className="text-xs text-gray-500">
-                                  {t("subTotal")} {currency}{itemTotal}
+                                  {t("subTotal")} {currency}{item?.accounting?.unitPrice}
                                 </p>
                               </div>
                             </li>
@@ -1376,11 +1349,13 @@ border text-sm transition-all cursor-pointer gap-1
 
                         const qty = quantities[key] ?? getQty(item);
                         const unitPrice =
-                          Number(item.accounting?.finalUnitPrice) ||
+                          Number(item.ticketDetails?.price) ||
                           Number(item.accounting?.unitPrice) ||
+                          Number(item.accounting?.finalUnitPrice) ||
                           Number(item.price) ||
                           0;
-                        const total = fmt(unitPrice * qty);
+
+                        const total = fmt(item?.accounting?.unitPrice);
                         return (
                           <div key={`${item._id}-${idx}`} className="flex items-center gap-3">
                             <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-gray-100 shrink-0 bg-gray-50">
@@ -1412,9 +1387,16 @@ border text-sm transition-all cursor-pointer gap-1
                     <div className="flex justify-between text-sm text-gray-500">
                       <span>{t("subTotal")}</span>
                       <span className="font-medium text-gray-700">
-                        {currency}{fmt(accounting.bagTotal ?? accounting.subTotal ?? subtotal)}
+                        {currency}{fmt(subtotal)}
                       </span>
                     </div>
+                    {Array.isArray(accounting.tax) &&
+                      accounting.tax.map((t, i) => (
+                        <div key={i} className="flex justify-between text-sm">
+                          <span>{t.taxName}</span>
+                          <span>{currency}{fmt(t.totalValue)}</span>
+                        </div>
+                      ))}
 
                     {shipping > 0 && (
                       <div className="flex justify-between text-sm text-gray-500">
@@ -1422,13 +1404,13 @@ border text-sm transition-all cursor-pointer gap-1
                         <span className="font-medium text-gray-700">{currency}{fmt(shipping)}</span>
                       </div>
                     )}
-
+                    {/* 
                     {tax > 0 && (
                       <div className="flex justify-between text-sm text-gray-500">
                         <span>{t("tax")}</span>
                         <span className="font-medium text-gray-700">{currency}{fmt(tax)}</span>
                       </div>
-                    )}
+                    )} */}
 
                     <div className="flex justify-between items-center pt-3 border-t border-gray-200">
                       <span className="font-bold text-gray-900">{t("total")}</span>
@@ -1446,7 +1428,7 @@ border text-sm transition-all cursor-pointer gap-1
 
                     <div className="flex flex-col gap-3">
 
-                     <button
+                      <button
                         type="button"
                         onClick={() => {
                           trackEvent("SELECT_PAYMENT_METHOD", {

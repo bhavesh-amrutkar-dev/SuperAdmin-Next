@@ -4,7 +4,6 @@ import { Controller, UseFormReturn, useFormState } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
-import type { CountryData } from "react-phone-input-2";
 import ErrorMessage from "@/src/components/ui/errorMessage";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
@@ -13,6 +12,7 @@ import { Button } from "../ui/button";
 import { useEffect, useState } from "react";
 import { CountryCurrency } from "@/src/models/api/response/auth";
 import { AuthService } from "@/src/lib/services/auth";
+import { getCookie } from "cookies-next";
 
 export type ExpressRegisterFormRM = {
   firstName: string;
@@ -43,7 +43,7 @@ const validators = {
     return true;
   },
 
-  name: (value: string, msg: string, nameFormatError: string) => {
+  name: (value: string, msg: string, nameFormatError: string, nameCharLimitError: string) => {
     if (!value || value.trim().length === 0) return msg;
     if (value.trim().length < 2 || value.trim().length > 50) {
       return nameFormatError;
@@ -80,6 +80,7 @@ export default function ExpressRegisterForm({
   isExpressOrder?: boolean;
   isRaffle: boolean;
 }) {
+  const defaultCountry = (getCookie("C_code") as string || "pr").toLowerCase();
   const [countries, setCountries] = useState<CountryCurrency[]>([]);
   const [countriesLoading, setCountriesLoading] = useState(false);
   const t = useTranslations();
@@ -97,7 +98,9 @@ export default function ExpressRegisterForm({
       setCountriesLoading(true);
       try {
         const res = await AuthService.getCurrency();
-        setCountries(res?.data ?? []);
+        const list = res?.data ?? [];
+        setCountries(list);
+
       } catch {
         console.log("Failed to load countries");
       } finally {
@@ -171,7 +174,7 @@ export default function ExpressRegisterForm({
               error={!!errors.firstName}
               {...register("firstName", {
                 required: t("firstNameRequired"),
-                validate: (v) => validators.name(v, t("firstNameRequired"), t("nameFormatError")),
+                validate: (v) => validators.name(v, t("firstNameRequired"), t("nameFormatError"), t("nameCharLimitError")),
               })}
             />
             <ErrorMessage message={errors.firstName?.message} />
@@ -188,7 +191,7 @@ export default function ExpressRegisterForm({
               error={!!errors.lastName}
               {...register("lastName", {
                 required: t("lastNameRequired"),
-                validate: (v) => validators.name(v, t("lastNameRequired"), t("nameFormatError")),
+                validate: (v) => validators.name(v, t("lastNameRequired"), t("nameFormatError"), t("nameCharLimitError")),
               })}
             />
             <ErrorMessage message={errors.lastName?.message} />
@@ -226,7 +229,7 @@ export default function ExpressRegisterForm({
                 required: t("mobileRequired"),
                 validate: (value) => {
                   const clean = (value || "").replace(/\D/g, "");
-                  if (!/^\d{7,15}$/.test(clean)) return t("invalidMobile");
+                  if (clean.length < 10) return t("invalidMobile");
                   return true;
                 },
               }}
@@ -236,24 +239,67 @@ export default function ExpressRegisterForm({
                     {t("loading")}
                   </div>
                 ) : (
-                  <PhoneInput
-                    country="us"
-                    value={field.value || ""}
-                    onlyCountries={countries.map((c) => c.countryCode.toLowerCase())}
-                    onChange={(value, country: CountryData) => {
-                      const dialCode = country?.dialCode || "";
-                      const isoCode = country?.countryCode || "";
-                      const numberWithoutCode = dialCode
-                        ? value.replace(/\D/g, "").slice(dialCode.length)
-                        : value.replace(/\D/g, "");
-
-                      field.onChange(value);
-                      setValue("countryCode", dialCode, { shouldValidate: false });
-                      setValue("mobileNumber", numberWithoutCode, { shouldValidate: false });
-                      setValue("mobileNumberSortCode", isoCode.toUpperCase(), { shouldValidate: false });
-                    }}
-                    inputClass="!w-full !h-[44px] !rounded-lg !border"
-                  />
+                  <div
+                    className={`flex items-center rounded-lg border hover:border-[#f3c200] focus-within:border-[#f3c200] transition-colors duration-200 ${errors.mobileFullNumber ? "border-red-500" : "border-[#2f2f2f]"}`}
+                    style={{ height: "44px", overflow: "visible", width: "100%" }}
+                  >
+                    <div className="shrink-0 flex items-center pl-2">
+                      <PhoneInput
+                        key={defaultCountry}
+                        country={defaultCountry}
+                        onlyCountries={countries.map((c) => c.countryCode.toLowerCase())}
+                        containerStyle={{ height: "44px", width: "40px", flexShrink: 0 }}
+                        containerClass="!h-full"
+                        countryCodeEditable={false}
+                        disableCountryCode={false}
+                        inputStyle={{ display: "none" }}
+                        buttonStyle={{
+                          height: "44px",
+                          width: "40px",
+                          border: "none",
+                          backgroundColor: "transparent",
+                          position: "static",
+                        }}
+                        buttonClass="!border-0 !bg-transparent !shadow-none !static"
+                        dropdownStyle={{ zIndex: 9999 }}
+                        onMount={(_value, data: any) => {
+                          const dialCode = data.dialCode || "";
+                          const isoCode = data.countryCode || "";
+                          setValue("countryCode", dialCode, { shouldValidate: false });
+                          setValue("mobileNumberSortCode", isoCode.toUpperCase(), { shouldValidate: false });
+                        }}
+                        onChange={(_value, data: any) => {
+                          const dialCode = data.dialCode || "";
+                          const isoCode = data.countryCode || "";
+                          setValue("countryCode", dialCode, { shouldValidate: false });
+                          setValue("mobileNumberSortCode", isoCode.toUpperCase(), { shouldValidate: false });
+                        }}
+                      />
+                    </div>
+                    <span className="text-sm text-gray-700 shrink-0 mx-1">
+                      {watch("countryCode") ? `+${watch("countryCode")}` : "+1"}
+                    </span>
+                    <input
+                      style={{ height: "44px" }}
+                      placeholder="Phone Number"
+                      className="flex-1 min-w-0 border-0 shadow-none outline-none ring-0 text-sm px-3 bg-transparent focus:outline-none focus:ring-0"
+                      maxLength={10}
+                      value={watch("mobileNumber") || ""}
+                      onChange={(e) => {
+                        const num = e.target.value.replace(/\D/g, "");
+                        const dialCode = watch("countryCode") || "";
+                        setValue("mobileNumber", num, { shouldValidate: false });
+                        field.onChange(`${dialCode}${num}`);
+                      }}
+                      onBlur={() => {
+                        const num = watch("mobileNumber") || "";
+                        if (num && num.length < 10) {
+                          field.onChange(num);
+                          form.trigger("mobileFullNumber");
+                        }
+                      }}
+                    />
+                  </div>
                 )
               }
             />
@@ -332,14 +378,26 @@ export default function ExpressRegisterForm({
               <Label required error={!!errors.pincode}>
                 {t("pincode")}
               </Label>
+
               <Input
                 placeholder={t("pincodePlaceholder")}
                 error={!!errors.pincode}
+                maxLength={15} // ✅ UI limit
                 {...register("pincode", {
                   required: t("pincodeRequired"),
-                  validate: (v) => validators.pincode(v, t("pincodeRequired"), t("pincodeInvalid")),
+                  maxLength: {
+                    value: 15,
+                    message: t("pincodeMaxLength") || "Pincode must be at most 15 characters",
+                  },
+                  validate: (v) =>
+                    validators.pincode(
+                      v,
+                      t("pincodeRequired"),
+                      t("pincodeInvalid")
+                    ),
                 })}
               />
+
               <ErrorMessage message={errors.pincode?.message} />
             </div>
           </div>

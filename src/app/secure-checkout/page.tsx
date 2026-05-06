@@ -37,6 +37,7 @@ import {
   hasStoredAthMovilNumber,
   normalizeAthMovilNumber,
 } from "@/src/lib/utils/athMovil";
+import PaymentProcessingATHMovil from "@/src/components/payments/PaymentProcessingATHMovil";
 
 import { trackEvent } from "@/src/lib/analytics";
 
@@ -152,7 +153,7 @@ export default function SecureCheckoutPage() {
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<UserAddress | null>(null);
   const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
-  const [paymentMethod, setPaymentMethod] = useState<string>("");
+  const [paymentMethod, setPaymentMethod] = useState<string>("athMovil");
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [placeToPayUrl, setPlaceToPayUrl] = useState<string | null>(null);
@@ -177,6 +178,7 @@ export default function SecureCheckoutPage() {
   const currency = cartData?.currencySymbol || "$";
   const accounting = cartData?.accounting || {};
   const [athOrderId, setAthOrderId] = useState<string | null>(null);
+  const [athDeepLink, setAthDeepLink] = useState<string | null>(null);
   const [timer, setTimer] = useState(0);
   const [athNumberModalOpen, setAthNumberModalOpen] = useState(false);
   const [athMobile, setAthMobile] = useState("");
@@ -857,6 +859,9 @@ export default function SecureCheckoutPage() {
       const orderId = createdOrder.orderId;
 
       setAthOrderId(orderId);
+      setAthDeepLink(
+        `https://pagos.athmovilapp.com/pagoPorCodigo.html?id=${createdOrder?.ecommerceId}`
+      );
       const timeoutSeconds = Number(createdOrder?.timeOut) || 300;
 
       setTimer(timeoutSeconds);
@@ -977,6 +982,9 @@ export default function SecureCheckoutPage() {
 
       const orderId = createdOrder.orderId;
       setAthOrderId(orderId);
+      setAthDeepLink(
+        `https://pagos.athmovilapp.com/pagoPorCodigo.html?id=${createdOrder?.ecommerceId}`
+      );
 
       const timeoutSeconds = Number(createdOrder?.timeOut) || 300;
       setTimer(timeoutSeconds);
@@ -1449,38 +1457,11 @@ export default function SecureCheckoutPage() {
     <div className={`min-h-screen bg-[#ededed] ${isUpdatingStatus ? "pointer-events-none select-none" : ""}`}>
       <>
         {isUpdatingStatus && (
-          <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center pointer-events-auto">
-            <div className="bg-white rounded-2xl shadow-2xl px-8 py-6 flex flex-col items-center gap-4 min-w-[260px]">
-
-              {/* Spinner */}
-              <div className="relative w-14 h-14">
-                <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
-                <div className="absolute inset-0 rounded-full border-4 border-[#f3c200] border-t-transparent animate-spin"></div>
-              </div>
-
-              <h3 className="text-base font-semibold text-[#2f2f2f] text-center">
-                {t("processingPayment")}
-              </h3>
-
-              <p className="text-xs text-gray-500 text-center">
-                {t("pleaseWaitDoNotClose")}
-              </p>
-
-              {/* Timer */}
-              <div className="text-sm font-semibold text-[#D4AF37]">
-                {formatTimer(timer)}
-              </div>
-
-              {/* 🔥 CANCEL BUTTON */}
-              <button
-                onClick={handleUserCancelClick}
-                className="mt-2 text-sm text-red-500 hover:cursor-pointer"
-              >
-                {t("cancelTransaction")}
-              </button>
-
-            </div>
-          </div>
+          <PaymentProcessingATHMovil
+            deepLinkUrl={athDeepLink ?? undefined}
+            formattedTimer={formatTimer(timer)}
+            onCancel={handleUserCancelClick}
+          />
         )}
 
 

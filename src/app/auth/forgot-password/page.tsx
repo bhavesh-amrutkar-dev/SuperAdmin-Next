@@ -7,6 +7,7 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { useTranslations } from "next-intl";
 import { AuthService } from "@/src/lib/services/auth";
+import { getCookie } from "cookies-next";
 import { toast } from "sonner";
 import { Input } from "@/src/components/ui/input";
 import { CountryCurrency } from "@/src/models/api/response/auth";
@@ -19,9 +20,11 @@ export default function ForgotPasswordPage() {
   const t = useTranslations();
   const searchParams = useSearchParams();
   const redirect = searchParams?.get("redirect");
+  const defaultCountry = (getCookie("C_code") as string || "pr").toLowerCase();
   const [method, setMethod] = useState<Method>("email");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
+  const [mobileError, setMobileError] = useState("");
   const [countryCode, setCountryCode] = useState("+1"); // default country code
   const [countries, setCountries] = useState<CountryCurrency[]>([]);
   const [countriesLoading, setCountriesLoading] = useState(false);
@@ -46,7 +49,11 @@ export default function ForgotPasswordPage() {
 
     if (method === "mobile") {
       if (!mobile || !countryCode) {
-        toast.error(t("invalidMobile"));
+        setMobileError(t("invalidMobile"));
+        return;
+      }
+      if (mobile.length < 10) {
+        setMobileError(t("invalidMobile"));
         return;
       }
     }
@@ -119,8 +126,10 @@ export default function ForgotPasswordPage() {
       setCountriesLoading(true);
       try {
         const res = await AuthService.getCurrency();
+        const list = res?.data ?? [];
+        setCountries(list);
 
-        setCountries(res?.data ?? []);
+
       } catch {
         toast.error("Failed to load countries");
       } finally {
@@ -209,18 +218,62 @@ export default function ForgotPasswordPage() {
                 Loading...
               </div>
             ) : (
-              <PhoneInput
-                country="us"
-                value={`${countryCode.replace("+", "")}${mobile}`}
-                onChange={(value, data: any) => {
-                  setCountryCode(`+${data.dialCode}`);
-                  setMobile(value.slice(data.dialCode.length));
-                }}
-                onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
-                inputClass="!bg-transparent !w-full !h-[44px] !text-sm !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200]"
-                buttonClass="!border-[#2f2f2f]"
-                containerClass="!w-full"
-              />)}
+              <div
+                className="flex items-center rounded-lg border border-[#2f2f2f] hover:border-[#f3c200] focus-within:border-[#f3c200] transition-colors duration-200"
+                style={{ height: "44px", overflow: "visible", width: "100%" }}
+              >
+                <div className="shrink-0 flex items-center pl-2">
+                  <PhoneInput
+                    key={defaultCountry}
+                    country={defaultCountry}
+                    onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
+                    containerStyle={{ height: "44px", width: "40px", flexShrink: 0 }}
+                    containerClass="!h-full"
+                    countryCodeEditable={false}
+                    disableCountryCode={false}
+                    inputStyle={{ display: "none" }}
+                    buttonStyle={{
+                      height: "44px",
+                      width: "40px",
+                      border: "none",
+                      backgroundColor: "transparent",
+                      position: "static",
+                    }}
+                    buttonClass="!border-0 !bg-transparent !shadow-none !static"
+                    dropdownStyle={{ zIndex: 9999 }}
+                    onMount={(_value, data: any) => {
+                      setCountryCode(`+${data.dialCode}`);
+                    }}
+                    onChange={(_value, data: any) => {
+                      setCountryCode(`+${data.dialCode}`);
+                    }}
+                  />
+                </div>
+                <span className="text-sm text-gray-700 shrink-0 mx-1">
+                  {countryCode}
+                </span>
+                <input
+                  style={{ height: "44px" }}
+                  placeholder="Phone Number"
+                  className="flex-1 min-w-0 border-0 shadow-none outline-none ring-0 text-sm px-3 bg-transparent focus:outline-none focus:ring-0"
+                  maxLength={10}
+                  value={mobile}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, "");
+                    setMobile(digits);
+                    if (mobileError) setMobileError("");
+                  }}
+                  onBlur={() => {
+                    if (mobile && mobile.length < 10) {
+                      setMobileError(t("invalidMobile"));
+                    }
+                  }}
+                />
+              </div>
+            )}
+            {mobileError && (
+              <p className="text-xs text-red-500 mt-1">{mobileError}</p>
+            )}
           </div>
         )}
 

@@ -142,7 +142,7 @@ export const TicketWalletService = {
             campaignId: lotteryItem.campaignId,
             countryId: getCountryId(),
             addToCartOnId: "",
-            newQuantity: ticketQuantity,
+            newQuantity: 1,
             cartType: 2,
             offers: {},
             storeTypeId: 8,
