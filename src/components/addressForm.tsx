@@ -125,9 +125,9 @@ export default function AddressForm({
         setValue("lastName", user.lastName || "");
 
         if (user.mobile) {
-            // setValue("mobileNumber", user.mobile);
-            // setValue("mobileNumberCode", user.countryCode?.replace("+", "") || "");
-            // setValue("mobileNumberSortCode", user.sortCountryCode || "");
+            setValue("mobileNumber", user.mobile);
+            setValue("mobileNumberCode", user.countryCode?.replace("+", "") || "");
+            setValue("mobileNumberSortCode", user.sortCountryCode || "");
         }
     }, [user, defaultValues, setValue]);
 
@@ -205,15 +205,6 @@ export default function AddressForm({
                 const res = await AuthService.getCurrency();
                 const list = mapCountryCurrency(res?.data ?? []);
                 setCountries(list);
-
-                // Set default country short code and country code to form field
-                const phoneCountry = list.find(
-                    c => c.countryCode.toLowerCase() === defaultCountry
-                );
-                if (phoneCountry) {
-                    setValue("mobileNumberCode", (phoneCountry.countryDialCode || "1").replace(/\D/g, ""));
-                    setValue("mobileNumberSortCode", phoneCountry.countryCode);
-                }
             } finally {
                 setCountriesLoading(false);
             }
@@ -385,6 +376,12 @@ export default function AddressForm({
                                                 }}
                                                 buttonClass="!border-0 !bg-transparent !shadow-none !static"
                                                 dropdownStyle={{ zIndex: 9999 }}
+                                                onMount={(_value, data: any) => {
+                                                    const dialCode = data.dialCode || "";
+                                                    const isoCode = data.countryCode || "";
+                                                    setValue("mobileNumberCode", dialCode, { shouldValidate: false });
+                                                    setValue("mobileNumberSortCode", isoCode.toUpperCase(), { shouldValidate: false });
+                                                }}
                                                 onChange={(value, country: any) => {
                                                     setValue("mobileNumberCode", country.dialCode);
                                                     setValue("mobileNumberSortCode", country.countryCode);
@@ -557,8 +554,13 @@ export default function AddressForm({
                             <Input
                                 placeholder={t("pincodePlaceholder")}
                                 error={!!errors.pincode}
+                                maxLength={15}
                                 {...register("pincode", {
                                     required: t("pincodeRequired"),
+                                    maxLength: {
+                                        value: 15,
+                                        message: t("pincodeMaxLength") || "Pincode must be at most 15 characters",
+                                    },
                                     validate: (value) =>
                                         noWhiteSpaceOnly(value, t("pincodeRequired")),
                                 })}
