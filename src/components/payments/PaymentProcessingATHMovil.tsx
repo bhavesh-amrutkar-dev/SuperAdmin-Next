@@ -36,7 +36,7 @@ export default function PaymentProcessingATHMovil({
   };
 
   const openApp = () => {
-    if (deepLinkUrl) window.location.href = deepLinkUrl;
+    if (deepLinkUrl) window.open(deepLinkUrl, "_blank", "noopener,noreferrer");
   };
 
   return (
