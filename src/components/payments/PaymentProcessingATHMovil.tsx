@@ -27,6 +27,9 @@ export default function PaymentProcessingATHMovil({
 
   const [confirmingCancel, setConfirmingCancel] = useState(false);
 
+  // ✅ Auto redirect countdown
+  const [autoRedirectSeconds, setAutoRedirectSeconds] = useState(30);
+
   const steps = [
     { num: 1, label: t("athMovilStep1") },
     { num: 2, label: t("athMovilStep2", { merchant: merchantName }) },
@@ -41,14 +44,32 @@ export default function PaymentProcessingATHMovil({
     }
   };
 
-  // ✅ Open ATH Móvil app
+  // ✅ Open ATH Móvil app manually
   const openApp = () => {
     if (deepLinkUrl) {
       window.location.href = deepLinkUrl;
     }
   };
 
-  // ✅ Auto attempt open once when modal appears
+  // ✅ Countdown timer
+  useEffect(() => {
+    if (!deepLinkUrl) return;
+
+    const interval = setInterval(() => {
+      setAutoRedirectSeconds((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [deepLinkUrl]);
+
+  // ✅ Auto open after 30 sec
   useEffect(() => {
     if (!deepLinkUrl) return;
 
@@ -58,7 +79,7 @@ export default function PaymentProcessingATHMovil({
       } catch (err) {
         console.warn("ATH redirect failed:", err);
       }
-    }, 500);
+    }, 30000);
 
     return () => clearTimeout(timer);
   }, [deepLinkUrl]);
@@ -110,35 +131,42 @@ export default function PaymentProcessingATHMovil({
 
           {/* ── Open App Button ── */}
           {deepLinkUrl && (
-            <button
-              type="button"
-              onClick={openApp}
-              className="
-                group w-full flex items-center justify-center gap-2.5
-                h-12 rounded-2xl
-                bg-[#f3c200] hover:bg-[#e6b400]
-                active:scale-[0.98] active:bg-[#d4a500]
-                shadow-md shadow-yellow-200
-                text-white font-bold text-[15px]
-                transition-all duration-150
-                focus-visible:outline-none focus-visible:ring-2
-                focus-visible:ring-[#f3c200]
-                focus-visible:ring-offset-2
-                cursor-pointer
-              "
-            >
-              <Smartphone
-                className="w-5 h-5 transition-transform duration-150 group-hover:-translate-y-0.5"
-                aria-hidden="true"
-              />
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={openApp}
+                className="
+                  group w-full flex items-center justify-center gap-2.5
+                  h-12 rounded-2xl
+                  bg-[#f3c200] hover:bg-[#e6b400]
+                  active:scale-[0.98] active:bg-[#d4a500]
+                  shadow-md shadow-yellow-200
+                  text-white font-bold text-[15px]
+                  transition-all duration-150
+                  focus-visible:outline-none focus-visible:ring-2
+                  focus-visible:ring-[#f3c200]
+                  focus-visible:ring-offset-2
+                  cursor-pointer
+                "
+              >
+                <Smartphone
+                  className="w-5 h-5 transition-transform duration-150 group-hover:-translate-y-0.5"
+                  aria-hidden="true"
+                />
 
-              {t("athMovilOpenApp")}
+                {t("athMovilOpenApp")}
 
-              <ExternalLink
-                className="w-3.5 h-3.5 opacity-70"
-                aria-hidden="true"
-              />
-            </button>
+                <ExternalLink
+                  className="w-3.5 h-3.5 opacity-70"
+                  aria-hidden="true"
+                />
+              </button>
+
+              {/* ✅ Auto redirect countdown */}
+              <p className="text-xs text-center text-gray-400">
+                Opening ATH Móvil app in {autoRedirectSeconds}s
+              </p>
+            </div>
           )}
 
           {/* ── Spinner + timer ── */}
