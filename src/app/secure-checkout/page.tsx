@@ -809,7 +809,7 @@ export default function SecureCheckoutPage() {
       setAthDeepLink(
         `https://pagos.athmovilapp.com/pagoPorCodigo.html?id=${createdOrder?.ecommerceId}`
       );
-      const timeoutSeconds = Number(createdOrder?.timeOut) || 300;
+      const timeoutSeconds = Number(createdOrder?.timeOut) || 600;
 
       setTimer(timeoutSeconds);
       setIsUpdatingStatus(true);
@@ -933,7 +933,7 @@ export default function SecureCheckoutPage() {
         `https://pagos.athmovilapp.com/pagoPorCodigo.html?id=${createdOrder?.ecommerceId}`
       );
 
-      const timeoutSeconds = Number(createdOrder?.timeOut) || 300;
+      const timeoutSeconds = Number(createdOrder?.timeOut) || 600;
       setTimer(timeoutSeconds);
       setIsUpdatingStatus(true);
 
