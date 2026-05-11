@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import {
   Smartphone,
@@ -9,6 +9,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 
 interface Props {
   deepLinkUrl?: string;
@@ -26,10 +27,9 @@ export default function PaymentProcessingATHMovil({
   const t = useTranslations();
 
   const [confirmingCancel, setConfirmingCancel] = useState(false);
-  const [autoOpenCountdown, setAutoOpenCountdown] = useState(30);
 
-  // Prevent app from opening multiple times
-  const hasOpenedRef = useRef(false);
+  // ✅ highlight button after 30 sec
+  const [highlightOpenButton, setHighlightOpenButton] = useState(false);
 
   const steps = [
     { num: 1, label: t("athMovilStep1") },
@@ -45,34 +45,27 @@ export default function PaymentProcessingATHMovil({
     }
   };
 
+  // ✅ MOBILE SAFE APP OPEN
   const openApp = () => {
-    if (!deepLinkUrl || hasOpenedRef.current) return;
-
-    hasOpenedRef.current = true;
-
-    window.open(deepLinkUrl, "_blank", "noopener,noreferrer");
+    if (deepLinkUrl) {
+      window.location.href = deepLinkUrl;
+    }
   };
 
-  // Auto open ATH Móvil app after 30 seconds
+  // ✅ after 30 sec show reminder instead of auto open
   useEffect(() => {
-    if (!deepLinkUrl || hasOpenedRef.current) return;
+    if (!deepLinkUrl) return;
 
-    const interval = setInterval(() => {
-      setAutoOpenCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
+    const timeout = setTimeout(() => {
+      setHighlightOpenButton(true);
 
-          openApp();
-
-          return 0;
-        }
-
-        return prev - 1;
+      toast.info(t("athMovilReminderTitle"), {
+        description: t("athMovilReminderDescription"),
       });
-    }, 1000);
+    }, 30000);
 
-    return () => clearInterval(interval);
-  }, [deepLinkUrl]);
+    return () => clearTimeout(timeout);
+  }, [deepLinkUrl, t]);
 
   return (
     <div
@@ -121,44 +114,39 @@ export default function PaymentProcessingATHMovil({
 
           {/* ── Primary CTA ── */}
           {deepLinkUrl && (
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={openApp}
-                className="
-                  group w-full flex items-center justify-center gap-2.5
-                  h-12 rounded-2xl
-                  bg-[#f3c200] hover:bg-[#e6b400]
-                  active:scale-[0.98] active:bg-[#d4a500]
-                  shadow-md shadow-yellow-200
-                  text-white font-bold text-[15px]
-                  transition-all duration-150
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f3c200] focus-visible:ring-offset-2
-                "
-              >
-                <Smartphone
-                  className="w-5 h-5 transition-transform duration-150 group-hover:-translate-y-0.5"
-                  aria-hidden="true"
-                />
+            <button
+              type="button"
+              onClick={openApp}
+              className={`
+                group w-full flex items-center justify-center gap-2.5
+                h-12 rounded-2xl
+                bg-[#f3c200] hover:bg-[#e6b400]
+                active:scale-[0.98] active:bg-[#d4a500]
+                shadow-md shadow-yellow-200
+                text-white font-bold text-[15px]
+                transition-all duration-150
+                focus-visible:outline-none focus-visible:ring-2
+                focus-visible:ring-[#f3c200]
+                focus-visible:ring-offset-2
+hover: cursor-pointer
+                ${highlightOpenButton
+                  ? "animate-pulse ring-4 ring-yellow-300"
+                  : ""
+                }
+              `}
+            >
+              <Smartphone
+                className="w-5 h-5 transition-transform duration-150 group-hover:-translate-y-0.5"
+                aria-hidden="true"
+              />
 
-                {t("athMovilOpenApp")}
+              {t("athMovilOpenApp")}
 
-                <ExternalLink
-                  className="w-3.5 h-3.5 opacity-70"
-                  aria-hidden="true"
-                />
-              </button>
-
-              {/* Auto redirect info */}
-              {!hasOpenedRef.current && autoOpenCountdown > 0 && (
-                <p className="text-xs text-center text-gray-500">
-                  Redirecting automatically in{" "}
-                  <span className="font-bold text-[#D4AF37]">
-                    {autoOpenCountdown}s
-                  </span>
-                </p>
-              )}
-            </div>
+              <ExternalLink
+                className="w-3.5 h-3.5 opacity-70"
+                aria-hidden="true"
+              />
+            </button>
           )}
 
           {/* ── Spinner + timer ── */}
@@ -211,11 +199,10 @@ export default function PaymentProcessingATHMovil({
               <button
                 type="button"
                 onClick={deepLinkUrl ? openApp : undefined}
-                className={`font-semibold underline underline-offset-2 transition-colors ${
-                  deepLinkUrl
+                className={`font-semibold underline underline-offset-2 transition-colors ${deepLinkUrl
                     ? "text-[#D4AF37] hover:text-[#b8940f] cursor-pointer"
                     : "text-gray-500 cursor-default"
-                }`}
+                  }`}
               >
                 {t("athMovilOpenManually")}
               </button>
@@ -231,10 +218,9 @@ export default function PaymentProcessingATHMovil({
                     w-full flex items-center justify-center gap-2
                     h-11 rounded-xl border-2 text-sm font-semibold
                     transition-all duration-150 cursor-pointer
-                    ${
-                      confirmingCancel
-                        ? "border-red-500 bg-red-500 text-white hover:bg-red-600 hover:border-red-600 active:scale-[0.98]"
-                        : "border-red-200 bg-red-50 text-red-500 hover:border-red-400 hover:bg-red-100 active:scale-[0.98]"
+                    ${confirmingCancel
+                      ? "border-red-500 bg-red-500 text-white hover:bg-red-600 hover:border-red-600 active:scale-[0.98]"
+                      : "border-red-200 bg-red-50 text-red-500 hover:border-red-400 hover:bg-red-100 active:scale-[0.98]"
                     }
                   `}
                 >
