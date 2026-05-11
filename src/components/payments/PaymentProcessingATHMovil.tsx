@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import {
   Smartphone,
@@ -27,8 +27,11 @@ export default function PaymentProcessingATHMovil({
 
   const [confirmingCancel, setConfirmingCancel] = useState(false);
 
-  // ✅ Auto redirect countdown
+  // ✅ Countdown
   const [autoRedirectSeconds, setAutoRedirectSeconds] = useState(30);
+
+  // ✅ Prevent multiple redirects
+  const hasRedirectedRef = useRef(false);
 
   const steps = [
     { num: 1, label: t("athMovilStep1") },
@@ -44,13 +47,42 @@ export default function PaymentProcessingATHMovil({
     }
   };
 
-  // ✅ Open ATH Móvil app manually
+  // ✅ Deeplink open
+  // IMPORTANT:
+  // Do NOT stop polling here
   const openApp = () => {
-    if (deepLinkUrl) {
-      window.location.href = deepLinkUrl;
+    if (!deepLinkUrl) return;
+
+    if (hasRedirectedRef.current) return;
+
+    hasRedirectedRef.current = true;
+
+    try {
+      const ua = navigator.userAgent;
+
+      const isIOS =
+        /iPad|iPhone|iPod/.test(ua);
+
+      const isAndroid =
+        /Android/.test(ua);
+
+      const isMobile = isIOS || isAndroid;
+
+      if (isMobile) {
+        // ✅ mobile/webview
+        window.location.href = deepLinkUrl;
+      } else {
+        // ✅ desktop
+        window.open(
+          deepLinkUrl,
+          "_blank",
+          "noopener,noreferrer"
+        );
+      }
+    } catch (err) {
+      console.warn("ATH deeplink failed:", err);
     }
   };
-
   // ✅ Countdown timer
   useEffect(() => {
     if (!deepLinkUrl) return;
@@ -69,16 +101,14 @@ export default function PaymentProcessingATHMovil({
     return () => clearInterval(interval);
   }, [deepLinkUrl]);
 
-  // ✅ Auto open after 30 sec
+  // ✅ Auto redirect after 30 sec
+  // IMPORTANT:
+  // polling continues in background
   useEffect(() => {
     if (!deepLinkUrl) return;
 
     const timer = setTimeout(() => {
-      try {
-        window.location.href = deepLinkUrl;
-      } catch (err) {
-        console.warn("ATH redirect failed:", err);
-      }
+      openApp();
     }, 30000);
 
     return () => clearTimeout(timer);
@@ -132,9 +162,19 @@ export default function PaymentProcessingATHMovil({
           {/* ── Open App Button ── */}
           {deepLinkUrl && (
             <div className="space-y-2">
-              <button
-                type="button"
-                onClick={openApp}
+              {/* 
+                IMPORTANT:
+                Use anchor tag instead of popup/window.open
+                Better iOS support
+              */}
+              <a
+                href={deepLinkUrl}
+                onClick={(e) => {
+                  e.preventDefault();
+
+                  // ✅ DO NOT stop polling
+                  openApp();
+                }}
                 className="
                   group w-full flex items-center justify-center gap-2.5
                   h-12 rounded-2xl
@@ -160,9 +200,9 @@ export default function PaymentProcessingATHMovil({
                   className="w-3.5 h-3.5 opacity-70"
                   aria-hidden="true"
                 />
-              </button>
+              </a>
 
-              {/* ✅ Auto redirect countdown */}
+              {/* Countdown */}
               <p className="text-xs text-center text-gray-400">
                 Opening ATH Móvil app in {autoRedirectSeconds}s
               </p>
@@ -213,17 +253,13 @@ export default function PaymentProcessingATHMovil({
               </div>
             </div>
 
-            {/* Manual open helper */}
+            {/* Manual helper */}
             <p className="text-xs text-gray-400 text-center leading-relaxed">
               {t("athMovilNoNotification")}{" "}
               <button
                 type="button"
-                onClick={deepLinkUrl ? openApp : undefined}
-                className={`font-semibold underline underline-offset-2 transition-colors ${
-                  deepLinkUrl
-                    ? "text-[#D4AF37] hover:text-[#b8940f] cursor-pointer"
-                    : "text-gray-500 cursor-default"
-                }`}
+                onClick={openApp}
+                className="font-semibold underline underline-offset-2 transition-colors text-[#D4AF37] hover:text-[#b8940f] cursor-pointer"
               >
                 {t("athMovilOpenManually")}
               </button>
@@ -239,10 +275,9 @@ export default function PaymentProcessingATHMovil({
                     w-full flex items-center justify-center gap-2
                     h-11 rounded-xl border-2 text-sm font-semibold
                     transition-all duration-150 cursor-pointer
-                    ${
-                      confirmingCancel
-                        ? "border-red-500 bg-red-500 text-white hover:bg-red-600 hover:border-red-600 active:scale-[0.98]"
-                        : "border-red-200 bg-red-50 text-red-500 hover:border-red-400 hover:bg-red-100 active:scale-[0.98]"
+                    ${confirmingCancel
+                      ? "border-red-500 bg-red-500 text-white hover:bg-red-600 hover:border-red-600 active:scale-[0.98]"
+                      : "border-red-200 bg-red-50 text-red-500 hover:border-red-400 hover:bg-red-100 active:scale-[0.98]"
                     }
                   `}
                 >
