@@ -9,7 +9,6 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { toast } from "sonner";
 
 interface Props {
   deepLinkUrl?: string;
@@ -28,9 +27,6 @@ export default function PaymentProcessingATHMovil({
 
   const [confirmingCancel, setConfirmingCancel] = useState(false);
 
-  // ✅ highlight button after 30 sec
-  const [highlightOpenButton, setHighlightOpenButton] = useState(false);
-
   const steps = [
     { num: 1, label: t("athMovilStep1") },
     { num: 2, label: t("athMovilStep2", { merchant: merchantName }) },
@@ -45,27 +41,27 @@ export default function PaymentProcessingATHMovil({
     }
   };
 
-  // ✅ MOBILE SAFE APP OPEN
+  // ✅ Open ATH Móvil app
   const openApp = () => {
     if (deepLinkUrl) {
       window.location.href = deepLinkUrl;
     }
   };
 
-  // ✅ after 30 sec show reminder instead of auto open
+  // ✅ Auto attempt open once when modal appears
   useEffect(() => {
     if (!deepLinkUrl) return;
 
-    const timeout = setTimeout(() => {
-      setHighlightOpenButton(true);
+    const timer = setTimeout(() => {
+      try {
+        window.location.href = deepLinkUrl;
+      } catch (err) {
+        console.warn("ATH redirect failed:", err);
+      }
+    }, 500);
 
-      toast.info(t("athMovilReminderTitle"), {
-        description: t("athMovilReminderDescription"),
-      });
-    }, 30000);
-
-    return () => clearTimeout(timeout);
-  }, [deepLinkUrl, t]);
+    return () => clearTimeout(timer);
+  }, [deepLinkUrl]);
 
   return (
     <div
@@ -75,7 +71,7 @@ export default function PaymentProcessingATHMovil({
       className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto"
     >
       <div className="bg-white w-full max-w-[460px] rounded-3xl shadow-2xl overflow-hidden">
-        {/* ── Header band ── */}
+        {/* ── Header ── */}
         <div className="bg-gradient-to-br from-[#f3c200] to-[#d4a017] px-6 pt-8 pb-7 flex flex-col items-center gap-3">
           <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg ring-4 ring-white/30">
             <Image
@@ -112,12 +108,12 @@ export default function PaymentProcessingATHMovil({
             ))}
           </ol>
 
-          {/* ── Primary CTA ── */}
+          {/* ── Open App Button ── */}
           {deepLinkUrl && (
             <button
               type="button"
               onClick={openApp}
-              className={`
+              className="
                 group w-full flex items-center justify-center gap-2.5
                 h-12 rounded-2xl
                 bg-[#f3c200] hover:bg-[#e6b400]
@@ -128,12 +124,8 @@ export default function PaymentProcessingATHMovil({
                 focus-visible:outline-none focus-visible:ring-2
                 focus-visible:ring-[#f3c200]
                 focus-visible:ring-offset-2
-hover: cursor-pointer
-                ${highlightOpenButton
-                  ? "animate-pulse ring-4 ring-yellow-300"
-                  : ""
-                }
-              `}
+                cursor-pointer
+              "
             >
               <Smartphone
                 className="w-5 h-5 transition-transform duration-150 group-hover:-translate-y-0.5"
@@ -193,16 +185,17 @@ hover: cursor-pointer
               </div>
             </div>
 
-            {/* Helper text */}
+            {/* Manual open helper */}
             <p className="text-xs text-gray-400 text-center leading-relaxed">
               {t("athMovilNoNotification")}{" "}
               <button
                 type="button"
                 onClick={deepLinkUrl ? openApp : undefined}
-                className={`font-semibold underline underline-offset-2 transition-colors ${deepLinkUrl
+                className={`font-semibold underline underline-offset-2 transition-colors ${
+                  deepLinkUrl
                     ? "text-[#D4AF37] hover:text-[#b8940f] cursor-pointer"
                     : "text-gray-500 cursor-default"
-                  }`}
+                }`}
               >
                 {t("athMovilOpenManually")}
               </button>
@@ -218,9 +211,10 @@ hover: cursor-pointer
                     w-full flex items-center justify-center gap-2
                     h-11 rounded-xl border-2 text-sm font-semibold
                     transition-all duration-150 cursor-pointer
-                    ${confirmingCancel
-                      ? "border-red-500 bg-red-500 text-white hover:bg-red-600 hover:border-red-600 active:scale-[0.98]"
-                      : "border-red-200 bg-red-50 text-red-500 hover:border-red-400 hover:bg-red-100 active:scale-[0.98]"
+                    ${
+                      confirmingCancel
+                        ? "border-red-500 bg-red-500 text-white hover:bg-red-600 hover:border-red-600 active:scale-[0.98]"
+                        : "border-red-200 bg-red-50 text-red-500 hover:border-red-400 hover:bg-red-100 active:scale-[0.98]"
                     }
                   `}
                 >
