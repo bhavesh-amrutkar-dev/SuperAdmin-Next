@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import {
   Smartphone,
@@ -26,10 +26,6 @@ export default function PaymentProcessingATHMovil({
   const t = useTranslations();
 
   const [confirmingCancel, setConfirmingCancel] = useState(false);
-  const [autoOpenCountdown, setAutoOpenCountdown] = useState(30);
-
-  // Prevent app from opening multiple times
-  const hasOpenedRef = useRef(false);
 
   const steps = [
     { num: 1, label: t("athMovilStep1") },
@@ -45,33 +41,26 @@ export default function PaymentProcessingATHMovil({
     }
   };
 
+  // ✅ Open ATH Móvil app
   const openApp = () => {
-    if (!deepLinkUrl || hasOpenedRef.current) return;
-
-    hasOpenedRef.current = true;
-
-    window.open(deepLinkUrl, "_blank", "noopener,noreferrer");
+    if (deepLinkUrl) {
+      window.location.href = deepLinkUrl;
+    }
   };
 
-  // Auto open ATH Móvil app after 30 seconds
+  // ✅ Auto attempt open once when modal appears
   useEffect(() => {
-    if (!deepLinkUrl || hasOpenedRef.current) return;
+    if (!deepLinkUrl) return;
 
-    const interval = setInterval(() => {
-      setAutoOpenCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
+    const timer = setTimeout(() => {
+      try {
+        window.location.href = deepLinkUrl;
+      } catch (err) {
+        console.warn("ATH redirect failed:", err);
+      }
+    }, 500);
 
-          openApp();
-
-          return 0;
-        }
-
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
+    return () => clearTimeout(timer);
   }, [deepLinkUrl]);
 
   return (
@@ -82,7 +71,7 @@ export default function PaymentProcessingATHMovil({
       className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto"
     >
       <div className="bg-white w-full max-w-[460px] rounded-3xl shadow-2xl overflow-hidden">
-        {/* ── Header band ── */}
+        {/* ── Header ── */}
         <div className="bg-gradient-to-br from-[#f3c200] to-[#d4a017] px-6 pt-8 pb-7 flex flex-col items-center gap-3">
           <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg ring-4 ring-white/30">
             <Image
@@ -119,46 +108,37 @@ export default function PaymentProcessingATHMovil({
             ))}
           </ol>
 
-          {/* ── Primary CTA ── */}
+          {/* ── Open App Button ── */}
           {deepLinkUrl && (
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={openApp}
-                className="
-                  group w-full flex items-center justify-center gap-2.5
-                  h-12 rounded-2xl
-                  bg-[#f3c200] hover:bg-[#e6b400]
-                  active:scale-[0.98] active:bg-[#d4a500]
-                  shadow-md shadow-yellow-200
-                  text-white font-bold text-[15px]
-                  transition-all duration-150
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f3c200] focus-visible:ring-offset-2
-                "
-              >
-                <Smartphone
-                  className="w-5 h-5 transition-transform duration-150 group-hover:-translate-y-0.5"
-                  aria-hidden="true"
-                />
+            <button
+              type="button"
+              onClick={openApp}
+              className="
+                group w-full flex items-center justify-center gap-2.5
+                h-12 rounded-2xl
+                bg-[#f3c200] hover:bg-[#e6b400]
+                active:scale-[0.98] active:bg-[#d4a500]
+                shadow-md shadow-yellow-200
+                text-white font-bold text-[15px]
+                transition-all duration-150
+                focus-visible:outline-none focus-visible:ring-2
+                focus-visible:ring-[#f3c200]
+                focus-visible:ring-offset-2
+                cursor-pointer
+              "
+            >
+              <Smartphone
+                className="w-5 h-5 transition-transform duration-150 group-hover:-translate-y-0.5"
+                aria-hidden="true"
+              />
 
-                {t("athMovilOpenApp")}
+              {t("athMovilOpenApp")}
 
-                <ExternalLink
-                  className="w-3.5 h-3.5 opacity-70"
-                  aria-hidden="true"
-                />
-              </button>
-
-              {/* Auto redirect info */}
-              {!hasOpenedRef.current && autoOpenCountdown > 0 && (
-                <p className="text-xs text-center text-gray-500">
-                  Redirecting automatically in{" "}
-                  <span className="font-bold text-[#D4AF37]">
-                    {autoOpenCountdown}s
-                  </span>
-                </p>
-              )}
-            </div>
+              <ExternalLink
+                className="w-3.5 h-3.5 opacity-70"
+                aria-hidden="true"
+              />
+            </button>
           )}
 
           {/* ── Spinner + timer ── */}
@@ -205,7 +185,7 @@ export default function PaymentProcessingATHMovil({
               </div>
             </div>
 
-            {/* Helper text */}
+            {/* Manual open helper */}
             <p className="text-xs text-gray-400 text-center leading-relaxed">
               {t("athMovilNoNotification")}{" "}
               <button
