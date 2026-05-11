@@ -1329,13 +1329,22 @@ export default function SecureCheckoutPage() {
     setManualPaymentConfirmed(true);
   };
 
-  const handleUserCancelClick = () => {
-    pollingCancelledRef.current = true;
-    setIsUpdatingStatus(false);
-    setPlacingOrder(false);
-    router.push("/orders");
-  };
+const handleUserCancelClick = () => {
+  pollingCancelledRef.current = true;
 
+  setIsUpdatingStatus(false);
+  setPlacingOrder(false);
+
+  // ✅ Toast message
+  toast.info(t("paymentCancelled"), {
+    description: t("paymentCancelledDescription"),
+  });
+
+  // ✅ Optional small delay so user can see toast before redirect
+  setTimeout(() => {
+    router.push("/orders");
+  }, 1200);
+};
   const shippingFee = Number((accounting as any).deliveryFee ?? (accounting as any).shippingFee ?? 0);
   const tax = accounting.tax;
   const taxItems = Array.isArray(tax) ? (tax as TaxItem[]) : null;

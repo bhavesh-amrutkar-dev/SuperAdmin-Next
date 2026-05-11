@@ -989,9 +989,19 @@ export default function GuestCheckoutPage() {
   };
   const handleUserCancelClick = () => {
     pollingCancelledRef.current = true;
+
     setIsUpdatingStatus(false);
     setPlacingOrder(false);
-    router.push("/");
+
+    // ✅ Toast message
+    toast.info(t("paymentCancelled"), {
+      description: t("paymentCancelledDescription"),
+    });
+
+    // ✅ Optional small delay so user can see toast before redirect
+    setTimeout(() => {
+      router.push("/");
+    }, 1200);
   };
 
   const handleAthNumberConfirm = async () => {
