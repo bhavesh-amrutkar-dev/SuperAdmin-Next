@@ -275,7 +275,7 @@ export default function GuestCheckoutPage() {
         key: "square",
         label: t("paySqr"),
       },
-    ].filter(Boolean);
+    ].filter((option): option is { key: string; label: string } => Boolean(option));
   }, [paymentConfig, t]);
   useEffect(() => {
     const accessToken = getCookie("access_token");

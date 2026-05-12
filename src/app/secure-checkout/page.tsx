@@ -117,6 +117,46 @@ type UserAddress = {
   tag?: string;
 };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function looksLikeBankList(value: unknown): value is BankDetail[] {
+  return Array.isArray(value) && value.some((item) =>
+    isRecord(item) &&
+    ("bankName" in item ||
+      "paymentMethodLogo" in item ||
+      "bankPaymentNumber" in item ||
+      "bankPaymentURL" in item)
+  );
+}
+
+function extractBankDetails(response: unknown, depth = 0): BankDetail[] {
+  if (depth > 5) return [];
+  if (looksLikeBankList(response)) return response;
+
+  if (Array.isArray(response)) {
+    for (const item of response) {
+      const banks = extractBankDetails(item, depth + 1);
+      if (banks.length > 0) return banks;
+    }
+    return [];
+  }
+
+  if (!isRecord(response)) return [];
+
+  if (looksLikeBankList(response.bankDetails)) {
+    return response.bankDetails;
+  }
+
+  for (const key of ["data", "country", "countryData", "result", "response"]) {
+    const banks = extractBankDetails(response[key], depth + 1);
+    if (banks.length > 0) return banks;
+  }
+
+  return [];
+}
+
 function formatCurrency(value: number | string | undefined): string {
   return (Number(value) || 0).toFixed(2);
 }
@@ -252,10 +292,8 @@ export default function SecureCheckoutPage() {
       setLoadingBankDetails(true);
       const response = await PaymentService.getBankDetails();
 
-      // Response structure: { data: { bankDetails: [] } } after axios interceptor
-      // Old project structure: { data: { data: { bankDetails: [] } } }
-      const bankDetailsData = (response as any)?.data?.bankDetails || (response as any)?.data?.data?.bankDetails || [];
-      setBankDetails(Array.isArray(bankDetailsData) ? bankDetailsData : []);
+      const bankDetailsData = extractBankDetails(response);
+      setBankDetails(bankDetailsData);
     } catch (error) {
       console.warn("Failed to fetch bank details:", error);
       setBankDetails([]);
@@ -427,7 +465,7 @@ export default function SecureCheckoutPage() {
         key: "square",
         label: t("paySqr"),
       },
-    ].filter(Boolean);
+    ].filter((option): option is { key: string; label: string } => Boolean(option));
   }, [paymentConfig, t]);
 
   useEffect(() => {
@@ -1325,6 +1363,9 @@ export default function SecureCheckoutPage() {
     setReceiptFile(null);
     setManualPaymentConfirmed(false);
     setConvertedAmount(null);
+    if (bankDetails.length === 0 && !loadingBankDetails) {
+      fetchBankDetails();
+    }
   };
 
   const handlePaymentMethodChange = async (method: string) => {
@@ -1751,12 +1792,16 @@ export default function SecureCheckoutPage() {
                               : "border-gray-300 hover:shadow-lg"
                               }`}
                           >
-                            {bank.paymentMethodLogo && (
+                            {bank.paymentMethodLogo ? (
                               <img
                                 src={bank.paymentMethodLogo}
                                 alt={bank.bankName || "Bank"}
                                 className="w-16 h-12 object-contain"
                               />
+                            ) : (
+                              <span className="min-w-16 min-h-12 flex items-center justify-center text-xs font-semibold text-gray-700 text-center">
+                                {bank.bankName || t("bank")}
+                              </span>
                             )}
                             {selectedBank?._id === bank._id && (
                               <div className="absolute -top-2 -right-2 bg-[#f3c200] rounded-full p-1">
