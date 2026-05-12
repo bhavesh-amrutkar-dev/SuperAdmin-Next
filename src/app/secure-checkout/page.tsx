@@ -118,6 +118,46 @@ type UserAddress = {
   tag?: string;
 };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function looksLikeBankList(value: unknown): value is BankDetail[] {
+  return Array.isArray(value) && value.some((item) =>
+    isRecord(item) &&
+    ("bankName" in item ||
+      "paymentMethodLogo" in item ||
+      "bankPaymentNumber" in item ||
+      "bankPaymentURL" in item)
+  );
+}
+
+function extractBankDetails(response: unknown, depth = 0): BankDetail[] {
+  if (depth > 5) return [];
+  if (looksLikeBankList(response)) return response;
+
+  if (Array.isArray(response)) {
+    for (const item of response) {
+      const banks = extractBankDetails(item, depth + 1);
+      if (banks.length > 0) return banks;
+    }
+    return [];
+  }
+
+  if (!isRecord(response)) return [];
+
+  if (looksLikeBankList(response.bankDetails)) {
+    return response.bankDetails;
+  }
+
+  for (const key of ["data", "country", "countryData", "result", "response"]) {
+    const banks = extractBankDetails(response[key], depth + 1);
+    if (banks.length > 0) return banks;
+  }
+
+  return [];
+}
+
 type PhoneInputCountryData = {
   dialCode?: string;
   countryCode?: string;
@@ -198,10 +238,6 @@ export default function SecureCheckoutPage() {
   const [athMobile, setAthMobile] = useState("");
   const [athMobileError, setAthMobileError] = useState("");
   const pollingCancelledRef = useRef(false);
-  const [athCountryCode, setAthCountryCode] = useState("1");
-  const [athCountrySortCode, setAthCountrySortCode] = useState((getCookie("C_code") as string || "pr").toLowerCase());
-  const isValidAthNumber = athMobile.length === 10;
-  const pollingActiveRef = useRef(false);
   const pendingAthOrderContextRef = useRef<{
     email: string;
     cartId: string;
@@ -270,10 +306,8 @@ export default function SecureCheckoutPage() {
       setLoadingBankDetails(true);
       const response = await PaymentService.getBankDetails();
 
-      // Response structure: { data: { bankDetails: [] } } after axios interceptor
-      // Old project structure: { data: { data: { bankDetails: [] } } }
-      const bankDetailsData = (response as any)?.data?.bankDetails || (response as any)?.data?.data?.bankDetails || [];
-      setBankDetails(Array.isArray(bankDetailsData) ? bankDetailsData : []);
+      const bankDetailsData = extractBankDetails(response);
+      setBankDetails(bankDetailsData);
     } catch (error) {
       console.warn("Failed to fetch bank details:", error);
       setBankDetails([]);
@@ -406,6 +440,63 @@ export default function SecureCheckoutPage() {
       window.removeEventListener("message", handlePaymentMessage);
     };
   }, []);
+
+  useEffect(() => {
+    fetchPaymentConfig();
+  }, []);
+
+  const fetchPaymentConfig = async () => {
+    try {
+      const res = await fetch("/api/customer/config"); // adjust base URL if needed
+      const data = await res.json();
+
+      setPaymentConfig(data?.data?.paymentGatewayStatus);
+    } catch (err) {
+      console.error("Payment config fetch failed", err);
+    }
+  };
+  const isEnabled = (value?: boolean | string) => Boolean(value);
+  const paymentOptions = useMemo(() => {
+    console.log("paymentConfig", paymentConfig);
+
+
+    if (!paymentConfig) return [];
+
+    return [
+      isEnabled(paymentConfig.ATHMovil) && {
+        key: "athMovil",
+        label: t("payWithATHMovil"),
+      },
+      isEnabled(paymentConfig.ManualPaymentMethod) && {
+        key: "manual",
+        label: t("manualPaymentMethods"),
+      },
+      isEnabled(paymentConfig.CreditOrDebitCard) && {
+        key: "card",
+        label: t("paySqr"),
+      },
+      isEnabled(paymentConfig.Square) && {
+        key: "square",
+        label: t("paySqr"),
+      },
+    ].filter((option): option is { key: string; label: string } => Boolean(option));
+  }, [paymentConfig, t]);
+
+  useEffect(() => {
+    console.log("paymentOptions", paymentOptions);
+
+    if (paymentOptions.length > 0 && !paymentMethod) {
+      setPaymentMethod(paymentOptions[0].key);
+    }
+  }, [paymentOptions, paymentConfig]);
+  const paymentMethodMap: Record<string, number> = {
+    athMovil: 10,
+    manual: 12,
+    square: 21,
+    card: 21, // adjust if backend differs
+  };
+
+  const onlinePaymentMethod = paymentMethodMap[paymentMethod];
   const handleSquareSuccess = () => {
     trackEvent("PAYMENT_SUCCESS");
     toast.success(
@@ -1358,6 +1449,9 @@ export default function SecureCheckoutPage() {
     setReceiptFile(null);
     setManualPaymentConfirmed(false);
     setConvertedAmount(null);
+    if (bankDetails.length === 0 && !loadingBankDetails) {
+      fetchBankDetails();
+    }
   };
 
   const handlePaymentMethodChange = async (method: string) => {
@@ -1734,49 +1828,25 @@ export default function SecureCheckoutPage() {
                 <div className="pt-3 sm:pt-4">
                   {/* Payment Options */}
                   <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
-                    {[
-                      {
-                        value: "athMovil",
-                        label: t("payWithATHMovil"),
-                      },
-                      ...(ENABLE_PLACE_TO_PAY
-                        ? [
-                          {
-                            value: "creditCard",
-                            label: t("payWithCreditCard"),
-                            icons: true,
-                          },
-                        ]
-                        : []),
-                      {
-                        value: "manual",
-                        label: t("manualPaymentMethods"),
-                      },
-                      ...(ENABLE_SQUARE_PAY
-                        ? [
-                          {
-                            value: "square",
-                            label: t("paySqr"),
-                            icons: true,
-                          },
-                        ]
-                        : []),
-                    ].map((method) => {
-                      const isSelected = paymentMethod === method.value;
+                    {paymentOptions.map((method: any) => {
+                      const isSelected = paymentMethod === method.key;
                       const isDisabled = grandTotal <= 0;
+
+                      const showIcons =
+                        method.key === "square" || method.key === "card";
 
                       return (
                         <label
-                          key={method.value}
-                          className={`relative flex-1 min-w-45 cursor-pointer`}
+                          key={method.key}
+                          className="relative flex-1 min-w-45 cursor-pointer"
                         >
                           <input
                             type="radio"
                             name="paymentMethod"
-                            value={method.value}
+                            value={method.key}
                             checked={isSelected}
                             onChange={(e) =>
-                              method.value === "manual"
+                              method.key === "manual"
                                 ? handleManualPaymentSelect()
                                 : handlePaymentMethodChange(e.target.value)
                             }
@@ -1785,21 +1855,23 @@ export default function SecureCheckoutPage() {
                           />
 
                           <div
-                            className={`px-3 py-3 h-full inline-flex items-center w-full border-2 border-dashed rounded-lg transition-all
+                            className={`px-3 py-3 h-full inline-flex items-center w-full border-2 border-dashed rounded-lg transition-all 
             ${isSelected
                                 ? "border-[#f3c200] border-dashed bg-yellow-50"
                                 : "border-gray-300 hover:shadow-md"
                               }
-            ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}
-          `}
+          ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+        `}
                           >
                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-wrap">
 
+                              {/* LABEL */}
                               <span className="text-[13px] text-gray-800 font-semibold">
                                 {method.label}
                               </span>
 
-                              {method.icons && (
+                              {/* CARD ICONS */}
+                              {showIcons && (
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <Image src="/images/Profile_new/visa.svg" alt="VISA" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
                                   <Image src="/images/Profile_new/mastercard.svg" alt="Mastercard" width={40} height={25} className="h-4 sm:h-5 w-auto object-contain" />
@@ -1813,7 +1885,6 @@ export default function SecureCheckoutPage() {
                       );
                     })}
                   </div>
-
                 </div>
               </div>
               {/* Manual Payment Bank Details Section */}
@@ -1842,12 +1913,16 @@ export default function SecureCheckoutPage() {
                               : "border-gray-300 hover:shadow-lg"
                               }`}
                           >
-                            {bank.paymentMethodLogo && (
+                            {bank.paymentMethodLogo ? (
                               <img
                                 src={bank.paymentMethodLogo}
                                 alt={bank.bankName || "Bank"}
                                 className="w-16 h-12 object-contain"
                               />
+                            ) : (
+                              <span className="min-w-16 min-h-12 flex items-center justify-center text-xs font-semibold text-gray-700 text-center">
+                                {bank.bankName || t("bank")}
+                              </span>
                             )}
                             {selectedBank?._id === bank._id && (
                               <div className="absolute -top-2 -right-2 bg-[#f3c200] rounded-full p-1">
