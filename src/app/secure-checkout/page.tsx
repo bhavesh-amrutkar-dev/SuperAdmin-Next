@@ -238,6 +238,11 @@ export default function SecureCheckoutPage() {
   const [athMobile, setAthMobile] = useState("");
   const [athMobileError, setAthMobileError] = useState("");
   const pollingCancelledRef = useRef(false);
+  const [paymentConfig, setPaymentConfig] = useState<any>(null);
+  const [athCountryCode, setAthCountryCode] = useState("1");
+  const [athCountrySortCode, setAthCountrySortCode] = useState((getCookie("C_code") as string || "pr").toLowerCase());
+  const isValidAthNumber = athMobile.length === 10;
+  const pollingActiveRef = useRef(false);
   const pendingAthOrderContextRef = useRef<{
     email: string;
     cartId: string;
@@ -1855,9 +1860,9 @@ export default function SecureCheckoutPage() {
                           />
 
                           <div
-                            className={`px-3 py-3 h-full inline-flex items-center w-full border-2 border-dashed rounded-lg transition-all 
-            ${isSelected
-                                ? "border-[#f3c200] border-dashed bg-yellow-50"
+                            className={`px-3 py-3 h-full inline-flex items-center w-full border-2 border-dashed rounded-lg transition-all
+          ${isSelected
+                                ? "border-[#f3c200] bg-yellow-50"
                                 : "border-gray-300 hover:shadow-md"
                               }
           ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}
