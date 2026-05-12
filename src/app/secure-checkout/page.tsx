@@ -145,6 +145,14 @@ function formatAddress(address: UserAddress): string {
   return parts.join(", ");
 }
 
+const ATH_PENDING_PAYMENT_KEY = "athMovilPendingPayment:secureCheckout";
+
+type AthMovilPendingPayment = {
+  orderId: string;
+  deepLink?: string;
+  expiresAt: number;
+};
+
 export default function SecureCheckoutPage() {
   const t = useTranslations();
   const router = useRouter();
@@ -184,6 +192,7 @@ export default function SecureCheckoutPage() {
   const [athMobile, setAthMobile] = useState("");
   const [athMobileError, setAthMobileError] = useState("");
   const pollingCancelledRef = useRef(false);
+  const pollingActiveRef = useRef(false);
   const pendingAthOrderContextRef = useRef<{
     email: string;
     cartId: string;
@@ -601,12 +610,27 @@ export default function SecureCheckoutPage() {
       setPlacingOrder(false);
     }
   };
-  const pollOrderStatus = async (orderId: string, timeoutSeconds: number) => {
-    const startTime = Date.now();
-    const maxTime = timeoutSeconds * 1000;
-    pollingCancelledRef.current = false;
+  const pollOrderStatus = async (
+    orderId: string,
+    timeoutSeconds: number,
+    deepLink?: string,
+    existingExpiresAt?: number
+  ) => {
+    if (pollingActiveRef.current) return;
 
-    while (!pollingCancelledRef.current && Date.now() - startTime < maxTime) {
+    const expiresAt = existingExpiresAt || Date.now() + timeoutSeconds * 1000;
+    const pendingPayment: AthMovilPendingPayment = {
+      orderId,
+      deepLink,
+      expiresAt,
+    };
+
+    pollingActiveRef.current = true;
+    pollingCancelledRef.current = false;
+    localStorage.setItem(ATH_PENDING_PAYMENT_KEY, JSON.stringify(pendingPayment));
+
+    try {
+      while (!pollingCancelledRef.current && Date.now() < expiresAt) {
       try {
         const res = await fetch("/api/orders/status-v2", {
           method: "POST",
@@ -623,6 +647,7 @@ export default function SecureCheckoutPage() {
         ).toLowerCase();
 
         if (status === "success") {
+          localStorage.removeItem(ATH_PENDING_PAYMENT_KEY);
           trackEvent("ATH_MOVIL_SUCCESS", { order_id: orderId });
           setIsUpdatingStatus(false);
           setPlacingOrder(false);
@@ -631,6 +656,7 @@ export default function SecureCheckoutPage() {
         }
 
         if (status === "cancelled" || status === "canceled" || status === "failed") {
+          localStorage.removeItem(ATH_PENDING_PAYMENT_KEY);
           trackEvent("ATH_MOVIL_CANCEL", { order_id: orderId });
           setIsUpdatingStatus(false);
           setPlacingOrder(false);
@@ -652,6 +678,7 @@ export default function SecureCheckoutPage() {
     }
 
     if (!pollingCancelledRef.current) {
+      localStorage.removeItem(ATH_PENDING_PAYMENT_KEY);
       trackEvent("ATH_MOVIL_TIMEOUT", { order_id: orderId });
 
       setIsUpdatingStatus(false);
@@ -674,7 +701,62 @@ export default function SecureCheckoutPage() {
 
       // setConfirmOpen(true);
     }
+    } finally {
+      pollingActiveRef.current = false;
+    }
   };
+
+  useEffect(() => {
+    const resumeAthMovilPolling = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      if (pollingActiveRef.current) return;
+
+      const raw = localStorage.getItem(ATH_PENDING_PAYMENT_KEY);
+      if (!raw) return;
+
+      try {
+        const pending = JSON.parse(raw) as AthMovilPendingPayment;
+        if (!pending?.orderId || !pending?.expiresAt) {
+          localStorage.removeItem(ATH_PENDING_PAYMENT_KEY);
+          return;
+        }
+
+        const remainingSeconds = Math.ceil((pending.expiresAt - Date.now()) / 1000);
+        if (remainingSeconds <= 0) {
+          localStorage.removeItem(ATH_PENDING_PAYMENT_KEY);
+          return;
+        }
+
+        setAthOrderId(pending.orderId);
+        setAthDeepLink(pending.deepLink || null);
+        setTimer(remainingSeconds);
+        setIsUpdatingStatus(true);
+        setPlacingOrder(true);
+        void pollOrderStatus(
+          pending.orderId,
+          remainingSeconds,
+          pending.deepLink,
+          pending.expiresAt
+        );
+      } catch (err) {
+        console.warn("Failed to resume ATH polling:", err);
+        localStorage.removeItem(ATH_PENDING_PAYMENT_KEY);
+      }
+    };
+
+    resumeAthMovilPolling();
+    window.addEventListener("pageshow", resumeAthMovilPolling);
+    window.addEventListener("focus", resumeAthMovilPolling);
+    document.addEventListener("visibilitychange", resumeAthMovilPolling);
+
+    return () => {
+      window.removeEventListener("pageshow", resumeAthMovilPolling);
+      window.removeEventListener("focus", resumeAthMovilPolling);
+      document.removeEventListener("visibilitychange", resumeAthMovilPolling);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleAthCancel = () => {
     setAthNumberModalOpen(false);
 
@@ -806,14 +888,13 @@ export default function SecureCheckoutPage() {
       const orderId = createdOrder.orderId;
 
       setAthOrderId(orderId);
-      setAthDeepLink(
-        `https://pagos.athmovilapp.com/pagoPorCodigo.html?id=${createdOrder?.ecommerceId}`
-      );
+      const deepLink = `https://pagos.athmovilapp.com/pagoPorCodigo.html?id=${createdOrder?.ecommerceId}`;
+      setAthDeepLink(deepLink);
       const timeoutSeconds = Number(createdOrder?.timeOut) || 600;
 
       setTimer(timeoutSeconds);
       setIsUpdatingStatus(true);
-      await pollOrderStatus(orderId, timeoutSeconds);
+      await pollOrderStatus(orderId, timeoutSeconds, deepLink);
 
     } catch (error: any) {
       const errorMessage = getErrorMessage(error, "Failed to place order. Please try again.");
@@ -929,15 +1010,14 @@ export default function SecureCheckoutPage() {
 
       const orderId = createdOrder.orderId;
       setAthOrderId(orderId);
-      setAthDeepLink(
-        `https://pagos.athmovilapp.com/pagoPorCodigo.html?id=${createdOrder?.ecommerceId}`
-      );
+      const deepLink = `https://pagos.athmovilapp.com/pagoPorCodigo.html?id=${createdOrder?.ecommerceId}`;
+      setAthDeepLink(deepLink);
 
       const timeoutSeconds = Number(createdOrder?.timeOut) || 600;
       setTimer(timeoutSeconds);
       setIsUpdatingStatus(true);
 
-      await pollOrderStatus(orderId, timeoutSeconds);
+      await pollOrderStatus(orderId, timeoutSeconds, deepLink);
 
     } catch (err: any) {
       // ✅ TOAST ONLY
@@ -1331,6 +1411,7 @@ export default function SecureCheckoutPage() {
 
 const handleUserCancelClick = () => {
   pollingCancelledRef.current = true;
+  localStorage.removeItem(ATH_PENDING_PAYMENT_KEY);
 
   setIsUpdatingStatus(false);
   setPlacingOrder(false);

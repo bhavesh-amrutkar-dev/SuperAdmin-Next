@@ -159,6 +159,14 @@ function getCartItemKey(item: CartItem, idx: number): string {
   );
 }
 
+const ATH_PENDING_PAYMENT_KEY = "athMovilPendingPayment:guestCheckout";
+
+type AthMovilPendingPayment = {
+  orderId: string;
+  deepLink?: string;
+  expiresAt: number;
+};
+
 // ─────────────────────────────────────────────
 // Sub-components (must live outside the page to keep stable references)
 // ─────────────────────────────────────────────
@@ -212,6 +220,7 @@ export default function GuestCheckoutPage() {
   const [athMobileError, setAthMobileError] = useState("");
   const [pendingAthFormData, setPendingAthFormData] = useState<any>(null);
   const pollingCancelledRef = useRef(false);
+  const pollingActiveRef = useRef(false);
   const form = useForm<ExpressRegisterFormRM>({
     mode: "onSubmit",              // ✅ change this
     reValidateMode: "onChange",    // ✅ change this
@@ -800,56 +809,128 @@ export default function GuestCheckoutPage() {
     }
   };
 
-  const pollOrderStatus = async (orderId: string, timeoutSeconds: number) => {
-    const startTime = Date.now();
-    const maxTime = timeoutSeconds * 1000;
+  const pollOrderStatus = async (
+    orderId: string,
+    timeoutSeconds: number,
+    deepLink?: string,
+    existingExpiresAt?: number
+  ) => {
+    if (pollingActiveRef.current) return;
+
+    const expiresAt = existingExpiresAt || Date.now() + timeoutSeconds * 1000;
+    const pendingPayment: AthMovilPendingPayment = {
+      orderId,
+      deepLink,
+      expiresAt,
+    };
+
+    pollingActiveRef.current = true;
     pollingCancelledRef.current = false;
+    localStorage.setItem(ATH_PENDING_PAYMENT_KEY, JSON.stringify(pendingPayment));
 
-    while (!pollingCancelledRef.current && Date.now() - startTime < maxTime) {
-      try {
-        const res = await fetch("/api/orders/status-v2", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId, paymentMethod: 10 }),
-        });
-        const data = await res.json();
-        const status = String(
-          data?.statusText ||
-          data?.data?.statusText ||
-          data?.status ||
-          data?.data?.status ||
-          ""
-        ).toLowerCase();
+    try {
+      while (!pollingCancelledRef.current && Date.now() < expiresAt) {
+        try {
+          const res = await fetch("/api/orders/status-v2", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderId, paymentMethod: 10 }),
+          });
+          const data = await res.json();
+          const status = String(
+            data?.statusText ||
+            data?.data?.statusText ||
+            data?.status ||
+            data?.data?.status ||
+            ""
+          ).toLowerCase();
 
-        if (status === "success") {
-          trackEvent("ATH_MOVIL_SUCCESS", { order_id: orderId });
-          setIsUpdatingStatus(false);
-          setPlacingOrder(false);
-          router.push("/thank-you?payment=athmovil");
-          return;
+          if (status === "success") {
+            localStorage.removeItem(ATH_PENDING_PAYMENT_KEY);
+            trackEvent("ATH_MOVIL_SUCCESS", { order_id: orderId });
+            setIsUpdatingStatus(false);
+            setPlacingOrder(false);
+            router.push("/thank-you?payment=athmovil");
+            return;
+          }
+
+          if (status === "cancelled" || status === "canceled" || status === "failed") {
+            localStorage.removeItem(ATH_PENDING_PAYMENT_KEY);
+            trackEvent("ATH_MOVIL_CANCEL", { order_id: orderId });
+            setIsUpdatingStatus(false);
+            setPlacingOrder(false);
+            toast.error(t("paymentCancelled"));
+            await fetchCart();
+            return;
+          }
+        } catch (err) {
+          console.warn("Polling error:", err);
         }
 
-        if (status === "cancelled" || status === "canceled" || status === "failed") {
-          trackEvent("ATH_MOVIL_CANCEL", { order_id: orderId });
-          setIsUpdatingStatus(false);
-          setPlacingOrder(false);
-          toast.error(t("paymentCancelled"));
-          await fetchCart();
-          return;
-        }
-      } catch (err) {
-        console.warn("Polling error:", err);
+        await new Promise((resolve) => setTimeout(resolve, 5000));
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-    }
-
-    if (!pollingCancelledRef.current) {
-      setIsUpdatingStatus(false);
-      setPlacingOrder(false);
-      router.push("/");
+      if (!pollingCancelledRef.current) {
+        localStorage.removeItem(ATH_PENDING_PAYMENT_KEY);
+        setIsUpdatingStatus(false);
+        setPlacingOrder(false);
+        router.push("/");
+      }
+    } finally {
+      pollingActiveRef.current = false;
     }
   };
+
+  useEffect(() => {
+    const resumeAthMovilPolling = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      if (pollingActiveRef.current) return;
+
+      const raw = localStorage.getItem(ATH_PENDING_PAYMENT_KEY);
+      if (!raw) return;
+
+      try {
+        const pending = JSON.parse(raw) as AthMovilPendingPayment;
+        if (!pending?.orderId || !pending?.expiresAt) {
+          localStorage.removeItem(ATH_PENDING_PAYMENT_KEY);
+          return;
+        }
+
+        const remainingSeconds = Math.ceil((pending.expiresAt - Date.now()) / 1000);
+        if (remainingSeconds <= 0) {
+          localStorage.removeItem(ATH_PENDING_PAYMENT_KEY);
+          return;
+        }
+
+        setAthOrderId(pending.orderId);
+        setAthDeepLink(pending.deepLink || null);
+        setTimer(remainingSeconds);
+        setIsUpdatingStatus(true);
+        setPlacingOrder(true);
+        void pollOrderStatus(
+          pending.orderId,
+          remainingSeconds,
+          pending.deepLink,
+          pending.expiresAt
+        );
+      } catch (err) {
+        console.warn("Failed to resume ATH polling:", err);
+        localStorage.removeItem(ATH_PENDING_PAYMENT_KEY);
+      }
+    };
+
+    resumeAthMovilPolling();
+    window.addEventListener("pageshow", resumeAthMovilPolling);
+    window.addEventListener("focus", resumeAthMovilPolling);
+    document.addEventListener("visibilitychange", resumeAthMovilPolling);
+
+    return () => {
+      window.removeEventListener("pageshow", resumeAthMovilPolling);
+      window.removeEventListener("focus", resumeAthMovilPolling);
+      document.removeEventListener("visibilitychange", resumeAthMovilPolling);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const placeExpressOrder = async (formData: any, athMovilNumber?: string) => {
     const ipAddress = await getMyIP();
@@ -956,14 +1037,13 @@ export default function GuestCheckoutPage() {
         });
 
         setAthOrderId(orderData.orderId);
-        setAthDeepLink(
-          `https://pagos.athmovilapp.com/pagoPorCodigo.html?id=${orderData.ecommerceId}`
-        );
+        const deepLink = `https://pagos.athmovilapp.com/pagoPorCodigo.html?id=${orderData.ecommerceId}`;
+        setAthDeepLink(deepLink);
         const timeoutSeconds = Number(orderData?.timeOut) || 600;
 
         setTimer(timeoutSeconds);
         setIsUpdatingStatus(true);
-        await pollOrderStatus(orderData.orderId, timeoutSeconds);
+        await pollOrderStatus(orderData.orderId, timeoutSeconds, deepLink);
         return;
       }
 
@@ -989,6 +1069,7 @@ export default function GuestCheckoutPage() {
   };
   const handleUserCancelClick = () => {
     pollingCancelledRef.current = true;
+    localStorage.removeItem(ATH_PENDING_PAYMENT_KEY);
 
     setIsUpdatingStatus(false);
     setPlacingOrder(false);
@@ -1038,9 +1119,8 @@ export default function GuestCheckoutPage() {
 
       localStorage.setItem("orderId", orderData.orderId);
       setAthOrderId(orderData.orderId);
-      setAthDeepLink(
-        `https://pagos.athmovilapp.com/pagoPorCodigo.html?id=${orderData.ecommerceId}`
-      );
+      const deepLink = `https://pagos.athmovilapp.com/pagoPorCodigo.html?id=${orderData.ecommerceId}`;
+      setAthDeepLink(deepLink);
 
       const timeoutSeconds = Number(orderData?.timeOut) || 600;
 
@@ -1048,7 +1128,7 @@ export default function GuestCheckoutPage() {
       setTimer(timeoutSeconds);
       setIsUpdatingStatus(true);
 
-      await pollOrderStatus(orderData.orderId, timeoutSeconds);
+      await pollOrderStatus(orderData.orderId, timeoutSeconds, deepLink);
 
     } catch (err: any) {
       toast.error(getErrorMessage(err, t("athMovilValidationFailed")));
