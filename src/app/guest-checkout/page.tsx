@@ -865,6 +865,7 @@ export default function GuestCheckoutPage() {
     // }
     const orderPayload = {
       ...formData,
+      
       athMovilNumber: formatAthMovilNumber(
         athMovilNumber || "",
         formData?.mobileNumberCode

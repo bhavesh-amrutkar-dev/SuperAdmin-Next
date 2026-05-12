@@ -102,7 +102,7 @@ export function formatAthMovilNumber(
     const digits = normalizeAthMovilNumber(number);
     const code = countryCode || "1";
 
-    return `+${code}${digits}`;
+    return `${code}${digits}`;
 }
 
 
