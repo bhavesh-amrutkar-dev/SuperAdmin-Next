@@ -218,6 +218,8 @@ export default function GuestCheckoutPage() {
   const [athNumberModalOpen, setAthNumberModalOpen] = useState(false);
   const [athMobile, setAthMobile] = useState("");
   const [athMobileError, setAthMobileError] = useState("");
+  const [athCountryCode, setAthCountryCode] = useState("1");
+  const [athCountrySortCode, setAthCountrySortCode] = useState((getCookie("C_code") as string || "pr").toLowerCase());
   const [pendingAthFormData, setPendingAthFormData] = useState<any>(null);
   const pollingCancelledRef = useRef(false);
   const pollingActiveRef = useRef(false);
@@ -944,6 +946,7 @@ export default function GuestCheckoutPage() {
     // }
     const orderPayload = {
       ...formData,
+      
       athMovilNumber: formatAthMovilNumber(
         athMovilNumber || "",
         formData?.mobileNumberCode
@@ -1179,21 +1182,56 @@ border text-sm transition-all cursor-pointer gap-1
             <div className="bg-white w-full max-w-md rounded-2xl p-6 space-y-4 shadow-xl">
               <h2 className="text-lg font-semibold text-gray-800">{t("athMovilNumberTitle")}</h2>
               <p className="text-sm text-gray-500">{t("athMovilNumberDescription")}</p>
-              <Input
-                value={athMobile}
-                onChange={(e) => {
-                  // ✅ allow only digits
-                  const value = e.target.value.replace(/\D/g, "");
-
-                  // ✅ limit to 10 digits
-                  if (value.length <= 10) {
-                    setAthMobile(value);
-                  }
-                }}
-                placeholder={t("athMovilPlaceholder")}
-                inputMode="tel"
-                maxLength={10}
-              />
+              <div
+                className="flex items-center rounded-lg border border-[#2f2f2f] hover:border-[#f3c200] focus-within:border-[#f3c200] transition-colors duration-200"
+                style={{ height: "44px", overflow: "visible", width: "100%" }}
+              >
+                <div className="shrink-0 flex items-center pl-2">
+                  <PhoneInput
+                    key={athCountrySortCode}
+                    country={athCountrySortCode}
+                    containerStyle={{ height: "44px", width: "40px", flexShrink: 0 }}
+                    containerClass="!h-full"
+                    countryCodeEditable={false}
+                    disableCountryCode={false}
+                    inputStyle={{ display: "none" }}
+                    buttonStyle={{
+                      height: "44px",
+                      width: "40px",
+                      border: "none",
+                      backgroundColor: "transparent",
+                      position: "static",
+                    }}
+                    buttonClass="!border-0 !bg-transparent !shadow-none !static"
+                    dropdownStyle={{ zIndex: 9999 }}
+                    onMount={(_value: any, data: any) => {
+                      setAthCountryCode(data.dialCode || "1");
+                      setAthCountrySortCode(data.countryCode || "pr");
+                    }}
+                    onChange={(_value: any, data: any) => {
+                      setAthCountryCode(data.dialCode || "1");
+                      setAthCountrySortCode(data.countryCode || "pr");
+                    }}
+                  />
+                </div>
+                <span className="text-sm text-gray-700 shrink-0 mx-1">
+                  +{athCountryCode}
+                </span>
+                <input
+                  style={{ height: "44px" }}
+                  placeholder={t("athMovilPlaceholder")}
+                  className="flex-1 min-w-0 border-0 shadow-none outline-none ring-0 text-sm px-3 bg-transparent focus:outline-none focus:ring-0"
+                  maxLength={10}
+                  inputMode="tel"
+                  value={athMobile}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, "");
+                    if (value.length <= 10) {
+                      setAthMobile(value);
+                    }
+                  }}
+                />
+              </div>
               {/* {athMobileError && (<p className="text-xs text-red-500">{athMobileError}</p>)} */}
               <div className="flex gap-3">
                 <Button variant="outline" className="w-full"
