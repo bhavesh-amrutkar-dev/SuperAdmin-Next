@@ -38,7 +38,9 @@ import {
   normalizeAthMovilNumber,
 } from "@/src/lib/utils/athMovil";
 import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
 import { ConfirmationModal } from "@/src/components/ui/confirmationModal";
+import { CountryCurrency } from "@/src/models/api/response/auth";
 
 // ─────────────────────────────────────────────
 // Types
@@ -214,6 +216,9 @@ export default function GuestCheckoutPage() {
   const [athCountrySortCode, setAthCountrySortCode] = useState((getCookie("C_code") as string || "pr").toLowerCase());
   const [pendingAthFormData, setPendingAthFormData] = useState<any>(null);
   const pollingCancelledRef = useRef(false);
+  const [countries, setCountries] = useState<CountryCurrency[]>([]);
+
+  const [countriesLoading, setCountriesLoading] = useState(false);
   const form = useForm<ExpressRegisterFormRM>({
     mode: "onSubmit",              // ✅ change this
     reValidateMode: "onChange",    // ✅ change this
@@ -250,6 +255,24 @@ export default function GuestCheckoutPage() {
     }
 
     setIsAuthChecked(true);
+  }, []);
+  useEffect(() => {
+    const fetchCountries = async () => {
+
+      setCountriesLoading(true);
+      try {
+        const res = await AuthService.getCurrency();
+        const list = res?.data ?? [];
+        setCountries(list);
+
+      } catch {
+        console.log("Failed to load countries");
+      } finally {
+        setCountriesLoading(false);
+      }
+    };
+
+    fetchCountries();
   }, []);
   useEffect(() => {
     trackEvent("VIEW_GUEST_CHECKOUT", {
@@ -865,7 +888,7 @@ export default function GuestCheckoutPage() {
     // }
     const orderPayload = {
       ...formData,
-      
+
       athMovilNumber: formatAthMovilNumber(
         athMovilNumber || "",
         formData?.mobileNumberCode
@@ -1100,6 +1123,7 @@ border text-sm transition-all cursor-pointer gap-1
                   <PhoneInput
                     key={athCountrySortCode}
                     country={athCountrySortCode}
+                    onlyCountries={countries.map((c) => c.countryCode.toLowerCase())}
                     containerStyle={{ height: "44px", width: "40px", flexShrink: 0 }}
                     containerClass="!h-full"
                     countryCodeEditable={false}

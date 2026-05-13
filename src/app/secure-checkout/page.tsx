@@ -41,6 +41,8 @@ import PaymentProcessingATHMovil from "@/src/components/payments/PaymentProcessi
 
 import { trackEvent } from "@/src/lib/analytics";
 import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
+import { CountryCurrency } from "@/src/models/api/response/auth";
 
 type TaxItem = {
   taxName?: string;
@@ -193,6 +195,9 @@ export default function SecureCheckoutPage() {
   const [athCountryCode, setAthCountryCode] = useState("1");
   const [athCountrySortCode, setAthCountrySortCode] = useState((getCookie("C_code") as string || "pr").toLowerCase());
   const isValidAthNumber = athMobile.length === 10;
+  const [countries, setCountries] = useState<CountryCurrency[]>([]);
+  const [countriesLoading, setCountriesLoading] = useState(false);
+
   const pendingAthOrderContextRef = useRef<{
     email: string;
     cartId: string;
@@ -226,6 +231,24 @@ export default function SecureCheckoutPage() {
     title: "",
     message: "",
   });
+  useEffect(() => {
+    const fetchCountries = async () => {
+
+      setCountriesLoading(true);
+      try {
+        const res = await AuthService.getCurrency();
+        const list = res?.data ?? [];
+        setCountries(list);
+
+      } catch {
+        console.log("Failed to load countries");
+      } finally {
+        setCountriesLoading(false);
+      }
+    };
+
+    fetchCountries();
+  }, []);
   useEffect(() => {
     fetchAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1437,6 +1460,7 @@ export default function SecureCheckoutPage() {
                     <PhoneInput
                       key={athCountrySortCode}
                       country={athCountrySortCode}
+                      onlyCountries={countries.map((c) => c.countryCode.toLowerCase())}
                       containerStyle={{ height: "44px", width: "40px", flexShrink: 0 }}
                       containerClass="!h-full"
                       countryCodeEditable={false}
