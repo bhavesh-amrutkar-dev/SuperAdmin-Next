@@ -1882,7 +1882,7 @@ export default function SecureCheckoutPage() {
 
                     {paymentConfig && paymentOptions.length === 0 && (
                       <p className="text-sm text-gray-600">
-                        No payment methods are available.
+                        {t("noPaymentMethodAvailable")}
                       </p>
                     )}
 
