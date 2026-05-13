@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
@@ -15,6 +15,7 @@ import { Button } from "@/src/components/ui/button";
 import ErrorMessage from "@/src/components/ui/errorMessage";
 import { AuthService } from "@/src/lib/services/auth";
 import { toast } from "sonner";
+import { getCookie } from "cookies-next";
 import { CountryCurrency } from "@/src/models/api/response/auth";
 import { getErrorMessage } from "@/src/lib/utils/errorMessage";
 
@@ -28,6 +29,7 @@ type Props = {
 
 export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) {
   const t = useTranslations();
+  const defaultCountry = (getCookie("C_code") as string || "pr").toLowerCase();
 
   const [countryCode, setCountryCode] = useState("");
   const [mobile, setMobile] = useState("");
@@ -147,7 +149,11 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
       setCountriesLoading(true);
       try {
         const res = await AuthService.getCurrency();
-        setCountries(res?.data ?? []);
+
+        const list = res?.data ?? [];
+        setCountries(list);
+
+
       } catch {
         console.log("Failed to load countries");
       } finally {
@@ -163,7 +169,12 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
     const cleaned = mobile.replace(/\D/g, "");
 
     if (!cleaned) {
-      setError(t("fieldRequired"));
+      setError(t("mobileRequired"));
+      return;
+    }
+
+    if (cleaned.length < 10) {
+      setError(t("invalidMobile"));
       return;
     }
 
@@ -332,27 +343,61 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
                   Loading...
                 </div>
               ) : (
-                <PhoneInput
-                  country="us"
-                  value={`${countryCode.replace("+", "")}${mobile}`}
-                  onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
-                  onChange={(value, data: any) => {
-                    const rawMobile = value.slice(data.dialCode.length);
-
-                    setCountryCode(`+${data.dialCode}`);
-                    setMobile(rawMobile);
-                    setCountrySortCode(data.countryCode);
-
-                    // reset states
-                    setOtpSent(false);
-                    setOtp(Array(OTP_LENGTH).fill(""));
-                    setError(null);
-
-                    // reset validation
-                    setErrors((prev) => ({ ...prev, mobile: undefined }));
-                  }}
-                  inputClass="!w-full !h-[44px]"
-                />)}
+                <div
+                  className="flex items-center rounded-lg border border-[#2f2f2f] hover:border-[#f3c200] focus-within:border-[#f3c200] transition-colors duration-200"
+                  style={{ height: "44px", overflow: "visible", width: "100%" }}
+                >
+                  <div className="shrink-0 flex items-center pl-2">
+                    <PhoneInput
+                      key={defaultCountry}
+                      country={defaultCountry}
+                      onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
+                      containerStyle={{ height: "44px", width: "40px", flexShrink: 0 }}
+                      containerClass="!h-full"
+                      countryCodeEditable={false}
+                      disableCountryCode={false}
+                      inputStyle={{ display: "none" }}
+                      buttonStyle={{
+                        height: "44px",
+                        width: "40px",
+                        border: "none",
+                        backgroundColor: "transparent",
+                        position: "static",
+                      }}
+                      buttonClass="!border-0 !bg-transparent !shadow-none !static"
+                      dropdownStyle={{ zIndex: 9999 }}
+                      onMount={(_value, data: any) => {
+                        setCountryCode(`+${data.dialCode}`);
+                        setCountrySortCode(data.countryCode);
+                      }}
+                      onChange={(_value, data: any) => {
+                        setCountryCode(`+${data.dialCode}`);
+                        setCountrySortCode(data.countryCode);
+                        setOtpSent(false);
+                        setOtp(Array(OTP_LENGTH).fill(""));
+                        setError(null);
+                      }}
+                    />
+                  </div>
+                  <span className="text-sm text-gray-700 shrink-0 mx-1">
+                    {countryCode || "+1"}
+                  </span>
+                  <input
+                    style={{ height: "44px" }}
+                    placeholder="Phone Number"
+                    className="flex-1 min-w-0 border-0 shadow-none outline-none ring-0 text-sm px-3 bg-transparent focus:outline-none focus:ring-0"
+                    maxLength={10}
+                    value={mobile}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "");
+                      setMobile(digits);
+                      setOtpSent(false);
+                      setOtp(Array(OTP_LENGTH).fill(""));
+                      setError(null);
+                    }}
+                  />
+                </div>
+              )}
             </div>
             {phoneValidating && (
               <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
@@ -433,7 +478,7 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
               </div>
             )}
 
-            {/* {!otpSent && <ErrorMessage message={error || undefined} />} */}
+            {!otpSent && <ErrorMessage message={error || undefined} />}
 
           </form>
         </div>

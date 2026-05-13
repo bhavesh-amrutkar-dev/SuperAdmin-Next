@@ -270,6 +270,10 @@
     "sendOtp": "Send OTP",
     "loginWithEmail": "LOG IN WITH EMAIL",
     "noAccount": "Don’t have an account?",
+    "hereToHelp": "We’re Here to Help",
+    "callUs": "Call Us",
+    "chatWithUs": "Chat With Us",
+    "chatOnWhatsApp": "Chat on WhatsApp",
     "forgotPasswordTitle": "Forgot password",
     "forgotPasswordSubtitle": "Choose how you want to receive the verification code",
     "selectMethod": "Select method",
@@ -744,5 +748,6 @@
     "athMovilNoNotification": "Didn't receive a notification?",
     "athMovilOpenManually": "Open the app manually.",
     "athMovilYesCancelPayment": "Yes, cancel my payment",
-    "athMovilKeepWaiting": "Keep waiting"
+    "athMovilKeepWaiting": "Keep waiting",
+    "pincodeMaxLength": "Pincode must be at most 15 characters"
 }

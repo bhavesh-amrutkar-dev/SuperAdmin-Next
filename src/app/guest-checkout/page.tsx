@@ -79,6 +79,7 @@ export interface CartItem {
   ticketCount?: number;
   ticketDetails?: {
     numberOfTicket?: number;
+    price?: number;
     ticketId?: string;
   };
   numberOfFreeTickets?: number;
@@ -88,14 +89,19 @@ export interface CartItem {
     finalUnitPrice?: number | string;
     unitPrice?: number | string;
     subTotal?: number | string;
+    finalTotal?: number | string
   };
   sellerSingleUnitPrice?: {
     unitPrice?: number | string;
     price?: number | string;
     ticketPrice?: number | string;
   };
-}
 
+}
+interface TaxItem {
+  taxName?: string;
+  totalValue?: number | string;
+}
 type CartData = {
   _id?: string;
   currencySymbol?: string;
@@ -106,12 +112,16 @@ type CartData = {
   }>;
   accounting?: {
     bagTotal?: number | string;
+    unitPrice?: number | string;
     subTotal?: number | string;
-    tax?: number | string;
-    deliveryFee?: number | string;
+    taxableAmount?: number | string;
+    tax?: number | string | TaxItem[];
+    taxAmount?: number | string;
     shippingFee?: number | string;
+    deliveryFee?: number | string;
     finalTotal?: number | string;
-    grandTotal?: number | string;
+    offerDiscount?: number | string;
+    serviceFeeTotal?: number | string;
   };
 };
 
@@ -182,7 +192,7 @@ export default function GuestCheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [cartData, setCartData] = useState<CartData | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"square" | "athMovil" | "manual">("square");
+  const [paymentMethod, setPaymentMethod] = useState<"square" | "athMovil" | "manual">("athMovil");
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [showManualModal, setShowManualModal] = useState(false);
   const [bankDetails, setBankDetails] = useState<BankDetail[]>([]);
@@ -393,7 +403,7 @@ export default function GuestCheckoutPage() {
       };
 
       await CartService.addToCart(payload);
-
+      await fetchCart();
       setQuantities((prev) => ({
         ...prev,
         [key]: newQty,
@@ -422,25 +432,23 @@ export default function GuestCheckoutPage() {
 
     setConfirmOpen(true);
   };
-  const subtotal = useMemo(
-    () =>
-      cartItems.reduce((sum, item, idx) => {
-        const key = getCartItemKey(item, idx);
-        const qty = quantities[key] ?? getQty(item);
-        const unitPrice =
-          Number(item.accounting?.finalUnitPrice) ||
-          Number(item.accounting?.unitPrice) ||
-          Number(item.price) ||
-          0;
-        return sum + unitPrice * qty;
-      }, 0),
-    [cartItems, quantities]
-  );
+  const subtotal =
+    Number(accounting.taxableAmount) ||
+    Number(accounting.subTotal) ||
+    Number(accounting.bagTotal) ||
+    0;
 
-  const tax = Number(accounting.tax) || 0;
+  const tax = useMemo(() => {
+    const t = accounting.tax;
+
+    if (Array.isArray(t)) {
+      return t.reduce((sum, item) => sum + Number(item.totalValue || 0), 0);
+    }
+
+    return Number(t || accounting.taxAmount || 0);
+  }, [accounting]);
   const shipping = Number(accounting.deliveryFee ?? accounting.shippingFee ?? 0);
-  const grandTotal = subtotal + tax + shipping;
-
+  const grandTotal = Number(accounting.finalTotal) || (subtotal + tax + shipping)
   const handleRemoveItem = async (item: CartItem, key: string) => {
     try {
       setIsRefreshingCart(true);
@@ -948,7 +956,9 @@ export default function GuestCheckoutPage() {
         });
 
         setAthOrderId(orderData.orderId);
-        setAthDeepLink("https://pagos.athmovilapp.com/pagoPorCodigo.html?id=243feb66-a82e-4fef-b2b1-fe67da6db5ac");
+        setAthDeepLink(
+          `https://pagos.athmovilapp.com/pagoPorCodigo.html?id=${orderData.ecommerceId}`
+        );
         const timeoutSeconds = Number(orderData?.timeOut) || 300;
 
         setTimer(timeoutSeconds);
@@ -1018,7 +1028,9 @@ export default function GuestCheckoutPage() {
 
       localStorage.setItem("orderId", orderData.orderId);
       setAthOrderId(orderData.orderId);
-      setAthDeepLink("https://pagos.athmovilapp.com/pagoPorCodigo.html?id=243feb66-a82e-4fef-b2b1-fe67da6db5ac");
+      setAthDeepLink(
+        `https://pagos.athmovilapp.com/pagoPorCodigo.html?id=${orderData.ecommerceId}`
+      );
 
       const timeoutSeconds = Number(orderData?.timeOut) || 300;
 
@@ -1188,8 +1200,9 @@ border text-sm transition-all cursor-pointer gap-1
                           const qty = quantities[key] ?? getQty(item);
 
                           const unitPrice =
-                            Number(item.accounting?.finalUnitPrice) ||
+                            Number(item.ticketDetails?.price) ||
                             Number(item.accounting?.unitPrice) ||
+                            Number(item.accounting?.finalUnitPrice) ||
                             Number(item.price) ||
                             0;
 
@@ -1234,11 +1247,11 @@ border text-sm transition-all cursor-pointer gap-1
                                   {/* Price */}
                                   <div className="flex flex-col justify-center items-center text-center h-10 px-1 sm:px-3 min-w-[90px] sm:min-w-[110px]">
                                     <p className="text-xs text-gray-600 font-medium leading-none">
-                                      {currency}{fmt(unitPrice)}
+                                      {currency}{fmt(unitPrice)} {t("perUnit")}
                                     </p>
-                                    <p className="text-xs text-green-600 font-semibold leading-none mt-1">
+                                    {/* <p className="text-xs text-green-600 font-semibold leading-none mt-1">
                                       {qty} {t("tickets")}
-                                    </p>
+                                    </p> */}
                                   </div>
 
                                   {/* Stepper */}
@@ -1284,7 +1297,7 @@ border text-sm transition-all cursor-pointer gap-1
 
                                 {/* SUBTOTAL */}
                                 <p className="text-xs text-gray-500">
-                                  {t("subTotal")} {currency}{itemTotal}
+                                  {t("subTotal")} {currency}{item?.accounting?.unitPrice}
                                 </p>
                               </div>
                             </li>
@@ -1336,11 +1349,13 @@ border text-sm transition-all cursor-pointer gap-1
 
                         const qty = quantities[key] ?? getQty(item);
                         const unitPrice =
-                          Number(item.accounting?.finalUnitPrice) ||
+                          Number(item.ticketDetails?.price) ||
                           Number(item.accounting?.unitPrice) ||
+                          Number(item.accounting?.finalUnitPrice) ||
                           Number(item.price) ||
                           0;
-                        const total = fmt(unitPrice * qty);
+
+                        const total = fmt(item?.accounting?.unitPrice);
                         return (
                           <div key={`${item._id}-${idx}`} className="flex items-center gap-3">
                             <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-gray-100 shrink-0 bg-gray-50">
@@ -1372,9 +1387,16 @@ border text-sm transition-all cursor-pointer gap-1
                     <div className="flex justify-between text-sm text-gray-500">
                       <span>{t("subTotal")}</span>
                       <span className="font-medium text-gray-700">
-                        {currency}{fmt(accounting.bagTotal ?? accounting.subTotal ?? subtotal)}
+                        {currency}{fmt(subtotal)}
                       </span>
                     </div>
+                    {Array.isArray(accounting.tax) &&
+                      accounting.tax.map((t, i) => (
+                        <div key={i} className="flex justify-between text-sm">
+                          <span>{t.taxName}</span>
+                          <span>{currency}{fmt(t.totalValue)}</span>
+                        </div>
+                      ))}
 
                     {shipping > 0 && (
                       <div className="flex justify-between text-sm text-gray-500">
@@ -1382,13 +1404,13 @@ border text-sm transition-all cursor-pointer gap-1
                         <span className="font-medium text-gray-700">{currency}{fmt(shipping)}</span>
                       </div>
                     )}
-
+                    {/* 
                     {tax > 0 && (
                       <div className="flex justify-between text-sm text-gray-500">
                         <span>{t("tax")}</span>
                         <span className="font-medium text-gray-700">{currency}{fmt(tax)}</span>
                       </div>
-                    )}
+                    )} */}
 
                     <div className="flex justify-between items-center pt-3 border-t border-gray-200">
                       <span className="font-bold text-gray-900">{t("total")}</span>

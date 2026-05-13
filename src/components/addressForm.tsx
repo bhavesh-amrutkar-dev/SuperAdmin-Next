@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import ErrorMessage from "@/src/components/ui/errorMessage";
 import { CountryCurrency } from "@/src/models/api/response/auth";
 import { AuthService } from "@/src/lib/services/auth";
@@ -14,6 +14,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { useProfile } from "../lib/hooks/userProfile";
+import { getCookie } from "cookies-next";
 
 export type AddressFormRM = {
     // 👤 UI fields
@@ -69,6 +70,7 @@ const mapCountryCurrency = (data: any[]): CountryCurrency[] => {
         countryCodeMobile: "", // optional
         emoji: getFlagEmoji(c.countryCode),
         ioc: "", // optional
+        countryDialCode: c.countryDialCode
     }));
 };
 export default function AddressForm({
@@ -81,7 +83,7 @@ export default function AddressForm({
     loading?: boolean;
 }) {
     const t = useTranslations();
-
+    const defaultCountry = (getCookie("C_code") as string || "pr").toLowerCase();
     const [countries, setCountries] = useState<CountryCurrency[]>([]);
     const [countriesLoading, setCountriesLoading] = useState(false);
     const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -132,6 +134,10 @@ export default function AddressForm({
     const taggedAs = watch("taggedAs");
     const mobileNumber = watch("mobileNumber");
     const mobileCode = watch("mobileNumberCode");
+    const mobileSortCode = watch("mobileNumberSortCode");
+    // ✅ Fixed: use correct watch variable name matching the form field
+    const mobileNumberCode = watch("mobileNumberCode");
+
     const askLocationPermission = () => {
         if (!("geolocation" in navigator)) return;
 
@@ -197,8 +203,8 @@ export default function AddressForm({
             setCountriesLoading(true);
             try {
                 const res = await AuthService.getCurrency();
-
-                setCountries(mapCountryCurrency(res?.data ?? []));
+                const list = mapCountryCurrency(res?.data ?? []);
+                setCountries(list);
             } finally {
                 setCountriesLoading(false);
             }
@@ -339,45 +345,91 @@ export default function AddressForm({
                     {/* Mobile */}
                     <div className="md:col-span-2 space-y-2">
                         <Label required>{t("mobile")}</Label>
-                        <div className="phone-input">
+                        <div className="phone-input w-full">
                             {countriesLoading || countries.length === 0 ? (
                                 <div className="w-full h-[44px] rounded-lg border border-[#2f2f2f] px-4 flex items-center text-sm text-gray-400">
                                     Loading...
                                 </div>
                             ) : (
-                                <PhoneInput
-                                    country="us"
-                                    value={`${mobileCode || ""}${mobileNumber || ""}`}
-                                    onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
-                                    containerClass="!w-full"
-                                    inputClass="!w-full !h-[44px] !rounded-lg !border-[#2f2f2f] focus:!border-[#f3c200] !text-sm !pl-14"
-                                    onChange={(value, country: any) => {
-                                        const numberWithoutCode = value.replace(country.dialCode, "");
+                                <Fragment>
+                                    <div
+                                        className="flex items-center rounded-lg border border-[#2f2f2f] hover:border-[#f3c200] focus-within:border-[#f3c200] transition-colors duration-200"
+                                        style={{ height: "44px", overflow: "visible", width: "100%" }}
+                                    >
+                                        {/* PhoneInput — flag only */}
+                                        <div className="shrink-0 flex items-center pl-2">
+                                            <PhoneInput
+                                                key={mobileSortCode || defaultCountry}
+                                                country={mobileSortCode?.toLowerCase() || defaultCountry}
+                                                onlyCountries={countries.map(c => c.countryCode.toLowerCase())}
+                                                containerStyle={{ height: "44px", width: "40px", flexShrink: 0 }}
+                                                containerClass="!h-full"
+                                                countryCodeEditable={false}
+                                                disableCountryCode={false}
+                                                inputStyle={{ display: "none" }}
+                                                buttonStyle={{
+                                                    height: "44px",
+                                                    width: "40px",
+                                                    border: "none",
+                                                    backgroundColor: "transparent",
+                                                    position: "static",
+                                                }}
+                                                buttonClass="!border-0 !bg-transparent !shadow-none !static"
+                                                dropdownStyle={{ zIndex: 9999 }}
+                                                onMount={(_value, data: any) => {
+                                                    const dialCode = data.dialCode || "";
+                                                    const isoCode = data.countryCode || "";
+                                                    setValue("mobileNumberCode", dialCode, { shouldValidate: false });
+                                                    setValue("mobileNumberSortCode", isoCode.toUpperCase(), { shouldValidate: false });
+                                                }}
+                                                onChange={(value, country: any) => {
+                                                    setValue("mobileNumberCode", country.dialCode);
+                                                    setValue("mobileNumberSortCode", country.countryCode);
+                                                }}
+                                            />
+                                        </div>
 
-                                        setValue("mobileNumber", numberWithoutCode, {
-                                            shouldValidate: true,
-                                        });
+                                        {/* Dial code — immediately after flag */}
+                                        <span className="text-sm text-gray-700 shrink-0 mx-1">
+                                            +{mobileNumberCode || "1"}
+                                        </span>
 
-                                        setValue("mobileNumberCode", country.dialCode);
-                                        setValue("mobileNumberSortCode", country.countryCode);
+                                        {/* Divider */}
+                                        {/* <div className="w-px bg-[#2f2f2f] self-stretch my-2 mx-1" /> */}
 
-                                        trigger("mobileNumber");
-                                    }}
-                                />
+                                        {/* Number input — fills remaining space */}
+                                        <input
+                                            style={{ height: "44px" }}
+                                            placeholder="Phone Number"
+                                            className="flex-1 min-w-0 border-0 shadow-none outline-none ring-0 text-sm px-3 bg-transparent focus:outline-none focus:ring-0"
+                                            maxLength={10}
+                                            {...(() => {
+                                                const { onChange, ...rest } = register("mobileNumber", {
+                                                    required: t("mobileRequired"),
+                                                    minLength: {
+                                                        value: 10,
+                                                        message: t("invalidMobile"),
+                                                    },
+                                                    maxLength: {
+                                                        value: 10,
+                                                        message: t("invalidMobile"),
+                                                    },
+                                                });
+                                                return {
+                                                    ...rest,
+                                                    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+                                                        e.target.value = e.target.value.replace(/\D/g, "");
+                                                        return onChange(e);
+                                                    },
+                                                };
+                                            })()}
+                                        />
+                                    </div>
+                                </Fragment>
                             )}
                         </div>
                         <ErrorMessage message={errors.mobileNumber?.message} />
                     </div>
-                    <input
-                        type="hidden"
-                        {...register("mobileNumber", {
-                            required: t("mobileRequired"),
-                            minLength: {
-                                value: 7,
-                                message: t("invalidMobile"),
-                            },
-                        })}
-                    />
                 </div>
             </section>
 
@@ -502,8 +554,13 @@ export default function AddressForm({
                             <Input
                                 placeholder={t("pincodePlaceholder")}
                                 error={!!errors.pincode}
+                                maxLength={15}
                                 {...register("pincode", {
                                     required: t("pincodeRequired"),
+                                    maxLength: {
+                                        value: 15,
+                                        message: t("pincodeMaxLength") || "Pincode must be at most 15 characters",
+                                    },
                                     validate: (value) =>
                                         noWhiteSpaceOnly(value, t("pincodeRequired")),
                                 })}
