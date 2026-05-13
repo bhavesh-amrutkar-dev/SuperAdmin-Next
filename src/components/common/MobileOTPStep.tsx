@@ -94,17 +94,30 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
     return () => clearTimeout(timer);
   }, [mobile]);
   useEffect(() => {
-    if (!debouncedMobile || debouncedMobile.length < 6) return;
+    // Remove non-digits
+    const cleaned = debouncedMobile.replace(/\D/g, "");
+
+    // Minimum validation before API call
+    // Example: most mobile numbers are between 10-15 digits with country code
+    if (!cleaned || cleaned.length < 10) {
+      return;
+    }
 
     validatePhone();
   }, [debouncedMobile, countryCode, email]);
   const validatePhone = async () => {
+    const cleaned = debouncedMobile.replace(/\D/g, "");
+
+    // Prevent unnecessary API calls
+    if (cleaned.length < 10) return;
+
     setPhoneValidating(true);
+
     try {
       await AuthService.emailPhoneValidate({
         verifyType: 2,
         countryCode,
-        mobile: debouncedMobile,
+        mobile: cleaned,
         email,
       });
 
@@ -394,7 +407,12 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
                       setOtpSent(false);
                       setOtp(Array(OTP_LENGTH).fill(""));
                       setError(null);
+
+                      if (errors.mobile) {
+                        setErrors((prev) => ({ ...prev, mobile: undefined }));
+                      }
                     }}
+
                   />
                 </div>
               )}
