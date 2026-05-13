@@ -16,7 +16,7 @@ import PlaceToPayLightbox from "@/src/components/checkout/PlaceToPayLightbox";
 import ComingSoonModal from "@/src/components/modals/ComingSoonModal";
 import { Copy, Check, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { DEFAULT_COUNTRY_CODE, COUNTRY_CODE, BASE_URL, ENABLE_PLACE_TO_PAY, CDN_IMAGE, ENABLE_SQUARE_PAY } from "@/src/lib/config";
+import { DEFAULT_COUNTRY_CODE, COUNTRY_CODE, BASE_URL, ENABLE_PLACE_TO_PAY, CDN_IMAGE } from "@/src/lib/config";
 import { getCommonHeaders } from "@/src/lib/api/headers";
 import axios from "axios";
 import { Button } from "../../components/ui/button";
@@ -117,6 +117,13 @@ type UserAddress = {
   tag?: string;
 };
 
+type PaymentMethodKey = "athMovil" | "manual" | "square" | "creditCard";
+
+type PaymentOption = {
+  key: PaymentMethodKey;
+  label: string;
+};
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
@@ -183,6 +190,16 @@ function formatAddress(address: UserAddress): string {
   if (address.emiratesRegionName) parts.push(address.emiratesRegionName);
   if (address.country) parts.push(address.country);
   return parts.join(", ");
+}
+
+function isPaymentEnabled(value?: boolean | string | number | null) {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value === 1;
+  if (typeof value === "string") {
+    return ["true", "1", "yes", "enabled", "active"].includes(value.trim().toLowerCase());
+  }
+
+  return false;
 }
 
 export default function SecureCheckoutPage() {
@@ -439,47 +456,47 @@ export default function SecureCheckoutPage() {
       setPaymentConfig(data?.data?.paymentGatewayStatus);
     } catch (err) {
       console.error("Payment config fetch failed", err);
+      setPaymentConfig({});
     }
   };
-  const isEnabled = (value?: boolean | string) => Boolean(value);
-  const paymentOptions = useMemo(() => {
-    console.log("paymentConfig", paymentConfig);
-
-
+  const paymentOptions = useMemo<PaymentOption[]>(() => {
     if (!paymentConfig) return [];
 
     return [
-      isEnabled(paymentConfig.ATHMovil) && {
+      isPaymentEnabled(paymentConfig.ATHMovil) && {
         key: "athMovil",
         label: t("payWithATHMovil"),
       },
-      isEnabled(paymentConfig.ManualPaymentMethod) && {
+      isPaymentEnabled(paymentConfig.ManualPaymentMethod) && {
         key: "manual",
         label: t("manualPaymentMethods"),
       },
-      isEnabled(paymentConfig.CreditOrDebitCard) && {
-        key: "card",
-        label: t("paySqr"),
+      isPaymentEnabled(paymentConfig.CreditOrDebitCard) && {
+        key: "creditCard",
+        label: t("payWithPlaceToPay"),
       },
-      isEnabled(paymentConfig.Square) && {
+      isPaymentEnabled(paymentConfig.Square) && {
         key: "square",
         label: t("paySqr"),
       },
-    ].filter((option): option is { key: string; label: string } => Boolean(option));
+    ].filter((option): option is { key: string; label: string } => Boolean(option)) as PaymentOption[];
   }, [paymentConfig, t]);
 
   useEffect(() => {
-    console.log("paymentOptions", paymentOptions);
+    if (paymentOptions.length === 0) {
+      if (paymentMethod) setPaymentMethod("");
+      return;
+    }
 
-    if (paymentOptions.length > 0 && !paymentMethod) {
+    if (!paymentOptions.some((option) => option.key === paymentMethod)) {
       setPaymentMethod(paymentOptions[0].key);
     }
-  }, [paymentOptions, paymentConfig]);
+  }, [paymentOptions, paymentMethod]);
   const paymentMethodMap: Record<string, number> = {
     athMovil: 10,
     manual: 12,
     square: 21,
-    card: 21, // adjust if backend differs
+    creditCard: 18,
   };
 
   const onlinePaymentMethod = paymentMethodMap[paymentMethod];
@@ -1707,12 +1724,24 @@ export default function SecureCheckoutPage() {
                 <div className="pt-3 sm:pt-4">
                   {/* Payment Options */}
                   <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
-                    {paymentOptions.map((method: any) => {
+                    {!paymentConfig && (
+                      <p className="text-sm text-gray-600">
+                        {t("loading")}
+                      </p>
+                    )}
+
+                    {paymentConfig && paymentOptions.length === 0 && (
+                      <p className="text-sm text-gray-600">
+                        No payment methods are available.
+                      </p>
+                    )}
+
+                    {paymentOptions.map((method) => {
                       const isSelected = paymentMethod === method.key;
                       const isDisabled = grandTotal <= 0;
 
                       const showIcons =
-                        method.key === "square" || method.key === "card";
+                        method.key === "square" || method.key === "creditCard";
 
                       return (
                         <label
@@ -2040,7 +2069,7 @@ export default function SecureCheckoutPage() {
                       <>
                         <Button
                           onClick={handlePlaceOrder}
-                          disabled={!selectedAddress || placingOrder}
+                          disabled={!selectedAddress || placingOrder || !paymentMethod}
                           className="w-full h-11 btn-primary text-white py-3 md:py-4 px-4 md:px-6 rounded-lg transition-colors shadow-lg text-sm md:text-default flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {placingOrder
@@ -2049,9 +2078,9 @@ export default function SecureCheckoutPage() {
                               ? t("placeOrder")
                               : paymentMethod === "athMovil"
                                 ? t("payWithATHMovil")
-                                : paymentMethod === "square" && ENABLE_SQUARE_PAY
+                                : paymentMethod === "square"
                                   ? t("paySqr")
-                                  : paymentMethod === "creditCard" && ENABLE_PLACE_TO_PAY
+                                  : paymentMethod === "creditCard"
                                     ? t("payWithPlaceToPay")
                                     : t("pay")}
                         </Button>

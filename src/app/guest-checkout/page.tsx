@@ -125,6 +125,13 @@ type CartData = {
   };
 };
 
+type PaymentMethodKey = "athMovil" | "manual" | "square";
+
+type PaymentOption = {
+  key: PaymentMethodKey;
+  label: string;
+};
+
 
 // ─────────────────────────────────────────────
 // Helpers
@@ -157,6 +164,16 @@ function getCartItemKey(item: CartItem, idx: number): string {
     item.ticketId ||
     `${item._id || item.productId || item.centralProductId || "item"}-${idx}`
   );
+}
+
+function isPaymentEnabled(value?: boolean | string | number | null) {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value === 1;
+  if (typeof value === "string") {
+    return ["true", "1", "yes", "enabled", "active"].includes(value.trim().toLowerCase());
+  }
+
+  return false;
 }
 
 // ─────────────────────────────────────────────
@@ -249,33 +266,32 @@ export default function GuestCheckoutPage() {
       setPaymentConfig(data?.data?.paymentGatewayStatus);
     } catch (err) {
       console.error("Payment config fetch failed", err);
+      setPaymentConfig({});
     }
   };
 
   useEffect(() => {
     fetchPaymentConfig();
   }, []);
-  const isEnabled = (value?: boolean | string) => Boolean(value);
-
-  const paymentOptions = useMemo(() => {
+  const paymentOptions = useMemo<PaymentOption[]>(() => {
     if (!paymentConfig) return [];
 
     return [
-      isEnabled(paymentConfig.ATHMovil) && {
+      isPaymentEnabled(paymentConfig.ATHMovil) && {
         key: "athMovil",
         label: t("payWithATHMovil"),
       },
 
-      isEnabled(paymentConfig.ManualPaymentMethod) && {
+      isPaymentEnabled(paymentConfig.ManualPaymentMethod) && {
         key: "manual",
         label: t("manualPaymentMethods"),
       },
 
-      isEnabled(paymentConfig.Square) && {
+      isPaymentEnabled(paymentConfig.Square) && {
         key: "square",
         label: t("paySqr"),
       },
-    ].filter((option): option is { key: string; label: string } => Boolean(option));
+    ].filter((option): option is { key: string; label: string } => Boolean(option)) as PaymentOption[];
   }, [paymentConfig, t]);
   useEffect(() => {
     const accessToken = getCookie("access_token");
@@ -288,7 +304,12 @@ export default function GuestCheckoutPage() {
     setIsAuthChecked(true);
   }, []);
   useEffect(() => {
-    if (paymentOptions.length > 0 && !paymentMethod) {
+    if (paymentOptions.length === 0) {
+      if (paymentMethod) setPaymentMethod("");
+      return;
+    }
+
+    if (!paymentOptions.some((option) => option.key === paymentMethod)) {
       setPaymentMethod(paymentOptions[0].key);
     }
   }, [paymentOptions, paymentMethod]);
@@ -1469,7 +1490,19 @@ border text-sm transition-all cursor-pointer gap-1
                       <h3 className="font-semibold text-gray-800 text-[15px]">{t("selectMethod")}</h3>
                     </div>
                     <div className="flex flex-col gap-3">
-                      {paymentOptions.map((option: any) => {
+                      {!paymentConfig && (
+                        <p className="text-sm text-gray-500 text-center py-3">
+                          {t("loading")}
+                        </p>
+                      )}
+
+                      {paymentConfig && paymentOptions.length === 0 && (
+                        <p className="text-sm text-gray-500 text-center py-3">
+                          No payment methods are available.
+                        </p>
+                      )}
+
+                      {paymentOptions.map((option) => {
                         const isSelected = paymentMethod === option.key;
 
                         return (
@@ -1576,7 +1609,7 @@ border text-sm transition-all cursor-pointer gap-1
                     <Button
                       type="submit"
                       form="express-form"
-                      disabled={placingOrder || cartItems.length === 0}
+                      disabled={placingOrder || cartItems.length === 0 || !paymentMethod}
                       className="w-full h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2
                                transition-all duration-200
                                "
