@@ -17,9 +17,9 @@ import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
 import { Button } from "@/src/components/ui/button";
 import { AuthService } from "@/src/lib/services/auth";
 import { CountryCurrency } from "@/src/models/api/response/auth";
-import { getCookie } from "cookies-next";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/src/lib/utils/errorMessage";
+import { getCookie } from "cookies-next";
 
 const OTP_LENGTH = 4;
 
@@ -53,14 +53,16 @@ const StatusBadge = ({ children, variant = "default" }: { children: React.ReactN
 export default function ProfileClient() {
   const { user, loading, refetch } = useProfile();
   const t = useTranslations();
+  const defaultCountry = ((getCookie("C_code") as string) || "us").toLowerCase();
 
   // ── Modal open/close ──────────────────────────────────────────────────────
   const [showVerifyModal, setShowVerifyModal] = useState(false);
 
   // ── Phone input state ─────────────────────────────────────────────────────
   const [countryCode, setCountryCode] = useState("");
+  const [phoneCountryCode, setPhoneCountryCode] = useState("");
   const [mobile, setMobile] = useState("");
-  const [countrySortCode, setCountrySortCode] = useState("us");
+  const [mobileError, setMobileError] = useState("");
   const [countries, setCountries] = useState<CountryCurrency[]>([]);
   const [countriesLoading, setCountriesLoading] = useState(false);
 
@@ -71,12 +73,19 @@ export default function ProfileClient() {
   const [sendingOtp, setSendingOtp] = useState(false);
   const [verifying, setVerifying] = useState(false);
 
-  // Load country list when modal opens
+  // Load country list when modal opens and initialise dial code from cookie country
   useEffect(() => {
     if (!showVerifyModal) return;
     setCountriesLoading(true);
     AuthService.getCurrency()
-      .then((res) => setCountries(res?.data ?? []))
+      .then((res) => {
+        const list: CountryCurrency[] = res?.data ?? [];
+        setCountries(list);
+        const match = list.find((c) => c.countryCode.toLowerCase() === defaultCountry);
+        const dialCode = ((match as any)?.countryDialCode || "1").replace(/\D/g, "");
+        setPhoneCountryCode(dialCode);
+        setCountryCode(`+${dialCode}`);
+      })
       .catch(() => { })
       .finally(() => setCountriesLoading(false));
   }, [showVerifyModal]);
@@ -86,7 +95,8 @@ export default function ProfileClient() {
     setShowVerifyModal(false);
     setMobile("");
     setCountryCode("");
-    setCountrySortCode("us");
+    setPhoneCountryCode("");
+    setMobileError("");
     setOtp(Array(OTP_LENGTH).fill(""));
     setOtpId("");
     setOtpSent(false);
@@ -116,36 +126,23 @@ export default function ProfileClient() {
   const handleSendOtp = async () => {
     const cleaned = mobile.replace(/\D/g, "");
     if (!cleaned) {
-      toast.error(t("fieldRequired"));
+      setMobileError(t("fieldRequired"));
+      return;
+    }
+    if (cleaned.length < 10) {
+      setMobileError(t("invalidMobile"));
       return;
     }
     try {
       setSendingOtp(true);
-      const token = getCookie("token") as string;
-      console.log("mobileToken", token);
-
-      const setRes = await fetch("/api/setMobileNumber", {
+      const res = await fetch("/api/em-patch-send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token: token,
-          phone: cleaned,
-          countryCode,
-          mobileNumberSortCode: countrySortCode.toUpperCase(),
-        }),
+        body: JSON.stringify({ mobile: cleaned, countryCode }),
       });
-      const setData = await setRes.json();
-      if (!setRes.ok) throw new Error(setData.message);
-
-      const otpRes = await fetch("/api/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ countryCode, mobile: cleaned, email: user.email }),
-      });
-      const otpData = await otpRes.json();
-      if (!otpRes.ok) throw new Error(otpData.message);
-
-      setOtpId(otpData?.data?.otpId);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      setOtpId(data?.data?.otpId);
       setOtpSent(true);
     } catch (err: any) {
       toast.error(getErrorMessage(err, "Something went wrong"));
@@ -161,8 +158,13 @@ export default function ProfileClient() {
     if (!otpId) { toast.error("OTP session expired. Please resend."); return; }
     try {
       setVerifying(true);
-      const res = await AuthService.verifyOtp({ otpCode, otpId, verifyType: 2 });
-      if (!res?.data) throw new Error(t("guestProfileOtpInvalid"));
+      const res = await fetch("/api/em-patch-verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ otpCode, otpId, mobile: mobile, countryCode }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
       toast.success(t("verified"));
       closeModal();
       refetch();
@@ -465,17 +467,62 @@ export default function ProfileClient() {
                     <Loader2 className="w-4 h-4 animate-spin mr-2" /> Loading…
                   </div>
                 ) : (
-                  <PhoneInput
-                    country="us"
-                    value={`${countryCode.replace("+", "")}${mobile}`}
-                    onlyCountries={countries.map((c) => c.countryCode.toLowerCase())}
-                    onChange={(value, data: any) => {
-                      setCountryCode(`+${data.dialCode}`);
-                      setMobile(value.slice(data.dialCode.length));
-                      setCountrySortCode(data.countryCode);
-                    }}
-                    inputClass="!w-full !h-[44px]"
-                  />
+                  <div
+                    className={`flex items-center rounded-lg border hover:border-[#D4AF37] focus-within:border-[#D4AF37] transition-colors duration-200 ${mobileError ? "border-red-500" : "border-gray-300"}`}
+                    style={{ height: "44px", overflow: "visible", width: "100%" }}
+                  >
+                    <div className="shrink-0 flex items-center pl-2">
+                      <PhoneInput
+                        key={defaultCountry}
+                        country={defaultCountry}
+                        onlyCountries={countries.map((c) => c.countryCode.toLowerCase())}
+                        containerStyle={{ height: "44px", width: "40px", flexShrink: 0 }}
+                        containerClass="!h-full"
+                        countryCodeEditable={false}
+                        disableCountryCode={false}
+                        inputStyle={{ display: "none" }}
+                        buttonStyle={{
+                          height: "44px",
+                          width: "40px",
+                          border: "none",
+                          backgroundColor: "transparent",
+                          position: "static",
+                        }}
+                        buttonClass="!border-0 !bg-transparent !shadow-none !static [&]:hover:!bg-transparent [&_.selected-flag]:!bg-transparent [&_.selected-flag:hover]:!bg-transparent [&_.selected-flag:focus]:!bg-transparent"
+                        dropdownStyle={{ zIndex: 9999 }}
+                        onChange={(_value, data: any) => {
+                          const dialCode = data.dialCode as string;
+                          setPhoneCountryCode(dialCode);
+                          setCountryCode(`+${dialCode}`);
+                          setMobile("");
+                          setMobileError("");
+                        }}
+                      />
+                    </div>
+                    <span className="text-sm text-gray-700 shrink-0 mx-1">
+                      +{phoneCountryCode}
+                    </span>
+                    <input
+                      style={{ height: "44px" }}
+                      placeholder={t("guestProfileMobileNumber")}
+                      className="flex-1 min-w-0 border-0 shadow-none outline-none ring-0 text-sm px-3 bg-transparent focus:outline-none focus:ring-0"
+                      maxLength={10}
+                      value={mobile}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, "");
+                        setMobile(digits);
+                        setMobileError(digits.length > 0 && digits.length < 10 ? t("invalidMobile") : "");
+                      }}
+                      onBlur={() => {
+                        if (mobile && mobile.length < 10) {
+                          setMobileError(t("invalidMobile"));
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+                {mobileError && (
+                  <p className="text-xs text-red-500 mt-1">{mobileError}</p>
                 )}
               </div>
 
@@ -495,7 +542,7 @@ export default function ProfileClient() {
             /* ── Step 2: OTP input ── */
             <div className="space-y-5">
               <p className="text-sm text-gray-500 text-center">
-                {t("guestProfileOtpSentTo")} {countryCode} {mobile}
+                {t("guestProfileOtpSentTo")} +{phoneCountryCode} {mobile}
               </p>
 
               <div className="flex justify-center gap-3">
