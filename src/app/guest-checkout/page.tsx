@@ -1498,7 +1498,7 @@ border text-sm transition-all cursor-pointer gap-1
 
                       {paymentConfig && paymentOptions.length === 0 && (
                         <p className="text-sm text-gray-500 text-center py-3">
-                          No payment methods are available.
+                          {t("noPaymentMethodAvailable")}
                         </p>
                       )}
 

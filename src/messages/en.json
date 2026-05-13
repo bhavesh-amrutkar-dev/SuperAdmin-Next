@@ -746,5 +746,6 @@
     "athMovilOpenManually": "Open the app manually.",
     "athMovilYesCancelPayment": "Yes, cancel my payment",
     "athMovilKeepWaiting": "Keep waiting",
-    "pincodeMaxLength": "Pincode must be at most 15 characters"
+    "pincodeMaxLength": "Pincode must be at most 15 characters",
+    "noPaymentMethodAvailable": "No payment methods are available"
 }
