@@ -47,7 +47,8 @@ export async function POST(request: NextRequest) {
       paymentMethodText: orderData.onlinePaymentMethodText,
       checkoutUrl: orderData.checkoutProcessUrl,
       timeOut: orderData.timeOut,
-      ecommerceId: orderData.ecommerceId
+      ecommerceId: orderData.ecommerceId,
+      isNewUserCreated: orderData.isNewUserCreated
     };
     return NextResponse.json(response);
 

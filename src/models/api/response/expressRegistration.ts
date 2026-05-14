@@ -10,7 +10,8 @@ export interface BackendOrderResponse {
         checkoutProcessUrl: string;
         cartId: string;
         timeOut?: number | string;
-        ecommerceId?: string
+        ecommerceId?: string;
+        isNewUserCreated: boolean
 
     };
 }
