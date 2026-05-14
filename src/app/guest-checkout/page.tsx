@@ -733,11 +733,15 @@ export default function GuestCheckoutPage() {
       description: t("redirecting"),
     });
 
+    const isNewUserCreated =
+      localStorage.getItem("isNewUserCreated") === "true";
+
     setTimeout(() => {
-      router.push("/thank-you?payment=square");
+      router.push(
+        `/thank-you?payment=square&newUser=${isNewUserCreated}`
+      );
     }, 1200);
   };
-
   const handleSquareError = (err: any) => {
     console.warn("Square payment failed:", err);
 
@@ -914,7 +918,12 @@ export default function GuestCheckoutPage() {
           trackEvent("ATH_MOVIL_SUCCESS", { order_id: orderId });
           setIsUpdatingStatus(false);
           setPlacingOrder(false);
-          router.push("/thank-you?payment=athmovil");
+          const isNewUserCreated =
+            localStorage.getItem("isNewUserCreated") === "true";
+
+          router.push(
+            `/thank-you?payment=athmovil&newUser=${isNewUserCreated}`
+          );
           return;
         }
 
@@ -1020,6 +1029,12 @@ export default function GuestCheckoutPage() {
         amount: grandTotal,
       });
       localStorage.setItem("orderId", orderData.orderId);
+      console.log("orderData?.isNewUserCreated", orderData?.isNewUserCreated);
+
+      localStorage.setItem(
+        "isNewUserCreated",
+        String(orderData?.isNewUserCreated)
+      );
 
 
       if (orderData.paymentMethod === 21) {
@@ -1117,6 +1132,11 @@ export default function GuestCheckoutPage() {
 
 
       localStorage.setItem("orderId", orderData.orderId);
+      console.log("orderData?.isNewUserCreated", orderData?.isNewUserCreated);
+      localStorage.setItem(
+        "isNewUserCreated",
+        String(orderData?.isNewUserCreated)
+      );
       setAthOrderId(orderData.orderId);
       setAthDeepLink(
         `https://pagos.athmovilapp.com/pagoPorCodigo.html?id=${orderData.ecommerceId}`
@@ -1579,16 +1599,16 @@ border text-sm transition-all cursor-pointer gap-1
                               setPaymentMethod(option.key);
                             }}
                             className={`${baseCls} ${isSelected
-                                ? "border-yellow-400 bg-yellow-50"
-                                : "border-gray-200 hover:border-gray-300 bg-white"
+                              ? "border-yellow-400 bg-yellow-50"
+                              : "border-gray-200 hover:border-gray-300 bg-white"
                               }`}
                           >
                             {/* LEFT */}
                             <div className="flex items-center gap-2 xl:gap-3">
                               <span
                                 className={`min-w-4 h-4 rounded-full border flex items-center justify-center ${isSelected
-                                    ? "border-yellow-500"
-                                    : "border-gray-300"
+                                  ? "border-yellow-500"
+                                  : "border-gray-300"
                                   }`}
                               >
                                 {isSelected && (
@@ -1842,10 +1862,17 @@ border text-sm transition-all cursor-pointer gap-1
 
                     // ✅ 4. Success
                     localStorage.setItem("orderId", orderData.orderId);
+                    console.log("orderData?.isNewUserCreated", orderData);
+                    localStorage.setItem(
+                      "isNewUserCreated",
+                      String(orderData?.isNewUserCreated)
+                    );
 
                     toast.success(t("guestCheckoutPaymentSubmitted"));
 
-                    router.push("/thank-you?payment=manual");
+                    router.push(
+                      `/thank-you?payment=manual&newUser=${orderData?.isNewUserCreated}`
+                    );
 
                   } catch (err: any) {
                     console.warn(err);
