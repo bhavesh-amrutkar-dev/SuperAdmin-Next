@@ -43,7 +43,13 @@ export default function PaymentResultPage() {
         order_id: orderId,
         payment_method: "square",
       });
-      router.replace(`/thank-you?payment=square&orderId=${orderId}`);
+
+      const isNewUserCreated =
+        localStorage.getItem("isNewUserCreated") === "true";
+
+      router.replace(
+        `/thank-you?payment=square&orderId=${orderId}&newUser=${isNewUserCreated}`
+      );
     } else {
       trackEvent("PAYMENT_FAILED", {
         order_id: orderId,

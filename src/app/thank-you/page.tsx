@@ -17,7 +17,7 @@ export default function ThankYouPage() {
   const searchParams = useSearchParams();
   const t = useTranslations();
 
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(10);
 
   const popupHandledRef = useRef(false);
   const orderHandledRef = useRef(false);
@@ -58,7 +58,8 @@ export default function ThankYouPage() {
       console.warn("Order status update failed:", err);
     }
   };
-
+  const isNewUserCreated =
+    searchParams?.get("newUser") === "true";
   /**
    * Handle popup communication (PlaceToPay only)
    */
@@ -92,7 +93,7 @@ export default function ThankYouPage() {
         await orderStatusUpdateFn(2);
         await orderStatusUpdateFn(3);
       } else if (payment === "square") {
-         trackEvent("PAYMENT_SUCCESS");
+        trackEvent("PAYMENT_SUCCESS");
         await orderStatusUpdateFn(3);
       } else {
         await orderStatusUpdateFn(3);
@@ -154,7 +155,22 @@ export default function ThankYouPage() {
             <p className="font-semibold text-gray-900 mb-1">
               {t("orderConfirmed")}
             </p>
+
             <p>{t("orderEmailConfirmation")}</p>
+
+            {isNewUserCreated && (
+              <div className="mt-4 pt-4 border-t border-[#FECB02]/20">
+                <p className="font-semibold text-gray-900 mb-1">
+                  Account Created Successfully
+                </p>
+
+                <p className="text-sm text-gray-600 leading-6">
+                  Please check your email to get instructions on how to create your
+                  password and access your account. Once you have set up your password,
+                  you will be able to view your purchases and future updates.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* ✅ Countdown */}
