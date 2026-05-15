@@ -127,15 +127,13 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
             mobile: cleaned,
           }
         );
-      console.log("res", res);
 
       if (!res?.success) {
-        console.log("es?.data?.success", res);
 
         setErrors((prev) => ({
           ...prev,
           mobile:
-            res?.data?.message ||
+            res?.message ||
             t(
               "mobileAlreadyExists"
             ),
