@@ -37,11 +37,11 @@ export default function PaymentProcessingATHMovil({
     useState(false);
 
   // ✅ Countdown
-  const [autoRedirectSeconds, setAutoRedirectSeconds] =
-    useState(30);
+  // const [autoRedirectSeconds, setAutoRedirectSeconds] =
+  //   useState(30);
 
   // ✅ Prevent multiple redirects
-  const hasRedirectedRef = useRef(false);
+  // const hasRedirectedRef = useRef(false);
 
   // ✅ Track visibility changes
   const pageHiddenAtRef = useRef<number | null>(
@@ -162,18 +162,18 @@ export default function PaymentProcessingATHMovil({
       return;
     }
 
-    if (
-      hasRedirectedRef.current
-    ) {
-      debugLog(
-        "OPEN_APP_ABORT_ALREADY_REDIRECTED"
-      );
+    // if (
+    //   hasRedirectedRef.current
+    // ) {
+    //   debugLog(
+    //     "OPEN_APP_ABORT_ALREADY_REDIRECTED"
+    //   );
 
-      return;
-    }
+    //   return;
+    // }
 
-    hasRedirectedRef.current =
-      true;
+    // hasRedirectedRef.current =
+    //   true;
 
     redirectAttemptRef.current += 1;
 
@@ -393,83 +393,83 @@ export default function PaymentProcessingATHMovil({
   // ===============================
   // COUNTDOWN TIMER
   // ===============================
-  useEffect(() => {
-    if (!deepLinkUrl) return;
+  // useEffect(() => {
+  //   if (!deepLinkUrl) return;
 
-    debugLog(
-      "COUNTDOWN_STARTED",
-      {
-        initialSeconds: 30,
-      }
-    );
+  //   debugLog(
+  //     "COUNTDOWN_STARTED",
+  //     {
+  //       initialSeconds: 30,
+  //     }
+  //   );
 
-    const interval =
-      setInterval(() => {
-        setAutoRedirectSeconds(
-          (prev) => {
-            debugLog(
-              "COUNTDOWN_TICK",
-              {
-                secondsRemaining:
-                  prev,
-              }
-            );
+  //   const interval =
+  //     setInterval(() => {
+  //       setAutoRedirectSeconds(
+  //         (prev) => {
+  //           debugLog(
+  //             "COUNTDOWN_TICK",
+  //             {
+  //               secondsRemaining:
+  //                 prev,
+  //             }
+  //           );
 
-            if (prev <= 1) {
-              clearInterval(
-                interval
-              );
+  //           if (prev <= 1) {
+  //             clearInterval(
+  //               interval
+  //             );
 
-              debugLog(
-                "COUNTDOWN_FINISHED"
-              );
+  //             debugLog(
+  //               "COUNTDOWN_FINISHED"
+  //             );
 
-              return 0;
-            }
+  //             return 0;
+  //           }
 
-            return prev - 1;
-          }
-        );
-      }, 1000);
+  //           return prev - 1;
+  //         }
+  //       );
+  //     }, 1000);
 
-    return () => {
-      debugLog(
-        "COUNTDOWN_CLEANUP"
-      );
+  //   return () => {
+  //     debugLog(
+  //       "COUNTDOWN_CLEANUP"
+  //     );
 
-      clearInterval(interval);
-    };
-  }, [deepLinkUrl]);
+  //     clearInterval(interval);
+  //   };
+  // }, [deepLinkUrl]);
 
   // ===============================
   // AUTO REDIRECT
   // ===============================
-  useEffect(() => {
-    if (!deepLinkUrl) return;
+  // useEffect(() => {
+  //   if (!deepLinkUrl) return;
 
-    debugLog(
-      "AUTO_REDIRECT_TIMER_STARTED",
-      {
-        delayMs: 30000,
-      }
-    );
+  //   debugLog(
+  //     "AUTO_REDIRECT_TIMER_STARTED",
+  //     {
+  //       delayMs: 30000,
+  //     }
+  //   );
 
-    const timer = setTimeout(() => {
-      debugLog(
-        "AUTO_REDIRECT_TRIGGERED"
-      );
+  //   const timer = setTimeout(() => {
+  //     debugLog(
+  //       "AUTO_REDIRECT_TRIGGERED"
+  //     );
 
-      openApp();
-    }, 30000);
+  //     openApp();
+  //   }, 30000);
 
-    return () => {
-      debugLog(
-        "AUTO_REDIRECT_TIMER_CLEANUP"
-      );
+  //   return () => {
+  //     debugLog(
+  //       "AUTO_REDIRECT_TIMER_CLEANUP"
+  //     );
 
-      clearTimeout(timer);
-    };
-  }, [deepLinkUrl, openApp]);
+  //     clearTimeout(timer);
+  //   };
+  // }, [deepLinkUrl, openApp]);
 
   return (
     <div
@@ -555,7 +555,7 @@ export default function PaymentProcessingATHMovil({
 
                 <ExternalLink className="w-3.5 h-3.5 opacity-70" />
               </a>
-
+{/* 
               <p className="text-xs text-center text-gray-400">
                 Opening ATH
                 Móvil app in{" "}
@@ -563,7 +563,7 @@ export default function PaymentProcessingATHMovil({
                   autoRedirectSeconds
                 }
                 s
-              </p>
+              </p> */}
             </div>
           )}
 
