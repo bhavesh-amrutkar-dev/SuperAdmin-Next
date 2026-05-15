@@ -752,5 +752,7 @@
     "pincodeMaxLength": "El código PIN debe tener como máximo 15 caracteres.",
     "noPaymentMethodAvailable": "No hay métodos de pago disponibles.",
     "athMovilReminderTitle": "Abrir la aplicación ATH Móvil",
-    "athMovilReminderDescription": "Por favor, pulse el botón para continuar con su pago en ATH Móvil."
+    "athMovilReminderDescription": "Por favor, pulse el botón para continuar con su pago en ATH Móvil.",
+    "athMovilTapButton": "Toque el botón para abrir ATH Móvil",
+    "athMovilReturnAfterPayment": "Regrese aquí después de completar su pago"
 }
