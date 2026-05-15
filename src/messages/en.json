@@ -756,5 +756,6 @@
     "athMovilTapButton": "Tap the button below to open ATH Móvil",
     "athMovilReturnAfterPayment": "Return here after completing your payment",
     "mobileAlreadyExists": "This phone number is already linked with another account.",
-    "mobileValidationFailed": "Unable to validate phone number."
+    "mobileValidationFailed": "Unable to validate phone number.",
+    "athMovilPayWith": "Pay with ATH Móvil"
 }
