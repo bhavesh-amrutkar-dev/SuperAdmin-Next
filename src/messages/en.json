@@ -754,5 +754,7 @@
     "athMovilReminderTitle": "Open ATH Móvil App",
     "athMovilReminderDescription": "Please tap the button to continue your payment in ATH Móvil.",
     "athMovilTapButton": "Tap the button below to open ATH Móvil",
-    "athMovilReturnAfterPayment": "Return here after completing your payment"
+    "athMovilReturnAfterPayment": "Return here after completing your payment",
+    "mobileAlreadyExists": "This phone number is already linked with another account.",
+    "mobileValidationFailed": "Unable to validate phone number."
 }

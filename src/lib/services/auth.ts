@@ -192,4 +192,14 @@ export const AuthService = {
   }): Promise<IAPIResponse> {
     return apiClient.post("/resetPassword", payload);
   },
+
+  phoneVerifiedValidate(payload: {
+    countryCode: string;
+    mobile: string;
+  }) {
+    return apiClient.post(
+      "/phoneVerifiedValidate",
+      payload
+    );
+  },
 }
