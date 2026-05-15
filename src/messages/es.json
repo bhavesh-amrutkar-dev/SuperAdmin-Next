@@ -756,6 +756,6 @@
     "athMovilTapButton": "Toque el botón para abrir ATH Móvil",
     "athMovilReturnAfterPayment": "Regrese aquí después de completar su pago",
     "mobileAlreadyExists": "Este número de teléfono ya está vinculado a otra cuenta.",
-    "mobileValidationFailed": "No se pudo validar el número de teléfono."
+    "mobileValidationFailed": "No se pudo validar el número de teléfono.",
     "athMovilPayWith": "Paga con ATH móvil"
 }
