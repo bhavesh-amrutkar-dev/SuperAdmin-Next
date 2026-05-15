@@ -8,4 +8,8 @@ export interface IAPIResponse<T = unknown> {
     message: string;
   }>;
 }
-         
+
+export interface IPhoneVerifiedValidateResponse {
+  success: boolean;
+  message: string;
+}

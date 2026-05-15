@@ -1,4 +1,4 @@
-import { IAPIResponse } from "@/src/models/api/response/common";
+import { IAPIResponse, IPhoneVerifiedValidateResponse } from "@/src/models/api/response/common";
 import { apiClient } from "../api/axios";
 import { API_ROUTE_CONTACT_FIELDS, API_ROUTE_CONTACT_REQUEST, API_ROUTE_GET_CURRENT_USER } from "../api/routes";
 import { getDeviceInfo } from "../utils/device";
@@ -196,7 +196,7 @@ export const AuthService = {
   phoneVerifiedValidate(payload: {
     countryCode: string;
     mobile: string;
-  }) {
+  }): Promise<IPhoneVerifiedValidateResponse> {
     return apiClient.post(
       "/phoneVerifiedValidate",
       payload
