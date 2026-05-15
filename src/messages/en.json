@@ -748,5 +748,7 @@
     "athMovilKeepWaiting": "Keep waiting",
     "pincodeMaxLength": "Pincode must be at most 15 characters",
     "athMovilReminderTitle": "Open ATH Móvil App",
-    "athMovilReminderDescription": "Please tap the button to continue your payment in ATH Móvil."
+    "athMovilReminderDescription": "Please tap the button to continue your payment in ATH Móvil.",
+    "athMovilTapButton": "Tap the button below to open ATH Móvil",
+    "athMovilReturnAfterPayment": "Return here after completing your payment"
 }
