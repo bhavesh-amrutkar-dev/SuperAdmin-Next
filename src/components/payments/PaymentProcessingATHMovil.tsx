@@ -522,9 +522,22 @@ export default function PaymentProcessingATHMovil({
             )}
           </ol>
 
-          {/* OPEN APP BUTTON */}
+          {/* OPEN APP CTA */}
           {deepLinkUrl && (
-            <div className="space-y-2">
+            <div className="space-y-4">
+
+              {/* PRIMARY INSTRUCTION */}
+              <div className="text-center">
+                <p className="text-base font-extrabold text-[#D4AF37] animate-pulse">
+                  👇 Tap Here to Open ATH Móvil
+                </p>
+
+                <p className="text-sm text-gray-500 mt-1">
+                  Complete your payment securely in the ATH Móvil app
+                </p>
+              </div>
+
+              {/* BIG CTA BUTTON */}
               <a
                 href={deepLinkUrl}
                 onClick={(e) => {
@@ -537,36 +550,43 @@ export default function PaymentProcessingATHMovil({
                   openApp();
                 }}
                 className="
-                  group w-full flex items-center justify-center gap-2.5
-                  h-12 rounded-2xl
-                  bg-[#f3c200] hover:bg-[#e6b400]
-                  active:scale-[0.98]
-                  shadow-md shadow-yellow-200
-                  text-white font-bold text-[15px]
-                  transition-all duration-150
-                  cursor-pointer
-                "
+        relative overflow-hidden
+        group w-full flex items-center justify-center gap-3
+        h-14 rounded-2xl
+        bg-[#f3c200]
+        hover:bg-[#e6b400]
+        active:scale-[0.98]
+        shadow-lg shadow-yellow-300/50
+        text-white font-extrabold text-[17px]
+        transition-all duration-200
+        cursor-pointer
+        animate-pulse
+      "
               >
+                {/* Glow effect */}
+                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+               
+
                 <Smartphone className="w-5 h-5" />
 
-                {t(
-                  "athMovilOpenApp"
-                )}
+                {t("athMovilOpenApp")}
 
-                <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+                <ExternalLink className="w-4 h-4 opacity-80" />
               </a>
-{/* 
-              <p className="text-xs text-center text-gray-400">
-                Opening ATH
-                Móvil app in{" "}
-                {
-                  autoRedirectSeconds
-                }
-                s
-              </p> */}
+
+              {/* HELPER TEXT */}
+              <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-center">
+                <p className="text-sm font-semibold text-blue-800">
+                  After tapping the button, ATH Móvil should open automatically
+                </p>
+
+                <p className="text-xs text-blue-600 mt-1">
+                  Return here after completing your payment
+                </p>
+              </div>
             </div>
           )}
-
           {/* TIMER */}
           <div className="flex flex-col items-center gap-2 py-1">
             <div className="relative w-12 h-12">
@@ -584,13 +604,13 @@ export default function PaymentProcessingATHMovil({
 
           {/* WARNING */}
           <div className="space-y-4 pt-1">
-            <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-2xl px-4 py-3.5 shadow-sm">
+            <div className="flex items-start gap-3 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5 shadow-sm">
               <span className="flex-shrink-0 w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center mt-0.5">
                 <AlertTriangle className="w-4 h-4 text-amber-500" />
               </span>
 
               <div>
-                <p className="text-sm font-bold text-amber-800 leading-snug">
+                <p className="text-sm font-bold text-gray-700 leading-snug">
                   {t(
                     "athMovilDoNotClose"
                   )}
@@ -638,10 +658,9 @@ export default function PaymentProcessingATHMovil({
                     w-full flex items-center justify-center gap-2
                     h-11 rounded-xl border-2 text-sm font-semibold
                     transition-all duration-150 cursor-pointer
-                    ${
-                      confirmingCancel
-                        ? "border-red-500 bg-red-500 text-white"
-                        : "border-red-200 bg-red-50 text-red-500"
+                    ${confirmingCancel
+                      ? "border-red-500 bg-red-500 text-white"
+                      : "border-red-200 bg-red-50 text-red-500"
                     }
                   `}
                 >
@@ -649,11 +668,11 @@ export default function PaymentProcessingATHMovil({
 
                   {confirmingCancel
                     ? t(
-                        "athMovilYesCancelPayment"
-                      )
+                      "athMovilYesCancelPayment"
+                    )
                     : t(
-                        "cancelTransaction"
-                      )}
+                      "cancelTransaction"
+                    )}
                 </button>
 
                 {confirmingCancel && (
