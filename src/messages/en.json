@@ -750,5 +750,6 @@
     "athMovilReminderTitle": "Open ATH Móvil App",
     "athMovilReminderDescription": "Please tap the button to continue your payment in ATH Móvil.",
     "athMovilTapButton": "Tap the button below to open ATH Móvil",
-    "athMovilReturnAfterPayment": "Return here after completing your payment"
+    "athMovilReturnAfterPayment": "Return here after completing your payment",
+    "athMovilPayWith": "Pay with ATH Móvil"
 }

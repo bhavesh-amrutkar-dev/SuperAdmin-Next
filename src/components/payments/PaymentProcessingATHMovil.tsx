@@ -35,6 +35,8 @@ export default function PaymentProcessingATHMovil({
 
   const [confirmingCancel, setConfirmingCancel] =
     useState(false);
+  const [isMobileDevice, setIsMobileDevice] =
+    useState(false);
 
   // ✅ Countdown
   // const [autoRedirectSeconds, setAutoRedirectSeconds] =
@@ -389,7 +391,25 @@ export default function PaymentProcessingATHMovil({
       );
     };
   }, []);
+  useEffect(() => {
+    const device =
+      getDeviceInfo();
 
+    setIsMobileDevice(
+      device.isMobile
+    );
+
+    debugLog(
+      "DEVICE_VISIBILITY_CHECK",
+      {
+        isMobile:
+          device.isMobile,
+        isIOS: device.isIOS,
+        isAndroid:
+          device.isAndroid,
+      }
+    );
+  }, []);
   // ===============================
   // COUNTDOWN TIMER
   // ===============================
@@ -523,66 +543,64 @@ export default function PaymentProcessingATHMovil({
           </ol>
 
           {/* OPEN APP CTA */}
-          {deepLinkUrl && (
-            <div className="space-y-3">
+          {deepLinkUrl &&
+            isMobileDevice && (
+              <div className="space-y-3">
 
-              {/* SHORT PRIMARY TEXT */}
-              <div className="text-center">
-                <p className="text-sm font-bold text-[#D4AF37]">
-                  👇 {t("athMovilTapButton")}
+                {/* SHORT PRIMARY TEXT */}
+                <div className="text-center">
+                  <p className="text-sm font-bold text-[#D4AF37]">
+                    👇 {t("athMovilTapButton")}
+                  </p>
+                </div>
+
+                {/* CTA BUTTON */}
+                <a
+                  href={deepLinkUrl}
+                  onClick={(e) => {
+                    e.preventDefault();
+
+                    debugLog(
+                      "MANUAL_OPEN_CLICKED"
+                    );
+
+                    openApp();
+                  }}
+                  className="
+  relative overflow-hidden
+  group w-full flex items-center justify-center gap-2.5
+  h-[56px]
+  rounded-xl
+  bg-[#f58200]
+  hover:bg-[#e67600]
+  active:scale-[0.98]
+  shadow-[0_10px_25px_rgba(245,130,0,0.45)]
+  text-white font-extrabold text-[17px]
+  transition-all duration-200
+  cursor-pointer
+  animate-pulse
+"
+                >
+                  {/* Glow layer */}
+                  <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+
+                  {/* Shine animation */}
+                  <div className="absolute -inset-y-full left-[-120%] w-[80%] rotate-12 bg-white/20 blur-xl group-hover:left-[120%] transition-all duration-700" />
+                  {/* Content */}
+                  <div className="relative z-10 flex items-center gap-2">
+                    <Smartphone className="w-5 h-5" />
+
+                    <span>
+                      {t("athMovilPayWith")}
+                    </span>
+                  </div>
+                </a>
+                {/* SMALL HELPER */}
+                <p className="text-[11px] text-center text-gray-500 leading-relaxed">
+                  {t("athMovilReturnAfterPayment")}
                 </p>
               </div>
-
-              {/* CTA BUTTON */}
-              <a
-                href={deepLinkUrl}
-                onClick={(e) => {
-                  e.preventDefault();
-
-                  debugLog(
-                    "MANUAL_OPEN_CLICKED"
-                  );
-
-                  openApp();
-                }}
-                className="
-    relative overflow-hidden
-    group w-full flex items-center justify-center gap-2.5
-    h-13 min-h-[52px]
-    rounded-2xl
-    bg-gradient-to-br from-[#f3c200] to-[#d4a017]
-    hover:from-[#ffd43b] hover:to-[#e0ad00]
-    active:scale-[0.98]
-    shadow-lg shadow-yellow-300/50
-    text-white font-extrabold text-[15px]
-    transition-all duration-200
-    cursor-pointer
-    animate-pulse
-  "
-              >
-                {/* Glow layer */}
-                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-
-                {/* Shine animation */}
-                <div className="absolute -inset-y-full left-[-120%] w-[80%] rotate-12 bg-white/20 blur-2xl group-hover:left-[120%] transition-all duration-700" />
-
-                {/* Content */}
-                <div className="relative z-10 flex items-center gap-2.5">
-                  
-
-                  <Smartphone className="w-5 h-5" />
-
-                  {t("athMovilOpenApp")}
-
-                  <ExternalLink className="w-4 h-4 opacity-80" />
-                </div>
-              </a>
-              {/* SMALL HELPER */}
-              <p className="text-[11px] text-center text-gray-500 leading-relaxed">
-                {t("athMovilReturnAfterPayment")}
-              </p>
-            </div>
-          )}
+            )}
           {/* TIMER */}
           <div className="flex flex-col items-center gap-2 py-1">
             <div className="relative w-12 h-12">
