@@ -103,31 +103,66 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
       return;
     }
 
-    validatePhone();
+    (async () => {
+      await validatePhone();
+    })();
   }, [debouncedMobile, countryCode, email]);
   const validatePhone = async () => {
-    const cleaned = debouncedMobile.replace(/\D/g, "");
+    const cleaned =
+      debouncedMobile.replace(
+        /\D/g,
+        ""
+      );
 
-    // Prevent unnecessary API calls
-    if (cleaned.length < 10) return;
+    if (cleaned.length < 10)
+      return false;
 
     setPhoneValidating(true);
 
     try {
-      await AuthService.emailPhoneValidate({
-        verifyType: 2,
-        countryCode,
-        mobile: cleaned,
-        email,
-      });
+      const res =
+        await AuthService.phoneVerifiedValidate(
+          {
+            countryCode,
+            mobile: cleaned,
+          }
+        );
+      console.log("res", res);
 
-      setErrors((prev) => ({ ...prev, mobile: undefined }));
+      if (!res?.success) {
+        console.log("es?.data?.success", res);
+
+        setErrors((prev) => ({
+          ...prev,
+          mobile:
+            res?.data?.message ||
+            t(
+              "mobileAlreadyExists"
+            ),
+        }));
+
+        return false;
+      }
+
+      setErrors((prev) => ({
+        ...prev,
+        mobile: undefined,
+      }));
+
+      return true;
     } catch (err: any) {
+      console.log("messgae", err);
+      
       setErrors((prev) => ({
         ...prev,
         mobile:
-          err?.response?.data?.message || "Mobile number already exists",
+          err?.message ||
+          t(
+            "mobileValidationFailed"
+          ),
       }));
+
+      return false;
     } finally {
       setPhoneValidating(false);
     }
@@ -195,7 +230,12 @@ export default function MobileOTPStep({ email, mobileToken, onSuccess }: Props) 
       setSendingOtp(true);
       setError(null);
 
-      await validatePhone();
+      const isValid =
+        await validatePhone();
+
+      if (!isValid) {
+        return;
+      }
 
       // 2️⃣ send OTP
       const otpRes = await fetch("/api/send-otp", {
