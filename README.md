@@ -58,7 +58,7 @@ A production-grade, multi-language customer-facing web application for the DonRi
 | **Analytics** | Firebase, Google Analytics, Meta Pixel, Airbridge, Branch |
 | **Internationalization** | next-intl (cookie-based locale) |
 | **Animations** | Framer Motion, Tailwind Animate |
-| **Deployment** | Docker → AWS CodeBuild → ECR → ECS |
+| **Deploymegitnt** | Docker → AWS CodeBuild → ECR → ECS |
 
 ---
 
