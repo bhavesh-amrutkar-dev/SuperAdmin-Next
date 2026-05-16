@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200.426" height="58.217" viewBox="0 0 200.426 58.217">
+  <g id="Group_55440" data-name="Group 55440" transform="translate(-936 -7694)">
+    <g id="Rectangle_41" data-name="Rectangle 41" transform="translate(936 7694)" fill="#fff" stroke="#262626" stroke-width="1">
+      <rect width="200.426" height="58.217" rx="1" stroke="none"/>
+      <rect x="0.5" y="0.5" width="199.426" height="57.217" rx="0.5" fill="none"/>
+    </g>
+    <g id="Group_53827" data-name="Group 53827" transform="translate(5.93 0.217)">
+      <path id="apple_1_" data-name="apple (1)" d="M32.025,35.449c-1.574,2.37-3.244,4.683-5.786,4.721-2.542.057-3.358-1.51-6.241-1.51-2.9,0-3.794,1.472-6.2,1.567-2.485.1-4.363-2.523-5.956-4.836C4.6,30.67,2.111,21.974,5.449,16.125a9.256,9.256,0,0,1,7.815-4.8c2.428-.038,4.742,1.663,6.241,1.663,1.48,0,4.287-2.045,7.227-1.739a8.787,8.787,0,0,1,6.9,3.785,8.712,8.712,0,0,0-4.078,7.282,8.425,8.425,0,0,0,5.084,7.722,21.2,21.2,0,0,1-2.618,5.409M21.194,4.867A8.6,8.6,0,0,1,26.771,2,8.406,8.406,0,0,1,24.8,8.1a6.906,6.906,0,0,1-5.6,2.714A8.208,8.208,0,0,1,21.194,4.867Z" transform="translate(946.206 7702.379)" fill="#2f2f2f"/>
+      <text id="Download_on_the" data-name="Download on the" transform="translate(991 7710.783)" fill="#2f2f2f" font-size="12" font-family="ProductSans-Regular, Product Sans" letter-spacing="0.05em"><tspan x="0" y="0">Download On The</tspan></text>
+      <text id="APP_Store" data-name="APP Store" transform="translate(991 7740.284)" fill="#2f2f2f" font-size="26" font-family="ProductSans-Bold, Product Sans" font-weight="700"><tspan x="0" y="0">APP Store</tspan></text>
+    </g>
+  </g>
+</svg>
