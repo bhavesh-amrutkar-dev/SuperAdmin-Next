@@ -1,0 +1,295 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+import { toast } from "sonner";
+import { Plus, Pencil, Trash2, CheckCircle } from "lucide-react";
+
+import Header from "@/src/components/layout/Header";
+import Footer from "@/src/components/layout/Footer";
+import { UserAddressService } from "@/src/lib/services/userAddress";
+import AddressFormModal from "../../components/AddressFormModal";
+import { Button } from "@/src/components/ui/button";
+import { ConfirmationModal } from "@/src/components/ui/confirmationModal";
+import { useProfile } from "@/src/lib/hooks/userProfile";
+import { useRouter } from "next/navigation";
+import { getErrorMessage } from "@/src/lib/utils/errorMessage";
+
+interface UserAddress {
+  _id?: string;
+  name?: string;
+  addLine1?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  country?: string;
+  mobileNumber?: string;
+  mobileNumberCode?: string;
+  default?: boolean;
+
+  // ✅ ADD THIS
+  tagged?: number;
+  taggedAs?: string;
+}
+export default function AddressesPage() {
+  const t = useTranslations();
+
+  const [addresses, setAddresses] = useState<UserAddress[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [openModal, setOpenModal] = useState(false);
+  const [editing, setEditing] = useState<UserAddress | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  // const { user } = useProfile();
+  const router = useRouter();
+  useEffect(() => {
+    fetchAddresses();
+  }, []);
+  // useEffect(() => {
+  //     console.log(user);
+  //   if (user === undefined) return; // still loading profile
+  //   console.log(user);
+  //   if (!user) {
+  //     router.replace("/auth/login");
+  //   }
+  // }, [user, router]);
+  const fetchAddresses = async () => {
+    try {
+      setLoading(true);
+      const res = await UserAddressService.getAddresses();
+      const data = (res as any)?.data?.data || (res as any)?.data || [];
+      setAddresses(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      toast.error(getErrorMessage(err, t("loadAddressesFailed")));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* ---------------- Delete ---------------- */
+  const handleConfirmDelete = async () => {
+    if (!selectedId) return;
+
+    try {
+      setConfirmLoading(true);
+
+      await UserAddressService.deleteAddress(selectedId);
+
+      const updated = addresses.filter((a) => a._id !== selectedId);
+
+      // check if any default address exists
+      const hasDefault = updated.some((a) => a.default);
+
+      if (!hasDefault && updated.length > 0) {
+        await UserAddressService.setDefaultAddress1({
+          addressId: updated[0]._id,
+        });
+
+        updated[0].default = true;
+      }
+
+      setAddresses(updated);
+
+      toast.success(t("addressDeleted"));
+      setConfirmOpen(false);
+      setSelectedId(null);
+    } catch (err: any) {
+      toast.error(getErrorMessage(err, t("deleteFailed")));
+    } finally {
+      setConfirmLoading(false);
+    }
+  };
+  /* ---------------- Set Default ---------------- */
+  const handleSetDefault = async (id?: string) => {
+    if (!id) return;
+
+    try {
+      // await UserAddressService.setDefaultAddress(id);
+      const data = {
+        addressId: id,
+      }
+      await UserAddressService.setDefaultAddress1(data)
+      setAddresses((prev) =>
+        prev.map((a) => ({
+          ...a,
+          default: a._id === id,
+        }))
+      );
+
+      toast.success(t("defaultAddressUpdated"));
+    } catch (err: any) {
+      toast.error(getErrorMessage(err, t("defaultUpdateFailed")));
+    }
+  };
+
+  const getTagLabel = (address: UserAddress) => {
+    if (address.tagged === 1) return "Home";
+    if (address.tagged === 2) return "Office";
+    if (address.tagged === 3) return address.taggedAs || "Other";
+    return "";
+  };
+  const getTagStyle = (tagged?: number) => {
+    if (tagged === 1) return "bg-green-100 text-green-700";
+    if (tagged === 2) return "bg-blue-100 text-blue-700";
+    if (tagged === 3) return "bg-purple-100 text-purple-700";
+    return "bg-gray-100 text-gray-700";
+  };
+  return (
+    <>
+      <ConfirmationModal
+        open={confirmOpen}
+        onCancel={() => {
+          setConfirmOpen(false);
+          setSelectedId(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        loading={confirmLoading}
+        variant="destructive"
+        title={t("deleteAddress")}
+        message={t("deleteAddressConfirm")}
+        confirmText={t("delete")}
+        cancelText={t("cancel")}
+      />
+
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+
+        <div className="mx-auto w-full max-w-[1648px] px-4 md:px-6 py-10">
+          {/* Header */}
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold">{t("savedAddresses")}</h1>
+              <p className="text-sm text-gray-500">{t("manageDeliveryAddresses")}</p>
+            </div>
+
+            <Button
+              className="btn-primary"
+              variant="primary"
+              size="default"
+              onClick={() => {
+                setEditing(null);
+                setOpenModal(true);
+              }}
+            >
+              <Plus size={16} />
+              {t("addAddress")}
+            </Button>
+          </div>
+
+          {/* Loading */}
+          {loading ? (
+            <div className="flex justify-center py-20">
+              <div className="h-10 w-10 animate-spin rounded-full border-2 border-yellow-400 border-t-transparent" />
+            </div>
+          ) : addresses.length === 0 ? (
+            /* Empty */
+            <div className="rounded-2xl border border-gray-200 bg-gray-100 p-12 text-center">
+              <p className="text-[#2f2f2f] mb-4 font-semibold">{t("noAddressFound")}</p>
+              <Button className="btn-primary" variant="primary" onClick={() => setOpenModal(true)}>
+                <Plus size={16} />
+                {t("addAddress")}
+              </Button>
+            </div>
+          ) : (
+            /* Address Grid */
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {addresses.map((address) => (
+                <div
+                  key={address._id}
+                  className={`relative rounded-2xl border bg-white p-6 shadow-sm transition ${address.default
+                    ? "border-yellow-400 ring-2 ring-yellow-100"
+                    : "border-gray-200"
+                    }`}
+                >
+                  {address.default && (
+                    <span className="absolute right-4 top-4 flex items-center gap-1 text-xs font-medium text-yellow-600">
+                      <CheckCircle size={14} />
+                      {t("default")}
+                    </span>
+                  )}
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="font-semibold">{address.name}</h3>
+
+                    <span
+                      className={`px-2.5 py-1 rounded-full text-xs font-medium ${getTagStyle(address.tagged)}`}
+                    >
+                      {getTagLabel(address)}
+                    </span>
+                  </div>
+
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p>{address.addLine1}</p>
+                    <p>
+                      {address.city}, {address.state} {address.pincode}
+                    </p>
+                    <p>{address.country}</p>
+                    <p>
+                      +{address.mobileNumberCode} {address.mobileNumber}
+                    </p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="mt-6 flex flex-wrap gap-3 text-sm">
+                    {!address.default && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSetDefault(address._id)}
+                      >
+                        {t("setDefault")}
+                      </Button>
+                    )}
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setEditing(address);
+                        setOpenModal(true);
+                      }}
+                    >
+                      <Pencil size={14} />
+                      {t("edit")}
+                    </Button>
+
+                    <Button
+                      variant="destructiveOutline"
+                      size="sm"
+                      // disabled={addresses.length === 1}
+                      onClick={() => {
+                        if (addresses.length === 1) {
+                          toast.error(t("cannotDeleteLastAddress"));
+                          return;
+                        }
+
+                        setSelectedId(address._id || null);
+                        setConfirmOpen(true);
+                      }}
+                    >
+                      <Trash2 size={14} />
+                      {t("delete")}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <Footer />
+
+        {/* Modal */}
+        <AddressFormModal
+          open={openModal}
+          onClose={() => {
+            setOpenModal(false);
+            setEditing(null);
+          }}
+          onSuccess={fetchAddresses}
+          editing={editing}
+        />
+      </div>
+    </>
+  );
+}
